@@ -44,7 +44,7 @@ const faqData = [
   {
     question: "Como faço para começar?",
     answer:
-      "É fácil! Clique no botão "Teste Grátis, forneça acesso à sua conta do Mercado Livre e deixe nossa equipe cuidar de todo o resto. Em minutos, sua loja estará pronta para transformar o atendimento e aumentar suas vendas!",
+      'É fácil! Clique no botão "Teste Grátis", forneça acesso à sua conta do Mercado Livre e deixe nossa equipe cuidar de todo o resto. Em minutos, sua loja estará pronta para transformar o atendimento e aumentar suas vendas!',
   },
 ];
 
