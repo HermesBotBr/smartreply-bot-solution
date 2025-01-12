@@ -1,19 +1,51 @@
 import { Link } from "react-router-dom";
 import { Facebook, Instagram, Linkedin, Youtube } from "lucide-react";
+import { ContactFormDialog } from "@/components/ContactFormDialog";
 
 const Footer = () => {
   const quickLinks = [
-    { name: "Início", href: "/" },
-    { name: "Soluções", href: "/funcionalidades" },
-    { name: "Sobre", href: "/sobre" },
-    { name: "Contato", href: "/contato" },
+    { 
+      name: "Início", 
+      href: "/" 
+    },
+    { 
+      name: "Soluções", 
+      href: "#funcionalidades",
+      onClick: () => document.getElementById("funcionalidades")?.scrollIntoView({ behavior: "smooth" })
+    },
+    { 
+      name: "Sobre", 
+      href: "#quem-somos",
+      onClick: () => document.getElementById("quem-somos")?.scrollIntoView({ behavior: "smooth" })
+    },
+    { 
+      name: "Contato", 
+      href: "#",
+      isDialog: true
+    },
   ];
 
   const socialLinks = [
-    { name: "Instagram", icon: Instagram, href: "#" },
-    { name: "Facebook", icon: Facebook, href: "#" },
-    { name: "LinkedIn", icon: Linkedin, href: "#" },
-    { name: "YouTube", icon: Youtube, href: "#" },
+    { 
+      name: "Instagram", 
+      icon: Instagram, 
+      href: "https://www.instagram.com/hermesbot_ia/" 
+    },
+    { 
+      name: "Facebook", 
+      icon: Facebook, 
+      href: "#" 
+    },
+    { 
+      name: "LinkedIn", 
+      icon: Linkedin, 
+      href: "#" 
+    },
+    { 
+      name: "YouTube", 
+      icon: Youtube, 
+      href: "https://www.youtube.com/channel/UCXxZpdP2Yr6gcnt4QeLhTsg" 
+    },
   ];
 
   return (
@@ -26,12 +58,21 @@ const Footer = () => {
             <ul className="space-y-2">
               {quickLinks.map((link) => (
                 <li key={link.name}>
-                  <Link
-                    to={link.href}
-                    className="hover:text-primary transition-colors"
-                  >
-                    {link.name}
-                  </Link>
+                  {link.isDialog ? (
+                    <ContactFormDialog>
+                      <button className="hover:text-primary transition-colors">
+                        {link.name}
+                      </button>
+                    </ContactFormDialog>
+                  ) : (
+                    <a
+                      href={link.href}
+                      onClick={link.onClick}
+                      className="hover:text-primary transition-colors"
+                    >
+                      {link.name}
+                    </a>
+                  )}
                 </li>
               ))}
             </ul>
@@ -51,10 +92,10 @@ const Footer = () => {
               </li>
               <li>
                 <a
-                  href="tel:11999999999"
+                  href="tel:11962021565"
                   className="hover:text-primary transition-colors"
                 >
-                  (11) 99999-9999
+                  (11) 96202-1565
                 </a>
               </li>
             </ul>
@@ -72,6 +113,11 @@ const Footer = () => {
                   rel="noopener noreferrer"
                   className="hover:text-primary transition-colors"
                   aria-label={social.name}
+                  onClick={(e) => {
+                    if (social.href === "#") {
+                      e.preventDefault();
+                    }
+                  }}
                 >
                   <social.icon size={24} />
                 </a>

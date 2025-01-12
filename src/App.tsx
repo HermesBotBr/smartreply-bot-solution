@@ -6,8 +6,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import Header from "./components/layout/Header";
 import Footer from "./components/layout/Footer";
 import Index from "./pages/Index";
+import ThankYou from "./pages/ThankYou";
 
-// Create a client
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -27,6 +27,7 @@ function App() {
             <main className="flex-grow pt-16">
               <Routes>
                 <Route path="/" element={<Index />} />
+                <Route path="/obrigado" element={<ThankYou />} />
               </Routes>
             </main>
             <Footer />

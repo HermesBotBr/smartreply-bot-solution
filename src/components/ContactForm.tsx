@@ -2,9 +2,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const ContactForm = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     EMAIL: "",
     FNAME: "",
@@ -21,6 +23,7 @@ const ContactForm = () => {
       description: "Entraremos em contato em breve.",
     });
     setFormData({ EMAIL: "", FNAME: "", PHONE: "", COMPANY: "" });
+    navigate("/obrigado");
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {

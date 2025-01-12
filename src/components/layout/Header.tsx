@@ -28,8 +28,11 @@ const Header = () => {
       href: "#quem-somos",
       onClick: () => scrollToSection("quem-somos")
     },
-    { name: "Contato", href: "/contato" },
-    { name: "FAQ", href: "/faq" },
+    { 
+      name: "FAQ", 
+      href: "#faq",
+      onClick: () => scrollToSection("faq")
+    },
   ];
 
   return (
