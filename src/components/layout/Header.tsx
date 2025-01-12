@@ -2,15 +2,32 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ContactFormDialog } from "@/components/ContactFormDialog";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
+  const scrollToSection = (id: string) => {
+    const element = document.getElementById(id);
+    if (element) {
+      element.scrollIntoView({ behavior: "smooth" });
+      setIsMenuOpen(false);
+    }
+  };
+
   const navigation = [
     { name: "Home", href: "/" },
     { name: "Blog", href: "/blog" },
-    { name: "Funcionalidades", href: "/funcionalidades" },
-    { name: "Sobre Nós", href: "/sobre" },
+    { 
+      name: "Funcionalidades", 
+      href: "#funcionalidades",
+      onClick: () => scrollToSection("funcionalidades")
+    },
+    { 
+      name: "Sobre Nós", 
+      href: "#quem-somos",
+      onClick: () => scrollToSection("quem-somos")
+    },
     { name: "Contato", href: "/contato" },
     { name: "FAQ", href: "/faq" },
   ];
@@ -28,17 +45,18 @@ const Header = () => {
           {/* Desktop Navigation */}
           <div className="hidden md:flex md:items-center md:space-x-8">
             {navigation.map((item) => (
-              <Link
+              <a
                 key={item.name}
-                to={item.href}
+                href={item.href}
+                onClick={item.onClick}
                 className="text-gray-700 hover:text-primary transition-colors"
               >
                 {item.name}
-              </Link>
+              </a>
             ))}
-            <Button asChild>
-              <Link to="/teste-gratis">Teste Grátis por 15 Dias</Link>
-            </Button>
+            <ContactFormDialog>
+              <Button>Teste Grátis por 15 Dias</Button>
+            </ContactFormDialog>
           </div>
 
           {/* Mobile menu button */}
@@ -58,20 +76,18 @@ const Header = () => {
           <div className="md:hidden py-4 animate-fade-in">
             <div className="flex flex-col space-y-4">
               {navigation.map((item) => (
-                <Link
+                <a
                   key={item.name}
-                  to={item.href}
+                  href={item.href}
+                  onClick={item.onClick}
                   className="text-gray-700 hover:text-primary transition-colors"
-                  onClick={() => setIsMenuOpen(false)}
                 >
                   {item.name}
-                </Link>
+                </a>
               ))}
-              <Button asChild className="w-full">
-                <Link to="/teste-gratis" onClick={() => setIsMenuOpen(false)}>
-                  Teste Grátis por 15 Dias
-                </Link>
-              </Button>
+              <ContactFormDialog>
+                <Button className="w-full">Teste Grátis por 15 Dias</Button>
+              </ContactFormDialog>
             </div>
           </div>
         )}

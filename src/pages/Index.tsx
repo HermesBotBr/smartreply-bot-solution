@@ -1,6 +1,7 @@
 import { ArrowRight, Shield, UserCheck, Rocket, BarChart } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import ContactForm from "@/components/ContactForm";
+import { ContactFormDialog } from "@/components/ContactFormDialog";
+import FAQ from "@/components/FAQ";
 
 const Index = () => {
   const diferenciais = [
@@ -26,6 +27,13 @@ const Index = () => {
     },
   ];
 
+  const scrollToSection = (id: string) => {
+    const element = document.getElementById(id);
+    if (element) {
+      element.scrollIntoView({ behavior: "smooth" });
+    }
+  };
+
   return (
     <div className="flex flex-col min-h-screen">
       {/* Hero Section */}
@@ -38,22 +46,21 @@ const Index = () => {
             Automatize seu atendimento, melhore seu ranqueamento e conquiste
             resultados surpreendentes.
           </p>
-          <Button
-            size="lg"
-            variant="secondary"
-            className="animate-fade-up"
-            asChild
-          >
-            <a href="/teste-gratis">
+          <ContactFormDialog>
+            <Button
+              size="lg"
+              variant="secondary"
+              className="animate-fade-up"
+            >
               Teste Grátis por 15 Dias
               <ArrowRight className="ml-2" size={20} />
-            </a>
-          </Button>
+            </Button>
+          </ContactFormDialog>
         </div>
       </section>
 
       {/* About Section */}
-      <section className="py-20 bg-gray-50">
+      <section id="quem-somos" className="py-20 bg-gray-50">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl font-bold text-center mb-12">Quem Somos?</h2>
           <div className="max-w-3xl mx-auto text-center">
@@ -64,18 +71,23 @@ const Index = () => {
               oferecendo respostas rápidas, humanizadas e um impacto direto no
               ranqueamento e nas vendas.
             </p>
-            {/* Video placeholder */}
-            <div className="aspect-video bg-gray-200 rounded-lg mb-8">
-              <div className="h-full flex items-center justify-center text-gray-500">
-                [Vídeo Simulador]
-              </div>
+            <div className="aspect-video rounded-lg overflow-hidden mb-8">
+              <iframe
+                width="100%"
+                height="100%"
+                src="https://www.youtube.com/embed/_PUAxU_h5AQ?controls=1&rel=0&showinfo=0"
+                title="HermesBot Video"
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              ></iframe>
             </div>
           </div>
         </div>
       </section>
 
       {/* Solutions Section */}
-      <section className="py-20">
+      <section id="funcionalidades" className="py-20">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl font-bold text-center mb-12">
             Transforme Seu Atendimento no Mercado Livre
@@ -141,6 +153,9 @@ const Index = () => {
           </div>
         </div>
       </section>
+
+      {/* FAQ Section */}
+      <FAQ />
 
       {/* Contact Form Section */}
       <section className="py-20">
