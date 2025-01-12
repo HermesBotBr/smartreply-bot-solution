@@ -7,6 +7,7 @@ import Header from "./components/layout/Header";
 import Footer from "./components/layout/Footer";
 import Index from "./pages/Index";
 import ThankYou from "./pages/ThankYou";
+import WhatsAppButton from "./components/WhatsAppButton";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -31,6 +32,7 @@ function App() {
               </Routes>
             </main>
             <Footer />
+            <WhatsAppButton />
           </div>
         </BrowserRouter>
         <Toaster />
