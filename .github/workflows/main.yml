@@ -1,0 +1,35 @@
+name: Deploy React App to Hostinger via FTP
+
+on:
+  push:
+    branches:
+      - main  # Substitua se sua branch principal tiver outro nome
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v3
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'  # Verifique a versão do Node.js que seu projeto utiliza
+
+    - name: Install Dependencies
+      run: npm install
+
+    - name: Build Project
+      run: npm run build
+
+    - name: Deploy via FTP
+      uses: SamKirkland/FTP-Deploy-Action@4.3.0
+      with:
+        ftp-server: ${{ secrets.FTP_SERVER }}
+        ftp-username: ${{ secrets.FTP_USERNAME }}
+        ftp-password: ${{ secrets.FTP_PASSWORD }}
+        server-port: ${{ secrets.FTP_PORT }}
+        local-dir: build  # Certifique-se de que a pasta gerada pelo build seja 'build'
+        git-ftp-args: --insecure
