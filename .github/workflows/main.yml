@@ -31,5 +31,5 @@ jobs:
         username: ${{ secrets.FTP_USERNAME }}
         password: ${{ secrets.FTP_PASSWORD }}
         port: ${{ secrets.FTP_PORT }}
-        local-dir: build  # Certifique-se de que a pasta gerada pelo build seja 'build'
+        local-dir: build/  # Certifique-se de que a pasta gerada pelo build seja 'build'
         protocol: ftp       # Use 'ftps' se estiver usando FTP seguro
