@@ -32,30 +32,29 @@ const Index = () => {
       {/* About Section */}
       <section className="py-20 bg-gray-50">
         <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto">
+          <div className="max-w-4xl mx-auto flex flex-col items-center">
             <h2 className="text-3xl font-bold text-center mb-12">
               Automatize seu atendimento e aumente suas vendas
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="space-y-6">
-                <p className="text-lg">
-                  A HermesBot é uma solução de automação inteligente que utiliza IA avançada para responder às perguntas dos seus clientes no Mercado Livre de forma rápida e eficiente.
-                </p>
-                <p className="text-lg">
-                  Com respostas personalizadas e humanizadas, você melhora seu atendimento, aumenta suas vendas e otimiza seu ranqueamento na plataforma.
-                </p>
-              </div>
-              <div className="aspect-video rounded-lg overflow-hidden">
-                <iframe
-                  width="100%"
-                  height="100%"
-                  src="https://www.youtube.com/embed/_PUAxU_h5AQ?controls=1&rel=0&showinfo=0"
-                  title="HermesBot Video"
-                  frameBorder="0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                ></iframe>
-              </div>
+            <div className="space-y-6 text-center mb-12">
+              <p className="text-lg">
+                A HermesBot é uma solução de automação inteligente que utiliza IA avançada para responder às perguntas dos seus clientes no Mercado Livre de forma rápida e eficiente.
+              </p>
+              <p className="text-lg">
+                Com respostas personalizadas e humanizadas, você melhora seu atendimento, aumenta suas vendas e otimiza seu ranqueamento na plataforma.
+              </p>
+            </div>
+            <div className="w-full max-w-3xl aspect-video rounded-lg overflow-hidden shadow-xl">
+              <iframe
+                width="100%"
+                height="100%"
+                src="https://www.youtube.com/embed/_PUAxU_h5AQ?controls=1&rel=0&showinfo=0"
+                title="HermesBot Video"
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                className="w-full h-full"
+              ></iframe>
             </div>
           </div>
         </div>
