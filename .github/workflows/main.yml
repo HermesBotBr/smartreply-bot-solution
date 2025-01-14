@@ -16,7 +16,7 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v3
       with:
-        node-version: '18'  # Verifique a versão do Node.js que seu projeto utiliza
+        node-version: '18'  # Versão compatível com seu projeto
 
     - name: Install Dependencies
       run: npm install
@@ -27,9 +27,9 @@ jobs:
     - name: Deploy via FTP
       uses: SamKirkland/FTP-Deploy-Action@4.3.0
       with:
-        ftp-server: ${{ secrets.FTP_SERVER }}
-        ftp-username: ${{ secrets.FTP_USERNAME }}
-        ftp-password: ${{ secrets.FTP_PASSWORD }}
-        server-port: ${{ secrets.FTP_PORT }}
+        server: ${{ secrets.FTP_SERVER }}
+        username: ${{ secrets.FTP_USERNAME }}
+        password: ${{ secrets.FTP_PASSWORD }}
+        port: ${{ secrets.FTP_PORT }}
         local-dir: build  # Certifique-se de que a pasta gerada pelo build seja 'build'
-        git-ftp-args: --insecure
+        protocol: ftp       # Use 'ftps' se estiver usando FTP seguro
