@@ -79,7 +79,7 @@ const ContactForm = () => {
           <Input
             type="url"
             name="COMPANY"
-            placeholder="Link da sua loja no ML"
+            placeholder="Link de um de seus produtos no Mercado Livre"
             value={formData.COMPANY}
             onChange={handleChange}
             required
