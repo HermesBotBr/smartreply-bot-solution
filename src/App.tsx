@@ -7,6 +7,7 @@ import Header from "./components/layout/Header";
 import Footer from "./components/layout/Footer";
 import Index from "./pages/Index";
 import ThankYou from "./pages/ThankYou";
+import Form from "./pages/Form";
 import WhatsAppButton from "./components/WhatsAppButton";
 
 const queryClient = new QueryClient({
@@ -29,6 +30,7 @@ function App() {
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/obrigado" element={<ThankYou />} />
+                <Route path="/form" element={<Form />} />
               </Routes>
             </main>
             <Footer />
