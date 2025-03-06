@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -10,7 +9,6 @@ import { DialogContent, DialogHeader, DialogTitle, Dialog } from "@/components/u
 import QuestionsList from "@/components/dashboard/QuestionsList";
 import MetricsDisplay from "@/components/dashboard/MetricsDisplay";
 
-// URLs dos endpoints
 const DATA_URL = 'https://7dbd2e762353.ngrok.app/all_msg.txt';
 const ASKS_URL = 'https://7dbd2e762353.ngrok.app/all_asks.txt';
 const GPT_URL = 'https://7dbd2e762353.ngrok.app/all_gpt.txt';
@@ -39,7 +37,6 @@ function breakTitle(title, limit = 35) {
   return result.trim();
 }
 
-// Parse function to handle the message data
 function parseMessages(text) {
   const entries = text.split("\n-------------------------------------------------\n");
   const convs = [];
@@ -106,7 +103,6 @@ function parseMessages(text) {
   return convs;
 }
 
-// ProductThumbnail component
 function ProductThumbnail({ itemId }) {
   const [thumbnail, setThumbnail] = useState(null);
 
@@ -136,7 +132,6 @@ function ProductThumbnail({ itemId }) {
   );
 }
 
-// Sale Switch component
 function SaleSwitch({ orderId }) {
   const [isEnabled, setIsEnabled] = useState(true);
   const { toast } = useToast();
@@ -203,7 +198,6 @@ function SaleSwitch({ orderId }) {
   );
 }
 
-// Timeline component
 const Timeline = ({ status }) => {
   const timelineSteps = [
     { label: "Em preparação" },
@@ -244,7 +238,6 @@ const Timeline = ({ status }) => {
   );
 };
 
-// Format utility functions for detailed view
 function formatDateTime(dt) {
   if (!dt) return "(não informado)";
   const parts = dt.split("T");
@@ -390,17 +383,14 @@ const UserGiovaniBurgo = () => {
       const tokenResponse = await fetch('https://7dbd2e762353.ngrok.app/mercadoLivreApiKey.txt');
       const token = await tokenResponse.text();
       
-      // Primeiro, tenta buscar pelo endpoint de orders com o order_id atual
       let orderResponse = await fetch(`https://api.mercadolibre.com/orders/${selectedConv.orderId}?access_token=${token.trim()}`);
       let detailedData = await orderResponse.json();
       
-      // Se retornar order_not_found, tenta buscar pelo endpoint de packs
       if (detailedData.error === "order_not_found") {
         const packResponse = await fetch(`https://api.mercadolibre.com/packs/${selectedConv.orderId}?access_token=${token.trim()}`);
         const packData = await packResponse.json();
         if (packData.orders && packData.orders.length > 0) {
           const correctOrderId = packData.orders[0].id;
-          // Refaz a requisição com o order_id correto
           orderResponse = await fetch(`https://api.mercadolibre.com/orders/${correctOrderId}?access_token=${token.trim()}`);
           detailedData = await orderResponse.json();
         }
@@ -421,7 +411,6 @@ const UserGiovaniBurgo = () => {
   const sendMessage = async () => {
     if (!messageText.trim()) return;
     
-    // Cria um objeto de mensagem otimista
     const newMessage = {
       sender: 'seller',
       message: messageText,
@@ -430,13 +419,11 @@ const UserGiovaniBurgo = () => {
       message_attachments: []
     };
 
-    // Atualiza imediatamente o estado da conversa com a nova mensagem
     setSelectedConv(prevConv => ({
       ...prevConv,
       messages: [...prevConv.messages, newMessage]
     }));
 
-    // Scroll para o final
     setTimeout(() => {
       if (chatEndRef.current) {
         chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
@@ -449,7 +436,6 @@ const UserGiovaniBurgo = () => {
         return;
       }
 
-      // Primeiro, busca os detalhes do pedido para obter o buyer_id
       const orderResponse = await fetch(`https://api.mercadolibre.com/orders/${selectedConv.orderId}?access_token=${mlToken}`);
       const orderData = await orderResponse.json();
       const buyer_id = orderData?.buyer?.id;
@@ -459,7 +445,6 @@ const UserGiovaniBurgo = () => {
         return;
       }
 
-      // Envia a mensagem para o servidor
       const response = await fetch('https://7dbd2e762353.ngrok.app/sendmsg', {
         method: 'POST',
         headers: {
@@ -505,12 +490,15 @@ const UserGiovaniBurgo = () => {
   const sortedConversations = filteredConversations.slice().sort((a, b) => {
     const getMostRecentDate = (conv) => {
       if (conv.messages.length === 0) return new Date(0);
-      return new Date(conv.messages.reduce((prev, curr) => new Date(curr.date) > new Date(prev.date) ? curr : prev).date);
+      return new Date(conv.messages.reduce((prev, curr) => {
+        const prevDate = new Date(prev.date).getTime();
+        const currDate = new Date(curr.date).getTime();
+        return currDate > prevDate ? curr : prev;
+      }, conv.messages[0]).date);
     };
-    return getMostRecentDate(b) - getMostRecentDate(a);
+    return getMostRecentDate(b).getTime() - getMostRecentDate(a).getTime();
   });
 
-  // Show customers list
   const renderListView = () => {
     return (
       <div className="flex flex-col h-full">
@@ -589,9 +577,10 @@ const UserGiovaniBurgo = () => {
     );
   };
 
-  // Show conversation detail
   const renderDetailView = () => {
-    const sortedMessages = selectedConv.messages.slice().sort((a, b) => new Date(a.date) - new Date(b.date));
+    const sortedMessages = selectedConv.messages.slice().sort((a, b) => {
+      return new Date(a.date).getTime() - new Date(b.date).getTime();
+    });
     
     return (
       <div className="flex flex-col h-full">
@@ -622,7 +611,7 @@ const UserGiovaniBurgo = () => {
             
             let messageClass = "";
             if (msg.sender.toLowerCase() === 'seller') {
-              const timeDiff = now - new Date(msg.date);
+              const timeDiff = now.getTime() - new Date(msg.date).getTime();
               if (timeDiff < 10000) {
                 messageClass = "bg-gray-300 self-end";
               } else if (msg.id && gptIds.includes(msg.id)) {
@@ -709,7 +698,6 @@ const UserGiovaniBurgo = () => {
     );
   };
 
-  // Show sale details
   const renderSaleDetailView = () => {
     return (
       <div className="flex flex-col h-full">
