@@ -82,13 +82,14 @@ function parseMessages(text) {
               messageId = idMatch[1];
               rest = rest.replace(/^\(\w+\)/, '').trim();
             }
-            const match = rest.match(/\((.*?)\)$/);
-            let date = '';
-            let message = rest;
-            if (match) {
-  date = match[1].trim();
-  message = rest.replace(`(${date})`, "").trim();
+    const match = rest.match(/\((\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z)\)$/);
+let date = '';
+let message = rest;
+if (match) {
+  date = match[1];
+  message = rest.substring(0, rest.lastIndexOf(`(${date})`)).trim();
 }
+
 
             messages.push({ sender, message, date, id: messageId, message_attachments: [] });
           }
