@@ -1,9 +1,13 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ChevronDown, ChevronUp } from "lucide-react";
 
 // URL do endpoint
 const ASKS_URL = 'https://7dbd2e762353.ngrok.app/all_asks.txt';
@@ -16,6 +20,24 @@ interface Question {
   status: string;
   answer?: string;
   date_answered?: string;
+}
+
+interface QAPair {
+  question: string;
+  answer: string;
+}
+
+interface AskBlock {
+  itemTitle: string;
+  itemId: string;
+  qa: string[];
+  latestDate: Date;
+}
+
+interface Announcement {
+  id: string;
+  title: string;
+  latestDate: Date;
 }
 
 function parseQuestions(text: string): Question[] {
@@ -53,6 +75,95 @@ function parseQuestions(text: string): Question[] {
   });
   
   return questions;
+}
+
+/**
+ * Parse asks from text format.
+ */
+function parseAsks(text: string): AskBlock[] {
+  const blocks = text
+    .split("-----------------------------------------------------")
+    .map(b => b.trim())
+    .filter(b => b.length > 0)
+    .map(block => {
+      const lines = block
+        .split('\n')
+        .map(line => line.trim())
+        .filter(line => line.length > 0);
+      // Check if there's at least title, item_id, and a question
+      if (lines.length < 3) return null;
+      const itemTitle = lines[0];
+      const itemId = lines[1];
+      const qaLines = lines.slice(2);
+      let latestDate: Date | null = null;
+      qaLines.forEach(line => {
+        if (line.toLowerCase().startsWith('buyer:')) {
+          const match = line.match(/\((.*?)\)/);
+          if (match) {
+            const parsedDate = new Date(match[1]);
+            if (!isNaN(parsedDate.getTime())) {
+              if (latestDate === null || parsedDate > latestDate) {
+                latestDate = parsedDate;
+              }
+            }
+          }
+        }
+      });
+      if (!latestDate) return null;
+      return { itemTitle, itemId, qa: qaLines, latestDate };
+    })
+    .filter(block => block !== null) as AskBlock[];
+  
+  // Sort blocks by latest date (most recent first)
+  blocks.sort((a, b) => b.latestDate.getTime() - a.latestDate.getTime());
+  return blocks;
+}
+
+/**
+ * Groups QA lines into pairs (buyer and seller).
+ */
+function getQAPairs(qaLines: string[]): QAPair[] {
+  const pairs: QAPair[] = [];
+  for (let i = 0; i < qaLines.length; i++) {
+    if (qaLines[i].toLowerCase().startsWith('buyer:')) {
+      const question = qaLines[i];
+      let answer = "";
+      if (i + 1 < qaLines.length && qaLines[i + 1].toLowerCase().startsWith('seller:')) {
+        answer = qaLines[i + 1];
+        i++; // Skip the answer line
+      }
+      pairs.push({ question, answer });
+    }
+  }
+  return pairs;
+}
+
+/**
+ * Format the title to be more readable.
+ */
+function formatTitle(title: string): string {
+  const words = title.split(' ');
+  let line = "";
+  let result = "";
+  words.forEach(word => {
+    if ((line + (line ? " " : "") + word).length <= 35) {
+      line += (line ? " " : "") + word;
+    } else {
+      result += (result ? "\n" : "") + line;
+      line = word;
+    }
+  });
+  if (line) {
+    result += (result ? "\n" : "") + line;
+  }
+  return result;
+}
+
+/**
+ * Truncate text to a maximum length.
+ */
+function truncateText(text: string, n: number): string {
+  return text.length > n ? text.substring(0, n) + "..." : text;
 }
 
 // Format date string
@@ -100,7 +211,7 @@ function ProductInfo({ itemId, mlToken }: ProductInfoProps) {
   
   return (
     <div className="flex items-center">
-      <div className="w-10 h-10 bg-gray-100 rounded overflow-hidden mr-3 border border-gray-200">
+      <div className="w-10 h-10 bg-gray-100 rounded-full overflow-hidden mr-3 border border-gray-200">
         {product.thumbnail && (
           <img 
             src={product.secure_thumbnail || product.thumbnail} 
@@ -122,22 +233,26 @@ interface QuestionsListProps {
 }
 
 const QuestionsList: React.FC<QuestionsListProps> = ({ mlToken }) => {
-  const [questions, setQuestions] = useState<Question[]>([]);
+  const [asks, setAsks] = useState<AskBlock[]>([]);
   const [loading, setLoading] = useState(true);
   const [answering, setAnswering] = useState<string | null>(null);
   const [answerText, setAnswerText] = useState('');
-  const [filter, setFilter] = useState('unanswered');
   const [searchText, setSearchText] = useState('');
+  const [filterNoAnswers, setFilterNoAnswers] = useState(false);
+  const [selectedAnnouncement, setSelectedAnnouncement] = useState<string | null>(null);
+  const [selectedQAPair, setSelectedQAPair] = useState<QAPair | null>(null);
+  const [expandedBlocks, setExpandedBlocks] = useState<Record<string, boolean>>({});
+  const [filterModalVisible, setFilterModalVisible] = useState(false);
   
   const { toast } = useToast();
 
-  const loadQuestions = async () => {
+  const loadAsks = async () => {
     try {
       setLoading(true);
       const response = await fetch(ASKS_URL);
       const text = await response.text();
-      const parsedQuestions = parseQuestions(text);
-      setQuestions(parsedQuestions);
+      const parsedAsks = parseAsks(text);
+      setAsks(parsedAsks);
     } catch (error) {
       console.error("Erro ao carregar perguntas:", error);
       toast({
@@ -151,8 +266,8 @@ const QuestionsList: React.FC<QuestionsListProps> = ({ mlToken }) => {
   };
 
   useEffect(() => {
-    loadQuestions();
-    const interval = setInterval(loadQuestions, 30000);
+    loadAsks();
+    const interval = setInterval(loadAsks, 30000);
     return () => clearInterval(interval);
   }, []);
 
@@ -179,19 +294,8 @@ const QuestionsList: React.FC<QuestionsListProps> = ({ mlToken }) => {
           description: "Sua resposta foi registrada com sucesso",
         });
         
-        // Atualiza a pergunta na lista
-        setQuestions(prevQuestions => 
-          prevQuestions.map(q => 
-            q.question_id === answering 
-              ? { 
-                  ...q, 
-                  answer: answerText,
-                  status: 'ANSWERED',
-                  date_answered: new Date().toISOString()
-                }
-              : q
-          )
-        );
+        // Recarrega as perguntas para atualizar a lista
+        loadAsks();
         
         setAnswerText('');
         setAnswering(null);
@@ -208,21 +312,39 @@ const QuestionsList: React.FC<QuestionsListProps> = ({ mlToken }) => {
     }
   };
 
-  const filteredQuestions = questions
-    .filter(q => {
-      // Filter by status
-      if (filter === 'unanswered' && q.status !== 'UNANSWERED') return false;
-      if (filter === 'answered' && q.status !== 'ANSWERED') return false;
-      
-      // Filter by search text
-      if (searchText) {
-        const searchLower = searchText.toLowerCase();
-        return q.text.toLowerCase().includes(searchLower);
+  // Filter asks based on search text, filter "No Answers", and selected announcement
+  const filteredAsks = asks.filter(ask => {
+    const combinedText = [ask.itemTitle, ask.itemId, ...ask.qa].join(' ').toLowerCase();
+    if (searchText && !combinedText.includes(searchText.toLowerCase())) return false;
+    
+    // If filter "No Answers" is active, filter QA pairs to keep only those without answer
+    if (filterNoAnswers) {
+      const qaPairs = getQAPairs(ask.qa);
+      const unansweredPairs = qaPairs.filter(pair => !pair.answer || pair.answer.trim() === "");
+      if (unansweredPairs.length === 0) return false;
+    }
+    
+    if (selectedAnnouncement && ask.itemId !== selectedAnnouncement) return false;
+    
+    return true;
+  });
+
+  // Create a unique list of announcements for the filter, using itemId, title and latest question date
+  const uniqueAnnouncements: Announcement[] = (() => {
+    const uniqueMap = new Map<string, Announcement>();
+    asks.forEach(ask => {
+      if (!uniqueMap.has(ask.itemId)) {
+        uniqueMap.set(ask.itemId, { id: ask.itemId, title: ask.itemTitle, latestDate: ask.latestDate });
+      } else {
+        if (ask.latestDate > uniqueMap.get(ask.itemId)!.latestDate) {
+          uniqueMap.set(ask.itemId, { id: ask.itemId, title: ask.itemTitle, latestDate: ask.latestDate });
+        }
       }
-      
-      return true;
-    })
-    .sort((a, b) => new Date(b.date_created).getTime() - new Date(a.date_created).getTime());
+    });
+    const arr = Array.from(uniqueMap.values());
+    arr.sort((a, b) => b.latestDate.getTime() - a.latestDate.getTime());
+    return arr;
+  })();
 
   return (
     <div className="flex flex-col h-full">
@@ -235,29 +357,12 @@ const QuestionsList: React.FC<QuestionsListProps> = ({ mlToken }) => {
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
           />
-          <div className="flex gap-1">
-            <Button 
-              variant={filter === 'all' ? "secondary" : "ghost"}
-              className="text-white border border-white"
-              onClick={() => setFilter('all')}
-            >
-              Todas
-            </Button>
-            <Button 
-              variant={filter === 'unanswered' ? "secondary" : "ghost"}
-              className="text-white border border-white"
-              onClick={() => setFilter('unanswered')}
-            >
-              Não respondidas
-            </Button>
-            <Button 
-              variant={filter === 'answered' ? "secondary" : "ghost"}
-              className="text-white border border-white"
-              onClick={() => setFilter('answered')}
-            >
-              Respondidas
-            </Button>
-          </div>
+          <Button 
+            variant="secondary"
+            onClick={() => setFilterModalVisible(true)}
+          >
+            Filtros
+          </Button>
         </div>
       </div>
       
@@ -268,78 +373,174 @@ const QuestionsList: React.FC<QuestionsListProps> = ({ mlToken }) => {
           </div>
         ) : (
           <>
-            {filteredQuestions.length === 0 ? (
+            {filteredAsks.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-gray-500">
-                <p className="mb-2 text-lg">Nenhuma pergunta {filter === 'unanswered' ? 'não respondida' : filter === 'answered' ? 'respondida' : ''} encontrada</p>
-                <Button onClick={loadQuestions}>Atualizar</Button>
+                <p className="mb-2 text-lg">
+                  {filterNoAnswers 
+                    ? "Nenhuma pergunta sem resposta encontrada" 
+                    : selectedAnnouncement 
+                      ? "Nenhuma pergunta encontrada para este anúncio" 
+                      : "Nenhuma pergunta encontrada"}
+                </p>
+                <Button onClick={loadAsks}>Atualizar</Button>
               </div>
             ) : (
               <div className="space-y-4">
-                {filteredQuestions.map((question) => (
-                  <Card key={question.question_id} className={question.status === 'UNANSWERED' ? 'border-l-4 border-l-amber-500' : ''}>
-                    <CardHeader className="pb-2">
-                      <ProductInfo itemId={question.item_id} mlToken={mlToken} />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="mb-4">
-                        <div className="flex justify-between items-start mb-1">
-                          <h3 className="font-medium text-gray-900">{question.text}</h3>
-                          <span className="text-xs text-gray-500">{formatDate(question.date_created)}</span>
+                {filteredAsks.map((block, index) => {
+                  const qaPairsAll = getQAPairs(block.qa);
+                  // If filter "No Answers" is active, keep only QA pairs without answer
+                  const qaPairs = filterNoAnswers 
+                    ? qaPairsAll.filter(pair => !pair.answer || pair.answer.trim() === "")
+                    : qaPairsAll;
+                  const isExpanded = expandedBlocks[block.itemId] || false;
+                  const pairsToDisplay = qaPairs.length > 3 && !isExpanded ? qaPairs.slice(0, 3) : qaPairs;
+                  
+                  return (
+                    <Card key={index} className="overflow-hidden">
+                      <CardHeader className="pb-2">
+                        <div className="flex items-center">
+                          <ProductInfo itemId={block.itemId} mlToken={mlToken} />
                         </div>
-                        
-                        {question.answer && (
-                          <div className="mt-3 ml-6 pl-3 border-l-2 border-gray-200">
-                            <p className="text-gray-700">{question.answer}</p>
-                            {question.date_answered && (
-                              <p className="text-xs text-gray-500 mt-1">{formatDate(question.date_answered)}</p>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                      
-                      {question.status === 'UNANSWERED' && (
-                        <>
-                          {answering === question.question_id ? (
-                            <div className="mt-3">
-                              <Input 
-                                placeholder="Digite sua resposta..."
-                                value={answerText}
-                                onChange={(e) => setAnswerText(e.target.value)}
-                                className="mb-2"
-                              />
-                              <div className="flex gap-2 justify-end">
-                                <Button 
-                                  variant="outline"
-                                  onClick={() => {
-                                    setAnswering(null);
-                                    setAnswerText('');
-                                  }}
-                                >
-                                  Cancelar
-                                </Button>
-                                <Button onClick={handleSubmitAnswer}>
-                                  Responder
-                                </Button>
+                      </CardHeader>
+                      <CardContent className="space-y-2">
+                        {pairsToDisplay.map((pair, idx) => {
+                          const hasAnswer = pair.answer && pair.answer.trim() !== "";
+                          
+                          return (
+                            <div
+                              key={idx}
+                              onClick={() => setSelectedQAPair(pair)}
+                              className={`p-3 rounded-md cursor-pointer ${hasAnswer ? 'bg-gray-100' : 'bg-amber-50 border-l-4 border-amber-500'}`}
+                            >
+                              <div className="mb-1">
+                                <span className="font-medium">Pergunta: </span>
+                                <span>{truncateText(pair.question, 100)}</span>
+                              </div>
+                              <div>
+                                <span className="font-medium">Resposta: </span>
+                                <span>{hasAnswer ? truncateText(pair.answer, 100) : "Sem resposta"}</span>
                               </div>
                             </div>
-                          ) : (
-                            <Button 
-                              onClick={() => setAnswering(question.question_id)}
-                              className="w-full"
-                            >
-                              Responder
-                            </Button>
-                          )}
-                        </>
-                      )}
-                    </CardContent>
-                  </Card>
-                ))}
+                          );
+                        })}
+                        
+                        {qaPairs.length > 3 && (
+                          <Button
+                            variant="ghost"
+                            className="w-full text-gray-500"
+                            onClick={() => setExpandedBlocks({ 
+                              ...expandedBlocks, 
+                              [block.itemId]: !isExpanded 
+                            })}
+                          >
+                            {isExpanded ? (
+                              <ChevronUp className="mr-2 h-4 w-4" />
+                            ) : (
+                              <ChevronDown className="mr-2 h-4 w-4" />
+                            )}
+                            {isExpanded ? "Ver menos" : `Ver mais ${qaPairs.length - 3} perguntas`}
+                          </Button>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
             )}
           </>
         )}
       </div>
+      
+      {/* Filter Dialog */}
+      <Dialog open={filterModalVisible} onOpenChange={setFilterModalVisible}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Filtrar Perguntas</DialogTitle>
+          </DialogHeader>
+          
+          <div className="py-4 space-y-4">
+            <div className="flex items-center space-x-2">
+              <Switch 
+                id="filter-no-answers"
+                checked={filterNoAnswers}
+                onCheckedChange={setFilterNoAnswers}
+              />
+              <Label htmlFor="filter-no-answers">Sem respostas</Label>
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Filtro por anúncio</Label>
+              <div className="max-h-60 overflow-y-auto space-y-2 border rounded-md p-2">
+                {uniqueAnnouncements.map((item, idx) => (
+                  <div 
+                    key={idx}
+                    className={`flex items-center p-2 hover:bg-gray-100 rounded-md cursor-pointer ${selectedAnnouncement === item.id ? 'bg-blue-50' : ''}`}
+                    onClick={() => setSelectedAnnouncement(item.id === selectedAnnouncement ? null : item.id)}
+                  >
+                    <ProductInfo itemId={item.id} mlToken={mlToken} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+          
+          <div className="flex justify-end">
+            <Button 
+              variant="outline" 
+              className="mr-2"
+              onClick={() => {
+                setFilterNoAnswers(false);
+                setSelectedAnnouncement(null);
+              }}
+            >
+              Limpar filtros
+            </Button>
+            <Button onClick={() => setFilterModalVisible(false)}>
+              Aplicar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Selected QA Pair Dialog */}
+      <Dialog open={!!selectedQAPair} onOpenChange={() => setSelectedQAPair(null)}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Detalhes da Pergunta</DialogTitle>
+          </DialogHeader>
+          
+          {selectedQAPair && (
+            <div className="py-4 space-y-4">
+              <div className="space-y-2">
+                <h3 className="font-bold text-lg">Pergunta Completa</h3>
+                <p className="whitespace-pre-wrap p-3 bg-gray-100 rounded-md">{selectedQAPair.question}</p>
+              </div>
+              
+              <div className="space-y-2">
+                <h3 className="font-bold text-lg">Resposta Completa</h3>
+                <p className="whitespace-pre-wrap p-3 bg-gray-100 rounded-md">
+                  {selectedQAPair.answer || "Sem resposta"}
+                </p>
+              </div>
+              
+              {!selectedQAPair.answer && (
+                <div className="space-y-2">
+                  <h3 className="font-bold text-lg">Responder Pergunta</h3>
+                  <Input
+                    placeholder="Digite sua resposta..."
+                    value={answerText}
+                    onChange={(e) => setAnswerText(e.target.value)}
+                    className="mb-2"
+                  />
+                  <Button onClick={handleSubmitAnswer} className="w-full">
+                    Enviar Resposta
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
