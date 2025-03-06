@@ -644,41 +644,44 @@ if (activeView === 'detail' && selectedConv) {
             }
             
             return (
-              <div key={index}>
-                {(index === 0 || currentMessageDate !== previousMessageDate) && (
-                  <div className="flex justify-center my-3">
-                    <div className="bg-blue-500 text-white px-4 py-1 rounded-full text-sm">
-                      {currentMessageDate}
-                    </div>
-                  </div>
-                )}
-                
-                <div className={`rounded-lg p-3 max-w-[70%] mb-2 shadow-sm ${messageClass}`}>
-                  {msg.message_attachments && msg.message_attachments.length > 0 && (
-                    <div 
-                      className="mb-2 cursor-pointer" 
-                      onClick={() => setFullScreenImage(`https://api.mercadolibre.com/messages/attachments/${msg.message_attachments[0].filename}?site_id=MLB`)}
-                    >
-                      <img
-                        src={`https://api.mercadolibre.com/messages/attachments/${msg.message_attachments[0].filename}?site_id=MLB`}
-                        alt="Anexo"
-                        className="w-24 h-24 object-cover rounded"
-                      />
-                    </div>
-                  )}
-                  
-                  {msg.message && (
-                    <p className="whitespace-pre-wrap">
-                      {msg.message.replace(/\\n/g, "\n")}
-                    </p>
-                  )}
-                  
-                  <p className="text-xs text-gray-500 text-right mt-1">
-                    {formatTime(msg.date)}
-                  </p>
-                </div>
-              </div>
-            );
+  <div key={index}>
+    {(index === 0 || currentMessageDate !== previousMessageDate) && (
+      <div className="flex justify-center my-3">
+        <div className="bg-blue-500 text-white px-4 py-1 rounded-full text-sm">
+          {currentMessageDate}
+        </div>
+      </div>
+    )}
+    
+    <div className={`flex ${msg.sender.toLowerCase() === 'seller' ? 'justify-end' : 'justify-start'}`}>
+      <div className={`rounded-lg p-3 max-w-[70%] mb-2 shadow-sm ${messageClass}`}>
+        {msg.message_attachments && msg.message_attachments.length > 0 && (
+          <div 
+            className="mb-2 cursor-pointer" 
+            onClick={() => setFullScreenImage(`https://api.mercadolibre.com/messages/attachments/${msg.message_attachments[0].filename}?site_id=MLB`)}
+          >
+            <img
+              src={`https://api.mercadolibre.com/messages/attachments/${msg.message_attachments[0].filename}?site_id=MLB`}
+              alt="Anexo"
+              className="w-24 h-24 object-cover rounded"
+            />
+          </div>
+        )}
+        
+        {msg.message && (
+          <p className="whitespace-pre-wrap">
+            {msg.message.replace(/\\n/g, "\n")}
+          </p>
+        )}
+        
+        <p className="text-xs text-gray-500 text-right mt-1">
+          {formatTime(msg.date)}
+        </p>
+      </div>
+    </div>
+  </div>
+);
+
           })}
           <div ref={chatEndRef} />
         </div>
