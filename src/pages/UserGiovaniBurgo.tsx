@@ -577,7 +577,7 @@ const UserGiovaniBurgo = () => {
     );
   };
 
-  const renderDetailView = () => {
+  const renderDetailScreen = () => {
     const sortedMessages = selectedConv.messages.slice().sort((a, b) => {
       return new Date(a.date).getTime() - new Date(b.date).getTime();
     });
@@ -866,7 +866,7 @@ const UserGiovaniBurgo = () => {
           <div className="flex-1 overflow-hidden">
             <TabsContent value="conversas" className="h-full">
               {activeView === 'list' && renderListView()}
-              {activeView === 'detail' && renderDetailView()}
+              {activeView === 'detail' && renderDetailScreen()}
               {activeView === 'saleDetail' && renderSaleDetailView()}
             </TabsContent>
             
