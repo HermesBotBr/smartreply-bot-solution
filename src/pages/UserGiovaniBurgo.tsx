@@ -86,9 +86,10 @@ function parseMessages(text) {
             let date = '';
             let message = rest;
             if (match) {
-              date = match[1];
-              message = rest.replace(`(${date})`, "").trim();
-            }
+  date = match[1].trim();
+  message = rest.replace(`(${date})`, "").trim();
+}
+
             messages.push({ sender, message, date, id: messageId, message_attachments: [] });
           }
         }
