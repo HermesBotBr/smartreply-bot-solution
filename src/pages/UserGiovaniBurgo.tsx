@@ -748,7 +748,7 @@ if (activeView === 'detail' && selectedConv) {
             <div className="space-y-4">
               <Card className="relative">
                 <img 
-                  src="https://http2.mlstatic.com/static/org-img/homesnw/mercado-livre.png?v=2"
+                  src="https://http2.mlstatic.com/static/org-img/homesnw/mercado-libre.png?v=2"
                   alt="Mercado Livre"
                   className="absolute top-4 right-4 w-24 h-auto"
                 />
