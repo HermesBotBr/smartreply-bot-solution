@@ -316,12 +316,30 @@ const UserGiovaniBurgo = () => {
       const textData = await response.text();
       const convs = parseMessages(textData);
       setConversations(convs);
-      if (activeView === 'detail' && selectedConv) {
-        const updatedConv = convs.find(c => c.orderId === selectedConv.orderId);
-        if (updatedConv) {
-          setSelectedConv(updatedConv);
-        }
+if (activeView === 'detail' && selectedConv) {
+  const updatedConv = convs.find(c => c.orderId === selectedConv.orderId);
+  if (updatedConv) {
+    // Preserva as mensagens temporárias enviadas pela interface (que possuem id iniciando com 'temp-')
+    const tempMessages = selectedConv.messages.filter(msg => msg.id.startsWith('temp-'));
+    // Cria uma cópia das mensagens atualizadas vindas do all_msg.txt
+    const mergedMessages = updatedConv.messages.slice();
+    // Para cada mensagem temporária, verifica se já não foi confirmada (substituída por uma mensagem "verde")
+    tempMessages.forEach(temp => {
+      const alreadyConfirmed = mergedMessages.some(m =>
+        m.sender === 'seller' &&
+        m.message === temp.message &&
+        new Date(m.date).getTime() === new Date(temp.date).getTime()
+      );
+      if (!alreadyConfirmed) {
+        mergedMessages.push(temp);
       }
+    });
+    // Ordena as mensagens da mais antiga para a mais recente
+    updatedConv.messages = mergedMessages.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    setSelectedConv(updatedConv);
+  }
+}
+
       setRefreshing(false);
     } catch (error) {
       console.error("Erro ao carregar mensagens:", error);
