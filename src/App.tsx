@@ -11,6 +11,7 @@ import ThankYou from "./pages/ThankYou";
 import Form from "./pages/Form";
 import HelloWorld from "./pages/HelloWorld";
 import WhatsAppButton from "./components/WhatsAppButton";
+import UserGiovaniBurgo from "./pages/UserGiovaniBurgo";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -34,6 +35,7 @@ function App() {
                 <Route path="/obrigado" element={<ThankYou />} />
                 <Route path="/form" element={<Form />} />
                 <Route path="/hello-world" element={<HelloWorld />} />
+                <Route path="/user_giovaniburgo" element={<UserGiovaniBurgo />} />
               </Routes>
             </main>
             <Footer />
