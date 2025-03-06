@@ -1,3 +1,4 @@
+
 import { ArrowRight, Shield, UserCheck, Rocket, BarChart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ContactFormDialog } from "@/components/ContactFormDialog";
@@ -30,7 +31,7 @@ const Index = () => {
       </section>
 
       {/* About Section */}
-      <section className="py-20 bg-gray-50">
+      <section id="funcionalidades" className="py-20 bg-gray-50">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto flex flex-col items-center">
             <h2 className="text-3xl font-bold text-center mb-12">
