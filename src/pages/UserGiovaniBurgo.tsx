@@ -3,11 +3,11 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DialogContent, DialogHeader, DialogTitle, Dialog } from "@/components/ui/dialog";
 import QuestionsList from "@/components/dashboard/QuestionsList";
 import MetricsDisplay from "@/components/dashboard/MetricsDisplay";
+import { MessageSquare, HelpCircle, BarChart, Search, ArrowLeft, Info } from "lucide-react";
 
 const DATA_URL = 'https://9cf7e1a3f021.ngrok.app/all_msg.txt';
 const ASKS_URL = 'https://9cf7e1a3f021.ngrok.app/all_asks.txt';
@@ -113,38 +113,37 @@ function ProductThumbnail({ itemId }) {
   const [thumbnail, setThumbnail] = useState(null);
 
   useEffect(() => {
-  async function fetchThumbnail() {
-    try {
-      console.log("Fetching thumbnail for itemId:", itemId);
-      // Obtém o token da API
-      const tokenResponse = await fetch('https://9cf7e1a3f021.ngrok.app/mercadoLivreApiKey.txt');
-      const token = (await tokenResponse.text()).trim();
-      console.log("ML Token:", token);
-      
-      // Faz a requisição à API do Mercado Livre com o token
-      const response = await fetch(`https://api.mercadolibre.com/items/${itemId}?access_token=${token}`);
-      const data = await response.json();
-      console.log("Response data:", data);
-      
-      const imageUrl = data.secure_thumbnail || data.thumbnail;
-      console.log("Original image URL:", imageUrl);
-      
-      if (imageUrl) {
-        const secureUrl = imageUrl.replace('http://', 'https://');
-        console.log("Secure image URL:", secureUrl);
-        setThumbnail(secureUrl);
-      } else {
-        console.error("Nenhuma URL de imagem encontrada para o itemId:", itemId);
+    async function fetchThumbnail() {
+      try {
+        console.log("Fetching thumbnail for itemId:", itemId);
+        // Obtém o token da API
+        const tokenResponse = await fetch('https://9cf7e1a3f021.ngrok.app/mercadoLivreApiKey.txt');
+        const token = (await tokenResponse.text()).trim();
+        console.log("ML Token:", token);
+        
+        // Faz a requisição à API do Mercado Livre com o token
+        const response = await fetch(`https://api.mercadolibre.com/items/${itemId}?access_token=${token}`);
+        const data = await response.json();
+        console.log("Response data:", data);
+        
+        const imageUrl = data.secure_thumbnail || data.thumbnail;
+        console.log("Original image URL:", imageUrl);
+        
+        if (imageUrl) {
+          const secureUrl = imageUrl.replace('http://', 'https://');
+          console.log("Secure image URL:", secureUrl);
+          setThumbnail(secureUrl);
+        } else {
+          console.error("Nenhuma URL de imagem encontrada para o itemId:", itemId);
+        }
+      } catch (error) {
+        console.error("Erro ao buscar thumbnail:", error);
       }
-    } catch (error) {
-      console.error("Erro ao buscar thumbnail:", error);
     }
-  }
-  if (itemId) {
-    fetchThumbnail();
-  }
-}, [itemId]);
-
+    if (itemId) {
+      fetchThumbnail();
+    }
+  }, [itemId]);
 
   return (
     <div className="rounded-full overflow-hidden w-12 h-12 border border-gray-300">
@@ -298,7 +297,7 @@ const UserGiovaniBurgo = () => {
   const [gptIds, setGptIds] = useState([]);
   const [detailedInfo, setDetailedInfo] = useState(null);
   const [messageText, setMessageText] = useState('');
-  const [activeView, setActiveView] = useState('list'); // 'list', 'detail', 'saleDetail'
+  const [showSaleDetails, setShowSaleDetails] = useState(false);
   
   const chatEndRef = useRef(null);
   const { toast } = useToast();
@@ -339,30 +338,29 @@ const UserGiovaniBurgo = () => {
       const textData = await response.text();
       const convs = parseMessages(textData);
       setConversations(convs);
-if (activeView === 'detail' && selectedConv) {
-  const updatedConv = convs.find(c => c.orderId === selectedConv.orderId);
-  if (updatedConv) {
-    // Preserva as mensagens temporárias enviadas pela interface (que possuem id iniciando com 'temp-')
-    const tempMessages = selectedConv.messages.filter(msg => msg.id.startsWith('temp-'));
-    // Cria uma cópia das mensagens atualizadas vindas do all_msg.txt
-    const mergedMessages = updatedConv.messages.slice();
-    // Para cada mensagem temporária, verifica se já não foi confirmada (substituída por uma mensagem "verde")
-    tempMessages.forEach(temp => {
-      const alreadyConfirmed = mergedMessages.some(m =>
-        m.sender === 'seller' &&
-        m.message === temp.message &&
-        new Date(m.date).getTime() === new Date(temp.date).getTime()
-      );
-      if (!alreadyConfirmed) {
-        mergedMessages.push(temp);
+      if (selectedConv) {
+        const updatedConv = convs.find(c => c.orderId === selectedConv.orderId);
+        if (updatedConv) {
+          // Preserva as mensagens temporárias enviadas pela interface (que possuem id iniciando com 'temp-')
+          const tempMessages = selectedConv.messages.filter(msg => msg.id.startsWith('temp-'));
+          // Cria uma cópia das mensagens atualizadas vindas do all_msg.txt
+          const mergedMessages = updatedConv.messages.slice();
+          // Para cada mensagem temporária, verifica se já não foi confirmada (substituída por uma mensagem "verde")
+          tempMessages.forEach(temp => {
+            const alreadyConfirmed = mergedMessages.some(m =>
+              m.sender === 'seller' &&
+              m.message === temp.message &&
+              new Date(m.date).getTime() === new Date(temp.date).getTime()
+            );
+            if (!alreadyConfirmed) {
+              mergedMessages.push(temp);
+            }
+          });
+          // Ordena as mensagens da mais antiga para a mais recente
+          updatedConv.messages = mergedMessages.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+          setSelectedConv(updatedConv);
+        }
       }
-    });
-    // Ordena as mensagens da mais antiga para a mais recente
-    updatedConv.messages = mergedMessages.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-    setSelectedConv(updatedConv);
-  }
-}
-
       setRefreshing(false);
     } catch (error) {
       console.error("Erro ao carregar mensagens:", error);
@@ -378,26 +376,26 @@ if (activeView === 'detail' && selectedConv) {
 
   useEffect(() => {
     let intervalId;
-    if (activeView === 'detail') {
+    if (showSaleDetails && selectedConv) {
       intervalId = setInterval(loadData, 5000);
     }
     return () => {
       if (intervalId) clearInterval(intervalId);
     };
-  }, [activeView, selectedConv]);
+  }, [showSaleDetails, selectedConv]);
 
   useEffect(() => {
-    if (activeView === 'saleDetail') {
+    if (showSaleDetails && selectedConv) {
       fetchSaleDetails();
     }
-  }, [activeView]);
+  }, [showSaleDetails, selectedConv]);
 
   useEffect(() => {
-    if (activeView === 'detail' && chatEndRef.current && !initialAutoScrollDone) {
+    if (chatEndRef.current && !initialAutoScrollDone) {
       chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
       setInitialAutoScrollDone(true);
     }
-  }, [activeView, selectedConv, initialAutoScrollDone]);
+  }, [selectedConv, initialAutoScrollDone]);
 
   const fetchSaleDetails = async () => {
     try {
@@ -542,24 +540,20 @@ if (activeView === 'detail' && selectedConv) {
     return getMostRecentDate(b).getTime() - getMostRecentDate(a).getTime();
   });
 
-  const renderListView = () => {
+  // Renderiza a lista de conversas na coluna esquerda
+  const renderConversationsList = () => {
     return (
-      <div className="flex flex-col h-full">
-        <div className="bg-primary text-white p-4">
-          <h1 className="text-xl font-bold mb-4">Monitor de Vendas</h1>
-          <div className="flex items-center gap-2">
+      <div className="h-full flex flex-col">
+        <div className="bg-primary p-3">
+          <h1 className="text-lg font-bold text-white">Monitor de Vendas</h1>
+          <div className="relative mt-2">
+            <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-500 h-4 w-4" />
             <Input
-              className="flex-1 bg-white text-black"
+              className="bg-white text-black pl-8"
               placeholder="Pesquisar por nome completo..."
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
             />
-            <Button 
-              variant="secondary"
-              onClick={() => setFilterModalVisible(true)}
-            >
-              Filtros
-            </Button>
           </div>
         </div>
         
@@ -582,13 +576,14 @@ if (activeView === 'detail' && selectedConv) {
                   formattedMessage = "Sem mensagem";
                 }
                 
+                const isSelected = selectedConv && selectedConv.orderId === item.orderId;
+                
                 return (
                   <div 
                     key={item.orderId || `${item.buyer}-${Math.random()}`}
-                    className="p-4 hover:bg-gray-50 cursor-pointer"
+                    className={`p-3 hover:bg-gray-50 cursor-pointer ${isSelected ? 'bg-gray-100' : ''}`}
                     onClick={() => {
                       setSelectedConv(item);
-                      setActiveView('detail');
                       setInitialAutoScrollDone(false);
                     }}
                   >
@@ -616,33 +611,68 @@ if (activeView === 'detail' && selectedConv) {
             </div>
           )}
         </div>
+        
+        <Dialog open={filterModalVisible} onOpenChange={setFilterModalVisible}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Filtrar Conversas</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-2">
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="filter-has-message"
+                  checked={filterHasMessage}
+                  onCheckedChange={setFilterHasMessage}
+                />
+                <label htmlFor="filter-has-message">Com Mensagem</label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="filter-buyer-message"
+                  checked={filterBuyerMessage}
+                  onCheckedChange={setFilterBuyerMessage}
+                />
+                <label htmlFor="filter-buyer-message">Mensagem Comprador</label>
+              </div>
+            </div>
+            <div className="flex justify-end">
+              <Button onClick={() => setFilterModalVisible(false)}>Aplicar</Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     );
   };
 
-  const renderDetailScreen = () => {
+  // Renderiza o chat na coluna central
+  const renderChatPanel = () => {
+    if (!selectedConv) {
+      return (
+        <div className="flex h-full items-center justify-center bg-gray-50">
+          <p className="text-gray-500">Selecione uma conversa para visualizar as mensagens</p>
+        </div>
+      );
+    }
+
     const sortedMessages = selectedConv.messages.slice().sort((a, b) => {
       return new Date(a.date).getTime() - new Date(b.date).getTime();
     });
     
     return (
       <div className="flex flex-col h-full">
-        <div className="bg-primary text-white p-4 flex items-center">
-          <Button
-            variant="ghost" 
-            className="text-white mr-2"
-            onClick={() => setActiveView('list')}
-          >
-            ←
-          </Button>
-          <div>
-            <button
-              className="text-lg font-bold text-white hover:underline"
-              onClick={() => setActiveView('saleDetail')}
-            >
-              {selectedConv.buyer}
-            </button>
-            <p className="text-sm opacity-80">Order_ID: {selectedConv.orderId}</p>
+        <div 
+          className="bg-primary text-white p-3 flex items-center cursor-pointer"
+          onClick={() => setShowSaleDetails(!showSaleDetails)}
+        >
+          <div className="flex items-center">
+            <ProductThumbnail itemId={selectedConv.itemId} />
+            <div className="ml-3">
+              <h2 className="text-lg font-bold">{selectedConv.buyer}</h2>
+              <p className="text-xs opacity-80">Order_ID: {selectedConv.orderId}</p>
+            </div>
+          </div>
+          <div className="ml-auto">
+            <Info size={20} />
           </div>
         </div>
         
@@ -667,60 +697,56 @@ if (activeView === 'detail' && selectedConv) {
             }
             
             return (
-  <div key={index}>
-    {(index === 0 || currentMessageDate !== previousMessageDate) && (
-      <div className="flex justify-center my-3">
-        <div className="bg-blue-500 text-white px-4 py-1 rounded-full text-sm">
-          {currentMessageDate}
-        </div>
-      </div>
-    )}
-    
-    <div className={`flex ${msg.sender.toLowerCase() === 'seller' ? 'justify-end' : 'justify-start'}`}>
-      <div className={`rounded-lg p-3 max-w-[70%] mb-2 shadow-sm ${messageClass}`}>
-{msg.message_attachments && msg.message_attachments.length > 0 && (
-  <div>
-    {console.log("Attachment data:", msg.message_attachments)}
-  {(() => {
-  const attachmentFilename = msg.message_attachments[0].filename.trim();
-  const attachmentUrl = `https://api.mercadolibre.com/messages/attachments/${attachmentFilename}?site_id=MLB${mlToken ? `&access_token=${mlToken}` : ''}`;
-  return (
-    <div 
-      className="mb-2 cursor-pointer" 
-      onClick={() => setFullScreenImage(attachmentUrl)}
-    >
-      <img
-        src={attachmentUrl}
-        alt="Anexo"
-        className="w-24 h-24 object-cover rounded"
-      />
-    </div>
-  );
-})()}
-
-  </div>
-)}
-
-        
-        {msg.message && (
-          <p className="whitespace-pre-wrap">
-            {msg.message.replace(/\\n/g, "\n")}
-          </p>
-        )}
-        
-        <p className="text-xs text-gray-500 text-right mt-1">
-          {formatTime(msg.date)}
-        </p>
-      </div>
-    </div>
-  </div>
-);
-
+              <div key={index}>
+                {(index === 0 || currentMessageDate !== previousMessageDate) && (
+                  <div className="flex justify-center my-3">
+                    <div className="bg-blue-500 text-white px-4 py-1 rounded-full text-sm">
+                      {currentMessageDate}
+                    </div>
+                  </div>
+                )}
+                
+                <div className={`flex ${msg.sender.toLowerCase() === 'seller' ? 'justify-end' : 'justify-start'}`}>
+                  <div className={`rounded-lg p-3 max-w-[70%] mb-2 shadow-sm ${messageClass}`}>
+                    {msg.message_attachments && msg.message_attachments.length > 0 && (
+                      <div>
+                        {(() => {
+                          const attachmentFilename = msg.message_attachments[0].filename.trim();
+                          const attachmentUrl = `https://api.mercadolibre.com/messages/attachments/${attachmentFilename}?site_id=MLB${mlToken ? `&access_token=${mlToken}` : ''}`;
+                          return (
+                            <div 
+                              className="mb-2 cursor-pointer" 
+                              onClick={() => setFullScreenImage(attachmentUrl)}
+                            >
+                              <img
+                                src={attachmentUrl}
+                                alt="Anexo"
+                                className="w-24 h-24 object-cover rounded"
+                              />
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    )}
+                    
+                    {msg.message && (
+                      <p className="whitespace-pre-wrap">
+                        {msg.message.replace(/\\n/g, "\n")}
+                      </p>
+                    )}
+                    
+                    <p className="text-xs text-gray-500 text-right mt-1">
+                      {formatTime(msg.date)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            );
           })}
           <div ref={chatEndRef} />
         </div>
         
-        <div className="p-4 bg-white border-t flex gap-2">
+        <div className="p-3 bg-white border-t flex gap-2">
           <Input
             className="flex-1"
             placeholder="Digite sua mensagem..."
@@ -734,42 +760,23 @@ if (activeView === 'detail' && selectedConv) {
           />
           <Button onClick={sendMessage}>Enviar</Button>
         </div>
-        
-        {fullScreenImage && (
-          <Dialog open={!!fullScreenImage} onOpenChange={() => setFullScreenImage(null)}>
-            <DialogContent className="max-w-4xl">
-              <DialogHeader>
-                <DialogTitle>Anexo</DialogTitle>
-              </DialogHeader>
-              <div className="flex justify-center">
-                <img
-                  src={fullScreenImage}
-                  alt="Anexo em tamanho completo"
-                  className="max-h-[70vh] max-w-full object-contain"
-                />
-              </div>
-            </DialogContent>
-          </Dialog>
-        )}
       </div>
     );
   };
 
-  const renderSaleDetailView = () => {
+  // Renderiza os detalhes da venda na coluna direita
+  const renderSaleDetailsPanel = () => {
+    if (!showSaleDetails || !selectedConv) {
+      return null;
+    }
+
     return (
-      <div className="flex flex-col h-full">
-        <div className="bg-primary text-white p-4 flex items-center">
-          <Button
-            variant="ghost" 
-            className="text-white mr-2"
-            onClick={() => setActiveView('detail')}
-          >
-            ←
-          </Button>
-          <h1 className="text-lg font-bold">Detalhes da venda</h1>
+      <div className="h-full flex flex-col border-l border-gray-300">
+        <div className="bg-primary text-white p-3 flex items-center">
+          <h2 className="text-lg font-bold">Detalhes da venda</h2>
         </div>
         
-        <div className="flex-1 overflow-auto p-4 bg-gray-50">
+        <div className="flex-1 overflow-auto p-3 bg-gray-50">
           {!orderDetails ? (
             <div className="flex justify-center items-center h-full">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -780,18 +787,18 @@ if (activeView === 'detail' && selectedConv) {
                 <img 
                   src="https://http2.mlstatic.com/static/org-img/homesnw/mercado-libre.png?v=2"
                   alt="Mercado Livre"
-                  className="absolute top-4 right-4 w-24 h-auto"
+                  className="absolute top-4 right-4 w-20 h-auto"
                 />
                 
-                <CardHeader>
-                  <CardTitle>Detalhes da venda</CardTitle>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base">Detalhes da venda</CardTitle>
                 </CardHeader>
                 
                 <CardContent>
-                  <p className="text-gray-800 mb-3">Venda: #{orderDetails.id}</p>
+                  <p className="text-gray-800 text-sm mb-2">Venda: #{orderDetails.id}</p>
                   <div className="flex items-center">
                     <ProductThumbnail itemId={orderDetails.order_items && orderDetails.order_items[0]?.item?.id} />
-                    <p className="ml-3 font-medium">
+                    <p className="ml-3 font-medium text-sm">
                       {orderDetails.order_items && orderDetails.order_items[0]?.item?.title}
                     </p>
                   </div>
@@ -799,20 +806,21 @@ if (activeView === 'detail' && selectedConv) {
               </Card>
               
               <Card>
-                <CardHeader>
-                  <CardTitle>Rastreamento de envio</CardTitle>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base">Rastreamento de envio</CardTitle>
                 </CardHeader>
                 <CardContent>
                   {shippingDetails ? (
                     <Timeline status={shippingDetails.status} />
                   ) : (
-                    <p>Sem informações de envio.</p>
+                    <p className="text-sm">Sem informações de envio.</p>
                   )}
                 </CardContent>
               </Card>
               
               <Button
-                className="w-full"
+                className="w-full text-sm"
+                size="sm"
                 onClick={() => {
                   if (!detailedInfo) {
                     fetchDetailedInfo();
@@ -827,148 +835,8 @@ if (activeView === 'detail' && selectedConv) {
               
               {expandedInfo && detailedInfo && (
                 <Card>
-                  <CardHeader>
-                    <CardTitle>Informações detalhadas</CardTitle>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base">Informações detalhadas</CardTitle>
                   </CardHeader>
-                  <CardContent className="max-h-96 overflow-auto">
-                    <div className="space-y-4">
-                      <div>
-                        <h3 className="font-bold text-lg mb-2">Resumo do Pedido</h3>
-                        <p>ID do Pedido: {detailedInfo.id}</p>
-                        <p>Data de Criação: {formatDateTime(detailedInfo.date_created)}</p>
-                        <p>Última Atualização: {formatDateTime(detailedInfo.last_updated)}</p>
-                        <p>Data de Fechamento: {formatDateTime(detailedInfo.date_closed)}</p>
-                        <p>Status: {detailedInfo.status}</p>
-                        <p>Detalhe do Status: {detailedInfo.status_detail || "(não informado)"}</p>
-                        <p>Tags: {detailedInfo.tags ? detailedInfo.tags.join(", ") : "(não informado)"}</p>
-                      </div>
-                      
-                      <div>
-                        <h3 className="font-bold text-lg mb-2">Detalhes Gerais</h3>
-                        <p>Modo de Compra: {detailedInfo.buying_mode}</p>
-                        <p>Montante Total: {formatCurrency(detailedInfo.total_amount)}</p>
-                        <p>Montante Pago: {formatCurrency(detailedInfo.paid_amount)}</p>
-                        <p>Moeda: {detailedInfo.currency_id}</p>
-                        <p>Fulfilled: {detailedInfo.fulfilled ? "Sim" : "Não"}</p>
-                        <p>ID do Envio: {detailedInfo.shipping ? detailedInfo.shipping.id : "(não informado)"}</p>
-                      </div>
-                      
-                      <div>
-                        <h3 className="font-bold text-lg mb-2">Informações do Vendedor e Comprador</h3>
-                        <p>Vendedor ID: {detailedInfo.seller ? detailedInfo.seller.id : "(não informado)"}</p>
-                        <p>Comprador ID: {detailedInfo.buyer ? detailedInfo.buyer.id : "(não informado)"}</p>
-                        <p>Nickname: {detailedInfo.buyer ? detailedInfo.buyer.nickname : "(não informado)"}</p>
-                        <p>Nome: {detailedInfo.buyer ? detailedInfo.buyer.first_name : "(não informado)"}</p>
-                        <p>Sobrenome: {detailedInfo.buyer ? detailedInfo.buyer.last_name : "(não informado)"}</p>
-                      </div>
-                      
-                      {detailedInfo.order_items && detailedInfo.order_items.length > 0 && (
-                        <div>
-                          <h3 className="font-bold text-lg mb-2">Itens do Pedido</h3>
-                          {detailedInfo.order_items.map((item, idx) => (
-                            <div key={idx} className="mb-3 p-3 bg-gray-50 rounded">
-                              <p className="font-medium">Item {idx + 1}</p>
-                              <p>ID do Item: {item.item.id}</p>
-                              <p>Título: {item.item.title}</p>
-                              <p>Categoria: {item.item.category_id}</p>
-                              <p>Condição: {item.item.condition}</p>
-                              <p>Quantidade: {item.quantity}</p>
-                              <p>Preço Unitário: {formatCurrency(item.unit_price)}</p>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                      
-                      {detailedInfo.payments && detailedInfo.payments.length > 0 && (
-                        <div>
-                          <h3 className="font-bold text-lg mb-2">Pagamento</h3>
-                          {detailedInfo.payments.map((pay, idx) => (
-                            <div key={idx} className="mb-3 p-3 bg-gray-50 rounded">
-                              <p className="font-medium">Pagamento {idx + 1}</p>
-                              <p>ID do Pagamento: {pay.id}</p>
-                              <p>Método: {pay.payment_method_id}</p>
-                              <p>Tipo: {pay.payment_type}</p>
-                              <p>Status: {pay.status} ({pay.status_detail || "(não informado)"})</p>
-                              <p>Valor: {formatCurrency(pay.transaction_amount)}</p>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  };
-
-  return (
-    <div className="flex flex-col h-screen">
-      <main className="flex-1 overflow-hidden">
-        <Tabs 
-          defaultValue="conversas" 
-          value={activeTab}
-          onValueChange={setActiveTab}
-          className="h-full flex flex-col"
-        >
-          <TabsList className="grid grid-cols-3 w-full">
-            <TabsTrigger value="conversas">Conversas</TabsTrigger>
-            <TabsTrigger value="perguntas">Perguntas</TabsTrigger>
-            <TabsTrigger value="metricas">Métricas</TabsTrigger>
-          </TabsList>
-          
-          <div className="flex-1 overflow-hidden">
-            <TabsContent value="conversas" className="h-full">
-              {activeView === 'list' && renderListView()}
-              {activeView === 'detail' && renderDetailScreen()}
-              {activeView === 'saleDetail' && renderSaleDetailView()}
-            </TabsContent>
-            
-            <TabsContent value="perguntas" className="h-full">
-              <QuestionsList mlToken={mlToken} />
-            </TabsContent>
-            
-            <TabsContent value="metricas" className="h-full">
-              <MetricsDisplay />
-            </TabsContent>
-          </div>
-        </Tabs>
-      </main>
-      
-      <Dialog open={filterModalVisible} onOpenChange={setFilterModalVisible}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Filtrar Conversas</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-2">
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="filter-has-message"
-                checked={filterHasMessage}
-                onCheckedChange={setFilterHasMessage}
-              />
-              <label htmlFor="filter-has-message">Com Mensagem</label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="filter-buyer-message"
-                checked={filterBuyerMessage}
-                onCheckedChange={setFilterBuyerMessage}
-              />
-              <label htmlFor="filter-buyer-message">Mensagem Comprador</label>
-            </div>
-          </div>
-          <div className="flex justify-end">
-            <Button onClick={() => setFilterModalVisible(false)}>Aplicar</Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
-};
-
-export default UserGiovaniBurgo;
-
+                  <CardContent className="max-h-80 overflow-auto text-sm">
+                    <div className="space-y-3">
