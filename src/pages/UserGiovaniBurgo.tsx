@@ -109,19 +109,38 @@ function ProductThumbnail({ itemId }) {
   const [thumbnail, setThumbnail] = useState(null);
 
   useEffect(() => {
-    async function fetchThumbnail() {
-      try {
-        const response = await fetch(`https://api.mercadolibre.com/items/${itemId}`);
-        const data = await response.json();
-        setThumbnail(data.secure_thumbnail || data.thumbnail);
-      } catch (error) {
-        console.error("Erro ao buscar thumbnail:", error);
+  async function fetchThumbnail() {
+    try {
+      console.log("Fetching thumbnail for itemId:", itemId);
+      // Obtém o token da API
+      const tokenResponse = await fetch('https://9cf7e1a3f021.ngrok.app/mercadoLivreApiKey.txt');
+      const token = (await tokenResponse.text()).trim();
+      console.log("ML Token:", token);
+      
+      // Faz a requisição à API do Mercado Livre com o token
+      const response = await fetch(`https://api.mercadolibre.com/items/${itemId}?access_token=${token}`);
+      const data = await response.json();
+      console.log("Response data:", data);
+      
+      const imageUrl = data.secure_thumbnail || data.thumbnail;
+      console.log("Original image URL:", imageUrl);
+      
+      if (imageUrl) {
+        const secureUrl = imageUrl.replace('http://', 'https://');
+        console.log("Secure image URL:", secureUrl);
+        setThumbnail(secureUrl);
+      } else {
+        console.error("Nenhuma URL de imagem encontrada para o itemId:", itemId);
       }
+    } catch (error) {
+      console.error("Erro ao buscar thumbnail:", error);
     }
-    if (itemId) {
-      fetchThumbnail();
-    }
-  }, [itemId]);
+  }
+  if (itemId) {
+    fetchThumbnail();
+  }
+}, [itemId]);
+
 
   return (
     <div className="rounded-full overflow-hidden w-12 h-12 border border-gray-300">
