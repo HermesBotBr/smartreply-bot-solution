@@ -49,7 +49,8 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
       message: messageText,
       date: new Date().toISOString(),
       id: 'temp-' + Date.now(),
-      message_attachments: []
+      message_attachments: [],
+      conversationId: selectedConv.orderId
     };
 
     setTempMessages(prev => [...prev, newMessage]);
@@ -113,16 +114,18 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
   }
 
   const filteredTempMessages = tempMessages.filter(tempMsg => {
-    if (tempMsg.conversationId && tempMsg.conversationId !== selectedConv.orderId) {
+    if (tempMsg.conversationId !== selectedConv.orderId) {
       return false;
     }
     
-    return !selectedConv.messages.some(
+    const isConfirmed = selectedConv.messages.some(
       (msg: any) => 
         msg.sender === 'seller' && 
         msg.message === tempMsg.message && 
-        Math.abs(new Date(msg.date).getTime() - new Date(tempMsg.date).getTime()) < 60000 // 1 minute difference
+        Math.abs(new Date(msg.date).getTime() - new Date(tempMsg.date).getTime()) < 60000
     );
+    
+    return !isConfirmed;
   });
 
   const sortedMessages = [...selectedConv.messages, ...filteredTempMessages].sort((a, b) => {
