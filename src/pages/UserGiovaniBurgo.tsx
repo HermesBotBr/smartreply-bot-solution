@@ -523,7 +523,7 @@ if (activeView === 'detail' && selectedConv) {
     return (
       <div className="flex flex-col h-full">
         <div className="bg-primary text-white p-4">
-          <h1 className="text-xl font-bold mb-4">MONITOR DE VENDAS</h1>
+          <h1 className="text-xl font-bold mb-4">Monitor de Vendas</h1>
           <div className="flex items-center gap-2">
             <Input
               className="flex-1 bg-white text-black"
