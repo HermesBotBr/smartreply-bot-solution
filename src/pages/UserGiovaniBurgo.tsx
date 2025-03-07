@@ -90,8 +90,12 @@ if (match) {
   message = rest.substring(0, rest.lastIndexOf(`(${date})`)).trim();
 }
 
+if (!message) {
+  message = "[Imagem]";
+}
 
-            messages.push({ sender, message, date, id: messageId, message_attachments: [] });
+messages.push({ sender, message, date, id: messageId, message_attachments: [] });
+
           }
         }
       }
