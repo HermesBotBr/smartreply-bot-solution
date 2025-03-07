@@ -9,9 +9,9 @@ import { DialogContent, DialogHeader, DialogTitle, Dialog } from "@/components/u
 import QuestionsList from "@/components/dashboard/QuestionsList";
 import MetricsDisplay from "@/components/dashboard/MetricsDisplay";
 
-const DATA_URL = 'https://7dbd2e762353.ngrok.app/all_msg.txt';
-const ASKS_URL = 'https://7dbd2e762353.ngrok.app/all_asks.txt';
-const GPT_URL = 'https://7dbd2e762353.ngrok.app/all_gpt.txt';
+const DATA_URL = 'https://9cf7e1a3f021.ngrok.app/all_msg.txt';
+const ASKS_URL = 'https://9cf7e1a3f021.ngrok.app/all_asks.txt';
+const GPT_URL = 'https://9cf7e1a3f021.ngrok.app/all_gpt.txt';
 
 function formatTime(dateStr) {
   const d = new Date(dateStr);
@@ -141,7 +141,7 @@ function SaleSwitch({ orderId }) {
   useEffect(() => {
     const fetchSwitchState = async () => {
       try {
-        const response = await fetch('https://7dbd2e762353.ngrok.app/switch');
+        const response = await fetch('https://9cf7e1a3f021.ngrok.app/switch');
         const data = await response.json();
         if (data.pack_ids && data.pack_ids.includes(orderId.toString())) {
           setIsEnabled(false);
@@ -160,7 +160,7 @@ function SaleSwitch({ orderId }) {
     setIsEnabled(newValue);
     try {
       if (!newValue) {
-        const response = await fetch('https://7dbd2e762353.ngrok.app/switch/off', {
+        const response = await fetch('https://9cf7e1a3f021.ngrok.app/switch/off', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ pack_id: orderId })
@@ -172,7 +172,7 @@ function SaleSwitch({ orderId }) {
           description: `Pedido #${orderId}`,
         });
       } else {
-        const response = await fetch(`https://7dbd2e762353.ngrok.app/switch/on/${orderId}`, {
+        const response = await fetch(`https://9cf7e1a3f021.ngrok.app/switch/on/${orderId}`, {
           method: 'DELETE'
         });
         const json = await response.json();
@@ -283,7 +283,7 @@ const UserGiovaniBurgo = () => {
   useEffect(() => {
     const fetchToken = async () => {
       try {
-        const response = await fetch('https://7dbd2e762353.ngrok.app/mercadoLivreApiKey.txt');
+        const response = await fetch('https://9cf7e1a3f021.ngrok.app/mercadoLivreApiKey.txt');
         const tokenText = await response.text();
         setMlToken(tokenText.trim());
       } catch (error) {
@@ -378,7 +378,7 @@ if (activeView === 'detail' && selectedConv) {
 
   const fetchSaleDetails = async () => {
     try {
-      const tokenResponse = await fetch('https://7dbd2e762353.ngrok.app/mercadoLivreApiKey.txt');
+      const tokenResponse = await fetch('https://9cf7e1a3f021.ngrok.app/mercadoLivreApiKey.txt');
       const token = await tokenResponse.text();
       const orderResponse = await fetch(`https://api.mercadolibre.com/orders/${selectedConv.orderId}?access_token=${token.trim()}`);
       const orderData = await orderResponse.json();
@@ -400,7 +400,7 @@ if (activeView === 'detail' && selectedConv) {
 
   const fetchDetailedInfo = async () => {
     try {
-      const tokenResponse = await fetch('https://7dbd2e762353.ngrok.app/mercadoLivreApiKey.txt');
+      const tokenResponse = await fetch('https://9cf7e1a3f021.ngrok.app/mercadoLivreApiKey.txt');
       const token = await tokenResponse.text();
       
       let orderResponse = await fetch(`https://api.mercadolibre.com/orders/${selectedConv.orderId}?access_token=${token.trim()}`);
@@ -465,7 +465,7 @@ if (activeView === 'detail' && selectedConv) {
         return;
       }
 
-      const response = await fetch('https://7dbd2e762353.ngrok.app/sendmsg', {
+      const response = await fetch('https://9cf7e1a3f021.ngrok.app/sendmsg', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
