@@ -132,17 +132,18 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
       return false;
     }
     
-    // Filter out temporary messages if there is a newer official (green) seller message
-    const tempMessageTime = new Date(tempMsg.date).getTime();
-    const hasNewerGreenSellerMessage = selectedConv.messages.some(
-      (msg: any) =>
-        msg.sender === 'seller' &&
-        !(msg.id && msg.id.startsWith('temp-')) &&
-        !(msg.id && gptIds.includes(msg.id)) &&
-        new Date(msg.date).getTime() > tempMessageTime
-    );
-    
-    return !hasNewerGreenSellerMessage;
+// Filter out temporary messages if there is a newer (or same-timestamp) official (green) seller message
+const tempMessageTime = new Date(tempMsg.date).getTime();
+const hasNewerGreenSellerMessage = selectedConv.messages.some(
+  (msg: any) =>
+    msg.sender === 'seller' &&
+    !(msg.id && msg.id.startsWith('temp-')) &&
+    !(msg.id && gptIds.includes(msg.id)) &&
+    new Date(msg.date).getTime() >= tempMessageTime
+);
+
+return !hasNewerGreenSellerMessage;
+
 
   });
 
