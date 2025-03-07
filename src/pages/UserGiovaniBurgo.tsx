@@ -901,16 +901,16 @@ const UserGiovaniBurgo = () => {
       <div className="flex-1 flex">
         {activeTab === 'conversas' ? (
           <>
-            <div className="w-[280px] min-w-[280px] h-screen">
+            <div className="w-1/3 h-screen overflow-hidden">
               {renderConversationsList()}
             </div>
             
-            <div className={`${showSaleDetails ? 'flex-1' : 'flex-1'} h-screen`}>
+            <div className={`${showSaleDetails ? 'w-[34%]' : 'w-2/3'} h-screen overflow-hidden`}>
               {renderChatPanel()}
             </div>
             
             {showSaleDetails && selectedConv && (
-              <div className="w-[320px] min-w-[320px] h-screen">
+              <div className="w-1/3 h-screen overflow-hidden">
                 {renderSaleDetailsPanel()}
               </div>
             )}
