@@ -681,16 +681,23 @@ if (activeView === 'detail' && selectedConv) {
 {msg.message_attachments && msg.message_attachments.length > 0 && (
   <div>
     {console.log("Attachment data:", msg.message_attachments)}
+  {(() => {
+  const attachmentFilename = msg.message_attachments[0].filename.trim();
+  const attachmentUrl = `https://api.mercadolibre.com/messages/attachments/${attachmentFilename}?site_id=MLB${mlToken ? `&access_token=${mlToken}` : ''}`;
+  return (
     <div 
       className="mb-2 cursor-pointer" 
-      onClick={() => setFullScreenImage(`https://api.mercadolibre.com/messages/attachments/${msg.message_attachments[0].filename.trim()}?site_id=MLB`)}
+      onClick={() => setFullScreenImage(attachmentUrl)}
     >
       <img
-        src={`https://api.mercadolibre.com/messages/attachments/${msg.message_attachments[0].filename.trim()}?site_id=MLB`}
+        src={attachmentUrl}
         alt="Anexo"
         className="w-24 h-24 object-cover rounded"
       />
     </div>
+  );
+})()}
+
   </div>
 )}
 
