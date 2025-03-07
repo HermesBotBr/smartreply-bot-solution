@@ -69,25 +69,14 @@ const UserGiovaniBurgo = () => {
       const textData = await response.text();
       const convs = parseMessages(textData);
       setConversations(convs);
+      
       if (selectedConv) {
         const updatedConv = convs.find(c => c.orderId === selectedConv.orderId);
         if (updatedConv) {
-          const tempMessages = selectedConv.messages.filter(msg => msg.id.startsWith('temp-'));
-          const mergedMessages = updatedConv.messages.slice();
-          tempMessages.forEach(temp => {
-            const alreadyConfirmed = mergedMessages.some(m =>
-              m.sender === 'seller' &&
-              m.message === temp.message &&
-              new Date(m.date).getTime() === new Date(temp.date).getTime()
-            );
-            if (!alreadyConfirmed) {
-              mergedMessages.push(temp);
-            }
-          });
-          updatedConv.messages = mergedMessages.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
           setSelectedConv(updatedConv);
         }
       }
+      
       setRefreshing(false);
     } catch (error) {
       console.error("Erro ao carregar mensagens:", error);
@@ -171,10 +160,6 @@ const UserGiovaniBurgo = () => {
 
   const handleCloseSaleDetails = () => {
     setShowSaleDetails(false);
-  };
-
-  const updateSelectedConv = (updatedConv) => {
-    setSelectedConv(updatedConv);
   };
 
   return (

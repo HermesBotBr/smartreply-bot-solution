@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, useState } from 'react';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -42,11 +41,6 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
     }
   }, [selectedConv, initialAutoScrollDone, setInitialAutoScrollDone]);
 
-  // Clear temporary messages when conversation changes
-  useEffect(() => {
-    setTempMessages([]);
-  }, [selectedConv?.orderId]);
-
   const sendMessage = async () => {
     if (!messageText.trim() || !selectedConv) return;
     
@@ -58,7 +52,6 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
       message_attachments: []
     };
 
-    // Add to temporary messages
     setTempMessages(prev => [...prev, newMessage]);
     setMessageText('');
 
@@ -119,8 +112,11 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
     );
   }
 
-  // Filter out temporary messages that have been confirmed by the system
   const filteredTempMessages = tempMessages.filter(tempMsg => {
+    if (tempMsg.conversationId && tempMsg.conversationId !== selectedConv.orderId) {
+      return false;
+    }
+    
     return !selectedConv.messages.some(
       (msg: any) => 
         msg.sender === 'seller' && 
@@ -129,7 +125,6 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
     );
   });
 
-  // Combine system messages with filtered temporary messages
   const sortedMessages = [...selectedConv.messages, ...filteredTempMessages].sort((a, b) => {
     return new Date(a.date).getTime() - new Date(b.date).getTime();
   });
