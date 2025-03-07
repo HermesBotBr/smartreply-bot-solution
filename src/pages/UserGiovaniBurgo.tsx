@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -840,3 +841,129 @@ const UserGiovaniBurgo = () => {
                   </CardHeader>
                   <CardContent className="max-h-80 overflow-auto text-sm">
                     <div className="space-y-3">
+                      <div>
+                        <p className="font-medium">Data da compra:</p>
+                        <p>{formatDateTime(detailedInfo.date_created)}</p>
+                      </div>
+                      <div>
+                        <p className="font-medium">Total:</p>
+                        <p>{formatCurrency(detailedInfo.total_amount)}</p>
+                      </div>
+                      <div>
+                        <p className="font-medium">Status de pagamento:</p>
+                        <p>{detailedInfo.payments?.[0]?.status || "(não informado)"}</p>
+                      </div>
+                      {detailedInfo.shipping && (
+                        <>
+                          <div>
+                            <p className="font-medium">Endereço de entrega:</p>
+                            <p>
+                              {[
+                                detailedInfo.shipping.receiver_address?.street_name,
+                                detailedInfo.shipping.receiver_address?.street_number,
+                                detailedInfo.shipping.receiver_address?.comment,
+                                detailedInfo.shipping.receiver_address?.city?.name,
+                                detailedInfo.shipping.receiver_address?.state?.name,
+                                detailedInfo.shipping.receiver_address?.zip_code
+                              ].filter(Boolean).join(", ")}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="font-medium">Nome do destinatário:</p>
+                            <p>{detailedInfo.shipping.receiver_address?.receiver_name || "(não informado)"}</p>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  // Renderiza a interface principal
+  return (
+    <div className="flex h-full">
+      {/* Sidebar de navegação */}
+      <div className="w-16 bg-gray-100 border-r flex flex-col items-center py-4">
+        <div 
+          className={`w-12 h-12 flex items-center justify-center rounded-full mb-4 cursor-pointer ${activeTab === 'conversas' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+          onClick={() => setActiveTab('conversas')}
+        >
+          <MessageSquare size={24} />
+        </div>
+        <div 
+          className={`w-12 h-12 flex items-center justify-center rounded-full mb-4 cursor-pointer ${activeTab === 'perguntas' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+          onClick={() => setActiveTab('perguntas')}
+        >
+          <HelpCircle size={24} />
+        </div>
+        <div 
+          className={`w-12 h-12 flex items-center justify-center rounded-full cursor-pointer ${activeTab === 'metricas' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+          onClick={() => setActiveTab('metricas')}
+        >
+          <BarChart size={24} />
+        </div>
+      </div>
+
+      {/* Conteúdo principal */}
+      <div className="flex-1 flex">
+        {activeTab === 'conversas' ? (
+          <>
+            {/* Coluna de lista de conversas */}
+            <div className="w-1/4 border-r">
+              {renderConversationsList()}
+            </div>
+            
+            {/* Coluna central com as mensagens */}
+            <div className="flex-1">
+              {renderChatPanel()}
+            </div>
+            
+            {/* Coluna de detalhes da venda (condicional) */}
+            {showSaleDetails && selectedConv && (
+              <div className="w-1/4">
+                {renderSaleDetailsPanel()}
+              </div>
+            )}
+          </>
+        ) : activeTab === 'perguntas' ? (
+          <QuestionsList />
+        ) : (
+          <MetricsDisplay />
+        )}
+      </div>
+
+      {/* Dialog de imagem em tela cheia */}
+      {fullScreenImage && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center"
+          onClick={() => setFullScreenImage(null)}
+        >
+          <div className="relative">
+            <img 
+              src={fullScreenImage} 
+              alt="Imagem" 
+              className="max-w-full max-h-[90vh] object-contain"
+            />
+            <button 
+              className="absolute top-2 right-2 bg-white rounded-full p-1 text-black"
+              onClick={(e) => {
+                e.stopPropagation();
+                setFullScreenImage(null);
+              }}
+            >
+              <ArrowLeft size={20} />
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default UserGiovaniBurgo;
