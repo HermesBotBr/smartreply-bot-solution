@@ -558,7 +558,7 @@ const UserGiovaniBurgo = () => {
           </div>
         </div>
         
-        <div className="flex-1 overflow-auto">
+        <div className="flex-1 overflow-y-auto">
           {refreshing ? (
             <div className="flex justify-center items-center p-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -677,7 +677,7 @@ const UserGiovaniBurgo = () => {
           </div>
         </div>
         
-        <div className="flex-1 overflow-auto p-4 bg-gray-100">
+        <div className="flex-1 overflow-y-auto p-4 bg-gray-100">
           {sortedMessages.map((msg, index) => {
             const currentMessageDate = formatDate(msg.date);
             const previousMessageDate = index > 0 ? formatDate(sortedMessages[index - 1].date) : null;
@@ -777,7 +777,7 @@ const UserGiovaniBurgo = () => {
           <h2 className="text-lg font-bold">Detalhes da venda</h2>
         </div>
         
-        <div className="flex-1 overflow-auto p-3 bg-gray-50">
+        <div className="flex-1 overflow-y-auto p-3 bg-gray-50">
           {!orderDetails ? (
             <div className="flex justify-center items-center h-full">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -887,7 +887,7 @@ const UserGiovaniBurgo = () => {
 
   // Renderiza a interface principal
   return (
-    <div className="flex h-full">
+    <div className="flex h-screen overflow-hidden">
       {/* Sidebar de navegação */}
       <div className="w-16 bg-gray-100 border-r flex flex-col items-center py-4">
         <div 
@@ -915,26 +915,30 @@ const UserGiovaniBurgo = () => {
         {activeTab === 'conversas' ? (
           <>
             {/* Coluna de lista de conversas */}
-            <div className="w-1/4 border-r">
+            <div className="w-1/4 h-screen">
               {renderConversationsList()}
             </div>
             
             {/* Coluna central com as mensagens */}
-            <div className="flex-1">
+            <div className={`${showSaleDetails ? 'w-1/2' : 'w-3/4'} h-screen`}>
               {renderChatPanel()}
             </div>
             
             {/* Coluna de detalhes da venda (condicional) */}
             {showSaleDetails && selectedConv && (
-              <div className="w-1/4">
+              <div className="w-1/4 h-screen">
                 {renderSaleDetailsPanel()}
               </div>
             )}
           </>
         ) : activeTab === 'perguntas' ? (
-          <QuestionsList />
+          <div className="w-full h-screen overflow-auto">
+            <QuestionsList />
+          </div>
         ) : (
-          <MetricsDisplay />
+          <div className="w-full h-screen overflow-auto">
+            <MetricsDisplay />
+          </div>
         )}
       </div>
 
