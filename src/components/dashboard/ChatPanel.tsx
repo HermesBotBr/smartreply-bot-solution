@@ -31,6 +31,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
   setInitialAutoScrollDone
 }) => {
   const [messageText, setMessageText] = useState('');
+  const [tempMessages, setTempMessages] = useState<any[]>([]);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -40,6 +41,11 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
       setInitialAutoScrollDone(true);
     }
   }, [selectedConv, initialAutoScrollDone, setInitialAutoScrollDone]);
+
+  // Clear temporary messages when conversation changes
+  useEffect(() => {
+    setTempMessages([]);
+  }, [selectedConv?.orderId]);
 
   const sendMessage = async () => {
     if (!messageText.trim() || !selectedConv) return;
@@ -52,16 +58,9 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
       message_attachments: []
     };
 
-    // We can't modify selectedConv directly in a React component like this
-    // This update should be handled by the parent component
-    const updatedMessages = [...selectedConv.messages, newMessage];
-    const updatedConv = {
-      ...selectedConv,
-      messages: updatedMessages
-    };
-    
-    // The parent component should handle this
-    // setSelectedConv(updatedConv);
+    // Add to temporary messages
+    setTempMessages(prev => [...prev, newMessage]);
+    setMessageText('');
 
     setTimeout(() => {
       if (chatEndRef.current) {
@@ -98,7 +97,6 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
 
       const data = await response.json();
       console.log("Mensagem enviada:", data);
-      setMessageText('');
       toast({
         title: "Mensagem enviada",
         description: "Sua mensagem foi enviada com sucesso",
@@ -121,7 +119,18 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
     );
   }
 
-  const sortedMessages = selectedConv.messages.slice().sort((a, b) => {
+  // Filter out temporary messages that have been confirmed by the system
+  const filteredTempMessages = tempMessages.filter(tempMsg => {
+    return !selectedConv.messages.some(
+      (msg: any) => 
+        msg.sender === 'seller' && 
+        msg.message === tempMsg.message && 
+        Math.abs(new Date(msg.date).getTime() - new Date(tempMsg.date).getTime()) < 60000 // 1 minute difference
+    );
+  });
+
+  // Combine system messages with filtered temporary messages
+  const sortedMessages = [...selectedConv.messages, ...filteredTempMessages].sort((a, b) => {
     return new Date(a.date).getTime() - new Date(b.date).getTime();
   });
   
@@ -151,8 +160,12 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
           
           let messageClass = "";
           if (msg.sender.toLowerCase() === 'seller') {
+            const isTemp = msg.id && msg.id.startsWith('temp-');
             const timeDiff = now.getTime() - new Date(msg.date).getTime();
-            if (timeDiff < 10000) {
+            
+            if (isTemp) {
+              messageClass = "bg-gray-300 self-end";
+            } else if (timeDiff < 10000) {
               messageClass = "bg-gray-300 self-end";
             } else if (msg.id && gptIds.includes(msg.id)) {
               messageClass = "bg-blue-200 self-end";
