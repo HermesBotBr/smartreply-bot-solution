@@ -91,7 +91,7 @@ if (match) {
 }
 
 if (!message) {
-  message = " ";
+  message = "[Imagem]";
 }
 
 messages.push({ sender, message, date, id: messageId, message_attachments: [] });
