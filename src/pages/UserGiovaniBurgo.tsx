@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -170,7 +169,10 @@ const UserGiovaniBurgo = () => {
     }
   };
 
-  // Update the selected conversation with new messages
+  const handleCloseSaleDetails = () => {
+    setShowSaleDetails(false);
+  };
+
   const updateSelectedConv = (updatedConv) => {
     setSelectedConv(updatedConv);
   };
@@ -235,6 +237,7 @@ const UserGiovaniBurgo = () => {
                   setExpandedInfo={setExpandedInfo}
                   detailedInfo={detailedInfo}
                   fetchDetailedInfo={fetchDetailedInfo}
+                  onClose={handleCloseSaleDetails}
                 />
               </div>
             )}

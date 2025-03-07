@@ -1,7 +1,7 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { X } from "lucide-react";
 import ProductThumbnail from './ProductThumbnail';
 import Timeline from './Timeline';
 import { formatDateTime, formatCurrency } from '@/utils/formatters';
@@ -14,6 +14,7 @@ interface SaleDetailsPanelProps {
   setExpandedInfo: (expanded: boolean) => void;
   detailedInfo: any;
   fetchDetailedInfo: () => Promise<void>;
+  onClose: () => void;
 }
 
 const SaleDetailsPanel: React.FC<SaleDetailsPanelProps> = ({
@@ -23,7 +24,8 @@ const SaleDetailsPanel: React.FC<SaleDetailsPanelProps> = ({
   expandedInfo,
   setExpandedInfo,
   detailedInfo,
-  fetchDetailedInfo
+  fetchDetailedInfo,
+  onClose
 }) => {
   if (!selectedConv) {
     return null;
@@ -31,8 +33,15 @@ const SaleDetailsPanel: React.FC<SaleDetailsPanelProps> = ({
 
   return (
     <div className="h-full flex flex-col border-l border-gray-300">
-      <div className="bg-primary text-white p-3 flex items-center">
+      <div className="bg-primary text-white p-3 flex items-center justify-between">
         <h2 className="text-lg font-bold">Detalhes da venda</h2>
+        <button 
+          onClick={onClose}
+          className="text-white hover:bg-primary-dark rounded-full p-1"
+          aria-label="Fechar detalhes da venda"
+        >
+          <X size={20} />
+        </button>
       </div>
       
       <div className="flex-1 overflow-y-auto p-3 bg-gray-50">
