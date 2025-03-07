@@ -1,3 +1,4 @@
+
 import React, { useRef, useEffect, useState } from 'react';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -114,10 +115,12 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
   }
 
   const filteredTempMessages = tempMessages.filter(tempMsg => {
+    // Filter out messages from other conversations
     if (tempMsg.conversationId !== selectedConv.orderId) {
       return false;
     }
     
+    // Check if this temporary message has been confirmed by the system
     const isConfirmed = selectedConv.messages.some(
       (msg: any) => 
         msg.sender === 'seller' && 
@@ -125,7 +128,19 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
         Math.abs(new Date(msg.date).getTime() - new Date(tempMsg.date).getTime()) < 60000
     );
     
-    return !isConfirmed;
+    if (isConfirmed) {
+      return false;
+    }
+    
+    // Filter out temporary messages if there are newer official seller messages
+    const tempMessageTime = new Date(tempMsg.date).getTime();
+    const hasNewerSellerMessage = selectedConv.messages.some(
+      (msg: any) => 
+        msg.sender === 'seller' && 
+        new Date(msg.date).getTime() > tempMessageTime
+    );
+    
+    return !hasNewerSellerMessage;
   });
 
   const sortedMessages = [...selectedConv.messages, ...filteredTempMessages].sort((a, b) => {
