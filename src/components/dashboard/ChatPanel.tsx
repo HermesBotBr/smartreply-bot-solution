@@ -132,15 +132,18 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
       return false;
     }
     
-    // Filter out temporary messages if there are newer official seller messages
+    // Filter out temporary messages if there is a newer official (green) seller message
     const tempMessageTime = new Date(tempMsg.date).getTime();
-    const hasNewerSellerMessage = selectedConv.messages.some(
-      (msg: any) => 
-        msg.sender === 'seller' && 
+    const hasNewerGreenSellerMessage = selectedConv.messages.some(
+      (msg: any) =>
+        msg.sender === 'seller' &&
+        !(msg.id && msg.id.startsWith('temp-')) &&
+        !(msg.id && gptIds.includes(msg.id)) &&
         new Date(msg.date).getTime() > tempMessageTime
     );
     
-    return !hasNewerSellerMessage;
+    return !hasNewerGreenSellerMessage;
+
   });
 
   const sortedMessages = [...selectedConv.messages, ...filteredTempMessages].sort((a, b) => {
