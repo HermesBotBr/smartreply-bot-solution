@@ -48,6 +48,7 @@ body, html {
   padding: 0;
   height: 100%;
   overflow: hidden;
+  box-sizing: border-box;
 }
 
 #root {
@@ -61,4 +62,11 @@ body, html {
   height: 100vh;
   width: 100vw;
   overflow: hidden;
+}
+
+/* Ensure all panels fit within viewport width */
+@media screen and (max-width: 1200px) {
+  .dashboard-container {
+    min-width: 100vw;
+  }
 }

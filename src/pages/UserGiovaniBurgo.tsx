@@ -898,14 +898,14 @@ const UserGiovaniBurgo = () => {
         </div>
       </div>
 
-      <div className="flex-1 flex">
+      <div className="flex-1 flex w-[calc(100%-3.5rem)]">
         {activeTab === 'conversas' ? (
           <>
             <div className="w-1/3 h-screen overflow-hidden">
               {renderConversationsList()}
             </div>
             
-            <div className={`${showSaleDetails ? 'w-[34%]' : 'w-2/3'} h-screen overflow-hidden`}>
+            <div className={`${showSaleDetails ? 'w-1/3' : 'w-2/3'} h-screen overflow-hidden`}>
               {renderChatPanel()}
             </div>
             
@@ -954,3 +954,4 @@ const UserGiovaniBurgo = () => {
 };
 
 export default UserGiovaniBurgo;
+
