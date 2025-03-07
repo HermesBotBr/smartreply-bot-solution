@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -83,19 +82,19 @@ function parseMessages(text) {
               messageId = idMatch[1];
               rest = rest.replace(/^\(\w+\)/, '').trim();
             }
-    const match = rest.match(/\((\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z)\)$/);
-let date = '';
-let message = rest;
-if (match) {
-  date = match[1];
-  message = rest.substring(0, rest.lastIndexOf(`(${date})`)).trim();
-}
+            const match = rest.match(/\((\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z)\)$/);
+            let date = '';
+            let message = rest;
+            if (match) {
+              date = match[1];
+              message = rest.substring(0, rest.lastIndexOf(`(${date})`)).trim();
+            }
 
-if (!message) {
-  message = "[Imagem]";
-}
+            if (!message) {
+              message = "[Imagem]";
+            }
 
-messages.push({ sender, message, date, id: messageId, message_attachments: [] });
+            messages.push({ sender, message, date, id: messageId, message_attachments: [] });
 
           }
         }
@@ -117,12 +116,10 @@ function ProductThumbnail({ itemId }) {
     async function fetchThumbnail() {
       try {
         console.log("Fetching thumbnail for itemId:", itemId);
-        // Obtém o token da API
         const tokenResponse = await fetch('https://9cf7e1a3f021.ngrok.app/mercadoLivreApiKey.txt');
         const token = (await tokenResponse.text()).trim();
         console.log("ML Token:", token);
         
-        // Faz a requisição à API do Mercado Livre com o token
         const response = await fetch(`https://api.mercadolibre.com/items/${itemId}?access_token=${token}`);
         const data = await response.json();
         console.log("Response data:", data);
@@ -342,11 +339,8 @@ const UserGiovaniBurgo = () => {
       if (selectedConv) {
         const updatedConv = convs.find(c => c.orderId === selectedConv.orderId);
         if (updatedConv) {
-          // Preserva as mensagens temporárias enviadas pela interface (que possuem id iniciando com 'temp-')
           const tempMessages = selectedConv.messages.filter(msg => msg.id.startsWith('temp-'));
-          // Cria uma cópia das mensagens atualizadas vindas do all_msg.txt
           const mergedMessages = updatedConv.messages.slice();
-          // Para cada mensagem temporária, verifica se já não foi confirmada (substituída por uma mensagem "verde")
           tempMessages.forEach(temp => {
             const alreadyConfirmed = mergedMessages.some(m =>
               m.sender === 'seller' &&
@@ -357,7 +351,6 @@ const UserGiovaniBurgo = () => {
               mergedMessages.push(temp);
             }
           });
-          // Ordena as mensagens da mais antiga para a mais recente
           updatedConv.messages = mergedMessages.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
           setSelectedConv(updatedConv);
         }
@@ -541,7 +534,6 @@ const UserGiovaniBurgo = () => {
     return getMostRecentDate(b).getTime() - getMostRecentDate(a).getTime();
   });
 
-  // Renderiza a lista de conversas na coluna esquerda
   const renderConversationsList = () => {
     return (
       <div className="h-full flex flex-col">
@@ -645,7 +637,6 @@ const UserGiovaniBurgo = () => {
     );
   };
 
-  // Renderiza o chat na coluna central
   const renderChatPanel = () => {
     if (!selectedConv) {
       return (
@@ -765,7 +756,6 @@ const UserGiovaniBurgo = () => {
     );
   };
 
-  // Renderiza os detalhes da venda na coluna direita
   const renderSaleDetailsPanel = () => {
     if (!showSaleDetails || !selectedConv) {
       return null;
@@ -885,48 +875,42 @@ const UserGiovaniBurgo = () => {
     );
   };
 
-  // Renderiza a interface principal
   return (
     <div className="flex h-screen overflow-hidden">
-      {/* Sidebar de navegação */}
-      <div className="w-16 bg-gray-100 border-r flex flex-col items-center py-4">
+      <div className="w-14 bg-gray-100 border-r flex flex-col items-center py-4">
         <div 
-          className={`w-12 h-12 flex items-center justify-center rounded-full mb-4 cursor-pointer ${activeTab === 'conversas' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+          className={`w-10 h-10 flex items-center justify-center rounded-full mb-4 cursor-pointer ${activeTab === 'conversas' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
           onClick={() => setActiveTab('conversas')}
         >
-          <MessageSquare size={24} />
+          <MessageSquare size={20} />
         </div>
         <div 
-          className={`w-12 h-12 flex items-center justify-center rounded-full mb-4 cursor-pointer ${activeTab === 'perguntas' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+          className={`w-10 h-10 flex items-center justify-center rounded-full mb-4 cursor-pointer ${activeTab === 'perguntas' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
           onClick={() => setActiveTab('perguntas')}
         >
-          <HelpCircle size={24} />
+          <HelpCircle size={20} />
         </div>
         <div 
-          className={`w-12 h-12 flex items-center justify-center rounded-full cursor-pointer ${activeTab === 'metricas' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+          className={`w-10 h-10 flex items-center justify-center rounded-full cursor-pointer ${activeTab === 'metricas' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
           onClick={() => setActiveTab('metricas')}
         >
-          <BarChart size={24} />
+          <BarChart size={20} />
         </div>
       </div>
 
-      {/* Conteúdo principal */}
       <div className="flex-1 flex">
         {activeTab === 'conversas' ? (
           <>
-            {/* Coluna de lista de conversas */}
-            <div className="w-1/4 h-screen">
+            <div className="w-[280px] min-w-[280px] h-screen">
               {renderConversationsList()}
             </div>
             
-            {/* Coluna central com as mensagens */}
-            <div className={`${showSaleDetails ? 'w-1/2' : 'w-3/4'} h-screen`}>
+            <div className={`${showSaleDetails ? 'flex-1' : 'flex-1'} h-screen`}>
               {renderChatPanel()}
             </div>
             
-            {/* Coluna de detalhes da venda (condicional) */}
             {showSaleDetails && selectedConv && (
-              <div className="w-1/4 h-screen">
+              <div className="w-[320px] min-w-[320px] h-screen">
                 {renderSaleDetailsPanel()}
               </div>
             )}
@@ -942,7 +926,6 @@ const UserGiovaniBurgo = () => {
         )}
       </div>
 
-      {/* Dialog de imagem em tela cheia */}
       {fullScreenImage && (
         <div 
           className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center"
