@@ -22,11 +22,19 @@ const randomColors = [
   '#82ca9d', '#ffc658', '#8dd1e1', '#a4de6c', '#d0ed57'
 ];
 
-const MetricsDisplay = () => {
+const MetricsDisplay = ({ onOrderClick }: { onOrderClick?: (orderId: string) => void }) => {
   const [loading, setLoading] = useState(true);
   const [metrics, setMetrics] = useState<any>(null);
   const [showPopup, setShowPopup] = useState(false);
   const [complaintsList, setComplaintsList] = useState<string[]>([]);
+
+  // Função para lidar com o clique em um order_id do popup
+  const handleOrderClick = (orderId: string) => {
+    setShowPopup(false);
+    if (typeof onOrderClick === 'function') {
+      onOrderClick(orderId);
+    }
+  };
 
   // Função auxiliar para buscar a contagem de reclamações evitadas
   const fetchComplaintsAvoidedCount = async () => {
@@ -329,7 +337,13 @@ const MetricsDisplay = () => {
             {complaintsList.length > 0 ? (
               <ul className="max-h-60 overflow-auto text-sm">
                 {complaintsList.map((order, index) => (
-                  <li key={index} className="border-b py-1">{order}</li>
+                  <li 
+                    key={index} 
+                    className="border-b py-1 cursor-pointer hover:bg-gray-100"
+                    onClick={() => handleOrderClick(order)}
+                  >
+                    {order}
+                  </li>
                 ))}
               </ul>
             ) : (
