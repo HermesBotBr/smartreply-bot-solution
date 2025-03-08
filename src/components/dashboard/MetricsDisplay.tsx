@@ -31,7 +31,7 @@ const MetricsDisplay = ({ onOrderClick }: { onOrderClick?: (orderId: string) => 
   // Função para lidar com o clique em um order_id do popup
 const handleOrderClick = (orderId: string) => {
   setShowPopup(false);
-  window.open(`https://www.mercadolivre.com.br/vendas/novo/mensagens/${orderId}`, '_blank');
+  window.open(`https://www.mercadolivre.com.br/vendas/novo/mensagens/${orderId}`);
 };
 
 
