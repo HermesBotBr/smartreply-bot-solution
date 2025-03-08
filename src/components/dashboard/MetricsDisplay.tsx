@@ -123,18 +123,24 @@ const fetchComplaintsAvoidedList = async () => {
       // Obtém a contagem de reclamações evitadas
       const complaintsAvoided = await fetchComplaintsAvoidedCount();
 
-      const fakeData = {
-        summary: {
-          totalMessages: messageData.reduce((acc, curr) => acc + curr.total, 0),
-          totalQuestions: questionData.reduce((acc, curr) => acc + curr.received, 0),
-          complaintsAvoided: complaintsAvoided,
-          totalRevenue: salesData.reduce((acc, curr) => acc + curr.value, 0)
-        },
-        messageData,
-        questionData,
-        salesData,
-        productCategories
-      };
+     const gptResponse = await fetch('https://735e1872650f.ngrok.app/all_gpt.txt');
+const gptText = await gptResponse.text();
+const gptIds = gptText.split('\n').filter(line => line.trim() !== '');
+const totalMessagesCount = gptIds.length;
+
+const fakeData = {
+  summary: {
+    totalMessages: totalMessagesCount,
+    totalQuestions: questionData.reduce((acc, curr) => acc + curr.received, 0),
+    complaintsAvoided: complaintsAvoided,
+    totalRevenue: salesData.reduce((acc, curr) => acc + curr.value, 0)
+  },
+  messageData,
+  questionData,
+  salesData,
+  productCategories
+};
+
 
       setMetrics(fakeData);
       setLoading(false);
