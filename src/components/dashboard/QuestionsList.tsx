@@ -10,7 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { ChevronDown, ChevronUp } from "lucide-react";
 
 // URL do endpoint
-const ASKS_URL = 'https://9cf7e1a3f021.ngrok.app/all_asks.txt';
+const ASKS_URL = 'https://735e1872650f.ngrok.app/all_asks.txt';
 
 interface Question {
   item_id: string;
@@ -275,7 +275,7 @@ const QuestionsList: React.FC<QuestionsListProps> = ({ mlToken }) => {
     if (!answering || !answerText.trim()) return;
     
     try {
-      const response = await fetch('https://9cf7e1a3f021.ngrok.app/answer_question', {
+      const response = await fetch('https://735e1872650f.ngrok.app/answer_question', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
