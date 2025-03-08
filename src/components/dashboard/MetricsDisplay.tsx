@@ -58,25 +58,29 @@ const handleOrderClick = (orderId: string) => {
   };
 
   // Função auxiliar para buscar a lista completa de order_ids das reclamações evitadas
-  const fetchComplaintsAvoidedList = async () => {
-    try {
-      const response = await fetch('https://735e1872650f.ngrok.app/all_tags.txt');
-      const text = await response.text();
-      const sections = text.split('\n\n');
-      let orders: string[] = [];
-      sections.forEach(section => {
-        if (section.startsWith('GPT impediu reclamação')) {
-          // Pula a linha do cabeçalho e pega as linhas não vazias
-          const lines = section.split('\n').slice(1);
-          orders = lines.filter(line => line.trim() !== '');
-        }
-      });
-      return orders;
-    } catch (error) {
-      console.error("Erro ao buscar lista de tags:", error);
-      return [];
-    }
-  };
+const fetchComplaintsAvoidedList = async () => {
+  try {
+    const response = await fetch('https://735e1872650f.ngrok.app/all_tags.txt');
+    const text = await response.text();
+    const sections = text.split('\n\n');
+    let orders: string[] = [];
+    sections.forEach(section => {
+      if (section.startsWith('GPT impediu reclamação')) {
+        // Pula a linha do cabeçalho, pega as linhas não vazias e remove a data (se houver)
+        const lines = section.split('\n').slice(1);
+        orders = lines.filter(line => line.trim() !== '').map(line => {
+          const parts = line.split(' - ');
+          return parts[0].trim();
+        });
+      }
+    });
+    return orders;
+  } catch (error) {
+    console.error("Erro ao buscar lista de tags:", error);
+    return [];
+  }
+};
+
 
   useEffect(() => {
     const generateData = async () => {
