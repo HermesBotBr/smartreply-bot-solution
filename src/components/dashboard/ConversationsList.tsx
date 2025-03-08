@@ -29,9 +29,16 @@ const ConversationsList: React.FC<ConversationsListProps> = ({
   const [filterBuyerMessage, setFilterBuyerMessage] = useState(false);
 
   const filteredConversations = conversations.filter(conv => {
-    if (searchText && !conv.buyer.toLowerCase().includes(searchText.toLowerCase())) {
-      return false;
-    }
+if (
+  searchText &&
+  !(
+    conv.buyer.toLowerCase().includes(searchText.toLowerCase()) ||
+    conv.orderId.toString().toLowerCase().includes(searchText.toLowerCase())
+  )
+) {
+  return false;
+}
+
     if (filterHasMessage && conv.messages.length === 0) {
       return false;
     }
@@ -59,12 +66,13 @@ const ConversationsList: React.FC<ConversationsListProps> = ({
         <h1 className="text-lg font-bold text-white">Monitor de Vendas</h1>
         <div className="relative mt-2">
           <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-500 h-4 w-4" />
-          <Input
-            className="bg-white text-black pl-8"
-            placeholder="Pesquisar por nome completo..."
-            value={searchText}
-            onChange={(e) => setSearchText(e.target.value)}
-          />
+         <Input
+  className="bg-white text-black pl-8"
+  placeholder="Pesquisar por nome ou Order_ID..."
+  value={searchText}
+  onChange={(e) => setSearchText(e.target.value)}
+/>
+
         </div>
       </div>
       
