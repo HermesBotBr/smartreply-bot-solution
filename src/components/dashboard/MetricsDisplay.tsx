@@ -165,61 +165,65 @@ const fetchComplaintsAvoidedList = async () => {
       </div>
       
       <div className="flex-1 overflow-auto p-4">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <div className="flex flex-col space-y-1">
-                <CardTitle className="text-sm font-medium">Total de Mensagens</CardTitle>
-                <CardDescription>Últimos 7 dias</CardDescription>
-              </div>
-              <MessageSquare className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{metrics.summary.totalMessages}</div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <div className="flex flex-col space-y-1">
-                <CardTitle className="text-sm font-medium">Perguntas Recebidas</CardTitle>
-                <CardDescription>Últimos 7 dias</CardDescription>
-              </div>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{metrics.summary.totalQuestions}</div>
-            </CardContent>
-          </Card>
-          
-          <Card onClick={handlePopupOpen} className="cursor-pointer">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <div className="flex flex-col space-y-1">
-                <CardTitle className="text-sm font-medium">Reclamações Evitadas</CardTitle>
-                <CardDescription>Últimos 7 dias</CardDescription>
-              </div>
-              <ShoppingBag className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{metrics.summary.complaintsAvoided}</div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <div className="flex flex-col space-y-1">
-                <CardTitle className="text-sm font-medium">Faturamento Total</CardTitle>
-                <CardDescription>Últimos 7 dias</CardDescription>
-              </div>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(metrics.summary.totalRevenue)}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+
+
+<div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+  <Card onClick={handlePopupOpen} className="cursor-pointer">
+    <CardHeader className="flex flex-row items-center justify-between pb-2">
+      <div className="flex flex-col space-y-1">
+        <CardTitle className="text-sm font-medium">Reclamações Evitadas</CardTitle>
+        <CardDescription>Últimos 7 dias</CardDescription>
+      </div>
+      <ShoppingBag className="h-4 w-4 text-muted-foreground" />
+    </CardHeader>
+    <CardContent>
+      <div className="text-2xl font-bold">{metrics.summary.complaintsAvoided}</div>
+    </CardContent>
+  </Card>
+
+  <Card>
+    <CardHeader className="flex flex-row items-center justify-between pb-2">
+      <div className="flex flex-col space-y-1">
+        <CardTitle className="text-sm font-medium">Total de Mensagens</CardTitle>
+        <CardDescription>Últimos 7 dias</CardDescription>
+      </div>
+      <MessageSquare className="h-4 w-4 text-muted-foreground" />
+    </CardHeader>
+    <CardContent>
+      <div className="text-2xl font-bold">{metrics.summary.totalMessages}</div>
+    </CardContent>
+  </Card>
+  
+  <Card>
+    <CardHeader className="flex flex-row items-center justify-between pb-2">
+      <div className="flex flex-col space-y-1">
+        <CardTitle className="text-sm font-medium">Perguntas Recebidas</CardTitle>
+        <CardDescription>Últimos 7 dias</CardDescription>
+      </div>
+      <Users className="h-4 w-4 text-muted-foreground" />
+    </CardHeader>
+    <CardContent>
+      <div className="text-2xl font-bold">{metrics.summary.totalQuestions}</div>
+    </CardContent>
+  </Card>
+  
+  <Card>
+    <CardHeader className="flex flex-row items-center justify-between pb-2">
+      <div className="flex flex-col space-y-1">
+        <CardTitle className="text-sm font-medium">Faturamento Total</CardTitle>
+        <CardDescription>Últimos 7 dias</CardDescription>
+      </div>
+      <TrendingUp className="h-4 w-4 text-muted-foreground" />
+    </CardHeader>
+    <CardContent>
+      <div className="text-2xl font-bold">
+        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(metrics.summary.totalRevenue)}
+      </div>
+    </CardContent>
+  </Card>
+</div>
+
+
         
         {/* Outras seções de gráficos */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
