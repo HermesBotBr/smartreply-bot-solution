@@ -189,19 +189,18 @@ const MetricsDisplay = ({ onOrderClick }: { onOrderClick?: (orderId: string) => 
             </CardContent>
           </Card>
           
-         <Card onClick={handlePopupOpen} className="cursor-pointer">
-  <CardHeader className="flex flex-row items-center justify-between pb-2">
-    <div className="flex flex-col space-y-1">
-      <CardTitle className="text-sm font-medium">Reclamações Evitadas</CardTitle>
-      <CardDescription>Últimos 7 dias</CardDescription>
-    </div>
-    <ShoppingBag className="h-4 w-4 text-muted-foreground" />
-  </CardHeader>
-  <CardContent>
-    <div className="text-2xl font-bold">{metrics.summary.complaintsAvoided}</div>
-  </CardContent>
-</Card>
-
+          <Card onClick={handlePopupOpen} className="cursor-pointer">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <div className="flex flex-col space-y-1">
+                <CardTitle className="text-sm font-medium">Reclamações Evitadas</CardTitle>
+                <CardDescription>Últimos 7 dias</CardDescription>
+              </div>
+              <ShoppingBag className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{metrics.summary.complaintsAvoided}</div>
+            </CardContent>
+          </Card>
           
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -357,4 +356,4 @@ const MetricsDisplay = ({ onOrderClick }: { onOrderClick?: (orderId: string) => 
   );
 };
 
-export default MetricsDisplay;
+export default MetricsDisplay; 
