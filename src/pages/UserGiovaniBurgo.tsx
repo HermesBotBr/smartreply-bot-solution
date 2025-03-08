@@ -233,13 +233,16 @@ const UserGiovaniBurgo = () => {
           </div>
         ) : (
 <div className="w-full h-screen overflow-auto">
-  <MetricsDisplay onOrderClick={(orderId) => {
-    const conversation = conversations.find(conv => conv.orderId === orderId);
-    if (conversation) {
-      setSelectedConv(conversation);
-      setActiveTab('conversas');
-    }
-  }} />
+ <MetricsDisplay onOrderClick={(orderId) => {
+  const conversation = conversations.find(conv => conv.orderId.toString() === orderId.toString());
+  if (conversation) {
+    setSelectedConv(conversation);
+    setActiveTab('conversas');
+  } else {
+    console.error('Conversa não encontrada para orderId:', orderId);
+  }
+}} />
+
 </div>
 
         )}
