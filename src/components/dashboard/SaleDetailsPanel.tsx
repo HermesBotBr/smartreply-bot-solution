@@ -51,27 +51,35 @@ const SaleDetailsPanel: React.FC<SaleDetailsPanelProps> = ({
           </div>
         ) : (
           <div className="space-y-4">
-            <Card className="relative">
-              <img 
-                src="https://http2.mlstatic.com/static/org-img/homesnw/mercado-libre.png?v=2"
-                alt="Mercado Livre"
-                className="absolute top-4 right-4 w-20 h-auto"
-              />
-              
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base">Detalhes da venda</CardTitle>
-              </CardHeader>
-              
-              <CardContent>
-                <p className="text-gray-800 text-sm mb-2">Venda: #{orderDetails.id}</p>
-                <div className="flex items-center">
-                  <ProductThumbnail itemId={orderDetails.order_items && orderDetails.order_items[0]?.item?.id} />
-                  <p className="ml-3 font-medium text-sm">
-                    {orderDetails.order_items && orderDetails.order_items[0]?.item?.title}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+<a
+  href={`https://www.mercadolivre.com.br/vendas/${orderDetails.id}/detalhe`}
+  target="_blank"
+  rel="noopener noreferrer"
+  className="no-underline"
+>
+  <Card className="relative cursor-pointer">
+    <img 
+      src="https://http2.mlstatic.com/static/org-img/homesnw/mercado-livre.png?v=2"
+      alt="Mercado Livre"
+      className="absolute top-4 right-4 w-20 h-auto"
+    />
+    
+    <CardHeader className="pb-2">
+      <CardTitle className="text-base">Detalhes da venda</CardTitle>
+    </CardHeader>
+    
+    <CardContent>
+      <p className="text-gray-800 text-sm mb-2">Venda: #{orderDetails.id}</p>
+      <div className="flex items-center">
+        <ProductThumbnail itemId={orderDetails.order_items && orderDetails.order_items[0]?.item?.id} />
+        <p className="ml-3 font-medium text-sm">
+          {orderDetails.order_items && orderDetails.order_items[0]?.item?.title}
+        </p>
+      </div>
+    </CardContent>
+  </Card>
+</a>
+
             
             <Card>
               <CardHeader className="pb-2">
