@@ -78,7 +78,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
         return;
       }
 
-      const response = await fetch('https://9cf7e1a3f021.ngrok.app/sendmsg', {
+      const response = await fetch('https://958408211cc6.ngrok.app/sendmsg', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
