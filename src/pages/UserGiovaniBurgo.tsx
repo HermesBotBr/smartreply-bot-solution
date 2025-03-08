@@ -232,9 +232,16 @@ const UserGiovaniBurgo = () => {
             <QuestionsList />
           </div>
         ) : (
-          <div className="w-full h-screen overflow-auto">
-            <MetricsDisplay />
-          </div>
+<div className="w-full h-screen overflow-auto">
+  <MetricsDisplay onOrderClick={(orderId) => {
+    const conversation = conversations.find(conv => conv.orderId === orderId);
+    if (conversation) {
+      setSelectedConv(conversation);
+      setActiveTab('conversas');
+    }
+  }} />
+</div>
+
         )}
       </div>
 
