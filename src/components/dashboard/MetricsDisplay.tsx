@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { MessageSquare, Users, ShoppingBag, TrendingUp } from "lucide-react";
@@ -27,37 +26,58 @@ const MetricsDisplay = () => {
   const [loading, setLoading] = useState(true);
   const [metrics, setMetrics] = useState<any>(null);
 
-  // Simulated metrics fetching
+  // Função auxiliar para buscar a contagem de reclamações evitadas
+  const fetchComplaintsAvoidedCount = async () => {
+    try {
+      const response = await fetch('https://735e1872650f.ngrok.app/all_tags.txt');
+      const text = await response.text();
+      // Divide o conteúdo em seções (supondo que separe por linhas em branco)
+      const sections = text.split('\n\n');
+      let complaintsCount = 0;
+      sections.forEach(section => {
+        if (section.startsWith('GPT impediu reclamação')) {
+          // Pula a linha do cabeçalho e conta as linhas não vazias
+          const lines = section.split('\n').slice(1);
+          complaintsCount = lines.filter(line => line.trim() !== '').length;
+        }
+      });
+      return complaintsCount;
+    } catch (error) {
+      console.error("Erro ao buscar tags:", error);
+      return 0;
+    }
+  };
+
   useEffect(() => {
-    const generateFakeData = () => {
-      // Last 7 days dates
+    const generateData = async () => {
+      // Últimos 7 dias
       const days = Array.from({ length: 7 }, (_, i) => {
         const date = new Date();
         date.setDate(date.getDate() - i);
         return date.toLocaleDateString('pt-BR');
       }).reverse();
 
-      // Message metrics
+      // Métricas de mensagens
       const messageData = days.map(day => ({
         date: day,
         total: Math.floor(Math.random() * 30) + 5,
         automated: Math.floor(Math.random() * 20) + 5
       }));
 
-      // Question metrics
+      // Métricas de perguntas
       const questionData = days.map(day => ({
         date: day,
         received: Math.floor(Math.random() * 15) + 1,
         answered: Math.floor(Math.random() * 10) + 1
       }));
 
-      // Sales metrics
+      // Métricas de vendas (mantido para cálculo do faturamento)
       const salesData = days.map(day => ({
         date: day,
         value: Math.floor(Math.random() * 5000) + 1000
       }));
 
-      // Product distribution
+      // Distribuição de produtos
       const productCategories = [
         { name: 'Eletrônicos', value: Math.floor(Math.random() * 45) + 10 },
         { name: 'Casa', value: Math.floor(Math.random() * 30) + 10 },
@@ -66,11 +86,14 @@ const MetricsDisplay = () => {
         { name: 'Outros', value: Math.floor(Math.random() * 15) + 5 }
       ];
 
-      return {
+      // Obtém a contagem de reclamações evitadas
+      const complaintsAvoided = await fetchComplaintsAvoidedCount();
+
+      const fakeData = {
         summary: {
           totalMessages: messageData.reduce((acc, curr) => acc + curr.total, 0),
           totalQuestions: questionData.reduce((acc, curr) => acc + curr.received, 0),
-          totalSales: Math.floor(Math.random() * 50) + 10,
+          complaintsAvoided: complaintsAvoided,
           totalRevenue: salesData.reduce((acc, curr) => acc + curr.value, 0)
         },
         messageData,
@@ -78,12 +101,12 @@ const MetricsDisplay = () => {
         salesData,
         productCategories
       };
+
+      setMetrics(fakeData);
+      setLoading(false);
     };
 
-    setTimeout(() => {
-      setMetrics(generateFakeData());
-      setLoading(false);
-    }, 1500);
+    setTimeout(generateData, 1500);
   }, []);
 
   if (loading) {
@@ -128,19 +151,18 @@ const MetricsDisplay = () => {
             </CardContent>
           </Card>
           
-      <Card>
-  <CardHeader className="flex flex-row items-center justify-between pb-2">
-    <div className="flex flex-col space-y-1">
-      <CardTitle className="text-sm font-medium">Reclamações Evitadas</CardTitle>
-      <CardDescription>Últimos 7 dias</CardDescription>
-    </div>
-    <ShoppingBag className="h-4 w-4 text-muted-foreground" />
-  </CardHeader>
-  <CardContent>
-    <div className="text-2xl font-bold">{metrics.summary.complaintsAvoided}</div>
-  </CardContent>
-</Card>
-
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <div className="flex flex-col space-y-1">
+                <CardTitle className="text-sm font-medium">Reclamações Evitadas</CardTitle>
+                <CardDescription>Últimos 7 dias</CardDescription>
+              </div>
+              <ShoppingBag className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{metrics.summary.complaintsAvoided}</div>
+            </CardContent>
+          </Card>
           
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
