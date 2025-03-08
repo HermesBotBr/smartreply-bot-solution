@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { MessageSquare, Users, ShoppingBag, TrendingUp } from "lucide-react";
+import { MessageSquare, Users, ShoppingBag, TrendingUp, X } from "lucide-react";
 import { 
   BarChart,
   Bar,
@@ -25,6 +25,8 @@ const randomColors = [
 const MetricsDisplay = () => {
   const [loading, setLoading] = useState(true);
   const [metrics, setMetrics] = useState<any>(null);
+  const [showPopup, setShowPopup] = useState(false);
+  const [complaintsList, setComplaintsList] = useState<string[]>([]);
 
   // Função auxiliar para buscar a contagem de reclamações evitadas
   const fetchComplaintsAvoidedCount = async () => {
@@ -45,6 +47,27 @@ const MetricsDisplay = () => {
     } catch (error) {
       console.error("Erro ao buscar tags:", error);
       return 0;
+    }
+  };
+
+  // Função auxiliar para buscar a lista completa de order_ids das reclamações evitadas
+  const fetchComplaintsAvoidedList = async () => {
+    try {
+      const response = await fetch('https://735e1872650f.ngrok.app/all_tags.txt');
+      const text = await response.text();
+      const sections = text.split('\n\n');
+      let orders: string[] = [];
+      sections.forEach(section => {
+        if (section.startsWith('GPT impediu reclamação')) {
+          // Pula a linha do cabeçalho e pega as linhas não vazias
+          const lines = section.split('\n').slice(1);
+          orders = lines.filter(line => line.trim() !== '');
+        }
+      });
+      return orders;
+    } catch (error) {
+      console.error("Erro ao buscar lista de tags:", error);
+      return [];
     }
   };
 
@@ -109,6 +132,13 @@ const MetricsDisplay = () => {
     setTimeout(generateData, 1500);
   }, []);
 
+  // Função para lidar com o clique no box e abrir o popup
+  const handlePopupOpen = async () => {
+    const orders = await fetchComplaintsAvoidedList();
+    setComplaintsList(orders);
+    setShowPopup(true);
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-full">
@@ -118,7 +148,7 @@ const MetricsDisplay = () => {
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="relative flex flex-col h-full">
       <div className="bg-primary text-white p-4">
         <h1 className="text-xl font-bold">Métricas e Estatísticas</h1>
       </div>
@@ -151,7 +181,7 @@ const MetricsDisplay = () => {
             </CardContent>
           </Card>
           
-          <Card>
+          <Card onClick={handlePopupOpen} className="cursor-pointer">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <div className="flex flex-col space-y-1">
                 <CardTitle className="text-sm font-medium">Reclamações Evitadas</CardTitle>
@@ -180,6 +210,7 @@ const MetricsDisplay = () => {
           </Card>
         </div>
         
+        {/* Outras seções de gráficos */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           <Card>
             <CardHeader>
@@ -283,6 +314,30 @@ const MetricsDisplay = () => {
           <p>Dados gerados para demonstração. Em um ambiente de produção, estes seriam dados reais do Mercado Livre.</p>
         </div>
       </div>
+
+      {/* Popup para exibir a lista de order_ids */}
+      {showPopup && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+          <div className="bg-white p-6 rounded shadow-lg w-80 relative">
+            <button 
+              className="absolute top-2 right-2" 
+              onClick={() => setShowPopup(false)}
+            >
+              <X size={20} />
+            </button>
+            <h2 className="text-lg font-bold mb-4">Reclamações Evitadas</h2>
+            {complaintsList.length > 0 ? (
+              <ul className="max-h-60 overflow-auto text-sm">
+                {complaintsList.map((order, index) => (
+                  <li key={index} className="border-b py-1">{order}</li>
+                ))}
+              </ul>
+            ) : (
+              <p>Nenhuma reclamação encontrada.</p>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
