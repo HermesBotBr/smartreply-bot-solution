@@ -14,7 +14,7 @@ const SaleSwitch: React.FC<SaleSwitchProps> = ({ orderId }) => {
   useEffect(() => {
     const fetchSwitchState = async () => {
       try {
-        const response = await fetch('https://9cf7e1a3f021.ngrok.app/switch');
+        const response = await fetch('https://735e1872650f.ngrok.app/switch');
         const data = await response.json();
         if (data.pack_ids && data.pack_ids.includes(orderId.toString())) {
           setIsEnabled(false);
@@ -33,7 +33,7 @@ const SaleSwitch: React.FC<SaleSwitchProps> = ({ orderId }) => {
     setIsEnabled(newValue);
     try {
       if (!newValue) {
-        const response = await fetch('https://9cf7e1a3f021.ngrok.app/switch/off', {
+        const response = await fetch('https://735e1872650f.ngrok.app/switch/off', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ pack_id: orderId })
@@ -45,7 +45,7 @@ const SaleSwitch: React.FC<SaleSwitchProps> = ({ orderId }) => {
           description: `Pedido #${orderId}`,
         });
       } else {
-        const response = await fetch(`https://9cf7e1a3f021.ngrok.app/switch/on/${orderId}`, {
+        const response = await fetch(`https://735e1872650f.ngrok.app/switch/on/${orderId}`, {
           method: 'DELETE'
         });
         const json = await response.json();
