@@ -29,12 +29,11 @@ const MetricsDisplay = ({ onOrderClick }: { onOrderClick?: (orderId: string) => 
   const [complaintsList, setComplaintsList] = useState<string[]>([]);
 
   // Função para lidar com o clique em um order_id do popup
-  const handleOrderClick = (orderId: string) => {
-    setShowPopup(false);
-    if (typeof onOrderClick === 'function') {
-      onOrderClick(orderId);
-    }
-  };
+const handleOrderClick = (orderId: string) => {
+  setShowPopup(false);
+  window.open(`https://www.mercadolivre.com.br/vendas/novo/mensagens/${orderId}`, '_blank');
+};
+
 
   // Função auxiliar para buscar a contagem de reclamações evitadas
   const fetchComplaintsAvoidedCount = async () => {
