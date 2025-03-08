@@ -52,15 +52,15 @@ const SaleDetailsPanel: React.FC<SaleDetailsPanelProps> = ({
         ) : (
           <div className="space-y-4">
 <a
-  href={`https://www.mercadolivre.com.br/vendas/${orderDetails.id}/detalhe`}
+  href={`https://www.mercadolibre.com.br/vendas/${orderDetails.id}/detalhe`}
   target="_blank"
   rel="noopener noreferrer"
   className="no-underline"
 >
   <Card className="relative cursor-pointer">
     <img 
-      src="https://http2.mlstatic.com/static/org-img/homesnw/mercado-livre.png?v=2"
-      alt="Mercado Livre"
+      src="https://http2.mlstatic.com/static/org-img/homesnw/mercado-libre.png?v=2"
+      alt="Mercado libre"
       className="absolute top-4 right-4 w-20 h-auto"
     />
     
