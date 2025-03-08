@@ -11,9 +11,9 @@ import QuestionsList from "@/components/dashboard/QuestionsList";
 import MetricsDisplay from "@/components/dashboard/MetricsDisplay";
 import { parseMessages } from "@/utils/messageParser";
 
-const DATA_URL = 'https://958408211cc6.ngrok.app/all_msg.txt';
-const ASKS_URL = 'https://958408211cc6.ngrok.app/all_asks.txt';
-const GPT_URL = 'https://958408211cc6.ngrok.app/all_gpt.txt';
+const DATA_URL = 'https://735e1872650f.ngrok.app/all_msg.txt';
+const ASKS_URL = 'https://735e1872650f.ngrok.app/all_asks.txt';
+const GPT_URL = 'https://735e1872650f.ngrok.app/all_gpt.txt';
 
 const UserGiovaniBurgo = () => {
   const [conversations, setConversations] = useState([]);
@@ -36,7 +36,7 @@ const UserGiovaniBurgo = () => {
   useEffect(() => {
     const fetchToken = async () => {
       try {
-        const response = await fetch('https://958408211cc6.ngrok.app/mercadoLivreApiKey.txt');
+        const response = await fetch('https://735e1872650f.ngrok.app/mercadoLivreApiKey.txt');
         const tokenText = await response.text();
         setMlToken(tokenText.trim());
       } catch (error) {
@@ -108,7 +108,7 @@ const UserGiovaniBurgo = () => {
 
   const fetchSaleDetails = async () => {
     try {
-      const tokenResponse = await fetch('https://958408211cc6.ngrok.app/mercadoLivreApiKey.txt');
+      const tokenResponse = await fetch('https://735e1872650f.ngrok.app/mercadoLivreApiKey.txt');
       const token = await tokenResponse.text();
       const orderResponse = await fetch(`https://api.mercadolibre.com/orders/${selectedConv.orderId}?access_token=${token.trim()}`);
       const orderData = await orderResponse.json();
@@ -130,7 +130,7 @@ const UserGiovaniBurgo = () => {
 
   const fetchDetailedInfo = async () => {
     try {
-      const tokenResponse = await fetch('https://958408211cc6.ngrok.app/mercadoLivreApiKey.txt');
+      const tokenResponse = await fetch('https://735e1872650f.ngrok.app/mercadoLivreApiKey.txt');
       const token = await tokenResponse.text();
       
       let orderResponse = await fetch(`https://api.mercadolibre.com/orders/${selectedConv.orderId}?access_token=${token.trim()}`);
