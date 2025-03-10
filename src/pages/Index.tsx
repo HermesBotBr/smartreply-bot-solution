@@ -1,10 +1,8 @@
-
 import { ArrowRight, Shield, UserCheck, Rocket, BarChart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ContactFormDialog } from "@/components/ContactFormDialog";
 import ContactForm from "@/components/ContactForm";
 import FAQ from "@/components/FAQ";
-import NotificationPermission from "@/components/NotificationPermission";
 
 const Index = () => {
   return (
@@ -29,7 +27,6 @@ const Index = () => {
                 <ArrowRight className="ml-2" size={20} />
               </Button>
             </ContactFormDialog>
-            <NotificationPermission />
           </div>
         </div>
       </section>
