@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -56,12 +55,10 @@ const ConversationsList: React.FC<ConversationsListProps> = ({
   const hasBuyerLastMessage = (conv: any) => {
     if (!conv || !conv.messages || conv.messages.length === 0) return false;
     
-    // Get last message
     const lastMessage = conv.messages.reduce((prev: any, curr: any) => {
       return new Date(curr.date) > new Date(prev.date) ? curr : prev;
     }, conv.messages[0]);
     
-    // Check if sender is buyer and conversation is not in read list
     const isBuyerMessage = lastMessage.sender.toLowerCase() === 'buyer';
     const isNotRead = !readConversations.includes(conv.orderId);
     
@@ -72,11 +69,9 @@ const ConversationsList: React.FC<ConversationsListProps> = ({
     const hasNewBuyerMsgA = hasBuyerLastMessage(a);
     const hasNewBuyerMsgB = hasBuyerLastMessage(b);
 
-    // Priority 1: Unread buyer messages at top
     if (hasNewBuyerMsgA && !hasNewBuyerMsgB) return -1;
     if (!hasNewBuyerMsgA && hasNewBuyerMsgB) return 1;
 
-    // Priority 2: If both have unread messages or both don't have unread messages, sort by date
     const getMostRecentDate = (conv: any) => {
       if (!conv.messages || conv.messages.length === 0) return new Date(0);
       return new Date(conv.messages.reduce((prev: any, curr: any) => {
@@ -88,12 +83,11 @@ const ConversationsList: React.FC<ConversationsListProps> = ({
     return getMostRecentDate(b).getTime() - getMostRecentDate(a).getTime();
   });
 
-  // Handler for selecting a conversation
   const handleSelectConversation = async (item: any) => {
     setSelectedConv(item);
     setInitialAutoScrollDone(false);
     
-    if (item.orderId && !markingAsRead) {
+    if (item.orderId && !readConversations.includes(item.orderId) && !markingAsRead) {
       setMarkingAsRead(true);
       try {
         await markAsRead(item.orderId);
@@ -214,4 +208,3 @@ const ConversationsList: React.FC<ConversationsListProps> = ({
 };
 
 export default ConversationsList;
-

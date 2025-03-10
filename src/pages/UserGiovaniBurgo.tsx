@@ -33,10 +33,11 @@ const UserGiovaniBurgo = () => {
   const [detailedInfo, setDetailedInfo] = useState(null);
   const [showSaleDetails, setShowSaleDetails] = useState(false);
   const [readConversations, setReadConversations] = useState<string[]>([]);
-  
+  const [serverSyncError, setServerSyncError] = useState(false);
+  const [lastSyncAttempt, setLastSyncAttempt] = useState(0);
+
   const { toast } = useToast();
 
-  // Fetch read conversations from server
   const fetchReadConversations = async () => {
     try {
       console.log("Fetching read conversations from server");
@@ -54,6 +55,7 @@ const UserGiovaniBurgo = () => {
         setReadConversations(readConvs);
         // Update localStorage as fallback
         localStorage.setItem('readConversations', JSON.stringify(readConvs));
+        setServerSyncError(false);
       } else {
         console.log("No read conversations found on server");
         // Try to get from localStorage if server returns empty
@@ -68,6 +70,7 @@ const UserGiovaniBurgo = () => {
       }
     } catch (error) {
       console.error("Error fetching read conversations:", error);
+      setServerSyncError(true);
       // Fallback to localStorage
       const storedReadConvs = localStorage.getItem('readConversations');
       if (storedReadConvs) {
@@ -85,27 +88,32 @@ const UserGiovaniBurgo = () => {
     }
   };
 
-  // Mark conversation as read
   const markAsRead = async (orderId: string) => {
     if (!orderId || readConversations.includes(orderId)) return;
     
     console.log(`Marking conversation ${orderId} as read`);
     
+    const updatedReadConvs = [...readConversations, orderId];
+    setReadConversations(updatedReadConvs);
+    
+    localStorage.setItem('readConversations', JSON.stringify(updatedReadConvs));
+    
+    const now = Date.now();
+    if (serverSyncError && now - lastSyncAttempt < 60000) { // 1 minute cooldown
+      console.log("Skipping server sync due to recent errors");
+      return;
+    }
+    
+    setLastSyncAttempt(now);
+    
     try {
-      // Update local state immediately
-      const updatedReadConvs = [...readConversations, orderId];
-      setReadConversations(updatedReadConvs);
-      
-      // Update localStorage as fallback
-      localStorage.setItem('readConversations', JSON.stringify(updatedReadConvs));
-      
-      // Send to server
       const response = await fetch('https://b4c027be31fe.ngrok.app/mark_read.php', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ orderId }),
+        signal: AbortSignal.timeout(5000), // 5 second timeout
       });
       
       if (!response.ok) {
@@ -114,17 +122,21 @@ const UserGiovaniBurgo = () => {
       
       const result = await response.json();
       console.log("Server response for mark as read:", result);
+      setServerSyncError(false);
     } catch (error) {
       console.error("Error marking conversation as read:", error);
-      toast({
-        title: "Erro ao marcar conversa como lida",
-        description: "Os dados foram salvos localmente, mas não puderam ser sincronizados com o servidor",
-        variant: "destructive",
-      });
+      setServerSyncError(true);
+      
+      if (!serverSyncError) { // Only show error once
+        toast({
+          title: "Erro ao marcar conversa como lida",
+          description: "Os dados foram salvos localmente, mas não puderam ser sincronizados com o servidor",
+          variant: "destructive",
+        });
+      }
     }
   };
 
-  // Fetch ML token
   useEffect(() => {
     const fetchToken = async () => {
       try {
@@ -138,16 +150,13 @@ const UserGiovaniBurgo = () => {
     fetchToken();
   }, []);
 
-  // Load read conversations on mount and periodically
   useEffect(() => {
     fetchReadConversations();
     
-    // Poll for read conversations every 30 seconds
     const readInterval = setInterval(fetchReadConversations, 30000);
     return () => clearInterval(readInterval);
   }, []);
 
-  // Fetch GPT IDs
   useEffect(() => {
     const fetchGptIds = async () => {
       try {
@@ -164,7 +173,6 @@ const UserGiovaniBurgo = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // Load conversation data
   const loadData = async () => {
     try {
       setRefreshing(true);
@@ -209,7 +217,6 @@ const UserGiovaniBurgo = () => {
     }
   }, [showSaleDetails, selectedConv]);
 
-  // Fetch sale details
   const fetchSaleDetails = async () => {
     try {
       const tokenResponse = await fetch('https://b4c027be31fe.ngrok.app/mercadoLivreApiKey.txt');
@@ -232,7 +239,6 @@ const UserGiovaniBurgo = () => {
     }
   };
 
-  // Fetch detailed info
   const fetchDetailedInfo = async () => {
     try {
       const tokenResponse = await fetch('https://b4c027be31fe.ngrok.app/mercadoLivreApiKey.txt');

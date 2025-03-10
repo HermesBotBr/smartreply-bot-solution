@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -44,6 +43,7 @@ const SaleDetailsPanel: React.FC<SaleDetailsPanelProps> = ({
           console.log(`Conversation ${selectedConv.orderId} marked as read from SaleDetailsPanel`);
         } catch (error) {
           console.error("Error marking conversation as read from SaleDetailsPanel:", error);
+          // Not showing toast here since it will be handled in the markAsRead function
         } finally {
           setMarkingAsRead(false);
         }
@@ -186,4 +186,3 @@ const SaleDetailsPanel: React.FC<SaleDetailsPanelProps> = ({
 };
 
 export default SaleDetailsPanel;
-
