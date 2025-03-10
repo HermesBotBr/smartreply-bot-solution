@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ContactFormDialog } from "@/components/ContactFormDialog";
 import ContactForm from "@/components/ContactForm";
 import FAQ from "@/components/FAQ";
+import NotificationPermission from "@/components/NotificationPermission";
 
 const Index = () => {
   return (
@@ -17,16 +18,19 @@ const Index = () => {
           <p className="text-xl mb-8 animate-fade-up">
             Aumente suas vendas e melhore seu ranqueamento com respostas rápidas e personalizadas
           </p>
-          <ContactFormDialog>
-            <Button
-              size="lg"
-              variant="secondary"
-              className="animate-fade-up"
-            >
-              Teste Grátis por 15 Dias
-              <ArrowRight className="ml-2" size={20} />
-            </Button>
-          </ContactFormDialog>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <ContactFormDialog>
+              <Button
+                size="lg"
+                variant="secondary"
+                className="animate-fade-up"
+              >
+                Teste Grátis por 15 Dias
+                <ArrowRight className="ml-2" size={20} />
+              </Button>
+            </ContactFormDialog>
+            <NotificationPermission />
+          </div>
         </div>
       </section>
 
