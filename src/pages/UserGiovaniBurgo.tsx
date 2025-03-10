@@ -1,15 +1,16 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
-import { MessageSquare, HelpCircle, BarChart, ArrowLeft } from "lucide-react";
-
+import { MessageSquare, HelpCircle, BarChart, ArrowLeft, Tag } from "lucide-react";
 
 import ConversationsList from "@/components/dashboard/ConversationsList";
 import ChatPanel from "@/components/dashboard/ChatPanel";
 import SaleDetailsPanel from "@/components/dashboard/SaleDetailsPanel";
 import QuestionsList from "@/components/dashboard/QuestionsList";
 import MetricsDisplay from "@/components/dashboard/MetricsDisplay";
+import EtiquetasList from "@/components/dashboard/EtiquetasList";
 import { parseMessages } from "@/utils/messageParser";
 
 const DATA_URL = 'https://b4c027be31fe.ngrok.app/all_msg.txt';
@@ -179,10 +180,16 @@ const UserGiovaniBurgo = () => {
           <HelpCircle size={20} />
         </div>
         <div 
-          className={`w-10 h-10 flex items-center justify-center rounded-full cursor-pointer ${activeTab === 'metricas' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+          className={`w-10 h-10 flex items-center justify-center rounded-full mb-4 cursor-pointer ${activeTab === 'metricas' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
           onClick={() => setActiveTab('metricas')}
         >
           <BarChart size={20} />
+        </div>
+        <div 
+          className={`w-10 h-10 flex items-center justify-center rounded-full cursor-pointer ${activeTab === 'etiquetas' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+          onClick={() => setActiveTab('etiquetas')}
+        >
+          <Tag size={20} />
         </div>
       </div>
 
@@ -232,20 +239,22 @@ const UserGiovaniBurgo = () => {
           <div className="w-full h-screen overflow-auto">
             <QuestionsList />
           </div>
+        ) : activeTab === 'etiquetas' ? (
+          <div className="w-full h-screen overflow-auto">
+            <EtiquetasList />
+          </div>
         ) : (
-<div className="w-full h-screen overflow-auto">
- <MetricsDisplay onOrderClick={(orderId) => {
-  const conversation = conversations.find(conv => conv.orderId.toString() === orderId.toString());
-  if (conversation) {
-    setSelectedConv(conversation);
-    setActiveTab('conversas');
-  } else {
-    console.error('Conversa não encontrada para orderId:', orderId);
-  }
-}} />
-
-</div>
-
+          <div className="w-full h-screen overflow-auto">
+            <MetricsDisplay onOrderClick={(orderId) => {
+              const conversation = conversations.find(conv => conv.orderId.toString() === orderId.toString());
+              if (conversation) {
+                setSelectedConv(conversation);
+                setActiveTab('conversas');
+              } else {
+                console.error('Conversa não encontrada para orderId:', orderId);
+              }
+            }} />
+          </div>
         )}
       </div>
 
