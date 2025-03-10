@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -37,53 +36,95 @@ const UserGiovaniBurgo = () => {
   
   const { toast } = useToast();
 
-  // Carregar conversas lidas do servidor
+  // Fetch read conversations from server
   const fetchReadConversations = async () => {
     try {
+      console.log("Fetching read conversations from server");
       const response = await fetch(READ_CONVERSATIONS_URL);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch read conversations: ${response.status}`);
+      }
       const text = await response.text();
-      if (text.trim()) {
-        const readConvs = text.split('\n').map(line => line.trim()).filter(line => line);
+      console.log("Read conversations response:", text);
+      if (text && text.trim()) {
+        const readConvs = text.split('\n')
+          .map(line => line.trim())
+          .filter(line => line && line !== "undefined" && line !== "null");
+        console.log("Parsed read conversations:", readConvs);
         setReadConversations(readConvs);
+        // Update localStorage as fallback
+        localStorage.setItem('readConversations', JSON.stringify(readConvs));
       } else {
-        setReadConversations([]);
+        console.log("No read conversations found on server");
+        // Try to get from localStorage if server returns empty
+        const storedReadConvs = localStorage.getItem('readConversations');
+        if (storedReadConvs) {
+          const parsedConvs = JSON.parse(storedReadConvs);
+          console.log("Using localStorage read conversations:", parsedConvs);
+          setReadConversations(parsedConvs);
+        } else {
+          setReadConversations([]);
+        }
       }
     } catch (error) {
-      console.error("Erro ao carregar conversas lidas:", error);
-      // Fallback para localStorage se não conseguir carregar do servidor
+      console.error("Error fetching read conversations:", error);
+      // Fallback to localStorage
       const storedReadConvs = localStorage.getItem('readConversations');
       if (storedReadConvs) {
-        setReadConversations(JSON.parse(storedReadConvs));
+        try {
+          const parsedConvs = JSON.parse(storedReadConvs);
+          console.log("Using localStorage fallback for read conversations:", parsedConvs);
+          setReadConversations(parsedConvs);
+        } catch (e) {
+          console.error("Error parsing localStorage readConversations:", e);
+          setReadConversations([]);
+        }
+      } else {
+        setReadConversations([]);
       }
     }
   };
 
-  // Marcar conversa como lida (salva no servidor e no localStorage)
+  // Mark conversation as read
   const markAsRead = async (orderId: string) => {
     if (!orderId || readConversations.includes(orderId)) return;
     
+    console.log(`Marking conversation ${orderId} as read`);
+    
     try {
-      // Adicionar à lista local
+      // Update local state immediately
       const updatedReadConvs = [...readConversations, orderId];
       setReadConversations(updatedReadConvs);
       
-      // Salvar no localStorage como fallback
+      // Update localStorage as fallback
       localStorage.setItem('readConversations', JSON.stringify(updatedReadConvs));
       
-      // Enviar para o servidor
-      await fetch('https://b4c027be31fe.ngrok.app/mark_read.php', {
+      // Send to server
+      const response = await fetch('https://b4c027be31fe.ngrok.app/mark_read.php', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ orderId }),
       });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to mark conversation as read: ${response.status}`);
+      }
+      
+      const result = await response.json();
+      console.log("Server response for mark as read:", result);
     } catch (error) {
-      console.error("Erro ao marcar conversa como lida:", error);
-      // Se falhar no servidor, pelo menos mantém no localStorage
+      console.error("Error marking conversation as read:", error);
+      toast({
+        title: "Erro ao marcar conversa como lida",
+        description: "Os dados foram salvos localmente, mas não puderam ser sincronizados com o servidor",
+        variant: "destructive",
+      });
     }
   };
 
+  // Fetch ML token
   useEffect(() => {
     const fetchToken = async () => {
       try {
@@ -97,12 +138,16 @@ const UserGiovaniBurgo = () => {
     fetchToken();
   }, []);
 
+  // Load read conversations on mount and periodically
   useEffect(() => {
     fetchReadConversations();
+    
+    // Poll for read conversations every 30 seconds
     const readInterval = setInterval(fetchReadConversations, 30000);
     return () => clearInterval(readInterval);
   }, []);
 
+  // Fetch GPT IDs
   useEffect(() => {
     const fetchGptIds = async () => {
       try {
@@ -119,6 +164,7 @@ const UserGiovaniBurgo = () => {
     return () => clearInterval(interval);
   }, []);
 
+  // Load conversation data
   const loadData = async () => {
     try {
       setRefreshing(true);
@@ -163,6 +209,7 @@ const UserGiovaniBurgo = () => {
     }
   }, [showSaleDetails, selectedConv]);
 
+  // Fetch sale details
   const fetchSaleDetails = async () => {
     try {
       const tokenResponse = await fetch('https://b4c027be31fe.ngrok.app/mercadoLivreApiKey.txt');
@@ -185,6 +232,7 @@ const UserGiovaniBurgo = () => {
     }
   };
 
+  // Fetch detailed info
   const fetchDetailedInfo = async () => {
     try {
       const tokenResponse = await fetch('https://b4c027be31fe.ngrok.app/mercadoLivreApiKey.txt');

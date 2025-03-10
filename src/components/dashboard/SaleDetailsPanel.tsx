@@ -32,13 +32,25 @@ const SaleDetailsPanel: React.FC<SaleDetailsPanelProps> = ({
   markAsRead
 }) => {
   const { toast } = useToast();
+  const [markingAsRead, setMarkingAsRead] = useState(false);
 
+  // Mark conversation as read when panel is opened
   useEffect(() => {
-    if (selectedConv && selectedConv.orderId) {
-      markAsRead(selectedConv.orderId).catch(error => {
-        console.error("Erro ao marcar conversa como lida:", error);
-      });
-    }
+    const markConversationAsRead = async () => {
+      if (selectedConv && selectedConv.orderId && !markingAsRead) {
+        setMarkingAsRead(true);
+        try {
+          await markAsRead(selectedConv.orderId);
+          console.log(`Conversation ${selectedConv.orderId} marked as read from SaleDetailsPanel`);
+        } catch (error) {
+          console.error("Error marking conversation as read from SaleDetailsPanel:", error);
+        } finally {
+          setMarkingAsRead(false);
+        }
+      }
+    };
+    
+    markConversationAsRead();
   }, [selectedConv, markAsRead]);
 
   if (!selectedConv) {
@@ -174,3 +186,4 @@ const SaleDetailsPanel: React.FC<SaleDetailsPanelProps> = ({
 };
 
 export default SaleDetailsPanel;
+

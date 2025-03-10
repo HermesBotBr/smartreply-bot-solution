@@ -31,6 +31,7 @@ const ConversationsList: React.FC<ConversationsListProps> = ({
   const [filterModalVisible, setFilterModalVisible] = useState(false);
   const [filterHasMessage, setFilterHasMessage] = useState(false);
   const [filterBuyerMessage, setFilterBuyerMessage] = useState(false);
+  const [markingAsRead, setMarkingAsRead] = useState(false);
 
   const filteredConversations = conversations.filter(conv => {
     if (
@@ -53,11 +54,18 @@ const ConversationsList: React.FC<ConversationsListProps> = ({
   });
 
   const hasBuyerLastMessage = (conv: any) => {
-    if (conv.messages.length === 0) return false;
+    if (!conv || !conv.messages || conv.messages.length === 0) return false;
+    
+    // Get last message
     const lastMessage = conv.messages.reduce((prev: any, curr: any) => {
       return new Date(curr.date) > new Date(prev.date) ? curr : prev;
     }, conv.messages[0]);
-    return lastMessage.sender.toLowerCase() === 'buyer' && !readConversations.includes(conv.orderId);
+    
+    // Check if sender is buyer and conversation is not in read list
+    const isBuyerMessage = lastMessage.sender.toLowerCase() === 'buyer';
+    const isNotRead = !readConversations.includes(conv.orderId);
+    
+    return isBuyerMessage && isNotRead;
   };
 
   const sortedConversations = filteredConversations.slice().sort((a, b) => {
@@ -70,7 +78,7 @@ const ConversationsList: React.FC<ConversationsListProps> = ({
 
     // Priority 2: If both have unread messages or both don't have unread messages, sort by date
     const getMostRecentDate = (conv: any) => {
-      if (conv.messages.length === 0) return new Date(0);
+      if (!conv.messages || conv.messages.length === 0) return new Date(0);
       return new Date(conv.messages.reduce((prev: any, curr: any) => {
         const prevDate = new Date(prev.date).getTime();
         const currDate = new Date(curr.date).getTime();
@@ -79,6 +87,24 @@ const ConversationsList: React.FC<ConversationsListProps> = ({
     };
     return getMostRecentDate(b).getTime() - getMostRecentDate(a).getTime();
   });
+
+  // Handler for selecting a conversation
+  const handleSelectConversation = async (item: any) => {
+    setSelectedConv(item);
+    setInitialAutoScrollDone(false);
+    
+    if (item.orderId && !markingAsRead) {
+      setMarkingAsRead(true);
+      try {
+        await markAsRead(item.orderId);
+        console.log(`Conversation ${item.orderId} marked as read from ConversationsList`);
+      } catch (error) {
+        console.error("Error marking conversation as read from ConversationsList:", error);
+      } finally {
+        setMarkingAsRead(false);
+      }
+    }
+  };
 
   return (
     <div className="h-full flex flex-col">
@@ -124,13 +150,7 @@ const ConversationsList: React.FC<ConversationsListProps> = ({
                     isSelected ? 'bg-gray-100' : 
                     hasBuyerMessage ? 'bg-blue-50 hover:bg-blue-100' : ''
                   }`}
-                  onClick={() => {
-                    setSelectedConv(item);
-                    setInitialAutoScrollDone(false);
-                    if (item.orderId) {
-                      markAsRead(item.orderId);
-                    }
-                  }}
+                  onClick={() => handleSelectConversation(item)}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center flex-1">
@@ -194,3 +214,4 @@ const ConversationsList: React.FC<ConversationsListProps> = ({
 };
 
 export default ConversationsList;
+
