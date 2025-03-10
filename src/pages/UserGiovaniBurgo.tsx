@@ -88,14 +88,24 @@ const UserGiovaniBurgo = () => {
     }
   };
 
-  const markAsRead = async (orderId: string) => {
-    if (!orderId || readConversations.includes(orderId)) return;
+  const markAsRead = async (orderId: string | string[]) => {
+    let orderIds: string[] = [];
     
-    console.log(`Marking conversation ${orderId} as read`);
+    if (Array.isArray(orderId)) {
+      orderIds = orderId.filter(id => id && !readConversations.includes(id));
+    } else if (orderId && !readConversations.includes(orderId)) {
+      orderIds = [orderId];
+    }
     
-    const updatedReadConvs = [...readConversations, orderId];
+    if (orderIds.length === 0) return;
+    
+    console.log(`Marking conversation(s) as read: ${orderIds.join(', ')}`);
+    
+    // Update local state immediately with all IDs
+    const updatedReadConvs = [...readConversations, ...orderIds];
     setReadConversations(updatedReadConvs);
     
+    // Save to localStorage
     localStorage.setItem('readConversations', JSON.stringify(updatedReadConvs));
     
     const now = Date.now();
@@ -107,29 +117,30 @@ const UserGiovaniBurgo = () => {
     setLastSyncAttempt(now);
     
     try {
+      // Modified to send all order IDs in a single request
       const response = await fetch('https://b4c027be31fe.ngrok.app/mark_read.php', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ orderId }),
+        body: JSON.stringify({ orderIds }),
         signal: AbortSignal.timeout(5000), // 5 second timeout
       });
       
       if (!response.ok) {
-        throw new Error(`Failed to mark conversation as read: ${response.status}`);
+        throw new Error(`Failed to mark conversations as read: ${response.status}`);
       }
       
       const result = await response.json();
       console.log("Server response for mark as read:", result);
       setServerSyncError(false);
     } catch (error) {
-      console.error("Error marking conversation as read:", error);
+      console.error("Error marking conversations as read:", error);
       setServerSyncError(true);
       
       if (!serverSyncError) { // Only show error once
         toast({
-          title: "Erro ao marcar conversa como lida",
+          title: "Erro ao marcar conversas como lidas",
           description: "Os dados foram salvos localmente, mas não puderam ser sincronizados com o servidor",
           variant: "destructive",
         });
@@ -398,3 +409,4 @@ const UserGiovaniBurgo = () => {
 };
 
 export default UserGiovaniBurgo;
+

@@ -12,7 +12,7 @@ interface ConversationsListProps {
   setInitialAutoScrollDone: (done: boolean) => void;
   refreshing: boolean;
   readConversations: string[];
-  markAsRead: (orderId: string) => Promise<void>;
+  markAsRead: (orderId: string | string[]) => Promise<void>;
 }
 
 const ConversationsList: React.FC<ConversationsListProps> = ({
@@ -55,11 +55,11 @@ const ConversationsList: React.FC<ConversationsListProps> = ({
       console.log(`Marking ${unreadConversations.length} conversations as read`);
       
       if (unreadConversations.length > 0) {
-        // Create an array of promises for marking each conversation as read
-        const markingPromises = unreadConversations.map(conv => markAsRead(conv.orderId));
+        // Get all orderIds in one array and mark them all at once
+        const orderIds = unreadConversations.map(conv => conv.orderId).filter(Boolean);
         
-        // Wait for all promises to complete before continuing
-        await Promise.all(markingPromises);
+        // Pass the entire array of orderIds to markAsRead
+        await markAsRead(orderIds);
         
         console.log("All conversations marked as read successfully");
       } else {
@@ -78,7 +78,7 @@ const ConversationsList: React.FC<ConversationsListProps> = ({
     setSelectedConv(item);
     setInitialAutoScrollDone(false);
     
-    if (item.orderId && !readConversations.includes(item.orderId) && !markingAsRead) {
+    if (item.orderId && !readConversations.includes(item.orderId)) {
       try {
         await markAsRead(item.orderId);
         console.log(`Conversation ${item.orderId} marked as read from ConversationsList`);
