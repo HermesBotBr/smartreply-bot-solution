@@ -3,41 +3,45 @@ import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Code } from "lucide-react";
 import { useLocation } from 'react-router-dom';
+import { toast } from '@/hooks/use-toast';
 
 const NotificationEndpoint: React.FC = () => {
   const location = useLocation();
   const [message, setMessage] = useState<string>('');
   const [hasProcessedRequest, setHasProcessedRequest] = useState(false);
   
-  // Função para lidar com solicitações POST
-  const handlePostRequest = async () => {
-    // Esta é uma simulação de recebimento de POST
-    // Em uma aplicação real, você usaria um backend real
-    if (location.pathname === '/notification-endpoint' && !hasProcessedRequest) {
-      try {
-        // Simular extração de dados do body da requisição POST
-        const defaultMessage = 'Um cliente aguarda atendimento humano';
+  // Função para enviar a notificação
+  const sendNotification = (notificationMessage: string) => {
+    const defaultMessage = 'Um cliente aguarda atendimento humano';
+    const finalMessage = notificationMessage || defaultMessage;
+    
+    if (Notification.permission === 'granted' && navigator.serviceWorker.controller) {
+      navigator.serviceWorker.ready.then(registration => {
+        registration.showNotification('Atendimento Necessário', {
+          body: finalMessage,
+          icon: '/favicon.ico',
+          requireInteraction: true,
+          data: { timestamp: new Date().getTime() }
+        });
         
-        // Enviar notificação
-        if (Notification.permission === 'granted' && navigator.serviceWorker.controller) {
-          navigator.serviceWorker.ready.then(registration => {
-            registration.showNotification('Atendimento Necessário', {
-              body: message || defaultMessage,
-              icon: '/favicon.ico',
-              requireInteraction: true,
-              data: { timestamp: new Date().getTime() }
-            });
-          });
-        }
-        setHasProcessedRequest(true);
-      } catch (error) {
-        console.error('Erro ao processar solicitação POST:', error);
-      }
+        toast({
+          title: "Notificação enviada",
+          description: `Mensagem: "${finalMessage}"`,
+        });
+      });
+    }
+  };
+  
+  // Função para lidar com solicitações GET (para compatibilidade)
+  const handleGetRequest = () => {
+    if (location.pathname === '/notification-endpoint' && !hasProcessedRequest) {
+      sendNotification(message);
+      setHasProcessedRequest(true);
     }
   };
   
   // Função para lidar com mensagens recebidas via window.postMessage 
-  // Esta é uma forma de simular uma requisição POST no frontend
+  // Esta é uma forma de simular uma requisição no frontend
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
       // Verificar a origem da mensagem para segurança
@@ -46,7 +50,7 @@ const NotificationEndpoint: React.FC = () => {
       // Processar a mensagem
       if (event.data && event.data.type === 'notification') {
         setMessage(event.data.message || '');
-        handlePostRequest();
+        sendNotification(event.data.message || '');
       }
     };
 
@@ -57,17 +61,54 @@ const NotificationEndpoint: React.FC = () => {
     };
   }, []);
   
-  // Efeito para simular processamento de POST quando a página carrega
+  // Este efeito processa a solicitação GET quando a página carrega
   useEffect(() => {
-    handlePostRequest();
-  }, [location, message]);
+    handleGetRequest();
+  }, [location]);
+
+  // Handler para interceptar solicitações POST e processar o corpo da requisição
+  useEffect(() => {
+    // Esta função é apenas um hack para demonstration purposes
+    // Em um ambiente real, você precisa de um backend para processar solicitações POST
+    const originalFetch = window.fetch;
+    
+    window.fetch = async function(input, init) {
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+      
+      // Intercepta solicitações POST para este endpoint
+      if (url.includes('/notification-endpoint') && init?.method === 'POST') {
+        try {
+          const body = init.body ? JSON.parse(init.body.toString()) : {};
+          sendNotification(body.message || '');
+          
+          // Retorna uma resposta simulada bem-sucedida
+          return new Response(JSON.stringify({ success: true }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' }
+          });
+        } catch (error) {
+          console.error('Erro ao processar solicitação POST:', error);
+        }
+      }
+      
+      // Para outras solicitações, usa o fetch original
+      return originalFetch.apply(window, [input, init]);
+    };
+    
+    // Cleanup para restaurar o fetch original
+    return () => {
+      window.fetch = originalFetch;
+    };
+  }, []);
 
   // Função para testar o envio de notificação diretamente da página
   const testNotification = () => {
-    window.postMessage({ 
-      type: 'notification', 
-      message: 'Teste de notificação via POST' 
-    }, window.location.origin);
+    // Simula uma requisição POST usando a API fetch
+    fetch('/notification-endpoint', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: 'Teste de notificação via POST' })
+    }).catch(error => console.error('Erro ao enviar notificação de teste:', error));
   };
 
   return (
@@ -126,7 +167,10 @@ Body (JSON):
                 <strong>Nota:</strong> Para que as notificações funcionem, você precisa primeiro permitir notificações clicando no botão "Ativar notificações" na página inicial.
               </p>
               <p className="text-yellow-700 mt-2">
-                <strong>Importante:</strong> Como este é um frontend sem backend real, estamos simulando o POST usando uma técnica alternativa. Em um ambiente de produção, você precisaria de um backend real para processar solicitações POST.
+                <strong>Importante:</strong> Como este é um frontend sem backend real, estamos simulando o POST interceptando as requisições fetch. Em um ambiente de produção, você precisaria de um backend real para processar solicitações POST.
+              </p>
+              <p className="text-yellow-700 mt-2">
+                <strong>Compatibilidade:</strong> Por razões de backward compatibility, o endpoint ainda funciona com GET, mas recomendamos usar POST conforme as práticas REST.
               </p>
             </div>
           </div>
