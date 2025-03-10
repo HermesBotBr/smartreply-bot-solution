@@ -84,8 +84,8 @@ const ConversationsList: React.FC<ConversationsListProps> = ({
       // Create an array of promises for marking each conversation as read
       const markingPromises = unreadConversations.map(conv => markAsRead(conv.orderId));
       
-      // Execute all promises
-      await Promise.allSettled(markingPromises);
+      // Wait for all promises to complete before continuing
+      await Promise.all(markingPromises);
       
       console.log("All conversations marked as read");
     } catch (error) {
