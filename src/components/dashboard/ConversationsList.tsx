@@ -1,9 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Search } from "lucide-react";
+import { Search, Eye } from "lucide-react";
 import ProductThumbnail from './ProductThumbnail';
 import SaleSwitch from './SaleSwitch';
 
@@ -65,6 +66,35 @@ const ConversationsList: React.FC<ConversationsListProps> = ({
     return isBuyerMessage && isNotRead;
   };
 
+  const hasUnreadConversations = () => {
+    return filteredConversations.some(conv => hasBuyerLastMessage(conv));
+  };
+
+  const markAllAsRead = async () => {
+    if (markingAsRead) return;
+    
+    setMarkingAsRead(true);
+    
+    try {
+      // Find all unread conversations with buyer as last sender
+      const unreadConversations = filteredConversations.filter(conv => hasBuyerLastMessage(conv));
+      
+      console.log(`Marking ${unreadConversations.length} conversations as read`);
+      
+      // Create an array of promises for marking each conversation as read
+      const markingPromises = unreadConversations.map(conv => markAsRead(conv.orderId));
+      
+      // Execute all promises
+      await Promise.allSettled(markingPromises);
+      
+      console.log("All conversations marked as read");
+    } catch (error) {
+      console.error("Error marking all conversations as read:", error);
+    } finally {
+      setMarkingAsRead(false);
+    }
+  };
+
   const sortedConversations = filteredConversations.slice().sort((a, b) => {
     const hasNewBuyerMsgA = hasBuyerLastMessage(a);
     const hasNewBuyerMsgB = hasBuyerLastMessage(b);
@@ -113,6 +143,17 @@ const ConversationsList: React.FC<ConversationsListProps> = ({
             onChange={(e) => setSearchText(e.target.value)}
           />
         </div>
+        {hasUnreadConversations() && (
+          <Button 
+            variant="secondary" 
+            className="w-full mt-2 text-sm" 
+            onClick={markAllAsRead}
+            disabled={markingAsRead}
+          >
+            <Eye className="h-4 w-4 mr-1" />
+            {markingAsRead ? 'Processando...' : 'Visualizar todas'}
+          </Button>
+        )}
       </div>
       
       <div className="flex-1 overflow-y-auto">
