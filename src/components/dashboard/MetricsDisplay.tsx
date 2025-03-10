@@ -38,7 +38,7 @@ const handleOrderClick = (orderId: string) => {
   // Função auxiliar para buscar a contagem de reclamações evitadas
   const fetchComplaintsAvoidedCount = async () => {
     try {
-      const response = await fetch('https://735e1872650f.ngrok.app/all_tags.txt');
+      const response = await fetch('https://b4c027be31fe.ngrok.app/all_tags.txt');
       const text = await response.text();
       // Divide o conteúdo em seções (supondo que separe por linhas em branco)
       const sections = text.split('\n\n');
@@ -60,7 +60,7 @@ const handleOrderClick = (orderId: string) => {
   // Função auxiliar para buscar a lista completa de order_ids das reclamações evitadas
 const fetchComplaintsAvoidedList = async () => {
   try {
-    const response = await fetch('https://735e1872650f.ngrok.app/all_tags.txt');
+    const response = await fetch('https://b4c027be31fe.ngrok.app/all_tags.txt');
     const text = await response.text();
     const sections = text.split('\n\n');
     let orders: string[] = [];
@@ -123,7 +123,7 @@ const fetchComplaintsAvoidedList = async () => {
       // Obtém a contagem de reclamações evitadas
       const complaintsAvoided = await fetchComplaintsAvoidedCount();
 
-     const gptResponse = await fetch('https://735e1872650f.ngrok.app/all_gpt.txt');
+     const gptResponse = await fetch('https://b4c027be31fe.ngrok.app/all_gpt.txt');
 const gptText = await gptResponse.text();
 const gptIds = gptText.split('\n').filter(line => line.trim() !== '');
 const totalMessagesCount = gptIds.length;
