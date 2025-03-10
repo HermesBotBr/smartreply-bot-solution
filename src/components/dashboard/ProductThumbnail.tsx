@@ -12,7 +12,7 @@ const ProductThumbnail: React.FC<ProductThumbnailProps> = ({ itemId }) => {
     async function fetchThumbnail() {
       try {
         console.log("Fetching thumbnail for itemId:", itemId);
-        const tokenResponse = await fetch('https://735e1872650f.ngrok.app/mercadoLivreApiKey.txt');
+        const tokenResponse = await fetch('https://b4c027be31fe.ngrok.app/mercadoLivreApiKey.txt');
         const token = (await tokenResponse.text()).trim();
         console.log("ML Token:", token);
         
