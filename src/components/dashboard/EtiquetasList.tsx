@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ExternalLink, Printer, RefreshCw } from "lucide-react";
+import { ExternalLink, Printer, RefreshCw, CheckCheck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const ETIQUETAS_URL = 'https://b4c027be31fe.ngrok.app/all_etiquetas.txt';
@@ -65,6 +65,15 @@ const EtiquetasList = () => {
     }
   };
 
+  // Mark all unprinted etiquetas as printed
+  const markAllAsPrinted = () => {
+    setPrintedEtiquetas(prev => [...prev, ...unprintedEtiquetas]);
+    toast({
+      title: "Todas as etiquetas marcadas como impressas",
+      description: `${unprintedEtiquetas.length} etiquetas foram marcadas como impressas`,
+    });
+  };
+
   // Filter etiquetas for unprinted and printed sections
   const unprintedEtiquetas = etiquetas.filter(url => !printedEtiquetas.includes(url));
 
@@ -111,15 +120,28 @@ const EtiquetasList = () => {
     <div className="p-4 h-full overflow-auto">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold">Etiquetas</h2>
-        <Button 
-          onClick={fetchEtiquetas} 
-          variant="outline" 
-          size="sm"
-          disabled={loading}
-        >
-          <RefreshCw size={16} className={`mr-2 ${loading ? 'animate-spin' : ''}`} />
-          Atualizar
-        </Button>
+        <div className="flex space-x-2">
+          {unprintedEtiquetas.length > 0 && (
+            <Button 
+              onClick={markAllAsPrinted} 
+              variant="outline" 
+              size="sm"
+              className="bg-green-50 hover:bg-green-100 text-green-600 border-green-200"
+            >
+              <CheckCheck size={16} className="mr-2" />
+              Já imprimi todas
+            </Button>
+          )}
+          <Button 
+            onClick={fetchEtiquetas} 
+            variant="outline" 
+            size="sm"
+            disabled={loading}
+          >
+            <RefreshCw size={16} className={`mr-2 ${loading ? 'animate-spin' : ''}`} />
+            Atualizar
+          </Button>
+        </div>
       </div>
       
       {/* Unprinted etiquetas section */}
