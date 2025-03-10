@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -27,17 +27,38 @@ const ConversationsList: React.FC<ConversationsListProps> = ({
   const [filterModalVisible, setFilterModalVisible] = useState(false);
   const [filterHasMessage, setFilterHasMessage] = useState(false);
   const [filterBuyerMessage, setFilterBuyerMessage] = useState(false);
+  const [readConversations, setReadConversations] = useState<string[]>([]);
+
+  // Load read conversations from localStorage
+  useEffect(() => {
+    const storedReadConvs = localStorage.getItem('readConversations');
+    if (storedReadConvs) {
+      setReadConversations(JSON.parse(storedReadConvs));
+    }
+  }, []);
+
+  // Mark conversation as read when selected
+  useEffect(() => {
+    if (selectedConv) {
+      const updatedReadConvs = [...readConversations];
+      if (!readConversations.includes(selectedConv.orderId)) {
+        updatedReadConvs.push(selectedConv.orderId);
+        setReadConversations(updatedReadConvs);
+        localStorage.setItem('readConversations', JSON.stringify(updatedReadConvs));
+      }
+    }
+  }, [selectedConv, readConversations]);
 
   const filteredConversations = conversations.filter(conv => {
-if (
-  searchText &&
-  !(
-    conv.buyer.toLowerCase().includes(searchText.toLowerCase()) ||
-    conv.orderId.toString().toLowerCase().includes(searchText.toLowerCase())
-  )
-) {
-  return false;
-}
+    if (
+      searchText &&
+      !(
+        conv.buyer.toLowerCase().includes(searchText.toLowerCase()) ||
+        conv.orderId.toString().toLowerCase().includes(searchText.toLowerCase())
+      )
+    ) {
+      return false;
+    }
 
     if (filterHasMessage && conv.messages.length === 0) {
       return false;
@@ -48,10 +69,26 @@ if (
     return true;
   });
 
+  const hasBuyerLastMessage = (conv: any) => {
+    if (conv.messages.length === 0) return false;
+    const lastMessage = conv.messages.reduce((prev: any, curr: any) => {
+      return new Date(curr.date) > new Date(prev.date) ? curr : prev;
+    }, conv.messages[0]);
+    return lastMessage.sender.toLowerCase() === 'buyer' && !readConversations.includes(conv.orderId);
+  };
+
   const sortedConversations = filteredConversations.slice().sort((a, b) => {
-    const getMostRecentDate = (conv) => {
+    const hasNewBuyerMsgA = hasBuyerLastMessage(a);
+    const hasNewBuyerMsgB = hasBuyerLastMessage(b);
+
+    // Priority 1: Unread buyer messages at top
+    if (hasNewBuyerMsgA && !hasNewBuyerMsgB) return -1;
+    if (!hasNewBuyerMsgA && hasNewBuyerMsgB) return 1;
+
+    // Priority 2: If both have unread messages or both don't have unread messages, sort by date
+    const getMostRecentDate = (conv: any) => {
       if (conv.messages.length === 0) return new Date(0);
-      return new Date(conv.messages.reduce((prev, curr) => {
+      return new Date(conv.messages.reduce((prev: any, curr: any) => {
         const prevDate = new Date(prev.date).getTime();
         const currDate = new Date(curr.date).getTime();
         return currDate > prevDate ? curr : prev;
@@ -66,13 +103,12 @@ if (
         <h1 className="text-lg font-bold text-white">Monitor de Vendas</h1>
         <div className="relative mt-2">
           <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-500 h-4 w-4" />
-         <Input
-  className="bg-white text-black pl-8"
-  placeholder="Pesquisar por nome ou Order_ID..."
-  value={searchText}
-  onChange={(e) => setSearchText(e.target.value)}
-/>
-
+          <Input
+            className="bg-white text-black pl-8"
+            placeholder="Pesquisar por nome ou Order_ID..."
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+          />
         </div>
       </div>
       
@@ -96,11 +132,15 @@ if (
               }
               
               const isSelected = selectedConv && selectedConv.orderId === item.orderId;
+              const hasBuyerMessage = hasBuyerLastMessage(item);
               
               return (
                 <div 
                   key={item.orderId || `${item.buyer}-${Math.random()}`}
-                  className={`p-3 hover:bg-gray-50 cursor-pointer ${isSelected ? 'bg-gray-100' : ''}`}
+                  className={`p-3 hover:bg-gray-50 cursor-pointer ${
+                    isSelected ? 'bg-gray-100' : 
+                    hasBuyerMessage ? 'bg-blue-50 hover:bg-blue-100' : ''
+                  }`}
                   onClick={() => {
                     setSelectedConv(item);
                     setInitialAutoScrollDone(false);
@@ -110,9 +150,13 @@ if (
                     <div className="flex items-center flex-1">
                       <ProductThumbnail itemId={item.itemId} />
                       <div className="ml-3 flex-1 min-w-0">
-                        <h3 className="font-medium text-gray-900 truncate">{item.buyer}</h3>
+                        <h3 className={`font-medium truncate ${hasBuyerMessage ? 'text-blue-700' : 'text-gray-900'}`}>
+                          {item.buyer} {hasBuyerMessage && <span className="inline-block ml-1 h-2 w-2 rounded-full bg-blue-500"></span>}
+                        </h3>
                         {item.messages.length > 0 && (
-                          <p className="text-sm text-gray-500 truncate">{formattedMessage}</p>
+                          <p className={`text-sm truncate ${hasBuyerMessage ? 'text-blue-600' : 'text-gray-500'}`}>
+                            {formattedMessage}
+                          </p>
                         )}
                       </div>
                     </div>
