@@ -54,13 +54,17 @@ const ConversationsList: React.FC<ConversationsListProps> = ({
       
       console.log(`Marking ${unreadConversations.length} conversations as read`);
       
-      // Create an array of promises for marking each conversation as read
-      const markingPromises = unreadConversations.map(conv => markAsRead(conv.orderId));
-      
-      // Wait for all promises to complete before continuing
-      await Promise.all(markingPromises);
-      
-      console.log("All conversations marked as read");
+      if (unreadConversations.length > 0) {
+        // Create an array of promises for marking each conversation as read
+        const markingPromises = unreadConversations.map(conv => markAsRead(conv.orderId));
+        
+        // Wait for all promises to complete before continuing
+        await Promise.all(markingPromises);
+        
+        console.log("All conversations marked as read successfully");
+      } else {
+        console.log("No unread conversations to mark");
+      }
     } catch (error) {
       console.error("Error marking all conversations as read:", error);
     } finally {
@@ -75,14 +79,11 @@ const ConversationsList: React.FC<ConversationsListProps> = ({
     setInitialAutoScrollDone(false);
     
     if (item.orderId && !readConversations.includes(item.orderId) && !markingAsRead) {
-      setMarkingAsRead(true);
       try {
         await markAsRead(item.orderId);
         console.log(`Conversation ${item.orderId} marked as read from ConversationsList`);
       } catch (error) {
         console.error("Error marking conversation as read from ConversationsList:", error);
-      } finally {
-        setMarkingAsRead(false);
       }
     }
   };
