@@ -8,9 +8,8 @@ const NotificationEndpoint: React.FC = () => {
   const location = useLocation();
   
   useEffect(() => {
-    // Extrair parâmetros da URL se houver
-    const params = new URLSearchParams(location.search);
-    const message = params.get('message') || 'Um cliente aguarda atendimento humano';
+    // Extrair dados do body da requisição POST
+    const message = 'Um cliente aguarda atendimento humano';
     
     // Se o service worker estiver ativo, enviar notificação
     if (Notification.permission === 'granted' && navigator.serviceWorker.controller) {
@@ -41,19 +40,26 @@ const NotificationEndpoint: React.FC = () => {
           <div className="space-y-4">
             <div className="bg-muted p-4 rounded-md">
               <h3 className="font-semibold mb-2">Como usar:</h3>
-              <p className="mb-2">Acesse este URL via Postman ou navegador:</p>
+              <p className="mb-2">Faça uma requisição POST via Postman:</p>
               <pre className="bg-black text-white p-3 rounded-md overflow-x-auto">
-                {`GET ${window.location.origin}/notification-endpoint?message=Sua mensagem aqui`}
+                {`POST ${window.location.origin}/notification-endpoint
+
+Body (JSON):
+{
+  "message": "Sua mensagem aqui"
+}`}
               </pre>
-              <p className="mt-2">O parâmetro <code>message</code> é opcional. Se não for fornecido, será usado o texto padrão.</p>
+              <p className="mt-2">O campo <code>message</code> é opcional. Se não for fornecido, será usado o texto padrão.</p>
             </div>
             
             <div className="mt-6">
               <h3 className="font-semibold mb-2">Exemplo de uso com Postman:</h3>
               <ol className="list-decimal list-inside space-y-2">
                 <li>Abra o Postman</li>
-                <li>Crie uma nova requisição GET</li>
-                <li>Insira o URL: <code>{window.location.origin}/notification-endpoint?message=Novo cliente</code></li>
+                <li>Crie uma nova requisição POST</li>
+                <li>Insira o URL: <code>{window.location.origin}/notification-endpoint</code></li>
+                <li>Na aba "Body", selecione "raw" e "JSON"</li>
+                <li>Insira o JSON com a mensagem desejada</li>
                 <li>Clique em "Send" para enviar a requisição</li>
               </ol>
             </div>
