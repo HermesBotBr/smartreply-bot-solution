@@ -9,8 +9,22 @@ const ETIQUETAS_URL = 'https://b4c027be31fe.ngrok.app/all_etiquetas.txt';
 
 const EtiquetasList = () => {
   const [etiquetas, setEtiquetas] = useState<string[]>([]);
+  const [printedEtiquetas, setPrintedEtiquetas] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+
+  // Load printed etiquetas from localStorage on component mount
+  useEffect(() => {
+    const savedPrintedEtiquetas = localStorage.getItem('printedEtiquetas');
+    if (savedPrintedEtiquetas) {
+      setPrintedEtiquetas(JSON.parse(savedPrintedEtiquetas));
+    }
+  }, []);
+
+  // Save printed etiquetas to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('printedEtiquetas', JSON.stringify(printedEtiquetas));
+  }, [printedEtiquetas]);
 
   const fetchEtiquetas = async () => {
     try {
@@ -45,6 +59,52 @@ const EtiquetasList = () => {
 
   const openEtiqueta = (url: string) => {
     window.open(url, '_blank');
+    // Mark as printed if not already in the printed list
+    if (!printedEtiquetas.includes(url)) {
+      setPrintedEtiquetas(prev => [...prev, url]);
+    }
+  };
+
+  // Filter etiquetas for unprinted and printed sections
+  const unprintedEtiquetas = etiquetas.filter(url => !printedEtiquetas.includes(url));
+
+  // Render etiqueta cards
+  const renderEtiquetaCards = (etiquetasList: string[], isPrinted = false) => {
+    return etiquetasList.map((etiqueta, index) => {
+      // Extract label ID for display
+      const labelId = etiqueta.split('/').pop() || `Etiqueta ${index + 1}`;
+      
+      return (
+        <Card key={index} className={`hover:shadow-md transition-shadow ${isPrinted ? 'bg-gray-50' : ''}`}>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg font-medium truncate">
+              Etiqueta: {labelId}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-gray-500 mb-4 truncate">{etiqueta}</p>
+            <div className="flex space-x-2">
+              <Button 
+                variant={isPrinted ? "outline" : "default"} 
+                size="sm" 
+                className="flex-1"
+                onClick={() => openEtiqueta(etiqueta)}
+              >
+                <Printer size={16} className="mr-2" />
+                {isPrinted ? "Reimprimir" : "Imprimir"}
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => openEtiqueta(etiqueta)}
+              >
+                <ExternalLink size={16} />
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      );
+    });
   };
 
   return (
@@ -62,47 +122,27 @@ const EtiquetasList = () => {
         </Button>
       </div>
       
-      {etiquetas.length === 0 && !loading ? (
-        <div className="text-center py-10">
-          <p className="text-gray-500">Nenhuma etiqueta encontrada</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {etiquetas.map((etiqueta, index) => {
-            // Extract label ID for display
-            const labelId = etiqueta.split('/').pop() || `Etiqueta ${index + 1}`;
-            
-            return (
-              <Card key={index} className="hover:shadow-md transition-shadow">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg font-medium truncate">
-                    Etiqueta: {labelId}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-gray-500 mb-4 truncate">{etiqueta}</p>
-                  <div className="flex space-x-2">
-                    <Button 
-                      variant="default" 
-                      size="sm" 
-                      className="flex-1"
-                      onClick={() => openEtiqueta(etiqueta)}
-                    >
-                      <Printer size={16} className="mr-2" />
-                      Imprimir
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => openEtiqueta(etiqueta)}
-                    >
-                      <ExternalLink size={16} />
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
+      {/* Unprinted etiquetas section */}
+      <div className="mb-8">
+        <h3 className="text-xl font-semibold mb-4">Para Imprimir</h3>
+        {unprintedEtiquetas.length === 0 ? (
+          <div className="text-center py-6 bg-gray-50 rounded-lg">
+            <p className="text-gray-500">Todas as etiquetas já foram impressas</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {renderEtiquetaCards(unprintedEtiquetas)}
+          </div>
+        )}
+      </div>
+      
+      {/* Printed etiquetas section */}
+      {printedEtiquetas.length > 0 && (
+        <div>
+          <h3 className="text-xl font-semibold mb-4">Etiquetas Impressas</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {renderEtiquetaCards(printedEtiquetas, true)}
+          </div>
         </div>
       )}
     </div>
