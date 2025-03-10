@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -5,6 +6,7 @@ import { X } from "lucide-react";
 import ProductThumbnail from './ProductThumbnail';
 import Timeline from './Timeline';
 import { formatDateTime, formatCurrency } from '@/utils/formatters';
+import { useToast } from '@/hooks/use-toast';
 
 interface SaleDetailsPanelProps {
   selectedConv: any;
@@ -15,6 +17,7 @@ interface SaleDetailsPanelProps {
   detailedInfo: any;
   fetchDetailedInfo: () => Promise<void>;
   onClose: () => void;
+  markAsRead: (orderId: string) => Promise<void>;
 }
 
 const SaleDetailsPanel: React.FC<SaleDetailsPanelProps> = ({
@@ -25,19 +28,18 @@ const SaleDetailsPanel: React.FC<SaleDetailsPanelProps> = ({
   setExpandedInfo,
   detailedInfo,
   fetchDetailedInfo,
-  onClose
+  onClose,
+  markAsRead
 }) => {
+  const { toast } = useToast();
+
   useEffect(() => {
-    if (selectedConv) {
-      const storedReadConvs = localStorage.getItem('readConversations');
-      let readConversations = storedReadConvs ? JSON.parse(storedReadConvs) : [];
-      
-      if (!readConversations.includes(selectedConv.orderId)) {
-        readConversations.push(selectedConv.orderId);
-        localStorage.setItem('readConversations', JSON.stringify(readConversations));
-      }
+    if (selectedConv && selectedConv.orderId) {
+      markAsRead(selectedConv.orderId).catch(error => {
+        console.error("Erro ao marcar conversa como lida:", error);
+      });
     }
-  }, [selectedConv]);
+  }, [selectedConv, markAsRead]);
 
   if (!selectedConv) {
     return null;

@@ -16,6 +16,7 @@ import { parseMessages } from "@/utils/messageParser";
 const DATA_URL = 'https://b4c027be31fe.ngrok.app/all_msg.txt';
 const ASKS_URL = 'https://b4c027be31fe.ngrok.app/all_asks.txt';
 const GPT_URL = 'https://b4c027be31fe.ngrok.app/all_gpt.txt';
+const READ_CONVERSATIONS_URL = 'https://b4c027be31fe.ngrok.app/read_conversations.txt';
 
 const UserGiovaniBurgo = () => {
   const [conversations, setConversations] = useState([]);
@@ -32,8 +33,56 @@ const UserGiovaniBurgo = () => {
   const [gptIds, setGptIds] = useState([]);
   const [detailedInfo, setDetailedInfo] = useState(null);
   const [showSaleDetails, setShowSaleDetails] = useState(false);
+  const [readConversations, setReadConversations] = useState<string[]>([]);
   
   const { toast } = useToast();
+
+  // Carregar conversas lidas do servidor
+  const fetchReadConversations = async () => {
+    try {
+      const response = await fetch(READ_CONVERSATIONS_URL);
+      const text = await response.text();
+      if (text.trim()) {
+        const readConvs = text.split('\n').map(line => line.trim()).filter(line => line);
+        setReadConversations(readConvs);
+      } else {
+        setReadConversations([]);
+      }
+    } catch (error) {
+      console.error("Erro ao carregar conversas lidas:", error);
+      // Fallback para localStorage se não conseguir carregar do servidor
+      const storedReadConvs = localStorage.getItem('readConversations');
+      if (storedReadConvs) {
+        setReadConversations(JSON.parse(storedReadConvs));
+      }
+    }
+  };
+
+  // Marcar conversa como lida (salva no servidor e no localStorage)
+  const markAsRead = async (orderId: string) => {
+    if (!orderId || readConversations.includes(orderId)) return;
+    
+    try {
+      // Adicionar à lista local
+      const updatedReadConvs = [...readConversations, orderId];
+      setReadConversations(updatedReadConvs);
+      
+      // Salvar no localStorage como fallback
+      localStorage.setItem('readConversations', JSON.stringify(updatedReadConvs));
+      
+      // Enviar para o servidor
+      await fetch('https://b4c027be31fe.ngrok.app/mark_read.php', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ orderId }),
+      });
+    } catch (error) {
+      console.error("Erro ao marcar conversa como lida:", error);
+      // Se falhar no servidor, pelo menos mantém no localStorage
+    }
+  };
 
   useEffect(() => {
     const fetchToken = async () => {
@@ -46,6 +95,12 @@ const UserGiovaniBurgo = () => {
       }
     };
     fetchToken();
+  }, []);
+
+  useEffect(() => {
+    fetchReadConversations();
+    const readInterval = setInterval(fetchReadConversations, 30000);
+    return () => clearInterval(readInterval);
   }, []);
 
   useEffect(() => {
@@ -203,6 +258,8 @@ const UserGiovaniBurgo = () => {
                 setSelectedConv={setSelectedConv}
                 setInitialAutoScrollDone={setInitialAutoScrollDone}
                 refreshing={refreshing}
+                readConversations={readConversations}
+                markAsRead={markAsRead}
               />
             </div>
             
@@ -231,6 +288,7 @@ const UserGiovaniBurgo = () => {
                   detailedInfo={detailedInfo}
                   fetchDetailedInfo={fetchDetailedInfo}
                   onClose={handleCloseSaleDetails}
+                  markAsRead={markAsRead}
                 />
               </div>
             )}

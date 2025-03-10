@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -13,6 +14,8 @@ interface ConversationsListProps {
   setSelectedConv: (conv: any) => void;
   setInitialAutoScrollDone: (done: boolean) => void;
   refreshing: boolean;
+  readConversations: string[];
+  markAsRead: (orderId: string) => Promise<void>;
 }
 
 const ConversationsList: React.FC<ConversationsListProps> = ({
@@ -20,33 +23,14 @@ const ConversationsList: React.FC<ConversationsListProps> = ({
   selectedConv,
   setSelectedConv,
   setInitialAutoScrollDone,
-  refreshing
+  refreshing,
+  readConversations,
+  markAsRead
 }) => {
   const [searchText, setSearchText] = useState('');
   const [filterModalVisible, setFilterModalVisible] = useState(false);
   const [filterHasMessage, setFilterHasMessage] = useState(false);
   const [filterBuyerMessage, setFilterBuyerMessage] = useState(false);
-  const [readConversations, setReadConversations] = useState<string[]>([]);
-
-  // Load read conversations from localStorage
-  useEffect(() => {
-    const storedReadConvs = localStorage.getItem('readConversations');
-    if (storedReadConvs) {
-      setReadConversations(JSON.parse(storedReadConvs));
-    }
-  }, []);
-
-  // Mark conversation as read when selected
-  useEffect(() => {
-    if (selectedConv) {
-      const updatedReadConvs = [...readConversations];
-      if (!readConversations.includes(selectedConv.orderId)) {
-        updatedReadConvs.push(selectedConv.orderId);
-        setReadConversations(updatedReadConvs);
-        localStorage.setItem('readConversations', JSON.stringify(updatedReadConvs));
-      }
-    }
-  }, [selectedConv, readConversations]);
 
   const filteredConversations = conversations.filter(conv => {
     if (
@@ -143,6 +127,9 @@ const ConversationsList: React.FC<ConversationsListProps> = ({
                   onClick={() => {
                     setSelectedConv(item);
                     setInitialAutoScrollDone(false);
+                    if (item.orderId) {
+                      markAsRead(item.orderId);
+                    }
                   }}
                 >
                   <div className="flex items-center justify-between">
