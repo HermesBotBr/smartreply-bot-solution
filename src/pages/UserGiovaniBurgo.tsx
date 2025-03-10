@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { MessageSquare, HelpCircle, BarChart, ArrowLeft } from "lucide-react";
 
+
 import ConversationsList from "@/components/dashboard/ConversationsList";
 import ChatPanel from "@/components/dashboard/ChatPanel";
 import SaleDetailsPanel from "@/components/dashboard/SaleDetailsPanel";
