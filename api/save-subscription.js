@@ -1,28 +1,29 @@
 // api/save-subscription.js
 
-import { promises as fs } from "fs";
-const filePath = "./subscriptions.txt";
-
 export default async function handler(req, res) {
   if (req.method === "POST") {
     try {
-      let subscriptions = [];
-      // Tenta ler o arquivo; se não existir, inicia com array vazio
-      try {
-        const data = await fs.readFile(filePath, "utf8");
-        subscriptions = JSON.parse(data);
-      } catch (err) {
-        subscriptions = [];
-      }
       const subscription = req.body;
-      subscriptions.push(subscription);
-      // Escreve as subscriptions atualizadas no arquivo
-      await fs.writeFile(filePath, JSON.stringify(subscriptions, null, 2));
-      console.log("Subscription salva:", subscription);
+      // Converte a subscription para texto (JSON)
+      const subscriptionText = JSON.stringify(subscription);
+      
+      // Envia a subscription para o endpoint remoto que salva no subscriptions.txt
+      const response = await fetch("https://f7a0be410680.ngrok.app/subscription", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: subscriptionText })
+      });
+      
+      if (!response.ok) {
+        throw new Error("Erro ao salvar subscription no endpoint remoto");
+      }
+      
+      const data = await response.json();
+      console.log("Subscription salva remotamente:", data);
       res.status(200).json({ success: true });
-    } catch (err) {
-      console.error("Erro ao salvar subscription:", err);
-      res.status(500).json({ success: false, error: err.toString() });
+    } catch (error) {
+      console.error("Erro no save-subscription:", error);
+      res.status(500).json({ success: false, error: error.message });
     }
   } else {
     res.setHeader("Allow", ["POST"]);
