@@ -66,40 +66,36 @@ const NotificationEndpoint: React.FC = () => {
     handleGetRequest();
   }, [location]);
 
-  // Handler para interceptar solicitações POST e processar o corpo da requisição
-  useEffect(() => {
-    // Esta função é apenas um hack para demonstration purposes
-    // Em um ambiente real, você precisa de um backend para processar solicitações POST
-    const originalFetch = window.fetch;
-    
-    window.fetch = async function(input, init) {
-      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
-      
-      // Intercepta solicitações POST para este endpoint
-      if (url.includes('/notification-endpoint') && init?.method === 'POST') {
-        try {
-          const body = init.body ? JSON.parse(init.body.toString()) : {};
-          sendNotification(body.message || '');
-          
-          // Retorna uma resposta simulada bem-sucedida
-          return new Response(JSON.stringify({ success: true }), {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' }
-          });
-        } catch (error) {
-          console.error('Erro ao processar solicitação POST:', error);
-        }
-      }
-      
-      // Para outras solicitações, usa o fetch original
-      return originalFetch.apply(window, [input, init]);
-    };
-    
-    // Cleanup para restaurar o fetch original
-    return () => {
-      window.fetch = originalFetch;
-    };
-  }, []);
+// server.js
+const express = require('express');
+const bodyParser = require('body-parser');
+const cors = require('cors');
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// Configura middlewares
+app.use(cors());
+app.use(bodyParser.json());
+
+// Rota real para enviar notificação
+app.post('/notification-endpoint', (req, res) => {
+  const message = req.body.message || 'Um cliente aguarda atendimento humano';
+
+  // Aqui você implementaria a lógica para enviar a notificação via push,
+  // utilizando, por exemplo, a biblioteca web-push e as assinaturas dos usuários.
+  // Para este exemplo, apenas logamos a mensagem e retornamos uma resposta de sucesso.
+  console.log('Recebida requisição de notificação:', message);
+
+  // Resposta simulada de sucesso
+  res.status(200).json({ success: true, message: message });
+});
+
+// Inicia o servidor
+app.listen(PORT, () => {
+  console.log(`Servidor rodando na porta ${PORT}`);
+});
+
 
   // Função para testar o envio de notificação diretamente da página
   const testNotification = () => {
