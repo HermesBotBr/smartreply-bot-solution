@@ -1,6 +1,6 @@
-
 self.addEventListener('push', function(event) {
-  const data = event.data.json();
+  console.log("Evento push recebido:", event);
+  const data = event.data ? event.data.json() : {};
   
   const options = {
     body: data.body || 'Notificação recebida',
