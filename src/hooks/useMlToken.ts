@@ -1,5 +1,6 @@
 
 import { useState, useEffect } from 'react';
+import { getNgrokUrl } from '@/config/api';
 
 export function useMlToken() {
   const [mlToken, setMlToken] = useState<string | null>(null);
@@ -7,7 +8,7 @@ export function useMlToken() {
   useEffect(() => {
     const fetchToken = async () => {
       try {
-        const response = await fetch('https://b4c027be31fe.ngrok.app/mercadoLivreApiKey.txt');
+        const response = await fetch(getNgrokUrl('mercadoLivreApiKey.txt'));
         const tokenText = await response.text();
         setMlToken(tokenText.trim());
       } catch (error) {

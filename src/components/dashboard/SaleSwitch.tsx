@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
+import { getNgrokUrl } from '@/config/api';
 
 interface SaleSwitchProps {
   orderId: string;
@@ -14,7 +15,7 @@ const SaleSwitch: React.FC<SaleSwitchProps> = ({ orderId }) => {
   useEffect(() => {
     const fetchSwitchState = async () => {
       try {
-        const response = await fetch('https://b4c027be31fe.ngrok.app/switch');
+        const response = await fetch(getNgrokUrl('switch'));
         const data = await response.json();
         if (data.pack_ids && data.pack_ids.includes(orderId.toString())) {
           setIsEnabled(false);
@@ -33,7 +34,7 @@ const SaleSwitch: React.FC<SaleSwitchProps> = ({ orderId }) => {
     setIsEnabled(newValue);
     try {
       if (!newValue) {
-        const response = await fetch('https://b4c027be31fe.ngrok.app/switch/off', {
+        const response = await fetch(getNgrokUrl('switch/off'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ pack_id: orderId })
@@ -45,7 +46,7 @@ const SaleSwitch: React.FC<SaleSwitchProps> = ({ orderId }) => {
           description: `Pedido #${orderId}`,
         });
       } else {
-        const response = await fetch(`https://b4c027be31fe.ngrok.app/switch/on/${orderId}`, {
+        const response = await fetch(getNgrokUrl(`switch/on/${orderId}`), {
           method: 'DELETE'
         });
         const json = await response.json();

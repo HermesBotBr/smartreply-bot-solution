@@ -1,8 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { useToast } from "./use-toast";
-
-const READ_CONVERSATIONS_URL = 'https://b4c027be31fe.ngrok.app/read_conversations.txt';
+import { getNgrokUrl } from '@/config/api';
 
 export function useReadConversations() {
   const [readConversations, setReadConversations] = useState<string[]>([]);
@@ -13,7 +12,7 @@ export function useReadConversations() {
   const fetchReadConversations = async () => {
     try {
       console.log("Fetching read conversations from server");
-      const response = await fetch(READ_CONVERSATIONS_URL);
+      const response = await fetch(getNgrokUrl('read_conversations.txt'));
       if (!response.ok) {
         throw new Error(`Failed to fetch read conversations: ${response.status}`);
       }
@@ -90,7 +89,7 @@ export function useReadConversations() {
     
     try {
       // Modified to send all order IDs in a single request
-      const response = await fetch('https://b4c027be31fe.ngrok.app/mark_read.php', {
+      const response = await fetch(getNgrokUrl('mark_read.php'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

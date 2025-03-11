@@ -1,7 +1,6 @@
 
 import { useState, useEffect } from 'react';
-
-const GPT_URL = 'https://b4c027be31fe.ngrok.app/all_gpt.txt';
+import { getNgrokUrl } from '@/config/api';
 
 export function useGptIds() {
   const [gptIds, setGptIds] = useState<string[]>([]);
@@ -9,7 +8,7 @@ export function useGptIds() {
   useEffect(() => {
     const fetchGptIds = async () => {
       try {
-        const response = await fetch(GPT_URL);
+        const response = await fetch(getNgrokUrl('all_gpt.txt'));
         const text = await response.text();
         const ids = text.split('\n').map(line => line.trim()).filter(line => line);
         setGptIds(ids);

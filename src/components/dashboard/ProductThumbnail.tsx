@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import { getNgrokUrl } from '@/config/api';
 
 interface ProductThumbnailProps {
   itemId: string;
@@ -12,7 +13,7 @@ const ProductThumbnail: React.FC<ProductThumbnailProps> = ({ itemId }) => {
     async function fetchThumbnail() {
       try {
         console.log("Fetching thumbnail for itemId:", itemId);
-        const tokenResponse = await fetch('https://b4c027be31fe.ngrok.app/mercadoLivreApiKey.txt');
+        const tokenResponse = await fetch(getNgrokUrl('mercadoLivreApiKey.txt'));
         const token = (await tokenResponse.text()).trim();
         console.log("ML Token:", token);
         

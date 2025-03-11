@@ -16,6 +16,7 @@ import {
   Pie,
   Cell
 } from 'recharts';
+import { getNgrokUrl } from '@/config/api';
 
 const randomColors = [
   '#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8',
@@ -28,24 +29,19 @@ const MetricsDisplay = ({ onOrderClick }: { onOrderClick?: (orderId: string) => 
   const [showPopup, setShowPopup] = useState(false);
   const [complaintsList, setComplaintsList] = useState<string[]>([]);
 
-  // Função para lidar com o clique em um order_id do popup
-const handleOrderClick = (orderId: string) => {
-  setShowPopup(false);
-  window.open(`https://www.mercadolivre.com.br/vendas/novo/mensagens/${orderId}`);
-};
+  const handleOrderClick = (orderId: string) => {
+    setShowPopup(false);
+    window.open(`https://www.mercadolivre.com.br/vendas/novo/mensagens/${orderId}`);
+  };
 
-
-  // Função auxiliar para buscar a contagem de reclamações evitadas
   const fetchComplaintsAvoidedCount = async () => {
     try {
-      const response = await fetch('https://b4c027be31fe.ngrok.app/all_tags.txt');
+      const response = await fetch(getNgrokUrl('all_tags.txt'));
       const text = await response.text();
-      // Divide o conteúdo em seções (supondo que separe por linhas em branco)
       const sections = text.split('\n\n');
       let complaintsCount = 0;
       sections.forEach(section => {
         if (section.startsWith('GPT impediu reclamação')) {
-          // Pula a linha do cabeçalho e conta as linhas não vazias
           const lines = section.split('\n').slice(1);
           complaintsCount = lines.filter(line => line.trim() !== '').length;
         }
@@ -57,61 +53,53 @@ const handleOrderClick = (orderId: string) => {
     }
   };
 
-  // Função auxiliar para buscar a lista completa de order_ids das reclamações evitadas
-const fetchComplaintsAvoidedList = async () => {
-  try {
-    const response = await fetch('https://b4c027be31fe.ngrok.app/all_tags.txt');
-    const text = await response.text();
-    const sections = text.split('\n\n');
-    let orders: string[] = [];
-    sections.forEach(section => {
-      if (section.startsWith('GPT impediu reclamação')) {
-        // Pula a linha do cabeçalho, pega as linhas não vazias e remove a data (se houver)
-        const lines = section.split('\n').slice(1);
-        orders = lines.filter(line => line.trim() !== '').map(line => {
-          const parts = line.split(' - ');
-          return parts[0].trim();
-        });
-      }
-    });
-    return orders;
-  } catch (error) {
-    console.error("Erro ao buscar lista de tags:", error);
-    return [];
-  }
-};
-
+  const fetchComplaintsAvoidedList = async () => {
+    try {
+      const response = await fetch(getNgrokUrl('all_tags.txt'));
+      const text = await response.text();
+      const sections = text.split('\n\n');
+      let orders: string[] = [];
+      sections.forEach(section => {
+        if (section.startsWith('GPT impediu reclamação')) {
+          const lines = section.split('\n').slice(1);
+          orders = lines.filter(line => line.trim() !== '').map(line => {
+            const parts = line.split(' - ');
+            return parts[0].trim();
+          });
+        }
+      });
+      return orders;
+    } catch (error) {
+      console.error("Erro ao buscar lista de tags:", error);
+      return [];
+    }
+  };
 
   useEffect(() => {
     const generateData = async () => {
-      // Últimos 7 dias
       const days = Array.from({ length: 7 }, (_, i) => {
         const date = new Date();
         date.setDate(date.getDate() - i);
         return date.toLocaleDateString('pt-BR');
       }).reverse();
 
-      // Métricas de mensagens
       const messageData = days.map(day => ({
         date: day,
         total: Math.floor(Math.random() * 30) + 5,
         automated: Math.floor(Math.random() * 20) + 5
       }));
 
-      // Métricas de perguntas
       const questionData = days.map(day => ({
         date: day,
         received: Math.floor(Math.random() * 15) + 1,
         answered: Math.floor(Math.random() * 10) + 1
       }));
 
-      // Métricas de vendas (mantido para cálculo do faturamento)
       const salesData = days.map(day => ({
         date: day,
         value: Math.floor(Math.random() * 5000) + 1000
       }));
 
-      // Distribuição de produtos
       const productCategories = [
         { name: 'Eletrônicos', value: Math.floor(Math.random() * 45) + 10 },
         { name: 'Casa', value: Math.floor(Math.random() * 30) + 10 },
@@ -120,27 +108,25 @@ const fetchComplaintsAvoidedList = async () => {
         { name: 'Outros', value: Math.floor(Math.random() * 15) + 5 }
       ];
 
-      // Obtém a contagem de reclamações evitadas
       const complaintsAvoided = await fetchComplaintsAvoidedCount();
 
-     const gptResponse = await fetch('https://b4c027be31fe.ngrok.app/all_gpt.txt');
-const gptText = await gptResponse.text();
-const gptIds = gptText.split('\n').filter(line => line.trim() !== '');
-const totalMessagesCount = gptIds.length;
+      const gptResponse = await fetch(getNgrokUrl('all_gpt.txt'));
+      const gptText = await gptResponse.text();
+      const gptIds = gptText.split('\n').filter(line => line.trim() !== '');
+      const totalMessagesCount = gptIds.length;
 
-const fakeData = {
-  summary: {
-    totalMessages: totalMessagesCount,
-    totalQuestions: questionData.reduce((acc, curr) => acc + curr.received, 0),
-    complaintsAvoided: complaintsAvoided,
-    totalRevenue: salesData.reduce((acc, curr) => acc + curr.value, 0)
-  },
-  messageData,
-  questionData,
-  salesData,
-  productCategories
-};
-
+      const fakeData = {
+        summary: {
+          totalMessages: totalMessagesCount,
+          totalQuestions: questionData.reduce((acc, curr) => acc + curr.received, 0),
+          complaintsAvoided: complaintsAvoided,
+          totalRevenue: salesData.reduce((acc, curr) => acc + curr.value, 0)
+        },
+        messageData,
+        questionData,
+        salesData,
+        productCategories
+      };
 
       setMetrics(fakeData);
       setLoading(false);
@@ -149,7 +135,6 @@ const fakeData = {
     setTimeout(generateData, 1500);
   }, []);
 
-  // Função para lidar com o clique no box e abrir o popup
   const handlePopupOpen = async () => {
     const orders = await fetchComplaintsAvoidedList();
     setComplaintsList(orders);
@@ -172,66 +157,62 @@ const fakeData = {
       
       <div className="flex-1 overflow-auto p-4">
 
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <Card onClick={handlePopupOpen} className="cursor-pointer">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <div className="flex flex-col space-y-1">
+                <CardTitle className="text-sm font-medium">Reclamações Evitadas</CardTitle>
+                <CardDescription>Últimos 7 dias</CardDescription>
+              </div>
+              <ShoppingBag className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{metrics.summary.complaintsAvoided}</div>
+            </CardContent>
+          </Card>
 
-<div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-  <Card onClick={handlePopupOpen} className="cursor-pointer">
-    <CardHeader className="flex flex-row items-center justify-between pb-2">
-      <div className="flex flex-col space-y-1">
-        <CardTitle className="text-sm font-medium">Reclamações Evitadas</CardTitle>
-        <CardDescription>Últimos 7 dias</CardDescription>
-      </div>
-      <ShoppingBag className="h-4 w-4 text-muted-foreground" />
-    </CardHeader>
-    <CardContent>
-      <div className="text-2xl font-bold">{metrics.summary.complaintsAvoided}</div>
-    </CardContent>
-  </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <div className="flex flex-col space-y-1">
+                <CardTitle className="text-sm font-medium">Total de Mensagens</CardTitle>
+                <CardDescription>Últimos 7 dias</CardDescription>
+              </div>
+              <MessageSquare className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{metrics.summary.totalMessages}</div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <div className="flex flex-col space-y-1">
+                <CardTitle className="text-sm font-medium">Perguntas Recebidas</CardTitle>
+                <CardDescription>Últimos 7 dias</CardDescription>
+              </div>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{metrics.summary.totalQuestions}</div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <div className="flex flex-col space-y-1">
+                <CardTitle className="text-sm font-medium">Faturamento Total</CardTitle>
+                <CardDescription>Últimos 7 dias</CardDescription>
+              </div>
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(metrics.summary.totalRevenue)}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
-  <Card>
-    <CardHeader className="flex flex-row items-center justify-between pb-2">
-      <div className="flex flex-col space-y-1">
-        <CardTitle className="text-sm font-medium">Total de Mensagens</CardTitle>
-        <CardDescription>Últimos 7 dias</CardDescription>
-      </div>
-      <MessageSquare className="h-4 w-4 text-muted-foreground" />
-    </CardHeader>
-    <CardContent>
-      <div className="text-2xl font-bold">{metrics.summary.totalMessages}</div>
-    </CardContent>
-  </Card>
-  
-  <Card>
-    <CardHeader className="flex flex-row items-center justify-between pb-2">
-      <div className="flex flex-col space-y-1">
-        <CardTitle className="text-sm font-medium">Perguntas Recebidas</CardTitle>
-        <CardDescription>Últimos 7 dias</CardDescription>
-      </div>
-      <Users className="h-4 w-4 text-muted-foreground" />
-    </CardHeader>
-    <CardContent>
-      <div className="text-2xl font-bold">{metrics.summary.totalQuestions}</div>
-    </CardContent>
-  </Card>
-  
-  <Card>
-    <CardHeader className="flex flex-row items-center justify-between pb-2">
-      <div className="flex flex-col space-y-1">
-        <CardTitle className="text-sm font-medium">Faturamento Total</CardTitle>
-        <CardDescription>Últimos 7 dias</CardDescription>
-      </div>
-      <TrendingUp className="h-4 w-4 text-muted-foreground" />
-    </CardHeader>
-    <CardContent>
-      <div className="text-2xl font-bold">
-        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(metrics.summary.totalRevenue)}
-      </div>
-    </CardContent>
-  </Card>
-</div>
-
-
-        
-        {/* Outras seções de gráficos */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           <Card>
             <CardHeader>
@@ -336,7 +317,6 @@ const fakeData = {
         </div>
       </div>
 
-      {/* Popup para exibir a lista de order_ids */}
       {showPopup && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
           <div className="bg-white p-6 rounded shadow-lg w-80 relative">
@@ -369,4 +349,4 @@ const fakeData = {
   );
 };
 
-export default MetricsDisplay; 
+export default MetricsDisplay;

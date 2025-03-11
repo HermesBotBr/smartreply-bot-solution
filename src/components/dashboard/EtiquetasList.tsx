@@ -1,11 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ExternalLink, Printer, RefreshCw, CheckCheck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-
-const ETIQUETAS_URL = 'https://b4c027be31fe.ngrok.app/all_etiquetas.txt';
+import { getNgrokUrl } from '@/config/api';
 
 const EtiquetasList = () => {
   const [etiquetas, setEtiquetas] = useState<string[]>([]);
@@ -29,7 +27,7 @@ const EtiquetasList = () => {
   const fetchEtiquetas = async () => {
     try {
       setLoading(true);
-      const response = await fetch(ETIQUETAS_URL);
+      const response = await fetch(getNgrokUrl('all_etiquetas.txt'));
       const text = await response.text();
       
       // Parse the text to extract URLs

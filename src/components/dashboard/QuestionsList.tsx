@@ -8,6 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ChevronDown, ChevronUp } from "lucide-react";
+import { getNgrokUrl } from '@/config/api';
 
 // URL do endpoint
 const ASKS_URL = 'https://b4c027be31fe.ngrok.app/all_asks.txt';
@@ -249,7 +250,7 @@ const QuestionsList: React.FC<QuestionsListProps> = ({ mlToken }) => {
   const loadAsks = async () => {
     try {
       setLoading(true);
-      const response = await fetch(ASKS_URL);
+      const response = await fetch(getNgrokUrl('all_asks.txt'));
       const text = await response.text();
       const parsedAsks = parseAsks(text);
       setAsks(parsedAsks);
@@ -275,7 +276,7 @@ const QuestionsList: React.FC<QuestionsListProps> = ({ mlToken }) => {
     if (!answering || !answerText.trim()) return;
     
     try {
-      const response = await fetch('https://b4c027be31fe.ngrok.app/answer_question', {
+      const response = await fetch(getNgrokUrl('answer_question'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

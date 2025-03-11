@@ -1,8 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { parseMessages } from '@/utils/messageParser';
-
-const DATA_URL = 'https://b4c027be31fe.ngrok.app/all_msg.txt';
+import { getNgrokUrl } from '@/config/api';
 
 export function useConversations() {
   const [conversations, setConversations] = useState<any[]>([]);
@@ -13,7 +12,7 @@ export function useConversations() {
   const loadData = async () => {
     try {
       setRefreshing(true);
-      const response = await fetch(DATA_URL);
+      const response = await fetch(getNgrokUrl('all_msg.txt'));
       const textData = await response.text();
       const convs = parseMessages(textData);
       setConversations(convs);
