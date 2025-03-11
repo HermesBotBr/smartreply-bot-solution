@@ -40,7 +40,7 @@ const UserGiovaniBurgo = () => {
   // Registra o Service Worker e solicita permissão para notificações
   useEffect(() => {
     if ("serviceWorker" in navigator && "PushManager" in window) {
-      navigator.serviceWorker.register("/sw.js")
+      navigator.serviceWorker.register("/service_worker.js")
         .then((registration) => {
           console.log("Service Worker registrado:", registration);
           return Notification.requestPermission();
