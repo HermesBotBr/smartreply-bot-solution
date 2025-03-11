@@ -37,28 +37,48 @@ const UserGiovaniBurgo = () => {
     fetchSaleDetails
   } = useSaleDetails();
 
-  // Registra o Service Worker e solicita permissão para notificações
+  // Registra o Service Worker, solicita permissão e inscreve o usuário na Push API
   useEffect(() => {
     if ("serviceWorker" in navigator && "PushManager" in window) {
       navigator.serviceWorker.register("/service-worker.js")
         .then((registration) => {
           console.log("Service Worker registrado:", registration);
-          return Notification.requestPermission();
+          return Notification.requestPermission().then((permission) => {
+            if (permission !== "granted") {
+              throw new Error("Permissão para notificações não concedida");
+            }
+            return registration.pushManager.subscribe({
+              userVisibleOnly: true, // obrigatório para exibir notificações
+              applicationServerKey: urlBase64ToUint8Array("BAbN67uXIrHatd6zRxiQdcSOB4n6g09E4bS7cfszMA7nElaF1zn9d69g5qxnjwVebKVAQBtICDfT0xuPzaOWlhg")
+            });
+          });
         })
-        .then((permission) => {
-          if (permission === "granted") {
-            console.log("Permissão para notificações concedida.");
-          } else {
-            console.warn("Permissão para notificações negada.");
-          }
+        .then((subscription) => {
+          console.log("Usuário inscrito:", subscription);
+          // Aqui você pode enviar a subscription para o seu backend para armazenamento, se necessário.
         })
         .catch((error) => {
-          console.error("Erro ao registrar o Service Worker:", error);
+          console.error("Erro durante o registro ou inscrição do push:", error);
         });
     } else {
       console.warn("Service Worker ou Push API não são suportados neste navegador.");
     }
   }, []);
+
+  // Função utilitária para converter a chave VAPID de base64 para Uint8Array
+  function urlBase64ToUint8Array(base64String: string) {
+    const padding = "=".repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding)
+      .replace(/-/g, "+")
+      .replace(/_/g, "/");
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+    for (let i = 0; i < rawData.length; ++i) {
+      outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+  }
+
 
 
   return (
