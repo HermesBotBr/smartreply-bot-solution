@@ -54,9 +54,18 @@ const UserGiovaniBurgo = () => {
           });
         })
         .then((subscription) => {
-          console.log("Usuário inscrito:", subscription);
-          // Aqui você pode enviar a subscription para o seu backend para armazenamento, se necessário.
-        })
+  console.log("Usuário inscrito:", subscription);
+  // Envia a subscription para o backend para armazenamento
+  fetch("/api/save-subscription", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(subscription)
+  })
+    .then(response => response.json())
+    .then(data => console.log("Subscription salva:", data))
+    .catch(error => console.error("Erro ao salvar subscription:", error));
+})
+
         .catch((error) => {
           console.error("Erro durante o registro ou inscrição do push:", error);
         });
