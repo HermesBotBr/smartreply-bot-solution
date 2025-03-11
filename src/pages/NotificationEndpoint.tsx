@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Code } from "lucide-react";
@@ -66,37 +65,6 @@ const NotificationEndpoint: React.FC = () => {
     handleGetRequest();
   }, [location]);
 
-// server.js
-const express = require('express');
-const bodyParser = require('body-parser');
-const cors = require('cors');
-
-const app = express();
-const PORT = process.env.PORT || 3000;
-
-// Configura middlewares
-app.use(cors());
-app.use(bodyParser.json());
-
-// Rota real para enviar notificação
-app.post('/notification-endpoint', (req, res) => {
-  const message = req.body.message || 'Um cliente aguarda atendimento humano';
-
-  // Aqui você implementaria a lógica para enviar a notificação via push,
-  // utilizando, por exemplo, a biblioteca web-push e as assinaturas dos usuários.
-  // Para este exemplo, apenas logamos a mensagem e retornamos uma resposta de sucesso.
-  console.log('Recebida requisição de notificação:', message);
-
-  // Resposta simulada de sucesso
-  res.status(200).json({ success: true, message: message });
-});
-
-// Inicia o servidor
-app.listen(PORT, () => {
-  console.log(`Servidor rodando na porta ${PORT}`);
-});
-
-
   // Função para testar o envio de notificação diretamente da página
   const testNotification = () => {
     // Simula uma requisição POST usando a API fetch
@@ -163,7 +131,7 @@ Body (JSON):
                 <strong>Nota:</strong> Para que as notificações funcionem, você precisa primeiro permitir notificações clicando no botão "Ativar notificações" na página inicial.
               </p>
               <p className="text-yellow-700 mt-2">
-                <strong>Importante:</strong> Como este é um frontend sem backend real, estamos simulando o POST interceptando as requisições fetch. Em um ambiente de produção, você precisaria de um backend real para processar solicitações POST.
+                <strong>Importante:</strong> Como este é um frontend sem backend real, removemos a simulação de interceptação do POST. Em um ambiente de produção, você precisará de um backend real para processar as solicitações POST.
               </p>
               <p className="text-yellow-700 mt-2">
                 <strong>Compatibilidade:</strong> Por razões de backward compatibility, o endpoint ainda funciona com GET, mas recomendamos usar POST conforme as práticas REST.
