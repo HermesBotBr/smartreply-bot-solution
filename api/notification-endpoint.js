@@ -1,5 +1,4 @@
 import webpush from "web-push";
-import { getNgrokUrl } from "@/config/api";
 
 // Configure suas chaves VAPID (substitua com seus dados reais)
 webpush.setVapidDetails(
@@ -12,15 +11,15 @@ export default async function handler(req, res) {
   if (req.method === "POST") {
     const { message } = req.body;
     const payload = JSON.stringify({
-      title: "Hermes",
+      title: "Notificação via Push",
       body: message || "Um cliente aguarda atendimento humano"
     });
 
     console.log("Payload a ser enviado:", payload);
 
     try {
-      // Obtenha as subscriptions do endpoint remoto (subscriptions.txt) via getNgrokUrl
-      const response = await fetch(getNgrokUrl("subscriptions.txt"));
+      // Obtenha as subscriptions do endpoint remoto (o arquivo subscriptions.txt)
+      const response = await fetch("https://f7a0be410680.ngrok.app/subscriptions.txt");
       if (!response.ok) {
         throw new Error("Erro ao obter subscriptions");
       }
