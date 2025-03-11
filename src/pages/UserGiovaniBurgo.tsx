@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import QuestionsList from "@/components/dashboard/QuestionsList";
 import MetricsDisplay from "@/components/dashboard/MetricsDisplay";
 import EtiquetasList from "@/components/dashboard/EtiquetasList";
@@ -37,6 +36,29 @@ const UserGiovaniBurgo = () => {
     setShowSaleDetails,
     fetchSaleDetails
   } = useSaleDetails();
+
+  // Registra o Service Worker e solicita permissão para notificações
+  useEffect(() => {
+    if ("serviceWorker" in navigator && "PushManager" in window) {
+      navigator.serviceWorker.register("/sw.js")
+        .then((registration) => {
+          console.log("Service Worker registrado:", registration);
+          return Notification.requestPermission();
+        })
+        .then((permission) => {
+          if (permission === "granted") {
+            console.log("Permissão para notificações concedida.");
+          } else {
+            console.warn("Permissão para notificações negada.");
+          }
+        })
+        .catch((error) => {
+          console.error("Erro ao registrar o Service Worker:", error);
+        });
+    } else {
+      console.warn("Service Worker ou Push API não são suportados neste navegador.");
+    }
+  }, []);
 
   return (
     <div className="flex h-screen overflow-hidden">
