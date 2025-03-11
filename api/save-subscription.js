@@ -1,4 +1,4 @@
-// api/save-subscription.js
+import { getNgrokUrl } from "@/config/api";
 
 export default async function handler(req, res) {
   if (req.method === "POST") {
@@ -6,18 +6,18 @@ export default async function handler(req, res) {
       const subscription = req.body;
       // Converte a subscription para texto (JSON)
       const subscriptionText = JSON.stringify(subscription);
-      
-      // Envia a subscription para o endpoint remoto que salva no subscriptions.txt
-      const response = await fetch("https://f7a0be410680.ngrok.app/subscription", {
+
+      // Envia a subscription para o endpoint remoto usando getNgrokUrl
+      const response = await fetch(getNgrokUrl("subscription"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text: subscriptionText })
       });
-      
+
       if (!response.ok) {
         throw new Error("Erro ao salvar subscription no endpoint remoto");
       }
-      
+
       const data = await response.json();
       console.log("Subscription salva remotamente:", data);
       res.status(200).json({ success: true });
