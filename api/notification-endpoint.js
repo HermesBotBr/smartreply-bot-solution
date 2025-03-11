@@ -1,7 +1,6 @@
 import webpush from "web-push";
-import { subscriptions } from "./save-subscription.js";
 
-// Configure as chaves VAPID (substitua com seus dados reais)
+// Configure suas chaves VAPID (substitua com seus dados reais)
 webpush.setVapidDetails(
   "mailto:seuemail@dominio.com",
   "BAbN67uXIrHatd6zRxiQdcSOB4n6g09E4bS7cfszMA7nElaF1zn9d69g5qxnjwVebKVAQBtICDfT0xuPzaOWlhg",
@@ -13,23 +12,33 @@ export default async function handler(req, res) {
     const { message } = req.body;
     const payload = JSON.stringify({
       title: "Notificação via Push",
-      body: message || "Um cliente aguarda atendimento humano",
+      body: message || "Um cliente aguarda atendimento humano"
     });
 
     console.log("Payload a ser enviado:", payload);
-    console.log("Subscriptions armazenadas:", subscriptions);
 
     try {
-      // Se não houver subscriptions, apenas retorne um aviso
-      if (!subscriptions || subscriptions.length === 0) {
+      // Obtenha as subscriptions do endpoint remoto (o arquivo subscriptions.txt)
+      const response = await fetch("https://f7a0be410680.ngrok.app/subscriptions.txt");
+      if (!response.ok) {
+        throw new Error("Erro ao obter subscriptions");
+      }
+      const text = await response.text();
+
+      // Supondo que cada linha contenha uma subscription em formato JSON
+      const subscriptionLines = text.split("\n").filter(line => line.trim() !== "");
+      const subscriptions = subscriptionLines.map(line => JSON.parse(line));
+      console.log("Subscriptions recuperadas:", subscriptions);
+
+      if (subscriptions.length === 0) {
         console.warn("Nenhuma subscription encontrada para enviar notificações.");
         return res.status(200).json({ success: true, message: "Nenhuma subscription encontrada." });
       }
 
       // Envia a notificação para cada subscription armazenada
       await Promise.all(
-        subscriptions.map((sub) =>
-          webpush.sendNotification(sub, payload).catch((err) => {
+        subscriptions.map(sub =>
+          webpush.sendNotification(sub, payload).catch(err => {
             console.error("Erro ao enviar para uma subscription:", err);
           })
         )
