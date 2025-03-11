@@ -1,5 +1,4 @@
 import webpush from "web-push";
-import { getNgrokUrl } from "@/config/api"; // Importe a função de URL
 
 // Configure suas chaves VAPID (substitua com seus dados reais)
 webpush.setVapidDetails(
@@ -19,8 +18,8 @@ export default async function handler(req, res) {
     console.log("Payload a ser enviado:", payload);
 
     try {
-      // Obtenha as subscriptions usando a URL configurada
-      const response = await fetch(getNgrokUrl("subscriptions.txt"));
+      // Obtenha as subscriptions do endpoint remoto (o arquivo subscriptions.txt)
+      const response = await fetch("https://f7a0be410680.ngrok.app/subscriptions.txt");
       if (!response.ok) {
         throw new Error("Erro ao obter subscriptions");
       }
@@ -51,6 +50,6 @@ export default async function handler(req, res) {
     }
   } else {
     res.setHeader("Allow", ["POST"]);
-    res.status(405).end(`Method ${req.method} Not Allowed`);
+    res.status(405).end(Method ${req.method} Not Allowed);
   }
 }
