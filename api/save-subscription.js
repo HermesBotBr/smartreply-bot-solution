@@ -1,22 +1,31 @@
 // api/save-subscription.js
 
-// Em produção, recomenda-se utilizar um banco de dados para armazenar as subscriptions.
-// Para fins de demonstração, usaremos uma variável em memória.
-let subscriptions = [];
+import { promises as fs } from "fs";
+const filePath = "./subscriptions.txt";
 
-export default function handler(req, res) {
+export default async function handler(req, res) {
   if (req.method === "POST") {
-    const subscription = req.body;
-    // Adiciona a nova subscription, se ela ainda não estiver presente.
-    // Aqui você pode implementar uma verificação mais robusta para evitar duplicatas.
-    subscriptions.push(subscription);
-    console.log("Subscription salva:", subscription);
-    res.status(200).json({ success: true });
+    try {
+      let subscriptions = [];
+      // Tenta ler o arquivo; se não existir, inicia com array vazio
+      try {
+        const data = await fs.readFile(filePath, "utf8");
+        subscriptions = JSON.parse(data);
+      } catch (err) {
+        subscriptions = [];
+      }
+      const subscription = req.body;
+      subscriptions.push(subscription);
+      // Escreve as subscriptions atualizadas no arquivo
+      await fs.writeFile(filePath, JSON.stringify(subscriptions, null, 2));
+      console.log("Subscription salva:", subscription);
+      res.status(200).json({ success: true });
+    } catch (err) {
+      console.error("Erro ao salvar subscription:", err);
+      res.status(500).json({ success: false, error: err.toString() });
+    }
   } else {
     res.setHeader("Allow", ["POST"]);
     res.status(405).end(`Method ${req.method} Not Allowed`);
   }
 }
-
-// Exporta as subscriptions para que possam ser utilizadas por outros endpoints.
-export { subscriptions };
