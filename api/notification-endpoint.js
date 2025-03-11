@@ -1,8 +1,7 @@
 import webpush from "web-push";
-// Importe as subscriptions armazenadas (supondo que você criou o endpoint save-subscription.js)
 import { subscriptions } from "./save-subscription";
 
-// Configure as chaves VAPID (substitua com seus dados)
+// Configure as chaves VAPID (substitua com seus dados reais)
 webpush.setVapidDetails(
   "mailto:seuemail@dominio.com",
   "BAbN67uXIrHatd6zRxiQdcSOB4n6g09E4bS7cfszMA7nElaF1zn9d69g5qxnjwVebKVAQBtICDfT0xuPzaOWlhg",
@@ -11,15 +10,22 @@ webpush.setVapidDetails(
 
 export default async function handler(req, res) {
   if (req.method === "POST") {
-    // Extrai o campo "message" do corpo da requisição
     const { message } = req.body;
     const payload = JSON.stringify({
       title: "Notificação via Push",
-      body: message || "Um cliente aguarda atendimento humano"
-      // Você pode incluir outros dados no payload se necessário
+      body: message || "Um cliente aguarda atendimento humano",
     });
 
+    console.log("Payload a ser enviado:", payload);
+    console.log("Subscriptions armazenadas:", subscriptions);
+
     try {
+      // Se não houver subscriptions, apenas retorne um aviso
+      if (!subscriptions || subscriptions.length === 0) {
+        console.warn("Nenhuma subscription encontrada para enviar notificações.");
+        return res.status(200).json({ success: true, message: "Nenhuma subscription encontrada." });
+      }
+
       // Envia a notificação para cada subscription armazenada
       await Promise.all(
         subscriptions.map((sub) =>
