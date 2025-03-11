@@ -12,7 +12,7 @@ export default async function handler(req, res) {
     const { message } = req.body;
     const payload = JSON.stringify({
       title: "Notificação via Push",
-      body: message || "Um cliente aguarda atendimento humano"
+      body: message || "Hermes"
     });
 
     console.log("Payload a ser enviado:", payload);
