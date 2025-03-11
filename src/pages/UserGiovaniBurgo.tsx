@@ -40,7 +40,7 @@ const UserGiovaniBurgo = () => {
   // Registra o Service Worker e solicita permissão para notificações
   useEffect(() => {
     if ("serviceWorker" in navigator && "PushManager" in window) {
-      navigator.serviceWorker.register("/service_worker.js")
+      navigator.serviceWorker.register("/service-worker.js")
         .then((registration) => {
           console.log("Service Worker registrado:", registration);
           return Notification.requestPermission();
@@ -59,6 +59,7 @@ const UserGiovaniBurgo = () => {
       console.warn("Service Worker ou Push API não são suportados neste navegador.");
     }
   }, []);
+
 
   return (
     <div className="flex h-screen overflow-hidden">
