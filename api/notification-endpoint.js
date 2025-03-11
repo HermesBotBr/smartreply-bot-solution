@@ -1,5 +1,5 @@
 import webpush from "web-push";
-import { subscriptions } from "./save-subscription";
+import { subscriptions } from "./save-subscription.js";
 
 // Configure as chaves VAPID (substitua com seus dados reais)
 webpush.setVapidDetails(
