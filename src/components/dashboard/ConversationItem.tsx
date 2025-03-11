@@ -27,6 +27,16 @@ const ConversationItem: React.FC<ConversationItemProps> = ({
     formattedMessage = "Sem mensagem";
   }
 
+  // Truncate buyer name if longer than 30 characters
+  const truncatedBuyerName = item.buyer.length > 30 
+    ? `${item.buyer.substring(0, 30)}...` 
+    : item.buyer;
+
+  // Truncate message if longer than 40 characters
+  const truncatedMessage = formattedMessage.length > 40 
+    ? `${formattedMessage.substring(0, 40)}...` 
+    : formattedMessage;
+
   return (
     <div 
       className={`p-3 hover:bg-gray-50 cursor-pointer ${
@@ -40,11 +50,11 @@ const ConversationItem: React.FC<ConversationItemProps> = ({
           <ProductThumbnail itemId={item.itemId} />
           <div className="ml-3 flex-1 min-w-0">
             <h3 className={`font-medium truncate ${hasBuyerMessage ? 'text-blue-700' : 'text-gray-900'}`}>
-              {item.buyer} {hasBuyerMessage && <span className="inline-block ml-1 h-2 w-2 rounded-full bg-blue-500"></span>}
+              {truncatedBuyerName} {hasBuyerMessage && <span className="inline-block ml-1 h-2 w-2 rounded-full bg-blue-500"></span>}
             </h3>
             {item.messages.length > 0 && (
               <p className={`text-sm truncate ${hasBuyerMessage ? 'text-blue-600' : 'text-gray-500'}`}>
-                {formattedMessage}
+                {truncatedMessage}
               </p>
             )}
           </div>
