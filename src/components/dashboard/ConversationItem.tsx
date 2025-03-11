@@ -27,14 +27,14 @@ const ConversationItem: React.FC<ConversationItemProps> = ({
     formattedMessage = "Sem mensagem";
   }
 
-  // Truncate buyer name if longer than 30 characters
-  const truncatedBuyerName = item.buyer.length > 30 
-    ? `${item.buyer.substring(0, 30)}...` 
+  // Truncate buyer name if longer than 25 characters
+  const truncatedBuyerName = item.buyer.length > 25 
+    ? `${item.buyer.substring(0, 25)}...` 
     : item.buyer;
 
-  // Truncate message if longer than 40 characters
-  const truncatedMessage = formattedMessage.length > 40 
-    ? `${formattedMessage.substring(0, 40)}...` 
+  // Truncate message if longer than 30 characters
+  const truncatedMessage = formattedMessage.length > 30 
+    ? `${formattedMessage.substring(0, 30)}...` 
     : formattedMessage;
 
   return (
