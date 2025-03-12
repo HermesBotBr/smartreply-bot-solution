@@ -19,7 +19,7 @@ export default async function handler(req, res) {
 
     try {
       // Obtenha as subscriptions do endpoint remoto (o arquivo subscriptions.txt)
-      const response = await fetch("https://f7a0be410680.ngrok.app/subscriptions.txt");
+      const response = await fetch("https://a1adbfc89876.ngrok.app/subscriptions.txt");
       if (!response.ok) {
         throw new Error("Erro ao obter subscriptions");
       }
