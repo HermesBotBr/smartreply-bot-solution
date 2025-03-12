@@ -8,7 +8,7 @@ export default async function handler(req, res) {
       const subscriptionText = JSON.stringify(subscription);
       
       // Envia a subscription para o endpoint remoto que salva no subscriptions.txt
-      const response = await fetch("https://a1adbfc89876.ngrok.app/subscription", {
+      const response = await fetch("https://seu-app-hermesbot-222accf69f45.herokuapp.com/subscription", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text: subscriptionText })
