@@ -51,6 +51,30 @@ export function useConversations() {
     }
   }
 
+  async function forceUpdateAllConversations() {
+    try {
+      const response = await fetch('/api/update-all-conversations', { 
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok && data.success) {
+        await loadData();
+        return { success: true, message: data.message };
+      } else {
+        console.error('Erro ao forçar atualização de todas as conversas:', data.error);
+        return { success: false, error: data.error || 'Erro desconhecido' };
+      }
+    } catch (error) {
+      console.error('Erro na requisição do endpoint de atualização:', error);
+      return { success: false, error: 'Falha na comunicação com o servidor' };
+    }
+  }
+
   return {
     conversations,
     selectedConv,
@@ -59,7 +83,7 @@ export function useConversations() {
     initialAutoScrollDone,
     setInitialAutoScrollDone,
     loadData,
-    forceUpdateSelectedConversation
+    forceUpdateSelectedConversation,
+    forceUpdateAllConversations
   };
-
 }
