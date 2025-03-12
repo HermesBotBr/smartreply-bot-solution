@@ -17,6 +17,7 @@ export default async function handler(req, res) {
       if (!response.ok) {
         throw new Error("Erro ao salvar subscription no endpoint remoto");
       }
+
       
       const data = await response.json();
       console.log("Subscription salva remotamente:", data);
