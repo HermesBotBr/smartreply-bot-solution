@@ -8,10 +8,12 @@ export function useConversations() {
   const [selectedConv, setSelectedConv] = useState<any>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [initialAutoScrollDone, setInitialAutoScrollDone] = useState(false);
+  const [lastUpdate, setLastUpdate] = useState<string | null>(null);
 
   const loadData = async () => {
     try {
       setRefreshing(true);
+      console.log("Loading conversation data...");
       const response = await fetch(getNgrokUrl('all_msg.txt'));
       const textData = await response.text();
       const convs = parseMessages(textData);
@@ -25,17 +27,51 @@ export function useConversations() {
       }
       
       setRefreshing(false);
+      setLastUpdate(new Date().toISOString());
     } catch (error) {
       console.error("Erro ao carregar mensagens:", error);
       setRefreshing(false);
     }
   };
 
+  // Regular interval update
   useEffect(() => {
     loadData();
     const intervalId = setInterval(loadData, 30000);
     return () => clearInterval(intervalId);
   }, []);
+
+  // Check for forced updates
+  useEffect(() => {
+    const checkForForcedUpdates = async () => {
+      try {
+        const response = await fetch('/api/update-all-conversations', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-cache'
+          }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          
+          // If there's a new update timestamp that we haven't processed yet
+          if (data.timestamp && (!lastUpdate || data.timestamp > lastUpdate)) {
+            console.log("Detected forced update, refreshing data...");
+            await loadData();
+            setLastUpdate(data.timestamp);
+          }
+        }
+      } catch (error) {
+        console.error("Erro ao verificar atualizações forçadas:", error);
+      }
+    };
+
+    // Check for forced updates every 5 seconds
+    const forcedUpdateInterval = setInterval(checkForForcedUpdates, 5000);
+    return () => clearInterval(forcedUpdateInterval);
+  }, [lastUpdate]);
 
   async function forceUpdateSelectedConversation() {
     try {
