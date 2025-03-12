@@ -19,7 +19,7 @@ export default async function handler(req, res) {
 
     try {
       // Obtenha as subscriptions do endpoint remoto (o arquivo subscriptions.txt)
-      const response = await fetch("https://a1adbfc89876.ngrok.app/subscriptions.txt");
+      const response = await fetch("https://seu-app-hermesbot-222accf69f45.herokuapp.com/subscriptions.txt");
       if (!response.ok) {
         throw new Error("Erro ao obter subscriptions");
       }
