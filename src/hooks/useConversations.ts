@@ -37,6 +37,20 @@ export function useConversations() {
     return () => clearInterval(intervalId);
   }, []);
 
+  async function forceUpdateSelectedConversation() {
+    try {
+      const response = await fetch('/api/usc', { method: 'POST' });
+      const data = await response.json();
+      if (response.ok) {
+        await loadData();
+      } else {
+        console.error('Erro ao forçar atualização:', data.error);
+      }
+    } catch (error) {
+      console.error('Erro na requisição do endpoint:', error);
+    }
+  }
+
   return {
     conversations,
     selectedConv,
@@ -44,6 +58,8 @@ export function useConversations() {
     refreshing,
     initialAutoScrollDone,
     setInitialAutoScrollDone,
-    loadData
+    loadData,
+    forceUpdateSelectedConversation
   };
+
 }
