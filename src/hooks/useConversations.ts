@@ -19,6 +19,7 @@ export function useConversations() {
       const convs = parseMessages(textData);
       setConversations(convs);
       
+      // Update the selectedConv if one is currently selected
       if (selectedConv) {
         const updatedConv = convs.find(c => c.orderId === selectedConv.orderId);
         if (updatedConv) {
