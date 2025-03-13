@@ -2,11 +2,12 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { X, ArrowLeft } from "lucide-react";
+import { X, ArrowLeft, RotateCcw } from "lucide-react";
 import ProductThumbnail from './ProductThumbnail';
 import Timeline from './Timeline';
 import { formatDateTime, formatCurrency } from '@/utils/formatters';
 import { useToast } from '@/hooks/use-toast';
+import { getNgrokUrl } from '@/config/api';
 
 interface SaleDetailsPanelProps {
   selectedConv: any;
@@ -35,6 +36,7 @@ const SaleDetailsPanel: React.FC<SaleDetailsPanelProps> = ({
 }) => {
   const { toast } = useToast();
   const [markingAsRead, setMarkingAsRead] = useState(false);
+  const [creatingReverseShipment, setCreatingReverseShipment] = useState(false);
 
   // Mark conversation as read when panel is opened
   useEffect(() => {
@@ -55,6 +57,52 @@ const SaleDetailsPanel: React.FC<SaleDetailsPanelProps> = ({
     
     markConversationAsRead();
   }, [selectedConv, markAsRead]);
+
+  const handleCreateReverseShipment = async () => {
+    if (!selectedConv || !selectedConv.orderId || !selectedConv.buyerId) {
+      toast({
+        title: "Erro",
+        description: "Informações insuficientes para criar envio reverso",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setCreatingReverseShipment(true);
+    
+    try {
+      const response = await fetch(getNgrokUrl('/ep242024'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          order_id: selectedConv.orderId,
+          buyerId: selectedConv.buyerId,
+          msgId: "12345"
+        })
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Sucesso",
+          description: "Envio reverso criado com sucesso",
+        });
+      } else {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.message || 'Erro ao criar envio reverso');
+      }
+    } catch (error) {
+      console.error("Erro ao criar envio reverso:", error);
+      toast({
+        title: "Erro",
+        description: error instanceof Error ? error.message : "Erro ao criar envio reverso",
+        variant: "destructive",
+      });
+    } finally {
+      setCreatingReverseShipment(false);
+    }
+  };
 
   if (!selectedConv) {
     return null;
@@ -137,6 +185,28 @@ const SaleDetailsPanel: React.FC<SaleDetailsPanelProps> = ({
                 )}
               </CardContent>
             </Card>
+
+            <Button
+              className="w-full text-sm"
+              variant="secondary"
+              size="sm"
+              onClick={handleCreateReverseShipment}
+              disabled={creatingReverseShipment}
+            >
+              {creatingReverseShipment ? (
+                <>
+                  <span className="animate-spin mr-2">
+                    <RotateCcw size={16} />
+                  </span>
+                  Criando envio reverso...
+                </>
+              ) : (
+                <>
+                  <RotateCcw size={16} />
+                  Criar envio reverso
+                </>
+              )}
+            </Button>
             
             <Button
               className="w-full text-sm"
