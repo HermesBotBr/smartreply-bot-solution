@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { MessageSquare, HelpCircle, BarChart, Tag } from "lucide-react";
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 
 interface NavSidebarProps {
   activeTab: string;
@@ -8,6 +9,39 @@ interface NavSidebarProps {
 }
 
 const NavSidebar: React.FC<NavSidebarProps> = ({ activeTab, setActiveTab }) => {
+  const isMobile = useMediaQuery('(max-width: 768px)');
+
+  if (isMobile) {
+    return (
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t flex justify-around items-center py-2 px-4">
+        <MobileNavItem 
+          icon={<MessageSquare size={24} />} 
+          isActive={activeTab === 'conversas'} 
+          onClick={() => setActiveTab('conversas')}
+          label="Chat"
+        />
+        <MobileNavItem 
+          icon={<HelpCircle size={24} />} 
+          isActive={activeTab === 'perguntas'} 
+          onClick={() => setActiveTab('perguntas')}
+          label="Perguntas"
+        />
+        <MobileNavItem 
+          icon={<BarChart size={24} />} 
+          isActive={activeTab === 'metricas'} 
+          onClick={() => setActiveTab('metricas')}
+          label="Métricas"
+        />
+        <MobileNavItem 
+          icon={<Tag size={24} />} 
+          isActive={activeTab === 'etiquetas'} 
+          onClick={() => setActiveTab('etiquetas')}
+          label="Etiquetas"
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="w-14 bg-gray-100 border-r flex flex-col items-center py-4">
       <NavItem 
@@ -49,6 +83,29 @@ const NavItem: React.FC<NavItemProps> = ({ icon, isActive, onClick }) => {
       onClick={onClick}
     >
       {icon}
+    </div>
+  );
+};
+
+interface MobileNavItemProps {
+  icon: React.ReactNode;
+  isActive: boolean;
+  onClick: () => void;
+  label: string;
+}
+
+const MobileNavItem: React.FC<MobileNavItemProps> = ({ icon, isActive, onClick, label }) => {
+  return (
+    <div 
+      className={`flex flex-col items-center cursor-pointer ${
+        isActive ? 'text-primary' : 'text-gray-500'
+      }`}
+      onClick={onClick}
+    >
+      <div className="mb-1">
+        {icon}
+      </div>
+      <span className="text-xs">{label}</span>
     </div>
   );
 };

@@ -1,7 +1,8 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { X } from "lucide-react";
+import { X, ArrowLeft } from "lucide-react";
 import ProductThumbnail from './ProductThumbnail';
 import Timeline from './Timeline';
 import { formatDateTime, formatCurrency } from '@/utils/formatters';
@@ -17,6 +18,7 @@ interface SaleDetailsPanelProps {
   fetchDetailedInfo: () => Promise<void>;
   onClose: () => void;
   markAsRead: (orderId: string) => Promise<void>;
+  isMobile: boolean;
 }
 
 const SaleDetailsPanel: React.FC<SaleDetailsPanelProps> = ({
@@ -28,7 +30,8 @@ const SaleDetailsPanel: React.FC<SaleDetailsPanelProps> = ({
   detailedInfo,
   fetchDetailedInfo,
   onClose,
-  markAsRead
+  markAsRead,
+  isMobile
 }) => {
   const { toast } = useToast();
   const [markingAsRead, setMarkingAsRead] = useState(false);
@@ -60,14 +63,30 @@ const SaleDetailsPanel: React.FC<SaleDetailsPanelProps> = ({
   return (
     <div className="h-full flex flex-col border-l border-gray-300">
       <div className="bg-primary text-white p-3 flex items-center justify-between">
-        <h2 className="text-lg font-bold">Detalhes da venda</h2>
-        <button 
-          onClick={onClose}
-          className="text-white hover:bg-primary-dark rounded-full p-1"
-          aria-label="Fechar detalhes da venda"
-        >
-          <X size={20} />
-        </button>
+        {isMobile ? (
+          <>
+            <button 
+              onClick={onClose}
+              className="text-white"
+              aria-label="Voltar"
+            >
+              <ArrowLeft size={20} />
+            </button>
+            <h2 className="text-lg font-bold">Detalhes da venda</h2>
+            <div className="w-5"></div> {/* Empty div for flex alignment */}
+          </>
+        ) : (
+          <>
+            <h2 className="text-lg font-bold">Detalhes da venda</h2>
+            <button 
+              onClick={onClose}
+              className="text-white hover:bg-primary-dark rounded-full p-1"
+              aria-label="Fechar detalhes da venda"
+            >
+              <X size={20} />
+            </button>
+          </>
+        )}
       </div>
       
       <div className="flex-1 overflow-y-auto p-3 bg-gray-50">

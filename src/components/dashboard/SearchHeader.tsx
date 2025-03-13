@@ -2,14 +2,15 @@
 import React from 'react';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, Eye, CheckCheck } from "lucide-react";
+import { Search, Check } from "lucide-react";
 
 interface SearchHeaderProps {
   searchText: string;
-  setSearchText: (value: string) => void;
+  setSearchText: (text: string) => void;
   hasUnreadConversations: boolean;
   markAllAsRead: () => Promise<void>;
   markingAsRead: boolean;
+  isMobile?: boolean;
 }
 
 const SearchHeader: React.FC<SearchHeaderProps> = ({
@@ -17,44 +18,57 @@ const SearchHeader: React.FC<SearchHeaderProps> = ({
   setSearchText,
   hasUnreadConversations,
   markAllAsRead,
-  markingAsRead
+  markingAsRead,
+  isMobile = false
 }) => {
   return (
-    <div className="bg-primary p-3">
-      <h1 className="text-lg font-bold text-white">Monitor de Vendas</h1>
-      <div className="relative mt-2">
-        <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-500 h-4 w-4" />
-        <Input
-          className="bg-white text-black pl-8"
-          placeholder="Pesquisar por nome ou Order_ID..."
-          value={searchText}
-          onChange={(e) => setSearchText(e.target.value)}
-        />
-      </div>
-      {hasUnreadConversations && (
-        <Button 
-          variant="secondary" 
-          className="w-full mt-2 text-sm" 
-          onClick={markAllAsRead}
-          disabled={markingAsRead}
-        >
-          {markingAsRead ? (
-            <>
-              <span className="animate-spin mr-1">
-                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-              </span>
-              Processando...
-            </>
-          ) : (
-            <>
-              <Eye className="h-4 w-4 mr-1" />
-              Visualizar todas
-            </>
+    <div className={`p-3 bg-white border-b ${isMobile ? 'sticky top-0 z-10' : ''}`}>
+      <div className="flex items-center">
+        <div className="relative flex-1">
+          <Search
+            size={16}
+            className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400"
+          />
+          <Input
+            type="text"
+            placeholder="Pesquisar conversas..."
+            className="pl-8"
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+          />
+          {searchText && (
+            <button
+              className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              onClick={() => setSearchText('')}
+            >
+              ×
+            </button>
           )}
-        </Button>
+        </div>
+      </div>
+      
+      {hasUnreadConversations && (
+        <div className="mt-2">
+          <Button
+            onClick={markAllAsRead}
+            disabled={markingAsRead}
+            variant="outline"
+            size="sm"
+            className="w-full"
+          >
+            {markingAsRead ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-2"></div>
+                Marcando...
+              </>
+            ) : (
+              <>
+                <Check size={16} className="mr-1" />
+                Marcar todas como lidas
+              </>
+            )}
+          </Button>
+        </div>
       )}
     </div>
   );

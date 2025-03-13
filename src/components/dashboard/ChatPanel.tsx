@@ -1,7 +1,8 @@
+
 import React, { useRef, useEffect, useState } from 'react';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Info } from "lucide-react";
+import { Info, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import ProductThumbnail from './ProductThumbnail';
 import { formatDate, formatTime } from '@/utils/dateFormatters';
@@ -17,6 +18,8 @@ interface ChatPanelProps {
   isAtBottom: boolean;
   initialAutoScrollDone: boolean;
   setInitialAutoScrollDone: (done: boolean) => void;
+  onBack?: () => void;
+  isMobile: boolean;
 }
 
 const ChatPanel: React.FC<ChatPanelProps> = ({
@@ -28,7 +31,9 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
   setFullScreenImage,
   isAtBottom,
   initialAutoScrollDone,
-  setInitialAutoScrollDone
+  setInitialAutoScrollDone,
+  onBack,
+  isMobile
 }) => {
   const [messageText, setMessageText] = useState('');
   const [tempMessages, setTempMessages] = useState<any[]>([]);
@@ -150,16 +155,29 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
   return (
     <div className="flex flex-col h-full">
       <div 
-        className="bg-primary text-white p-3 flex items-center cursor-pointer"
-        onClick={() => setShowSaleDetails(!showSaleDetails)}
+        className="bg-primary text-white p-3 flex items-center"
       >
-        <div className="flex items-center">
+        {isMobile && onBack && (
+          <button 
+            onClick={onBack}
+            className="mr-2 text-white"
+            aria-label="Voltar"
+          >
+            <ArrowLeft size={20} />
+          </button>
+        )}
+        
+        <div 
+          className="flex items-center flex-1 cursor-pointer"
+          onClick={() => setShowSaleDetails(!showSaleDetails)}
+        >
           <ProductThumbnail itemId={selectedConv.itemId} />
           <div className="ml-3">
             <h2 className="text-lg font-bold">{selectedConv.buyer}</h2>
             <p className="text-xs opacity-80">Order_ID: {selectedConv.orderId}</p>
           </div>
         </div>
+        
         <div className="ml-auto">
           <Info size={20} />
         </div>

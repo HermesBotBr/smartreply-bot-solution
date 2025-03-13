@@ -13,6 +13,7 @@ interface ConversationsListProps {
   refreshing: boolean;
   readConversations: string[];
   markAsRead: (orderId: string | string[]) => Promise<void>;
+  isMobile: boolean;
 }
 
 const ConversationsList: React.FC<ConversationsListProps> = ({
@@ -22,7 +23,8 @@ const ConversationsList: React.FC<ConversationsListProps> = ({
   setInitialAutoScrollDone,
   refreshing,
   readConversations,
-  markAsRead
+  markAsRead,
+  isMobile
 }) => {
   const [searchText, setSearchText] = useState('');
   const [filterModalVisible, setFilterModalVisible] = useState(false);
@@ -96,6 +98,7 @@ const ConversationsList: React.FC<ConversationsListProps> = ({
         hasUnreadConversations={hasUnreadConversations()}
         markAllAsRead={markAllAsRead}
         markingAsRead={markingAsRead}
+        isMobile={isMobile}
       />
       
       <div className="flex-1 overflow-y-auto">

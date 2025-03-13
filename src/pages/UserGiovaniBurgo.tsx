@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import QuestionsList from "@/components/dashboard/QuestionsList";
 import MetricsDisplay from "@/components/dashboard/MetricsDisplay";
@@ -10,6 +11,7 @@ import { useMlToken } from "@/hooks/useMlToken";
 import { useConversations } from "@/hooks/useConversations";
 import { useGptIds } from "@/hooks/useGptIds";
 import { useSaleDetails } from "@/hooks/useSaleDetails";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 
 const UserGiovaniBurgo = () => {
   const [activeTab, setActiveTab] = useState('conversas');
@@ -36,8 +38,9 @@ const UserGiovaniBurgo = () => {
     setShowSaleDetails,
     fetchSaleDetails
   } = useSaleDetails();
+  const isMobile = useMediaQuery('(max-width: 768px)');
 
-  // Registra o Service Worker, solicita permissão e inscreve o usuário na Push API
+  // Service Worker registration
   useEffect(() => {
     if ("serviceWorker" in navigator && "PushManager" in window) {
       navigator.serviceWorker.register("/service-worker.js")
@@ -48,24 +51,22 @@ const UserGiovaniBurgo = () => {
               throw new Error("Permissão para notificações não concedida");
             }
             return registration.pushManager.subscribe({
-              userVisibleOnly: true, // obrigatório para exibir notificações
+              userVisibleOnly: true,
               applicationServerKey: urlBase64ToUint8Array("BAbN67uXIrHatd6zRxiQdcSOB4n6g09E4bS7cfszMA7nElaF1zn9d69g5qxnjwVebKVAQBtICDfT0xuPzaOWlhg")
             });
           });
         })
         .then((subscription) => {
-  console.log("Usuário inscrito:", subscription);
-  // Envia a subscription para o backend para armazenamento
-  fetch("/api/save-subscription", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(subscription)
-  })
-    .then(response => response.json())
-    .then(data => console.log("Subscription salva:", data))
-    .catch(error => console.error("Erro ao salvar subscription:", error));
-})
-
+          console.log("Usuário inscrito:", subscription);
+          fetch("/api/save-subscription", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(subscription)
+          })
+            .then(response => response.json())
+            .then(data => console.log("Subscription salva:", data))
+            .catch(error => console.error("Erro ao salvar subscription:", error));
+        })
         .catch((error) => {
           console.error("Erro durante o registro ou inscrição do push:", error);
         });
@@ -74,7 +75,7 @@ const UserGiovaniBurgo = () => {
     }
   }, []);
 
-  // Função utilitária para converter a chave VAPID de base64 para Uint8Array
+  // Function to convert base64 to Uint8Array
   function urlBase64ToUint8Array(base64String: string) {
     const padding = "=".repeat((4 - base64String.length % 4) % 4);
     const base64 = (base64String + padding)
@@ -88,13 +89,15 @@ const UserGiovaniBurgo = () => {
     return outputArray;
   }
 
-
-
   return (
     <div className="flex h-screen overflow-hidden">
-      <NavSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+      {/* NavSidebar - only show on sides for desktop */}
+      {!isMobile && (
+        <NavSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+      )}
 
-      <div className="flex-1 flex w-[calc(100%-3.5rem)]">
+      {/* Main content area - adjust height for mobile to account for bottom navbar */}
+      <div className={`flex-1 flex w-${isMobile ? 'full' : '[calc(100%-3.5rem)]'} ${isMobile ? 'h-[calc(100vh-56px)]' : 'h-screen'}`}>
         {activeTab === 'conversas' ? (
           <ConversationsTab 
             conversations={conversations}
@@ -119,15 +122,15 @@ const UserGiovaniBurgo = () => {
             fetchSaleDetails={fetchSaleDetails}
           />
         ) : activeTab === 'perguntas' ? (
-          <div className="w-full h-screen overflow-auto">
+          <div className="w-full h-full overflow-auto">
             <QuestionsList />
           </div>
         ) : activeTab === 'etiquetas' ? (
-          <div className="w-full h-screen overflow-auto">
+          <div className="w-full h-full overflow-auto">
             <EtiquetasList />
           </div>
         ) : (
-          <div className="w-full h-screen overflow-auto">
+          <div className="w-full h-full overflow-auto">
             <MetricsDisplay onOrderClick={(orderId) => {
               const conversation = conversations.find(conv => conv.orderId.toString() === orderId.toString());
               if (conversation) {
@@ -140,6 +143,11 @@ const UserGiovaniBurgo = () => {
           </div>
         )}
       </div>
+
+      {/* Bottom mobile navigation */}
+      {isMobile && (
+        <NavSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+      )}
 
       <FullScreenImage imageUrl={fullScreenImage} onClose={() => setFullScreenImage(null)} />
     </div>

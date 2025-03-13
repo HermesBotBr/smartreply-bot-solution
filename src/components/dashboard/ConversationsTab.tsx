@@ -1,8 +1,8 @@
-
 import React, { useEffect } from 'react';
 import ConversationsList from './ConversationsList';
 import ChatPanel from './ChatPanel';
 import SaleDetailsPanel from './SaleDetailsPanel';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 
 interface ConversationsTabProps {
   conversations: any[];
@@ -49,6 +49,8 @@ const ConversationsTab: React.FC<ConversationsTabProps> = ({
   fetchDetailedInfo,
   fetchSaleDetails
 }) => {
+  const isMobile = useMediaQuery('(max-width: 768px)');
+
   useEffect(() => {
     let intervalId: NodeJS.Timeout | undefined;
     if (showSaleDetails && selectedConv) {
@@ -73,6 +75,64 @@ const ConversationsTab: React.FC<ConversationsTabProps> = ({
     setShowSaleDetails(false);
   };
 
+  const handleBackFromChat = () => {
+    setSelectedConv(null);
+  };
+
+  if (isMobile) {
+    if (showSaleDetails && selectedConv) {
+      return (
+        <div className="w-full h-screen overflow-hidden">
+          <SaleDetailsPanel 
+            selectedConv={selectedConv}
+            orderDetails={orderDetails}
+            shippingDetails={shippingDetails}
+            expandedInfo={expandedInfo}
+            setExpandedInfo={setExpandedInfo}
+            detailedInfo={detailedInfo}
+            fetchDetailedInfo={() => mlToken && fetchDetailedInfo(selectedConv, mlToken)}
+            onClose={handleCloseSaleDetails}
+            markAsRead={markAsRead}
+            isMobile={true}
+          />
+        </div>
+      );
+    } else if (selectedConv) {
+      return (
+        <div className="w-full h-screen overflow-hidden">
+          <ChatPanel 
+            selectedConv={selectedConv}
+            showSaleDetails={showSaleDetails}
+            setShowSaleDetails={setShowSaleDetails}
+            gptIds={gptIds}
+            mlToken={mlToken}
+            setFullScreenImage={setFullScreenImage}
+            isAtBottom={true}
+            initialAutoScrollDone={initialAutoScrollDone}
+            setInitialAutoScrollDone={setInitialAutoScrollDone}
+            onBack={handleBackFromChat}
+            isMobile={true}
+          />
+        </div>
+      );
+    } else {
+      return (
+        <div className="w-full h-screen overflow-hidden">
+          <ConversationsList 
+            conversations={conversations}
+            selectedConv={selectedConv}
+            setSelectedConv={setSelectedConv}
+            setInitialAutoScrollDone={setInitialAutoScrollDone}
+            refreshing={refreshing}
+            readConversations={readConversations}
+            markAsRead={markAsRead}
+            isMobile={true}
+          />
+        </div>
+      );
+    }
+  }
+
   return (
     <>
       <div className="w-1/3 h-screen overflow-hidden">
@@ -84,6 +144,7 @@ const ConversationsTab: React.FC<ConversationsTabProps> = ({
           refreshing={refreshing}
           readConversations={readConversations}
           markAsRead={markAsRead}
+          isMobile={false}
         />
       </div>
       
@@ -98,6 +159,7 @@ const ConversationsTab: React.FC<ConversationsTabProps> = ({
           isAtBottom={true}
           initialAutoScrollDone={initialAutoScrollDone}
           setInitialAutoScrollDone={setInitialAutoScrollDone}
+          isMobile={false}
         />
       </div>
       
@@ -113,6 +175,7 @@ const ConversationsTab: React.FC<ConversationsTabProps> = ({
             fetchDetailedInfo={() => mlToken && fetchDetailedInfo(selectedConv, mlToken)}
             onClose={handleCloseSaleDetails}
             markAsRead={markAsRead}
+            isMobile={false}
           />
         </div>
       )}
