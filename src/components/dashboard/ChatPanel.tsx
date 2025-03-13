@@ -42,8 +42,11 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
 
   useEffect(() => {
     if (chatEndRef.current && !initialAutoScrollDone) {
-      chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
-      setInitialAutoScrollDone(true);
+      // Use a small timeout to ensure the header is fully rendered and fixed
+      setTimeout(() => {
+        chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        setInitialAutoScrollDone(true);
+      }, 100);
     }
   }, [selectedConv, initialAutoScrollDone, setInitialAutoScrollDone]);
 
@@ -154,6 +157,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
   
   return (
     <div className="flex flex-col h-full">
+      {/* Header - Always fixed at top on mobile */}
       <div 
         className={`bg-primary text-white p-3 flex items-center ${isMobile ? 'sticky top-0 z-10' : ''}`}
       >
@@ -183,6 +187,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
         </div>
       </div>
       
+      {/* Messages container - This will scroll independently */}
       <div className="flex-1 overflow-y-auto p-4 bg-gray-100">
         {sortedMessages.map((msg, index) => {
           const currentMessageDate = formatDate(msg.date);
@@ -257,6 +262,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
         <div ref={chatEndRef} />
       </div>
       
+      {/* Footer - Fixed at bottom on mobile */}
       <div className={`p-3 bg-white border-t flex gap-2 ${isMobile ? 'sticky bottom-0 z-10' : ''}`}>
         <Input
           className="flex-1"
