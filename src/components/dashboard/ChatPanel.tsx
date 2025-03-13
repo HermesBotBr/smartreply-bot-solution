@@ -155,7 +155,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
   return (
     <div className="flex flex-col h-full">
       <div 
-        className="bg-primary text-white p-3 flex items-center"
+        className={`bg-primary text-white p-3 flex items-center ${isMobile ? 'sticky top-0 z-10' : ''}`}
       >
         {isMobile && onBack && (
           <button 
@@ -257,7 +257,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
         <div ref={chatEndRef} />
       </div>
       
-      <div className="p-3 bg-white border-t flex gap-2">
+      <div className={`p-3 bg-white border-t flex gap-2 ${isMobile ? 'sticky bottom-0 z-10' : ''}`}>
         <Input
           className="flex-1"
           placeholder="Digite sua mensagem..."
