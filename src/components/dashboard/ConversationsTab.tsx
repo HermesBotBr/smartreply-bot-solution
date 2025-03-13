@@ -82,7 +82,7 @@ const ConversationsTab: React.FC<ConversationsTabProps> = ({
   if (isMobile) {
     if (showSaleDetails && selectedConv) {
       return (
-        <div className="w-full h-screen overflow-hidden">
+        <div className="w-full h-full flex flex-col overflow-hidden">
           <SaleDetailsPanel 
             selectedConv={selectedConv}
             orderDetails={orderDetails}
@@ -99,7 +99,7 @@ const ConversationsTab: React.FC<ConversationsTabProps> = ({
       );
     } else if (selectedConv) {
       return (
-        <div className="w-full h-screen overflow-hidden">
+        <div className="w-full h-full flex flex-col overflow-hidden">
           <ChatPanel 
             selectedConv={selectedConv}
             showSaleDetails={showSaleDetails}
@@ -117,7 +117,7 @@ const ConversationsTab: React.FC<ConversationsTabProps> = ({
       );
     } else {
       return (
-        <div className="w-full h-screen overflow-hidden">
+        <div className="w-full h-full flex flex-col overflow-hidden">
           <ConversationsList 
             conversations={conversations}
             selectedConv={selectedConv}
