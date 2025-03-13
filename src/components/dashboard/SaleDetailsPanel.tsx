@@ -59,7 +59,7 @@ const SaleDetailsPanel: React.FC<SaleDetailsPanelProps> = ({
   }, [selectedConv, markAsRead]);
 
   const handleCreateReverseShipment = async () => {
-    if (!selectedConv || !selectedConv.orderId || !selectedConv.buyerId) {
+    if (!selectedConv || !selectedConv.orderId) {
       toast({
         title: "Erro",
         description: "Informações insuficientes para criar envio reverso",
@@ -71,6 +71,29 @@ const SaleDetailsPanel: React.FC<SaleDetailsPanelProps> = ({
     setCreatingReverseShipment(true);
     
     try {
+      // Get the buyerId from the selected conversation or fetch it from the API
+      let buyerId = selectedConv.buyerId;
+      
+      // If buyerId is not available, fetch it from the Mercado Livre API
+      if (!buyerId) {
+        const mlTokenResponse = await fetch(getNgrokUrl('mercadoLivreApiKey.txt'));
+        const mlToken = await mlTokenResponse.text();
+        
+        const orderResponse = await fetch(`https://api.mercadolibre.com/orders/${selectedConv.orderId}?access_token=${mlToken.trim()}`);
+        const orderData = await orderResponse.json();
+        
+        if (orderData.error) {
+          throw new Error(`Erro ao obter informações do pedido: ${orderData.error}`);
+        }
+        
+        if (!orderData.buyer || !orderData.buyer.id) {
+          throw new Error('Não foi possível encontrar o ID do comprador');
+        }
+        
+        buyerId = orderData.buyer.id;
+      }
+      
+      // Now create the reverse shipment with the buyerId
       const response = await fetch(getNgrokUrl('/ep242024'), {
         method: 'POST',
         headers: {
@@ -78,7 +101,7 @@ const SaleDetailsPanel: React.FC<SaleDetailsPanelProps> = ({
         },
         body: JSON.stringify({
           order_id: selectedConv.orderId,
-          buyerId: selectedConv.buyerId,
+          buyerId: buyerId,
           msgId: "12345"
         })
       });
