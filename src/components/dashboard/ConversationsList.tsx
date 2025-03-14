@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import ConversationItem from './ConversationItem';
 import FilterModal from './FilterModal';
@@ -49,7 +48,6 @@ const ConversationsList: React.FC<ConversationsListProps> = ({
     setMarkingAsRead(true);
     
     try {
-      // Find all unread conversations with buyer as last sender
       const unreadConversations = filteredConversations.filter(conv => 
         hasBuyerLastMessage(conv, readConversations)
       );
@@ -57,12 +55,8 @@ const ConversationsList: React.FC<ConversationsListProps> = ({
       console.log(`Marking ${unreadConversations.length} conversations as read`);
       
       if (unreadConversations.length > 0) {
-        // Get all orderIds in one array and mark them all at once
         const orderIds = unreadConversations.map(conv => conv.orderId).filter(Boolean);
-        
-        // Pass the entire array of orderIds to markAsRead
         await markAsRead(orderIds);
-        
         console.log("All conversations marked as read successfully");
       } else {
         console.log("No unread conversations to mark");
@@ -80,7 +74,7 @@ const ConversationsList: React.FC<ConversationsListProps> = ({
     setSelectedConv(item);
     setInitialAutoScrollDone(false);
     
-    if (item.orderId && !readConversations.includes(item.orderId)) {
+    if (item.orderId) {
       try {
         await markAsRead(item.orderId);
         console.log(`Conversation ${item.orderId} marked as read from ConversationsList`);
