@@ -56,8 +56,16 @@ const ConversationsList: React.FC<ConversationsListProps> = ({
       console.log(`Marking ${unreadConversations.length} conversations as read`);
       
       if (unreadConversations.length > 0) {
-        const orderIds = unreadConversations.map(conv => conv.orderId).filter(Boolean);
-        await markAsRead(orderIds);
+        // For each conversation, find the latest buyer message and mark it as read
+        const messageIdsToMark = unreadConversations.map(conv => {
+          const latestMessage = conv.messages.reduce(
+            (prev: any, curr: any) => (new Date(curr.date) > new Date(prev.date) ? curr : prev),
+            conv.messages[0]
+          );
+          return latestMessage.id ? `${conv.orderId}:${latestMessage.id}` : conv.orderId;
+        }).filter(Boolean);
+        
+        await markAsRead(messageIdsToMark);
         console.log("All conversations marked as read successfully");
       } else {
         console.log("No unread conversations to mark");
@@ -87,14 +95,15 @@ const ConversationsList: React.FC<ConversationsListProps> = ({
               )
             : null;
             
-          if (latestMessage) {
+          if (latestMessage && latestMessage.id) {
             // Mark this specific message as read using the message ID
             await markAsRead(`${item.orderId}:${latestMessage.id}`);
+            console.log(`Message ${latestMessage.id} in conversation ${item.orderId} marked as read from ConversationsList`);
           } else {
             // Fallback to marking the whole conversation as read
             await markAsRead(item.orderId);
+            console.log(`Conversation ${item.orderId} marked as read from ConversationsList (no specific message ID)`);
           }
-          console.log(`Conversation ${item.orderId} marked as read from ConversationsList`);
         }
       } catch (error) {
         console.error("Error marking conversation as read from ConversationsList:", error);

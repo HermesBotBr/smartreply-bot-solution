@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useToast } from "./use-toast";
 import { getNgrokUrl } from '@/config/api';
@@ -65,24 +66,34 @@ export function useReadConversations() {
     // Handle both array and single order id inputs
     if (Array.isArray(orderId)) {
       // For arrays, filter out already read conversations
-      orderIds = orderId.filter(id => {
-        if (!id) return false;
+      orderId.forEach(id => {
+        if (!id) return;
         
         // Handle the special format orderId:messageId
         if (id.includes(':')) {
           const [oid, mid] = id.split(':');
-          messageIds.push(`${oid}:${mid}`);
-          return !readConversations.includes(`${oid}:${mid}`);
+          
+          // Check if this specific message is already marked as read
+          if (!readConversations.includes(`${oid}:${mid}`)) {
+            messageIds.push(`${oid}:${mid}`);
+            // We only add the order ID to be sent to the server if we're actually
+            // marking something as new
+            if (!orderIds.includes(oid)) {
+              orderIds.push(oid);
+            }
+          }
+        } else if (!readConversations.includes(id)) {
+          orderIds.push(id);
         }
-        
-        return !readConversations.includes(id);
       });
     } else if (orderId) {
       // Handle the special format orderId:messageId
       if (orderId.includes(':')) {
         const [oid, mid] = orderId.split(':');
-        messageIds.push(`${oid}:${mid}`);
+        
+        // Check if this specific message is already marked as read
         if (!readConversations.includes(orderId)) {
+          messageIds.push(orderId);
           orderIds = [oid]; // Add the order ID part to orderIds
         }
       } else if (!readConversations.includes(orderId)) {
@@ -129,7 +140,7 @@ export function useReadConversations() {
     setLastSyncAttempt(now);
     
     try {
-      // Modified to send all order IDs in a single request
+      // Send only the order IDs to the server (not the message IDs)
       const response = await fetch(getNgrokUrl('mark_read.php'), {
         method: 'POST',
         headers: {
