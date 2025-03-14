@@ -7,6 +7,7 @@ webpush.setVapidDetails(
   "mBpGXsV_EAV3GPkSG8_rp7b8U3w2DbdWFZhscct0UxA"
 );
 
+
 export default async function handler(req, res) {
   if (req.method === "POST") {
     const { message } = req.body;
