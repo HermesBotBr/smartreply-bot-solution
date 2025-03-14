@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { MessageSquare, Users, ShoppingBag, TrendingUp, X, AlertTriangle } from "lucide-react";
@@ -34,7 +33,11 @@ const MetricsDisplay = ({ onOrderClick }: { onOrderClick?: (orderId: string) => 
 
   const handleOrderClick = (orderId: string) => {
     setShowPopup(false);
-    window.open(`https://www.mercadolivre.com.br/vendas/novo/mensagens/${orderId}`);
+    if (activeComplaintType === 'prevented') {
+      window.open(`https://www.mercadolivre.com.br/vendas/novo/mensagens/${orderId}`);
+    } else {
+      window.open(`https://www.mercadolivre.com.br/vendas/${orderId}/detalhe`);
+    }
   };
 
   const fetchComplaintsAvoidedCount = async () => {
