@@ -15,11 +15,9 @@ export const hasBuyerLastMessage = (conv: any, readConversations: string[]) => {
     return false;
   }
   
-  // Also check if the conversation as a whole has been marked as read
-  // Some older messages might not have message IDs
-  if (readConversations.includes(conv.orderId)) {
-    return false;
-  }
+  // Don't check the general conversation read state anymore
+  // This ensures new messages will always be highlighted even if the conversation
+  // was previously read
   
   return true;
 };

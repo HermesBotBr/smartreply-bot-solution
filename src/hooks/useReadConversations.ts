@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useToast } from "./use-toast";
 import { getNgrokUrl } from '@/config/api';
@@ -112,15 +111,15 @@ export function useReadConversations() {
     // Update the read conversations state with both order IDs and message IDs
     const updatedReadConvs = [...readConversations];
     
-    // Add order IDs to the read state
-    orderIds.forEach(id => {
+    // Add message IDs to the read state - do this first and prioritize message IDs
+    messageIds.forEach(id => {
       if (!updatedReadConvs.includes(id)) {
         updatedReadConvs.push(id);
       }
     });
     
-    // Add message IDs to the read state
-    messageIds.forEach(id => {
+    // Add order IDs to the read state (but we'll prioritize message-specific IDs)
+    orderIds.forEach(id => {
       if (!updatedReadConvs.includes(id)) {
         updatedReadConvs.push(id);
       }

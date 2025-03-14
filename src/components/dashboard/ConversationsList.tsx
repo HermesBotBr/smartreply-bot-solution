@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import ConversationItem from './ConversationItem';
 import FilterModal from './FilterModal';
@@ -85,25 +84,23 @@ const ConversationsList: React.FC<ConversationsListProps> = ({
     
     if (item.orderId) {
       try {
-        // If this conversation has a buyer last message that is unread, mark it as read
-        if (hasBuyerLastMessage(item, readConversations)) {
-          // Find the latest message in the conversation to mark specifically
-          const latestMessage = item.messages.length > 0 
-            ? item.messages.reduce(
-                (prev: any, curr: any) => (new Date(curr.date) > new Date(prev.date) ? curr : prev),
-                item.messages[0]
-              )
-            : null;
-            
-          if (latestMessage && latestMessage.id) {
-            // Mark this specific message as read using the message ID
-            await markAsRead(`${item.orderId}:${latestMessage.id}`);
-            console.log(`Message ${latestMessage.id} in conversation ${item.orderId} marked as read from ConversationsList`);
-          } else {
-            // Fallback to marking the whole conversation as read
-            await markAsRead(item.orderId);
-            console.log(`Conversation ${item.orderId} marked as read from ConversationsList (no specific message ID)`);
-          }
+        // Always check for the last message and mark specifically that message as read
+        const latestMessage = item.messages.length > 0 
+          ? item.messages.reduce(
+              (prev: any, curr: any) => (new Date(curr.date) > new Date(prev.date) ? curr : prev),
+              item.messages[0]
+            )
+          : null;
+          
+        if (latestMessage && latestMessage.id) {
+          // Always mark the specific message ID to ensure we track which message was last read
+          const messageId = `${item.orderId}:${latestMessage.id}`;
+          await markAsRead(messageId);
+          console.log(`Message ${latestMessage.id} in conversation ${item.orderId} marked as read from ConversationsList`);
+        } else {
+          // Fallback to marking the whole conversation as read
+          await markAsRead(item.orderId);
+          console.log(`Conversation ${item.orderId} marked as read from ConversationsList (no specific message ID)`);
         }
       } catch (error) {
         console.error("Error marking conversation as read from ConversationsList:", error);
