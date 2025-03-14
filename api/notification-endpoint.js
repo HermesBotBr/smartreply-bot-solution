@@ -12,8 +12,8 @@ export default async function handler(req, res) {
   if (req.method === "POST") {
     const { message } = req.body;
     const payload = JSON.stringify({
-      title: "Notificação via Push",
-      body: message || "Um cliente aguarda atendimento humano"
+      title: "O cliente aguarda auxílio humano",
+      body: message || "O cliente aguarda atendimento humano"
     });
 
     console.log("Payload a ser enviado:", payload);
