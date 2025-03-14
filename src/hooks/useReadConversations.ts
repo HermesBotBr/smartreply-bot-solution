@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useToast } from "./use-toast";
 import { getNgrokUrl } from '@/config/api';
@@ -63,8 +62,8 @@ export function useReadConversations() {
     let orderIds: string[] = [];
     
     if (Array.isArray(orderId)) {
-      orderIds = orderId.filter(id => id && !readConversations.includes(id));
-    } else if (orderId && !readConversations.includes(orderId)) {
+      orderIds = orderId.filter(id => id && !readConversations.some(rc => rc === id || rc.startsWith(`${id}:`)));
+    } else if (orderId && !readConversations.some(rc => rc === orderId || rc.startsWith(`${orderId}:`))) {
       orderIds = [orderId];
     }
     
@@ -72,8 +71,34 @@ export function useReadConversations() {
     
     console.log(`Marking conversation(s) as read: ${orderIds.join(', ')}`);
     
-    // Update local state immediately with all IDs
-    const updatedReadConvs = [...readConversations, ...orderIds];
+    // Get the currently selected conversation to track its latest message ID
+    const updatedReadConvs = [...readConversations];
+    
+    // For each order ID, add both the orderID and orderID:latestMessageID format
+    orderIds.forEach(id => {
+      if (!updatedReadConvs.includes(id)) {
+        updatedReadConvs.push(id);
+      }
+      
+      // If we have access to the selected conversation details, track the latest message ID
+      const selectedConvElement = document.querySelector('[data-selected-conv]');
+      if (selectedConvElement) {
+        const selectedConv = JSON.parse(selectedConvElement.getAttribute('data-selected-conv') || '{}');
+        if (selectedConv?.orderId === id && selectedConv?.messages?.length > 0) {
+          // Find the latest message
+          const latestMessage = selectedConv.messages.reduce((prev: any, curr: any) => {
+            return new Date(curr.date) > new Date(prev.date) ? curr : prev;
+          }, selectedConv.messages[0]);
+          
+          // Add a read state with the message ID
+          const messageReadState = `${id}:${latestMessage.id}`;
+          if (!updatedReadConvs.includes(messageReadState)) {
+            updatedReadConvs.push(messageReadState);
+          }
+        }
+      }
+    });
+    
     setReadConversations(updatedReadConvs);
     
     // Save to localStorage

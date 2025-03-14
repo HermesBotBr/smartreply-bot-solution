@@ -1,4 +1,3 @@
-
 export const hasBuyerLastMessage = (conv: any, readConversations: string[]) => {
   if (!conv || !conv.messages || conv.messages.length === 0) return false;
   
@@ -7,7 +6,18 @@ export const hasBuyerLastMessage = (conv: any, readConversations: string[]) => {
   }, conv.messages[0]);
   
   const isBuyerMessage = lastMessage.sender.toLowerCase() === 'buyer';
-  const isNotRead = !readConversations.includes(conv.orderId);
+  
+  const conversationReadState = readConversations.find(readState => {
+    if (readState.includes(':')) {
+      const [orderId, messageId] = readState.split(':');
+      return orderId === conv.orderId;
+    }
+    return readState === conv.orderId;
+  });
+  
+  const lastMessageReadState = `${conv.orderId}:${lastMessage.id}`;
+  const isLastMessageRead = readConversations.includes(lastMessageReadState);
+  const isNotRead = !conversationReadState || (isBuyerMessage && !isLastMessageRead);
   
   return isBuyerMessage && isNotRead;
 };

@@ -44,6 +44,7 @@ const ConversationItem: React.FC<ConversationItemProps> = ({
         hasBuyerMessage ? 'bg-blue-50 hover:bg-blue-100' : ''
       }`}
       onClick={onClick}
+      data-selected-conv={isSelected ? JSON.stringify(item) : ''}
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center flex-1">
