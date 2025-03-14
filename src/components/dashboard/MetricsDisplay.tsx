@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { MessageSquare, Users, ShoppingBag, TrendingUp, X } from "lucide-react";
+import { MessageSquare, Users, ShoppingBag, TrendingUp, X, AlertTriangle } from "lucide-react";
 import { 
   BarChart,
   Bar,
@@ -28,6 +29,8 @@ const MetricsDisplay = ({ onOrderClick }: { onOrderClick?: (orderId: string) => 
   const [metrics, setMetrics] = useState<any>(null);
   const [showPopup, setShowPopup] = useState(false);
   const [complaintsList, setComplaintsList] = useState<string[]>([]);
+  const [unpreventedComplaintsList, setUnpreventedComplaintsList] = useState<string[]>([]);
+  const [activeComplaintType, setActiveComplaintType] = useState<'prevented' | 'unprevented'>('prevented');
 
   const handleOrderClick = (orderId: string) => {
     setShowPopup(false);
@@ -53,6 +56,25 @@ const MetricsDisplay = ({ onOrderClick }: { onOrderClick?: (orderId: string) => 
     }
   };
 
+  const fetchUnpreventedComplaintsCount = async () => {
+    try {
+      const response = await fetch(getNgrokUrl('all_tags.txt'));
+      const text = await response.text();
+      const sections = text.split('\n\n');
+      let complaintsCount = 0;
+      sections.forEach(section => {
+        if (section.startsWith('Reclamação no Mercado Livre')) {
+          const lines = section.split('\n').slice(1);
+          complaintsCount = lines.filter(line => line.trim() !== '').length;
+        }
+      });
+      return complaintsCount;
+    } catch (error) {
+      console.error("Erro ao buscar tags de reclamações não impedidas:", error);
+      return 0;
+    }
+  };
+
   const fetchComplaintsAvoidedList = async () => {
     try {
       const response = await fetch(getNgrokUrl('all_tags.txt'));
@@ -71,6 +93,25 @@ const MetricsDisplay = ({ onOrderClick }: { onOrderClick?: (orderId: string) => 
       return orders;
     } catch (error) {
       console.error("Erro ao buscar lista de tags:", error);
+      return [];
+    }
+  };
+
+  const fetchUnpreventedComplaintsList = async () => {
+    try {
+      const response = await fetch(getNgrokUrl('all_tags.txt'));
+      const text = await response.text();
+      const sections = text.split('\n\n');
+      let orders: string[] = [];
+      sections.forEach(section => {
+        if (section.startsWith('Reclamação no Mercado Livre')) {
+          const lines = section.split('\n').slice(1);
+          orders = lines.filter(line => line.trim() !== '');
+        }
+      });
+      return orders;
+    } catch (error) {
+      console.error("Erro ao buscar lista de reclamações não impedidas:", error);
       return [];
     }
   };
@@ -109,6 +150,7 @@ const MetricsDisplay = ({ onOrderClick }: { onOrderClick?: (orderId: string) => 
       ];
 
       const complaintsAvoided = await fetchComplaintsAvoidedCount();
+      const unpreventedComplaints = await fetchUnpreventedComplaintsCount();
 
       const gptResponse = await fetch(getNgrokUrl('all_gpt.txt'));
       const gptText = await gptResponse.text();
@@ -120,6 +162,7 @@ const MetricsDisplay = ({ onOrderClick }: { onOrderClick?: (orderId: string) => 
           totalMessages: totalMessagesCount,
           totalQuestions: questionData.reduce((acc, curr) => acc + curr.received, 0),
           complaintsAvoided: complaintsAvoided,
+          unpreventedComplaints: unpreventedComplaints,
           totalRevenue: salesData.reduce((acc, curr) => acc + curr.value, 0)
         },
         messageData,
@@ -135,9 +178,15 @@ const MetricsDisplay = ({ onOrderClick }: { onOrderClick?: (orderId: string) => 
     setTimeout(generateData, 1500);
   }, []);
 
-  const handlePopupOpen = async () => {
-    const orders = await fetchComplaintsAvoidedList();
-    setComplaintsList(orders);
+  const handlePopupOpen = async (type: 'prevented' | 'unprevented') => {
+    setActiveComplaintType(type);
+    if (type === 'prevented') {
+      const orders = await fetchComplaintsAvoidedList();
+      setComplaintsList(orders);
+    } else {
+      const orders = await fetchUnpreventedComplaintsList();
+      setUnpreventedComplaintsList(orders);
+    }
     setShowPopup(true);
   };
 
@@ -158,7 +207,7 @@ const MetricsDisplay = ({ onOrderClick }: { onOrderClick?: (orderId: string) => 
       <div className="flex-1 overflow-auto p-4">
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <Card onClick={handlePopupOpen} className="cursor-pointer">
+          <Card onClick={() => handlePopupOpen('prevented')} className="cursor-pointer">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <div className="flex flex-col space-y-1">
                 <CardTitle className="text-sm font-medium">Reclamações Evitadas</CardTitle>
@@ -197,18 +246,16 @@ const MetricsDisplay = ({ onOrderClick }: { onOrderClick?: (orderId: string) => 
             </CardContent>
           </Card>
           
-          <Card>
+          <Card onClick={() => handlePopupOpen('unprevented')} className="cursor-pointer">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <div className="flex flex-col space-y-1">
-                <CardTitle className="text-sm font-medium">Faturamento Total</CardTitle>
+                <CardTitle className="text-sm font-medium">Reclamações não impedidas</CardTitle>
                 <CardDescription>Últimos 7 dias</CardDescription>
               </div>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              <AlertTriangle className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
-                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(metrics.summary.totalRevenue)}
-              </div>
+              <div className="text-2xl font-bold">{metrics.summary.unpreventedComplaints}</div>
             </CardContent>
           </Card>
         </div>
@@ -326,21 +373,41 @@ const MetricsDisplay = ({ onOrderClick }: { onOrderClick?: (orderId: string) => 
             >
               <X size={20} />
             </button>
-            <h2 className="text-lg font-bold mb-4">Reclamações Evitadas</h2>
-            {complaintsList.length > 0 ? (
-              <ul className="max-h-60 overflow-auto text-sm">
-                {complaintsList.map((order, index) => (
-                  <li 
-                    key={index} 
-                    className="border-b py-1 cursor-pointer hover:bg-gray-100"
-                    onClick={() => handleOrderClick(order)}
-                  >
-                    {order}
-                  </li>
-                ))}
-              </ul>
+            <h2 className="text-lg font-bold mb-4">
+              {activeComplaintType === 'prevented' ? 'Reclamações Evitadas' : 'Reclamações não impedidas'}
+            </h2>
+            {activeComplaintType === 'prevented' ? (
+              complaintsList.length > 0 ? (
+                <ul className="max-h-60 overflow-auto text-sm">
+                  {complaintsList.map((order, index) => (
+                    <li 
+                      key={index} 
+                      className="border-b py-1 cursor-pointer hover:bg-gray-100"
+                      onClick={() => handleOrderClick(order)}
+                    >
+                      {order}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p>Nenhuma reclamação evitada encontrada.</p>
+              )
             ) : (
-              <p>Nenhuma reclamação encontrada.</p>
+              unpreventedComplaintsList.length > 0 ? (
+                <ul className="max-h-60 overflow-auto text-sm">
+                  {unpreventedComplaintsList.map((order, index) => (
+                    <li 
+                      key={index} 
+                      className="border-b py-1 cursor-pointer hover:bg-gray-100"
+                      onClick={() => handleOrderClick(order)}
+                    >
+                      {order}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p>Nenhuma reclamação não impedida encontrada.</p>
+              )
             )}
           </div>
         </div>
