@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import ConversationItem from './ConversationItem';
 import FilterModal from './FilterModal';
@@ -76,8 +77,25 @@ const ConversationsList: React.FC<ConversationsListProps> = ({
     
     if (item.orderId) {
       try {
-        await markAsRead(item.orderId);
-        console.log(`Conversation ${item.orderId} marked as read from ConversationsList`);
+        // If this conversation has a buyer last message that is unread, mark it as read
+        if (hasBuyerLastMessage(item, readConversations)) {
+          // Find the latest message in the conversation to mark specifically
+          const latestMessage = item.messages.length > 0 
+            ? item.messages.reduce(
+                (prev: any, curr: any) => (new Date(curr.date) > new Date(prev.date) ? curr : prev),
+                item.messages[0]
+              )
+            : null;
+            
+          if (latestMessage) {
+            // Mark this specific message as read using the message ID
+            await markAsRead(`${item.orderId}:${latestMessage.id}`);
+          } else {
+            // Fallback to marking the whole conversation as read
+            await markAsRead(item.orderId);
+          }
+          console.log(`Conversation ${item.orderId} marked as read from ConversationsList`);
+        }
       } catch (error) {
         console.error("Error marking conversation as read from ConversationsList:", error);
       }

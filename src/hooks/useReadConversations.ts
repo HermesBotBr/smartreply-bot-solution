@@ -60,42 +60,58 @@ export function useReadConversations() {
 
   const markAsRead = async (orderId: string | string[]) => {
     let orderIds: string[] = [];
+    let messageIds: string[] = [];
     
+    // Handle both array and single order id inputs
     if (Array.isArray(orderId)) {
-      orderIds = orderId.filter(id => id && !readConversations.some(rc => rc === id || rc.startsWith(`${id}:`)));
-    } else if (orderId && !readConversations.some(rc => rc === orderId || rc.startsWith(`${orderId}:`))) {
-      orderIds = [orderId];
+      // For arrays, filter out already read conversations
+      orderIds = orderId.filter(id => {
+        if (!id) return false;
+        
+        // Handle the special format orderId:messageId
+        if (id.includes(':')) {
+          const [oid, mid] = id.split(':');
+          messageIds.push(`${oid}:${mid}`);
+          return !readConversations.includes(`${oid}:${mid}`);
+        }
+        
+        return !readConversations.includes(id);
+      });
+    } else if (orderId) {
+      // Handle the special format orderId:messageId
+      if (orderId.includes(':')) {
+        const [oid, mid] = orderId.split(':');
+        messageIds.push(`${oid}:${mid}`);
+        if (!readConversations.includes(orderId)) {
+          orderIds = [oid]; // Add the order ID part to orderIds
+        }
+      } else if (!readConversations.includes(orderId)) {
+        orderIds = [orderId];
+      }
     }
     
-    if (orderIds.length === 0) return;
+    // If nothing new to mark as read, return early
+    if (orderIds.length === 0 && messageIds.length === 0) return;
     
     console.log(`Marking conversation(s) as read: ${orderIds.join(', ')}`);
+    if (messageIds.length > 0) {
+      console.log(`Marking specific messages as read: ${messageIds.join(', ')}`);
+    }
     
-    // Get the currently selected conversation to track its latest message ID
+    // Update the read conversations state with both order IDs and message IDs
     const updatedReadConvs = [...readConversations];
     
-    // For each order ID, add both the orderID and orderID:latestMessageID format
+    // Add order IDs to the read state
     orderIds.forEach(id => {
       if (!updatedReadConvs.includes(id)) {
         updatedReadConvs.push(id);
       }
-      
-      // If we have access to the selected conversation details, track the latest message ID
-      const selectedConvElement = document.querySelector('[data-selected-conv]');
-      if (selectedConvElement) {
-        const selectedConv = JSON.parse(selectedConvElement.getAttribute('data-selected-conv') || '{}');
-        if (selectedConv?.orderId === id && selectedConv?.messages?.length > 0) {
-          // Find the latest message
-          const latestMessage = selectedConv.messages.reduce((prev: any, curr: any) => {
-            return new Date(curr.date) > new Date(prev.date) ? curr : prev;
-          }, selectedConv.messages[0]);
-          
-          // Add a read state with the message ID
-          const messageReadState = `${id}:${latestMessage.id}`;
-          if (!updatedReadConvs.includes(messageReadState)) {
-            updatedReadConvs.push(messageReadState);
-          }
-        }
+    });
+    
+    // Add message IDs to the read state
+    messageIds.forEach(id => {
+      if (!updatedReadConvs.includes(id)) {
+        updatedReadConvs.push(id);
       }
     });
     

@@ -7,19 +7,21 @@ export const hasBuyerLastMessage = (conv: any, readConversations: string[]) => {
   
   const isBuyerMessage = lastMessage.sender.toLowerCase() === 'buyer';
   
-  const conversationReadState = readConversations.find(readState => {
-    if (readState.includes(':')) {
-      const [orderId, messageId] = readState.split(':');
-      return orderId === conv.orderId;
-    }
-    return readState === conv.orderId;
-  });
+  if (!isBuyerMessage) return false;
   
-  const lastMessageReadState = `${conv.orderId}:${lastMessage.id}`;
-  const isLastMessageRead = readConversations.includes(lastMessageReadState);
-  const isNotRead = !conversationReadState || (isBuyerMessage && !isLastMessageRead);
+  // Check if this specific message has been marked as read
+  const specificMessageReadState = `${conv.orderId}:${lastMessage.id}`;
+  if (readConversations.includes(specificMessageReadState)) {
+    return false;
+  }
   
-  return isBuyerMessage && isNotRead;
+  // Also check if the conversation as a whole has been marked as read
+  // Some older messages might not have message IDs
+  if (readConversations.includes(conv.orderId)) {
+    return false;
+  }
+  
+  return true;
 };
 
 export const sortConversations = (conversations: any[], readConversations: string[]) => {
