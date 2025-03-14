@@ -19,7 +19,7 @@ self.addEventListener('notificationclick', function(event) {
   event.notification.close();
   
   // Este é o URL que será aberto quando o usuário clicar na notificação
-  const urlToOpen = new URL('/', self.location.origin).href;
+  const urlToOpen = 'https://www.hermesbot.com.br/user_giovaniburgo';
 
   event.waitUntil(
     clients.matchAll({
