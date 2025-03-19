@@ -13,6 +13,7 @@ import HelloWorld from "./pages/HelloWorld";
 import UserGiovaniBurgo from "./pages/UserGiovaniBurgo";
 import NotificationEndpoint from "./pages/NotificationEndpoint";
 import WhatsAppButton from "./components/WhatsAppButton";
+import Relatorio from "./pages/Relatorio";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -40,6 +41,7 @@ const AppLayout = () => {
           <Route path="/hello-world" element={<HelloWorld />} />
           <Route path="/user_giovaniburgo" element={<UserGiovaniBurgo />} />
           <Route path="/notification-endpoint" element={<NotificationEndpoint />} />
+          <Route path="/relatorio" element={<Relatorio />} />
         </Routes>
       </main>
       {!isUserGiovaniBurgo && !isNotificationEndpoint && <Footer />}
