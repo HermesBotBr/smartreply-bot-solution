@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { getNgrokUrl } from '@/config/api';
 import { AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
@@ -69,20 +68,17 @@ const Relatorio: React.FC = () => {
       listaAnuncios: []
     };
 
-    // Extrair quantidade de vendas
     const quantidadeVendasMatch = text.match(/b1 - Quantidade de vendas analisadas:\s*Quantidade vendas:\s*(\d+)/);
     if (quantidadeVendasMatch) {
       data.quantidadeVendas = quantidadeVendasMatch[1];
     }
 
-    // Extrair dados de reclamações
     const reclamacoesMatch = text.match(/b2 - Percentual de reclamações no Mercado Livre:\s*Quantidade reclamações:\s*(\d+)\s*Percentual reclamações\/vendas:\s*([^%\n]*%)/);
     if (reclamacoesMatch) {
       data.quantidadeReclamacoes = reclamacoesMatch[1];
       data.percentualReclamacoes = reclamacoesMatch[2];
     }
 
-    // Extrair dados de conversão de insatisfações
     const insatisfacoesMatch = text.match(/b3 - Conversão de clientes insatisfeitos em reclamações:\s*Insatisfações \(vendas com problema sem reclamação\):\s*(\d+)\s*Quantidade problemas com produto \(reclamações \+ insatisfações\):\s*(\d+)\s*Percentual insatisfação\/problemas com produto:\s*([^%\n]*%)/);
     if (insatisfacoesMatch) {
       data.insatisfacoes = insatisfacoesMatch[1];
@@ -90,7 +86,6 @@ const Relatorio: React.FC = () => {
       data.percentualInsatisfacao = insatisfacoesMatch[3];
     }
 
-    // Extrair análises de motivos
     const analiseParte1Match = text.match(/b4 - Análise dos motivos \(parte 1\):\s*Resposta GPT:\s*([\s\S]*?)(?=b4 - Análise dos motivos \(parte 2|$)/);
     if (analiseParte1Match) {
       data.analiseMotivosParte1 = analiseParte1Match[1].trim();
@@ -106,7 +101,6 @@ const Relatorio: React.FC = () => {
       data.analiseMotivosParte3 = analiseParte3Match[1].trim();
     }
 
-    // Extrair dados dos anúncios
     const anunciosSection = text.match(/b5 - Experiência de compra atual dos 10 maiores anúncios[^:]*:([\s\S]*?)(?=Nota média|$)/);
     if (anunciosSection) {
       const anunciosText = anunciosSection[1];
@@ -128,13 +122,16 @@ const Relatorio: React.FC = () => {
       }
     }
 
-    // Extrair nota média de experiência
-    const notaMediaMatch = text.match(/Nota média de experiência de compra entre os anúncios: (\d+)/);
+    const notaMediaMatch = text.match(/Média das notas dos 10 primeiros anúncios: (\d+)/);
     if (notaMediaMatch) {
       data.notaMediaExperiencia = notaMediaMatch[1];
+    } else {
+      const oldFormatMatch = text.match(/Nota média de experiência de compra entre os anúncios: (\d+)/);
+      if (oldFormatMatch) {
+        data.notaMediaExperiencia = oldFormatMatch[1];
+      }
     }
 
-    // Extrair estratégias de atendimento
     const pontoForteMatch = text.match(/b6 - Estratégia de atendimento \(PONTO FORTE DO ATUAL ATENDIMENTO\):\s*Resposta GPT:\s*([\s\S]*?)(?=b6 - Estratégia de atendimento|$)/);
     if (pontoForteMatch) {
       data.pontoForteAtendimento = pontoForteMatch[1].trim();
