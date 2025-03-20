@@ -5,6 +5,7 @@ import { AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Progress } from '@/components/ui/progress';
 
 type ListingData = {
   anuncioId: string;
@@ -38,10 +39,22 @@ type ReportData = {
   conclusao: string;
 };
 
+const loadingSteps = [
+  "Para começar a análise, estou coletando as vendas, conversas e reclamações dos últimos 30 dias...",
+  "Estou verificando as reclamações e encontrando padrões...",
+  "Estou identificando como o seller impede reclamações atualmente...",
+  "Estou analisando as reclamações dos clientes e as possíveis falhas no atual atendimento...",
+  "Estou identificando quais são os maiores motivos que fazem com que os clientes abram reclamações...",
+  "Estou identificando o percentual de reclamações atual de cada anúncio...",
+  "Pronto, agora que tenho todas as informações, estou gerando o relatório (quase acabando)..."
+];
+
 const Relatorio: React.FC = () => {
   const [reportData, setReportData] = useState<ReportData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentLoadingMessage, setCurrentLoadingMessage] = useState<string>("");
+  const [currentStepIndex, setCurrentStepIndex] = useState<number>(-1);
 
   useEffect(() => {
     const fetchReport = async () => {
@@ -52,9 +65,31 @@ const Relatorio: React.FC = () => {
           throw new Error('Não foi possível carregar o relatório');
         }
         const textData = await response.text();
-        const parsedData = parseReportData(textData);
-        setReportData(parsedData);
-        setLoading(false);
+        
+        // Check if the response is one of the loading messages
+        const loadingMessageIndex = loadingSteps.findIndex(step => textData.trim() === step);
+        
+        if (loadingMessageIndex !== -1) {
+          // We're still in the loading stage
+          setCurrentLoadingMessage(loadingSteps[loadingMessageIndex]);
+          setCurrentStepIndex(loadingMessageIndex);
+          
+          // Try again in 3 seconds
+          setTimeout(fetchReport, 3000);
+          return;
+        }
+        
+        // If we have actual report data, parse it
+        if (textData.includes('b1 - Quantidade de vendas analisadas')) {
+          const parsedData = parseReportData(textData);
+          setReportData(parsedData);
+          setLoading(false);
+        } else {
+          // Not a loading message but also not valid report data
+          setCurrentLoadingMessage("Preparando relatório...");
+          setCurrentStepIndex(0);
+          setTimeout(fetchReport, 3000);
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Erro ao carregar dados');
         setLoading(false);
@@ -180,10 +215,31 @@ const Relatorio: React.FC = () => {
   };
 
   if (loading) {
+    const progress = currentStepIndex >= 0 ? ((currentStepIndex + 1) / loadingSteps.length) * 100 : 10;
+    
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen p-4">
-        <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
-        <p className="text-lg">Carregando relatório...</p>
+      <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-gradient-to-b from-background to-muted">
+        <div className="max-w-md w-full space-y-8 text-center">
+          <h1 className="text-3xl font-bold">Gerando Relatório</h1>
+          
+          <div className="my-8">
+            <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto mb-6" />
+            <p className="text-lg font-medium mb-4">{currentLoadingMessage}</p>
+            <Progress value={progress} className="h-2 w-full" />
+            <p className="text-sm text-muted-foreground mt-2">
+              Etapa {currentStepIndex + 1} de {loadingSteps.length}
+            </p>
+          </div>
+          
+          <Card className="bg-card/50 backdrop-blur-sm border border-primary/20">
+            <CardContent className="pt-6">
+              <p className="text-muted-foreground">
+                Este relatório analisa os dados de vendas e reclamações no Mercado Livre, 
+                identificando padrões e oportunidades de melhoria no atendimento.
+              </p>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
