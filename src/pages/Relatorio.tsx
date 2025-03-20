@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { getNgrokUrl } from '@/config/api';
 import { AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
@@ -378,7 +379,7 @@ const Relatorio: React.FC = () => {
                   <TableRow key={index}>
                     <TableCell className="font-medium">
                       <a 
-                        href={`https://articulo.mercadolibre.com.br/${anuncio.anuncioId}`} 
+                        href={`https://www.mercadolivre.com.br/metricas/${anuncio.anuncioId}/experiencia-compra`} 
                         target="_blank" 
                         rel="noopener noreferrer"
                         className="text-primary hover:underline"
