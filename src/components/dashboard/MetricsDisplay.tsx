@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { MessageSquare, Users, ShoppingBag, TrendingUp, X, AlertTriangle } from "lucide-react";
+import { MessageSquare, Users, ShoppingBag, TrendingUp, X, AlertTriangle, Zap } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { 
   BarChart,
   Bar,
@@ -30,6 +31,7 @@ const MetricsDisplay = ({ onOrderClick }: { onOrderClick?: (orderId: string) => 
   const [complaintsList, setComplaintsList] = useState<string[]>([]);
   const [unpreventedComplaintsList, setUnpreventedComplaintsList] = useState<string[]>([]);
   const [activeComplaintType, setActiveComplaintType] = useState<'prevented' | 'unprevented'>('prevented');
+  const [generatingReport, setGeneratingReport] = useState(false);
 
   const handleOrderClick = (orderId: string) => {
     setShowPopup(false);
@@ -37,6 +39,17 @@ const MetricsDisplay = ({ onOrderClick }: { onOrderClick?: (orderId: string) => 
       window.open(`https://www.mercadolivre.com.br/vendas/novo/mensagens/${orderId}`);
     } else {
       window.open(`https://www.mercadolivre.com.br/vendas/${orderId}/detalhe`);
+    }
+  };
+
+  const handleGenerateReport = async () => {
+    setGeneratingReport(true);
+    try {
+      await fetch("https://seu-app-hermesbot-222accf69f45.herokuapp.com/relatorio");
+      window.location.href = "https://www.hermesbot.com.br/relatorio";
+    } catch (error) {
+      console.error("Erro ao gerar relatório:", error);
+      setGeneratingReport(false);
     }
   };
 
@@ -203,8 +216,16 @@ const MetricsDisplay = ({ onOrderClick }: { onOrderClick?: (orderId: string) => 
 
   return (
     <div className="relative flex flex-col h-full">
-      <div className="bg-primary text-white p-4">
+      <div className="bg-primary text-white p-4 flex justify-between items-center">
         <h1 className="text-xl font-bold">Métricas e Estatísticas</h1>
+        <Button 
+          onClick={handleGenerateReport}
+          disabled={generatingReport}
+          className="bg-amber-500 hover:bg-amber-600 text-white flex items-center gap-2"
+        >
+          <Zap className="h-4 w-4" />
+          {generatingReport ? "Gerando..." : "Gerar relatório Hermes"}
+        </Button>
       </div>
       
       <div className="flex-1 overflow-auto p-4">
@@ -261,6 +282,17 @@ const MetricsDisplay = ({ onOrderClick }: { onOrderClick?: (orderId: string) => 
               <div className="text-2xl font-bold">{metrics.summary.unpreventedComplaints}</div>
             </CardContent>
           </Card>
+        </div>
+
+        <div className="mb-6 md:hidden">
+          <Button 
+            onClick={handleGenerateReport}
+            disabled={generatingReport}
+            className="bg-amber-500 hover:bg-amber-600 text-white w-full flex items-center justify-center gap-2 py-3"
+          >
+            <Zap className="h-4 w-4" />
+            {generatingReport ? "Gerando..." : "Gerar relatório Hermes"}
+          </Button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
