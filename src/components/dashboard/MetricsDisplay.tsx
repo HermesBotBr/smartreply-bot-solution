@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { MessageSquare, Users, ShoppingBag, TrendingUp, X, AlertTriangle, Zap } from "lucide-react";
@@ -45,7 +46,10 @@ const MetricsDisplay = ({ onOrderClick }: { onOrderClick?: (orderId: string) => 
   const handleGenerateReport = async () => {
     setGeneratingReport(true);
     try {
-      await fetch("https://seu-app-hermesbot-222accf69f45.herokuapp.com/relatorio");
+      // Send the request to generate report but don't wait for it to complete
+      fetch("https://seu-app-hermesbot-222accf69f45.herokuapp.com/relatorio");
+      
+      // Navigate immediately to the report page
       window.location.href = "https://www.hermesbot.com.br/relatorio";
     } catch (error) {
       console.error("Erro ao gerar relatório:", error);
