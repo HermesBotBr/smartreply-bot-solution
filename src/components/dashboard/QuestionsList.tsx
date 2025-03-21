@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -486,7 +487,7 @@ const QuestionsList: React.FC<QuestionsListProps> = ({ mlToken }) => {
                     <div className="flex items-center w-full">
                       <ProductThumbnail itemId={item.id} />
                       <div className="ml-3 flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{item.title}</p>
+                        <p className="text-sm font-medium truncate">{truncateText(item.title, 43)}</p>
                         <p className="text-xs text-gray-500">{item.id}</p>
                       </div>
                     </div>
