@@ -86,10 +86,6 @@ const MetricsDisplay = ({ onOrderClick }: { onOrderClick?: (orderId: string) => 
         <div className="text-center text-gray-700 text-xl font-medium my-12 py-12">
           Mais detalhes em breve!
         </div>
-        
-        <div className="mt-6 text-center text-sm text-gray-500">
-          <p>Dados gerados para demonstração. Em um ambiente de produção, estes seriam dados reais do Mercado Livre.</p>
-        </div>
       </div>
 
       <ComplaintsPopup 
