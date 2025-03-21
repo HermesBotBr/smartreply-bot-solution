@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,7 +11,6 @@ import { ChevronDown, ChevronUp } from "lucide-react";
 import { getNgrokUrl } from '@/config/api';
 import ProductThumbnail from './ProductThumbnail';
 
-// URL do endpoint
 const ASKS_URL = 'https://b4c027be31fe.ngrok.app/all_asks.txt';
 
 interface Question {
@@ -80,9 +78,6 @@ function parseQuestions(text: string): Question[] {
   return questions;
 }
 
-/**
- * Parse asks from text format.
- */
 function parseAsks(text: string): AskBlock[] {
   const blocks = text
     .split("-----------------------------------------------------")
@@ -93,7 +88,6 @@ function parseAsks(text: string): AskBlock[] {
         .split('\n')
         .map(line => line.trim())
         .filter(line => line.length > 0);
-      // Check if there's at least title, item_id, and a question
       if (lines.length < 3) return null;
       const itemTitle = lines[0];
       const itemId = lines[1];
@@ -117,14 +111,10 @@ function parseAsks(text: string): AskBlock[] {
     })
     .filter(block => block !== null) as AskBlock[];
   
-  // Sort blocks by latest date (most recent first)
   blocks.sort((a, b) => b.latestDate.getTime() - a.latestDate.getTime());
   return blocks;
 }
 
-/**
- * Groups QA lines into pairs (buyer and seller).
- */
 function getQAPairs(qaLines: string[]): QAPair[] {
   const pairs: QAPair[] = [];
   for (let i = 0; i < qaLines.length; i++) {
@@ -141,9 +131,6 @@ function getQAPairs(qaLines: string[]): QAPair[] {
   return pairs;
 }
 
-/**
- * Format the title to be more readable.
- */
 function formatTitle(title: string): string {
   const words = title.split(' ');
   let line = "";
@@ -162,14 +149,10 @@ function formatTitle(title: string): string {
   return result;
 }
 
-/**
- * Truncate text to a maximum length.
- */
 function truncateText(text: string, n: number): string {
   return text.length > n ? text.substring(0, n) + "..." : text;
 }
 
-// Format date string
 function formatDate(dateStr: string): string {
   const d = new Date(dateStr);
   const year = d.getFullYear();
@@ -297,7 +280,6 @@ const QuestionsList: React.FC<QuestionsListProps> = ({ mlToken }) => {
           description: "Sua resposta foi registrada com sucesso",
         });
         
-        // Recarrega as perguntas para atualizar a lista
         loadAsks();
         
         setAnswerText('');
@@ -315,12 +297,10 @@ const QuestionsList: React.FC<QuestionsListProps> = ({ mlToken }) => {
     }
   };
 
-  // Filter asks based on search text, filter "No Answers", and selected announcement
   const filteredAsks = asks.filter(ask => {
     const combinedText = [ask.itemTitle, ask.itemId, ...ask.qa].join(' ').toLowerCase();
     if (searchText && !combinedText.includes(searchText.toLowerCase())) return false;
     
-    // If filter "No Answers" is active, filter QA pairs to keep only those without answer
     if (filterNoAnswers) {
       const qaPairs = getQAPairs(ask.qa);
       const unansweredPairs = qaPairs.filter(pair => !pair.answer || pair.answer.trim() === "");
@@ -332,7 +312,6 @@ const QuestionsList: React.FC<QuestionsListProps> = ({ mlToken }) => {
     return true;
   });
 
-  // Create a unique list of announcements for the filter, using itemId, title and latest question date
   const uniqueAnnouncements: Announcement[] = (() => {
     const uniqueMap = new Map<string, Announcement>();
     asks.forEach(ask => {
@@ -391,7 +370,6 @@ const QuestionsList: React.FC<QuestionsListProps> = ({ mlToken }) => {
               <div className="space-y-4">
                 {filteredAsks.map((block, index) => {
                   const qaPairsAll = getQAPairs(block.qa);
-                  // If filter "No Answers" is active, keep only QA pairs without answer
                   const qaPairs = filterNoAnswers 
                     ? qaPairsAll.filter(pair => !pair.answer || pair.answer.trim() === "")
                     : qaPairsAll;
@@ -458,7 +436,6 @@ const QuestionsList: React.FC<QuestionsListProps> = ({ mlToken }) => {
         )}
       </div>
       
-      {/* Filter Dialog */}
       <Dialog open={filterModalVisible} onOpenChange={setFilterModalVisible}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -487,7 +464,7 @@ const QuestionsList: React.FC<QuestionsListProps> = ({ mlToken }) => {
                     <div className="flex items-center w-full">
                       <ProductThumbnail itemId={item.id} />
                       <div className="ml-3 flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{truncateText(item.title, 43)}</p>
+                        <p className="text-sm font-medium truncate">{truncateText(item.title, 35)}</p>
                         <p className="text-xs text-gray-500">{item.id}</p>
                       </div>
                     </div>
@@ -515,7 +492,6 @@ const QuestionsList: React.FC<QuestionsListProps> = ({ mlToken }) => {
         </DialogContent>
       </Dialog>
       
-      {/* Selected QA Pair Dialog */}
       <Dialog open={!!selectedQAPair} onOpenChange={() => setSelectedQAPair(null)}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
