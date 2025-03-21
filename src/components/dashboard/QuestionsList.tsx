@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { getNgrokUrl } from '@/config/api';
+import ProductThumbnail from './ProductThumbnail';
 
 // URL do endpoint
 const ASKS_URL = 'https://b4c027be31fe.ngrok.app/all_asks.txt';
@@ -400,7 +401,11 @@ const QuestionsList: React.FC<QuestionsListProps> = ({ mlToken }) => {
                     <Card key={index} className="overflow-hidden">
                       <CardHeader className="pb-2">
                         <div className="flex items-center">
-                          <ProductInfo itemId={block.itemId} mlToken={mlToken} />
+                          <ProductThumbnail itemId={block.itemId} />
+                          <div className="ml-3 flex-1">
+                            <h3 className="font-medium text-sm">{block.itemTitle}</h3>
+                            <p className="text-xs text-gray-500">{block.itemId}</p>
+                          </div>
                         </div>
                       </CardHeader>
                       <CardContent className="space-y-2">
@@ -478,7 +483,13 @@ const QuestionsList: React.FC<QuestionsListProps> = ({ mlToken }) => {
                     className={`flex items-center p-2 hover:bg-gray-100 rounded-md cursor-pointer ${selectedAnnouncement === item.id ? 'bg-blue-50' : ''}`}
                     onClick={() => setSelectedAnnouncement(item.id === selectedAnnouncement ? null : item.id)}
                   >
-                    <ProductInfo itemId={item.id} mlToken={mlToken} />
+                    <div className="flex items-center w-full">
+                      <ProductThumbnail itemId={item.id} />
+                      <div className="ml-3 flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{item.title}</p>
+                        <p className="text-xs text-gray-500">{item.id}</p>
+                      </div>
+                    </div>
                   </div>
                 ))}
               </div>
