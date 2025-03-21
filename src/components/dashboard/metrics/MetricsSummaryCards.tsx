@@ -26,7 +26,7 @@ const MetricsSummaryCards: React.FC<MetricsSummaryCardsProps> = ({
         <CardHeader className="flex flex-row items-center justify-between pb-2">
           <div className="flex flex-col space-y-1">
             <CardTitle className="text-sm font-medium">Reclamações Evitadas</CardTitle>
-            <CardDescription>Últimos 7 dias</CardDescription>
+            <CardDescription>Período total</CardDescription>
           </div>
           <ShoppingBag className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
@@ -39,7 +39,7 @@ const MetricsSummaryCards: React.FC<MetricsSummaryCardsProps> = ({
         <CardHeader className="flex flex-row items-center justify-between pb-2">
           <div className="flex flex-col space-y-1">
             <CardTitle className="text-sm font-medium">Total de Mensagens</CardTitle>
-            <CardDescription>Últimos 7 dias</CardDescription>
+            <CardDescription>Período total</CardDescription>
           </div>
           <MessageSquare className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
@@ -52,7 +52,7 @@ const MetricsSummaryCards: React.FC<MetricsSummaryCardsProps> = ({
         <CardHeader className="flex flex-row items-center justify-between pb-2">
           <div className="flex flex-col space-y-1">
             <CardTitle className="text-sm font-medium">Perguntas Recebidas</CardTitle>
-            <CardDescription>Últimos 7 dias</CardDescription>
+            <CardDescription>Período total</CardDescription>
           </div>
           <Users className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
@@ -65,7 +65,7 @@ const MetricsSummaryCards: React.FC<MetricsSummaryCardsProps> = ({
         <CardHeader className="flex flex-row items-center justify-between pb-2">
           <div className="flex flex-col space-y-1">
             <CardTitle className="text-sm font-medium">Reclamações não impedidas</CardTitle>
-            <CardDescription>Últimos 7 dias</CardDescription>
+            <CardDescription>Período total</CardDescription>
           </div>
           <AlertTriangle className="h-4 w-4 text-muted-foreground" />
         </CardHeader>

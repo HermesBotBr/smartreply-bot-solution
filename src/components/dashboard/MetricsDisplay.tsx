@@ -7,10 +7,6 @@ import { useMetricsData } from '@/hooks/useMetricsData';
 import { useReportGeneration } from '@/hooks/useReportGeneration';
 import ComplaintsPopup from './metrics/ComplaintsPopup';
 import MetricsSummaryCards from './metrics/MetricsSummaryCards';
-import MessageBarChart from './metrics/MessageBarChart';
-import SalesLineChart from './metrics/SalesLineChart';
-import QuestionsLineChart from './metrics/QuestionsLineChart';
-import ProductCategoriesPieChart from './metrics/ProductCategoriesPieChart';
 
 const MetricsDisplay = ({ onOrderClick }: { onOrderClick?: (orderId: string) => void }) => {
   const [showPopup, setShowPopup] = useState(false);
@@ -87,14 +83,8 @@ const MetricsDisplay = ({ onOrderClick }: { onOrderClick?: (orderId: string) => 
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          {metrics?.messageData && <MessageBarChart data={metrics.messageData} />}
-          {metrics?.salesData && <SalesLineChart data={metrics.salesData} />}
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {metrics?.questionData && <QuestionsLineChart data={metrics.questionData} />}
-          {metrics?.productCategories && <ProductCategoriesPieChart data={metrics.productCategories} />}
+        <div className="text-center text-gray-700 text-xl font-medium my-12 py-12">
+          Mais detalhes em breve!
         </div>
         
         <div className="mt-6 text-center text-sm text-gray-500">
