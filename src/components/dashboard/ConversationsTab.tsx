@@ -54,21 +54,19 @@ const ConversationsTab: React.FC<ConversationsTabProps> = ({
   useEffect(() => {
     let intervalId: NodeJS.Timeout | undefined;
     if (showSaleDetails && selectedConv) {
+      if (mlToken) {
+        fetchSaleDetails(selectedConv, mlToken);
+      }
+      
       intervalId = setInterval(() => {
         if (mlToken) {
           fetchSaleDetails(selectedConv, mlToken);
         }
-      }, 5000);
+      }, 20000);
     }
     return () => {
       if (intervalId) clearInterval(intervalId);
     };
-  }, [showSaleDetails, selectedConv, mlToken, fetchSaleDetails]);
-
-  useEffect(() => {
-    if (showSaleDetails && selectedConv && mlToken) {
-      fetchSaleDetails(selectedConv, mlToken);
-    }
   }, [showSaleDetails, selectedConv, mlToken, fetchSaleDetails]);
 
   const handleCloseSaleDetails = () => {
