@@ -1,5 +1,5 @@
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useToast } from "./use-toast";
 
 export function useSaleDetails() {
@@ -9,13 +9,43 @@ export function useSaleDetails() {
   const [detailedInfo, setDetailedInfo] = useState<any>(null);
   const [showSaleDetails, setShowSaleDetails] = useState(false);
   const { toast } = useToast();
+  const currentConvRef = useRef<any>(null);
   
   // Add error state tracking to prevent multiple error toasts
   const errorShown = useRef(false);
   const lastErrorTime = useRef(0);
   const consecutiveErrors = useRef(0);
 
+  // Clear all details when closing the panel
+  useEffect(() => {
+    if (!showSaleDetails) {
+      setOrderDetails(null);
+      setShippingDetails(null);
+      setDetailedInfo(null);
+      setExpandedInfo(false);
+      currentConvRef.current = null;
+    }
+  }, [showSaleDetails]);
+
+  const resetDetails = () => {
+    setOrderDetails(null);
+    setShippingDetails(null);
+    setDetailedInfo(null);
+    setExpandedInfo(false);
+    errorShown.current = false;
+    consecutiveErrors.current = 0;
+  };
+
   const fetchSaleDetails = async (selectedConv: any, token: string) => {
+    // If conversation changed, reset details
+    if (currentConvRef.current?.orderId !== selectedConv?.orderId) {
+      resetDetails();
+      currentConvRef.current = selectedConv;
+    }
+    
+    // Skip fetching if no conversation is selected
+    if (!selectedConv || !token) return;
+    
     // Skip fetching if we've had recent consecutive errors (implements backoff)
     const now = Date.now();
     if (consecutiveErrors.current > 3) {
@@ -60,6 +90,9 @@ export function useSaleDetails() {
   };
 
   const fetchDetailedInfo = async (selectedConv: any, token: string) => {
+    // Skip if no conversation is selected
+    if (!selectedConv || !token) return;
+    
     try {
       let orderResponse = await fetch(`https://api.mercadolibre.com/orders/${selectedConv.orderId}?access_token=${token.trim()}`);
       let detailedData = await orderResponse.json();
@@ -108,6 +141,7 @@ export function useSaleDetails() {
     fetchDetailedInfo,
     showSaleDetails,
     setShowSaleDetails,
-    fetchSaleDetails
+    fetchSaleDetails,
+    resetDetails
   };
 }

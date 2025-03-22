@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import ConversationsList from './ConversationsList';
 import ChatPanel from './ChatPanel';
@@ -25,6 +26,7 @@ interface ConversationsTabProps {
   detailedInfo: any;
   fetchDetailedInfo: (selectedConv: any, token: string) => Promise<void>;
   fetchSaleDetails: (selectedConv: any, token: string) => Promise<void>;
+  resetDetails?: () => void;
 }
 
 const ConversationsTab: React.FC<ConversationsTabProps> = ({
@@ -47,23 +49,26 @@ const ConversationsTab: React.FC<ConversationsTabProps> = ({
   setExpandedInfo,
   detailedInfo,
   fetchDetailedInfo,
-  fetchSaleDetails
+  fetchSaleDetails,
+  resetDetails
 }) => {
   const isMobile = useMediaQuery('(max-width: 768px)');
 
+  // Set up the fetch interval only when the panel is open
   useEffect(() => {
     let intervalId: NodeJS.Timeout | undefined;
-    if (showSaleDetails && selectedConv) {
-      if (mlToken) {
-        fetchSaleDetails(selectedConv, mlToken);
-      }
+    if (showSaleDetails && selectedConv && mlToken) {
+      // Initial fetch
+      fetchSaleDetails(selectedConv, mlToken);
       
+      // Set up interval
       intervalId = setInterval(() => {
         if (mlToken) {
           fetchSaleDetails(selectedConv, mlToken);
         }
       }, 20000);
     }
+    
     return () => {
       if (intervalId) clearInterval(intervalId);
     };
