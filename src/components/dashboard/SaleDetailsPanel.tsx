@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { X, ArrowLeft, RotateCcw } from "lucide-react";
+import { X, ArrowLeft, RotateCcw, Box } from "lucide-react";
 import ProductThumbnail from './ProductThumbnail';
 import Timeline from './Timeline';
 import { formatDateTime, formatCurrency } from '@/utils/formatters';
@@ -37,6 +37,7 @@ const SaleDetailsPanel: React.FC<SaleDetailsPanelProps> = ({
   const { toast } = useToast();
   const [markingAsRead, setMarkingAsRead] = useState(false);
   const [creatingReverseShipment, setCreatingReverseShipment] = useState(false);
+  const [creatingRegularShipment, setCreatingRegularShipment] = useState(false);
 
   // Mark conversation as read when panel is opened
   useEffect(() => {
@@ -124,6 +125,74 @@ const SaleDetailsPanel: React.FC<SaleDetailsPanelProps> = ({
       });
     } finally {
       setCreatingReverseShipment(false);
+    }
+  };
+
+  const handleCreateRegularShipment = async () => {
+    if (!selectedConv || !selectedConv.orderId) {
+      toast({
+        title: "Erro",
+        description: "Informações insuficientes para criar envio comum",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setCreatingRegularShipment(true);
+    
+    try {
+      // Get the buyerId from the selected conversation or fetch it from the API
+      let buyerId = selectedConv.buyerId;
+      
+      // If buyerId is not available, fetch it from the Mercado Livre API
+      if (!buyerId) {
+        const mlTokenResponse = await fetch(getNgrokUrl('mercadoLivreApiKey.txt'));
+        const mlToken = await mlTokenResponse.text();
+        
+        const orderResponse = await fetch(`https://api.mercadolibre.com/orders/${selectedConv.orderId}?access_token=${mlToken.trim()}`);
+        const orderData = await orderResponse.json();
+        
+        if (orderData.error) {
+          throw new Error(`Erro ao obter informações do pedido: ${orderData.error}`);
+        }
+        
+        if (!orderData.buyer || !orderData.buyer.id) {
+          throw new Error('Não foi possível encontrar o ID do comprador');
+        }
+        
+        buyerId = orderData.buyer.id;
+      }
+      
+      // Now create the regular shipment with the packId and buyerId
+      const response = await fetch(getNgrokUrl('/protocol252025'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          pack_id: selectedConv.orderId,
+          buyer_id: buyerId
+        })
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Sucesso",
+          description: "Envio comum criado com sucesso",
+        });
+      } else {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.message || 'Erro ao criar envio comum');
+      }
+    } catch (error) {
+      console.error("Erro ao criar envio comum:", error);
+      toast({
+        title: "Erro",
+        description: error instanceof Error ? error.message : "Erro ao criar envio comum",
+        variant: "destructive",
+      });
+    } finally {
+      setCreatingRegularShipment(false);
     }
   };
 
@@ -227,6 +296,28 @@ const SaleDetailsPanel: React.FC<SaleDetailsPanelProps> = ({
                 <>
                   <RotateCcw size={16} />
                   Criar envio reverso
+                </>
+              )}
+            </Button>
+            
+            <Button
+              className="w-full text-sm"
+              variant="secondary"
+              size="sm"
+              onClick={handleCreateRegularShipment}
+              disabled={creatingRegularShipment}
+            >
+              {creatingRegularShipment ? (
+                <>
+                  <span className="animate-spin mr-2">
+                    <Box size={16} />
+                  </span>
+                  Criando envio comum...
+                </>
+              ) : (
+                <>
+                  <Box size={16} />
+                  Criar envio comum
                 </>
               )}
             </Button>
