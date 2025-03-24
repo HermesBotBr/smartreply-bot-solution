@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { X, ArrowLeft, RotateCcw, Box } from "lucide-react";
@@ -38,8 +37,14 @@ const SaleDetailsPanel: React.FC<SaleDetailsPanelProps> = ({
   const [markingAsRead, setMarkingAsRead] = useState(false);
   const [creatingReverseShipment, setCreatingReverseShipment] = useState(false);
   const [creatingRegularShipment, setCreatingRegularShipment] = useState(false);
+  const isMounted = useRef(true);
 
-  // Mark conversation as read when panel is opened
+  useEffect(() => {
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
+
   useEffect(() => {
     const markConversationAsRead = async () => {
       if (selectedConv && selectedConv.orderId && !markingAsRead) {
@@ -72,10 +77,8 @@ const SaleDetailsPanel: React.FC<SaleDetailsPanelProps> = ({
     setCreatingReverseShipment(true);
     
     try {
-      // Get the buyerId from the selected conversation or fetch it from the API
       let buyerId = selectedConv.buyerId;
       
-      // If buyerId is not available, fetch it from the Mercado Livre API
       if (!buyerId) {
         const mlTokenResponse = await fetch(getNgrokUrl('mercadoLivreApiKey.txt'));
         const mlToken = await mlTokenResponse.text();
@@ -94,7 +97,6 @@ const SaleDetailsPanel: React.FC<SaleDetailsPanelProps> = ({
         buyerId = orderData.buyer.id;
       }
       
-      // Now create the reverse shipment with the buyerId
       const response = await fetch(getNgrokUrl('/ep242024'), {
         method: 'POST',
         headers: {
@@ -124,7 +126,9 @@ const SaleDetailsPanel: React.FC<SaleDetailsPanelProps> = ({
         variant: "destructive",
       });
     } finally {
-      setCreatingReverseShipment(false);
+      if (isMounted.current) {
+        setCreatingReverseShipment(false);
+      }
     }
   };
 
@@ -141,10 +145,8 @@ const SaleDetailsPanel: React.FC<SaleDetailsPanelProps> = ({
     setCreatingRegularShipment(true);
     
     try {
-      // Get the buyerId from the selected conversation or fetch it from the API
       let buyerId = selectedConv.buyerId;
       
-      // If buyerId is not available, fetch it from the Mercado Livre API
       if (!buyerId) {
         const mlTokenResponse = await fetch(getNgrokUrl('mercadoLivreApiKey.txt'));
         const mlToken = await mlTokenResponse.text();
@@ -163,7 +165,6 @@ const SaleDetailsPanel: React.FC<SaleDetailsPanelProps> = ({
         buyerId = orderData.buyer.id;
       }
       
-      // Now create the regular shipment with the packId and buyerId
       const response = await fetch(getNgrokUrl('/protocol252025'), {
         method: 'POST',
         headers: {
@@ -192,7 +193,9 @@ const SaleDetailsPanel: React.FC<SaleDetailsPanelProps> = ({
         variant: "destructive",
       });
     } finally {
-      setCreatingRegularShipment(false);
+      if (isMounted.current) {
+        setCreatingRegularShipment(false);
+      }
     }
   };
 
@@ -213,7 +216,7 @@ const SaleDetailsPanel: React.FC<SaleDetailsPanelProps> = ({
               <ArrowLeft size={20} />
             </button>
             <h2 className="text-lg font-bold">Detalhes da venda</h2>
-            <div className="w-5"></div> {/* Empty div for flex alignment */}
+            <div className="w-5"></div>
           </>
         ) : (
           <>
