@@ -1,6 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from '@/hooks/use-toast';
@@ -11,6 +12,8 @@ const MercadoLivreCallback = () => {
   const { toast } = useToast();
   const [authCode, setAuthCode] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isSending, setIsSending] = useState(false);
+  const [sendingResult, setSendingResult] = useState<{success: boolean, message: string} | null>(null);
 
   useEffect(() => {
     // Extract the authorization code from URL parameters
@@ -23,6 +26,9 @@ const MercadoLivreCallback = () => {
         title: "Código encontrado",
         description: "Código de autorização foi extraído com sucesso da URL",
       });
+
+      // Automatically send the code to the specified endpoint
+      sendAuthCodeToEndpoint(code);
     } else {
       setError('Código de autorização não encontrado na URL');
       toast({
@@ -32,6 +38,42 @@ const MercadoLivreCallback = () => {
       });
     }
   }, [location, toast]);
+
+  const sendAuthCodeToEndpoint = async (code: string) => {
+    setIsSending(true);
+    setSendingResult(null);
+    
+    try {
+      const response = await axios.post(
+        'https://projetohermes-dda7e0c8d836.herokuapp.com/getTokens',
+        { authorization_code: code },
+        { headers: { 'Content-Type': 'application/json' } }
+      );
+      
+      console.log('Resposta do endpoint:', response.data);
+      setSendingResult({
+        success: true,
+        message: 'Código enviado com sucesso para o servidor'
+      });
+      toast({
+        title: "Sucesso",
+        description: "Código enviado com sucesso para o servidor",
+      });
+    } catch (err) {
+      console.error('Erro ao enviar código:', err);
+      setSendingResult({
+        success: false,
+        message: err instanceof Error ? err.message : 'Erro desconhecido ao enviar código'
+      });
+      toast({
+        title: "Erro",
+        description: "Erro ao enviar código para o servidor",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSending(false);
+    }
+  };
 
   const copyToClipboard = (text: string, type: string) => {
     navigator.clipboard.writeText(text).then(() => {
@@ -78,6 +120,33 @@ const MercadoLivreCallback = () => {
                   <p className="text-sm text-gray-500 mt-2">
                     Este é o código de autorização que você pode usar para obter o refresh token e o access token manualmente.
                   </p>
+                </div>
+              )}
+              
+              {/* Display sending status */}
+              {isSending && (
+                <div className="my-4 p-3 bg-blue-50 rounded-md">
+                  <p className="text-blue-600">Enviando código para o servidor...</p>
+                </div>
+              )}
+              
+              {/* Display result */}
+              {sendingResult && (
+                <div className={`my-4 p-3 ${sendingResult.success ? 'bg-green-50' : 'bg-red-50'} rounded-md`}>
+                  <p className={sendingResult.success ? 'text-green-600' : 'text-red-600'}>
+                    {sendingResult.message}
+                  </p>
+                  {!sendingResult.success && (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="mt-2" 
+                      onClick={() => authCode && sendAuthCodeToEndpoint(authCode)}
+                      disabled={isSending}
+                    >
+                      Tentar novamente
+                    </Button>
+                  )}
                 </div>
               )}
               
