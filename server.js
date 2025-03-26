@@ -12,7 +12,11 @@ const PORT = process.env.PORT || 3000;
 let lastUpdateTimestamp = null;
 
 // Configura middlewares
-app.use(cors());
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(bodyParser.json());
 
 // Rota para enviar notificação
@@ -78,22 +82,30 @@ app.post('/exchange-token', async (req, res) => {
     const CLIENT_SECRET = 'RsK8hvmg9ER77h1SCo8XKBNopBg6GzF5';
     
     // Fazer a requisição ao Mercado Livre para trocar o código por tokens
-    const response = await axios.post('https://api.mercadolibre.com/oauth/token', {
-      grant_type: 'authorization_code',
-      client_id: CLIENT_ID,
-      client_secret: CLIENT_SECRET,
-      code: code,
-      redirect_uri: redirect_uri
+    const tokenResponse = await axios({
+      method: 'post',
+      url: 'https://api.mercadolibre.com/oauth/token',
+      headers: { 
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Accept': 'application/json'
+      },
+      data: new URLSearchParams({
+        grant_type: 'authorization_code',
+        client_id: CLIENT_ID,
+        client_secret: CLIENT_SECRET,
+        code: code,
+        redirect_uri: redirect_uri
+      }).toString()
     });
     
-    console.log('Resposta da troca de tokens:', response.data);
+    console.log('Resposta da troca de tokens:', tokenResponse.data);
     
     // Retorna os tokens para o cliente
     res.status(200).json({
       success: true,
-      access_token: response.data.access_token,
-      refresh_token: response.data.refresh_token,
-      expires_in: response.data.expires_in
+      access_token: tokenResponse.data.access_token,
+      refresh_token: tokenResponse.data.refresh_token,
+      expires_in: tokenResponse.data.expires_in
     });
   } catch (error) {
     console.error('Erro ao trocar código por token:', error.response?.data || error.message);

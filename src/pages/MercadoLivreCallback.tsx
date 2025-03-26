@@ -62,12 +62,17 @@ const MercadoLivreCallback = () => {
         })
       });
 
-      const data = await response.json();
-      
       if (!response.ok) {
-        throw new Error(data.message || data.error || 'Erro ao trocar código por token');
+        const errorData = await response.json().catch(() => null);
+        throw new Error(
+          errorData?.message || 
+          errorData?.error || 
+          `Erro na requisição: ${response.status} ${response.statusText}`
+        );
       }
 
+      const data = await response.json();
+      
       console.log('Resposta recebida:', data);
       
       if (isMounted.current) {
