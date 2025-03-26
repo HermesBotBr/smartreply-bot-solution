@@ -1,4 +1,3 @@
-
 // server.js
 const express = require('express');
 const bodyParser = require('body-parser');
@@ -112,6 +111,44 @@ app.post('/exchange-token', async (req, res) => {
     res.status(500).json({ 
       success: false, 
       message: 'Erro ao trocar código por token',
+      error: error.response?.data || error.message
+    });
+  }
+});
+
+// Proxy para o endpoint getTokens do Projeto Hermes
+app.post('/proxy/getTokens', async (req, res) => {
+  try {
+    const { authorization_code } = req.body;
+    
+    if (!authorization_code) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Código de autorização não fornecido'
+      });
+    }
+
+    console.log('Encaminhando código para o servidor Hermes:', authorization_code);
+    
+    // Faz a requisição para o servidor externo
+    const response = await axios.post(
+      'https://projetohermes-dda7e0c8d836.herokuapp.com/getTokens',
+      { authorization_code },
+      { 
+        headers: { 'Content-Type': 'application/json' },
+        timeout: 15000
+      }
+    );
+    
+    console.log('Resposta do servidor Hermes:', response.data);
+    
+    // Repassa a resposta para o cliente
+    res.status(200).json(response.data);
+  } catch (error) {
+    console.error('Erro ao encaminhar código para o servidor Hermes:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Erro ao processar solicitação',
       error: error.response?.data || error.message
     });
   }

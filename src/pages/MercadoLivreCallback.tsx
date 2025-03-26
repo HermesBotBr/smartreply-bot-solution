@@ -5,6 +5,7 @@ import axios from 'axios';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from '@/hooks/use-toast';
+import { getNgrokUrl } from '@/config/api';
 
 const MercadoLivreCallback = () => {
   const location = useLocation();
@@ -48,13 +49,17 @@ const MercadoLivreCallback = () => {
       const payload = { authorization_code: code };
       console.log('Enviando payload:', payload);
       
+      // Use our own server as a proxy to avoid CORS issues
+      const proxyUrl = getNgrokUrl('/proxy/getTokens');
+      console.log('Usando proxy URL:', proxyUrl);
+      
       const response = await axios.post(
-        'https://projetohermes-dda7e0c8d836.herokuapp.com/getTokens',
+        proxyUrl,
         payload,
         { 
           headers: { 'Content-Type': 'application/json' },
           // Add timeout to prevent hanging requests
-          timeout: 10000 
+          timeout: 15000 
         }
       );
       
