@@ -4,7 +4,6 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from '@/hooks/use-toast';
-import { getNgrokUrl } from '@/config/api';
 
 const MercadoLivreCallback = () => {
   const location = useLocation();
@@ -50,8 +49,9 @@ const MercadoLivreCallback = () => {
       const redirectUri = window.location.origin + '/ml-callback';
       console.log('Redirect URI:', redirectUri);
       
-      // Exchange the authorization code for tokens
-      const response = await fetch(getNgrokUrl('/exchange-token'), {
+      // Exchange the authorization code for tokens using our server endpoint
+      // Use full URL to our server (not ngrok)
+      const response = await fetch('/exchange-token', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
