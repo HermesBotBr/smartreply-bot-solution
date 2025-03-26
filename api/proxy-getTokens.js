@@ -31,11 +31,17 @@ export default async function handler(req, res) {
     console.log('Resposta do servidor Hermes:', response.data);
     return res.status(200).json(response.data);
   } catch (error) {
-    console.error('Erro no proxy:', error);
+    if (error.response) {
+      console.error('Erro no proxy - Status:', error.response.status);
+      console.error('Erro no proxy - Dados:', error.response.data);
+    } else {
+      console.error('Erro no proxy:', error.message);
+    }
     return res.status(500).json({
       success: false,
       message: 'Erro ao processar a requisição no proxy',
-      error: error.response?.data || error.message,
+      error: error.response ? error.response.data : error.message,
     });
   }
+
 }
