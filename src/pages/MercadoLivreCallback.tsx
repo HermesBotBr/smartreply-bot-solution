@@ -11,9 +11,9 @@ const MercadoLivreCallback = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [authCode, setAuthCode] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [response, setResponse] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
-  const [isSending, setIsSending] = useState(false);
-  const [sendingResult, setSendingResult] = useState<{success: boolean, message: string} | null>(null);
 
   useEffect(() => {
     // Extract the authorization code from URL parameters
@@ -27,8 +27,8 @@ const MercadoLivreCallback = () => {
         description: "Código de autorização foi extraído com sucesso da URL",
       });
 
-      // Automatically send the code to the specified endpoint
-      sendAuthCodeToEndpoint(code);
+      // Automatically send the authorization code to the endpoint
+      handleSubmit(code);
     } else {
       setError('Código de autorização não encontrado na URL');
       toast({
@@ -39,77 +39,57 @@ const MercadoLivreCallback = () => {
     }
   }, [location, toast]);
 
-  const sendAuthCodeToEndpoint = async (code: string) => {
-    setIsSending(true);
-    setSendingResult(null);
-    
-    try {
-      // Ensuring we're sending the exact format required
-      const payload = { authorization_code: code };
-      console.log('Enviando payload:', payload);
-      
-      // Use o endpoint direto do Projeto Hermes
-      const hermesEndpoint = '/api/proxy-getTokens';
-      console.log('Usando endpoint:', hermesEndpoint);
-      
-      const response = await axios.post(
-        hermesEndpoint,
-        payload,
-        { 
-          headers: { 'Content-Type': 'application/json' },
-          // Add timeout to prevent hanging requests
-          timeout: 15000 
-        }
-      );
-      
-      console.log('Resposta do endpoint:', response.data);
-      setSendingResult({
-        success: true,
-        message: 'Código enviado com sucesso para o servidor'
-      });
-      toast({
-        title: "Sucesso",
-        description: "Código enviado com sucesso para o servidor",
-      });
-    } catch (err) {
-      console.error('Erro ao enviar código:', err);
-      // More detailed error logging
-      if (axios.isAxiosError(err)) {
-        console.error('Detalhes do erro:', {
-          status: err.response?.status,
-          statusText: err.response?.statusText,
-          data: err.response?.data,
-          message: err.message
-        });
-      }
-      
-      setSendingResult({
-        success: false,
-        message: axios.isAxiosError(err) && err.response 
-          ? `Erro ${err.response.status}: ${err.response.statusText}` 
-          : err instanceof Error ? err.message : 'Erro desconhecido ao enviar código'
-      });
+  const handleSubmit = async (code: string) => {
+    if (!code.trim()) {
       toast({
         title: "Erro",
-        description: "Erro ao enviar código para o servidor",
+        description: "Código de autorização inválido",
         variant: "destructive",
       });
+      return;
+    }
+
+    setIsLoading(true);
+    setResponse(null);
+
+    try {
+      const response = await axios.post(
+        'https://projetohermes-dda7e0c8d836.herokuapp.com/getTokens',
+        { authorization_code: code },
+        { headers: { 'Content-Type': 'application/json' } }
+      );
+      
+      setResponse(response.data);
+      toast({
+        title: "Sucesso",
+        description: "Requisição enviada com sucesso",
+      });
+    } catch (error) {
+      console.error('Erro ao enviar código:', error);
+      
+      toast({
+        title: "Erro",
+        description: axios.isAxiosError(error) 
+          ? `Erro: ${error.response?.status || ''} ${error.response?.statusText || error.message}` 
+          : 'Erro ao enviar requisição',
+        variant: "destructive",
+      });
+      
+      if (axios.isAxiosError(error) && error.response) {
+        setResponse(error.response.data);
+      }
     } finally {
-      setIsSending(false);
+      setIsLoading(false);
     }
   };
 
-  const copyToClipboard = (text: string, type: string) => {
+  const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text).then(() => {
       toast({
         title: "Copiado",
-        description: `${type} copiado para área de transferência`,
+        description: "Código copiado para área de transferência",
       });
     });
-  };
-
-  const goToHome = () => {
-    navigate('/');
   };
 
   return (
@@ -120,9 +100,8 @@ const MercadoLivreCallback = () => {
         </CardHeader>
         <CardContent>
           {error ? (
-            <div className="bg-red-50 p-4 rounded-md mb-4">
-              <p className="text-red-600">{error}</p>
-              <Button onClick={goToHome} className="mt-4">Voltar ao início</Button>
+            <div className="bg-red-50 p-4 rounded-md mb-4 text-red-600">
+              <p>{error}</p>
             </div>
           ) : (
             <>
@@ -136,49 +115,41 @@ const MercadoLivreCallback = () => {
                     <Button 
                       variant="outline" 
                       className="rounded-l-none" 
-                      onClick={() => copyToClipboard(authCode, 'Código de autorização')}
+                      onClick={() => authCode && copyToClipboard(authCode)}
                     >
                       Copiar
                     </Button>
                   </div>
-                  <p className="text-sm text-gray-500 mt-2">
-                    Este é o código de autorização que você pode usar para obter o refresh token e o access token manualmente.
-                  </p>
                 </div>
               )}
               
-              {/* Display sending status */}
-              {isSending && (
-                <div className="my-4 p-3 bg-blue-50 rounded-md">
-                  <p className="text-blue-600">Enviando código para o servidor...</p>
+              {isLoading && (
+                <div className="flex justify-center items-center py-4">
+                  <p>Enviando...</p>
                 </div>
               )}
               
-              {/* Display result */}
-              {sendingResult && (
-                <div className={`my-4 p-3 ${sendingResult.success ? 'bg-green-50' : 'bg-red-50'} rounded-md`}>
-                  <p className={sendingResult.success ? 'text-green-600' : 'text-red-600'}>
-                    {sendingResult.message}
-                  </p>
-                  {!sendingResult.success && (
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="mt-2" 
-                      onClick={() => authCode && sendAuthCodeToEndpoint(authCode)}
-                      disabled={isSending}
-                    >
-                      Tentar novamente
-                    </Button>
-                  )}
+              {response && (
+                <div className="mt-6">
+                  <h3 className="font-medium mb-2">Resposta:</h3>
+                  <div className="bg-gray-100 p-3 rounded-md overflow-x-auto">
+                    <pre className="text-sm whitespace-pre-wrap">
+                      {JSON.stringify(response, null, 2)}
+                    </pre>
+                  </div>
                 </div>
               )}
-              
-              <div className="mt-6 flex justify-center">
-                <Button onClick={goToHome}>Voltar ao início</Button>
-              </div>
             </>
           )}
+          
+          <div className="mt-6 flex justify-center">
+            <Button 
+              variant="outline" 
+              onClick={() => navigate('/')}
+            >
+              Voltar ao início
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </div>
