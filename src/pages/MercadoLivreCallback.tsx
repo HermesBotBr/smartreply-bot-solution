@@ -49,7 +49,7 @@ const MercadoLivreCallback = () => {
       console.log('Enviando payload:', payload);
       
       // Use o endpoint direto do Projeto Hermes
-      const hermesEndpoint = 'https://projetohermes-dda7e0c8d836.herokuapp.com/getTokens';
+      const hermesEndpoint = 'https://cors-anywhere.herokuapp.com/https://projetohermes-dda7e0c8d836.herokuapp.com/getTokens';
       console.log('Usando endpoint:', hermesEndpoint);
       
       const response = await axios.post(
