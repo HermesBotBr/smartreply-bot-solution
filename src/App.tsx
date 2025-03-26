@@ -14,6 +14,7 @@ import UserGiovaniBurgo from "./pages/UserGiovaniBurgo";
 import NotificationEndpoint from "./pages/NotificationEndpoint";
 import WhatsAppButton from "./components/WhatsAppButton";
 import Relatorio from "./pages/Relatorio";
+import MercadoLivreCallback from "./pages/MercadoLivreCallback";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -29,11 +30,12 @@ const AppLayout = () => {
   const location = useLocation();
   const isUserGiovaniBurgo = location.pathname === "/user_giovaniburgo";
   const isNotificationEndpoint = location.pathname === "/notification-endpoint";
+  const isMlCallback = location.pathname === "/ml-callback";
 
   return (
     <div className="min-h-screen flex flex-col">
-      {!isUserGiovaniBurgo && !isNotificationEndpoint && <Header />}
-      <main className={`flex-grow ${!isUserGiovaniBurgo && !isNotificationEndpoint ? "pt-16" : ""}`}>
+      {!isUserGiovaniBurgo && !isNotificationEndpoint && !isMlCallback && <Header />}
+      <main className={`flex-grow ${!isUserGiovaniBurgo && !isNotificationEndpoint && !isMlCallback ? "pt-16" : ""}`}>
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/obrigado" element={<ThankYou />} />
@@ -42,10 +44,11 @@ const AppLayout = () => {
           <Route path="/user_giovaniburgo" element={<UserGiovaniBurgo />} />
           <Route path="/notification-endpoint" element={<NotificationEndpoint />} />
           <Route path="/relatorio" element={<Relatorio />} />
+          <Route path="/ml-callback" element={<MercadoLivreCallback />} />
         </Routes>
       </main>
-      {!isUserGiovaniBurgo && !isNotificationEndpoint && <Footer />}
-      {!isUserGiovaniBurgo && !isNotificationEndpoint && <WhatsAppButton />}
+      {!isUserGiovaniBurgo && !isNotificationEndpoint && !isMlCallback && <Footer />}
+      {!isUserGiovaniBurgo && !isNotificationEndpoint && !isMlCallback && <WhatsAppButton />}
     </div>
   );
 };
