@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,18 +10,7 @@ const MercadoLivreCallback = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [authCode, setAuthCode] = useState<string | null>(null);
-  const [refreshToken, setRefreshToken] = useState<string | null>(null);
-  const [accessToken, setAccessToken] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const isMounted = useRef(true);
-
-  useEffect(() => {
-    // Cleanup function to prevent state updates after unmounting
-    return () => {
-      isMounted.current = false;
-    };
-  }, []);
 
   useEffect(() => {
     // Extract the authorization code from URL parameters
@@ -30,78 +19,19 @@ const MercadoLivreCallback = () => {
     
     if (code) {
       setAuthCode(code);
-      exchangeCodeForToken(code);
+      toast({
+        title: "Código encontrado",
+        description: "Código de autorização foi extraído com sucesso da URL",
+      });
     } else {
       setError('Código de autorização não encontrado na URL');
-    }
-  }, [location]);
-
-  const exchangeCodeForToken = async (code: string) => {
-    if (!isMounted.current) return;
-    
-    setLoading(true);
-    setError(null);
-    
-    try {
-      console.log('Iniciando troca de código por token:', code);
-      
-      // The redirect URI should match exactly what was used in the authorization request
-      const redirectUri = window.location.origin + '/ml-callback';
-      console.log('Redirect URI:', redirectUri);
-      
-      // Exchange the authorization code for tokens using our server endpoint
-      // Use full URL to our server (not ngrok)
-      const response = await fetch('/exchange-token', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          code: code,
-          redirect_uri: redirectUri
-        })
+      toast({
+        title: "Erro",
+        description: "Código de autorização não encontrado na URL",
+        variant: "destructive",
       });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        throw new Error(
-          errorData?.message || 
-          errorData?.error || 
-          `Erro na requisição: ${response.status} ${response.statusText}`
-        );
-      }
-
-      const data = await response.json();
-      
-      console.log('Resposta recebida:', data);
-      
-      if (isMounted.current) {
-        setRefreshToken(data.refresh_token);
-        setAccessToken(data.access_token);
-        
-        toast({
-          title: "Sucesso",
-          description: "Autorização concluída com sucesso",
-        });
-      }
-    } catch (error) {
-      console.error("Erro ao trocar código por token:", error);
-      
-      if (isMounted.current) {
-        setError(error instanceof Error ? error.message : 'Erro ao trocar código por token');
-        
-        toast({
-          title: "Erro",
-          description: error instanceof Error ? error.message : "Erro ao trocar código por token",
-          variant: "destructive",
-        });
-      }
-    } finally {
-      if (isMounted.current) {
-        setLoading(false);
-      }
     }
-  };
+  }, [location, toast]);
 
   const copyToClipboard = (text: string, type: string) => {
     navigator.clipboard.writeText(text).then(() => {
@@ -123,11 +53,7 @@ const MercadoLivreCallback = () => {
           <CardTitle className="text-center">Autorização Mercado Livre</CardTitle>
         </CardHeader>
         <CardContent>
-          {loading ? (
-            <div className="flex justify-center my-8">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-            </div>
-          ) : error ? (
+          {error ? (
             <div className="bg-red-50 p-4 rounded-md mb-4">
               <p className="text-red-600">{error}</p>
               <Button onClick={goToHome} className="mt-4">Voltar ao início</Button>
@@ -149,47 +75,8 @@ const MercadoLivreCallback = () => {
                       Copiar
                     </Button>
                   </div>
-                </div>
-              )}
-              
-              {refreshToken && (
-                <div className="mb-6">
-                  <h3 className="font-medium mb-2">Refresh Token:</h3>
-                  <div className="flex">
-                    <div className="flex-1 bg-gray-100 p-3 rounded-l-md overflow-x-auto">
-                      <code className="text-sm">{refreshToken}</code>
-                    </div>
-                    <Button 
-                      variant="outline" 
-                      className="rounded-l-none" 
-                      onClick={() => copyToClipboard(refreshToken, 'Refresh Token')}
-                    >
-                      Copiar
-                    </Button>
-                  </div>
                   <p className="text-sm text-gray-500 mt-2">
-                    Guarde este refresh token em um local seguro. Ele permite que sua aplicação solicite novos access tokens.
-                  </p>
-                </div>
-              )}
-              
-              {accessToken && (
-                <div className="mb-6">
-                  <h3 className="font-medium mb-2">Access Token:</h3>
-                  <div className="flex">
-                    <div className="flex-1 bg-gray-100 p-3 rounded-l-md overflow-x-auto">
-                      <code className="text-sm">{accessToken}</code>
-                    </div>
-                    <Button 
-                      variant="outline" 
-                      className="rounded-l-none" 
-                      onClick={() => copyToClipboard(accessToken, 'Access Token')}
-                    >
-                      Copiar
-                    </Button>
-                  </div>
-                  <p className="text-sm text-gray-500 mt-2">
-                    Este token expira em algumas horas. Use o refresh token para obter um novo quando necessário.
+                    Este é o código de autorização que você pode usar para obter o refresh token e o access token manualmente.
                   </p>
                 </div>
               )}
