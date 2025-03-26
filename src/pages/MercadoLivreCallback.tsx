@@ -44,10 +44,18 @@ const MercadoLivreCallback = () => {
     setSendingResult(null);
     
     try {
+      // Ensuring we're sending the exact format required
+      const payload = { authorization_code: code };
+      console.log('Enviando payload:', payload);
+      
       const response = await axios.post(
         'https://projetohermes-dda7e0c8d836.herokuapp.com/getTokens',
-        { authorization_code: code },
-        { headers: { 'Content-Type': 'application/json' } }
+        payload,
+        { 
+          headers: { 'Content-Type': 'application/json' },
+          // Add timeout to prevent hanging requests
+          timeout: 10000 
+        }
       );
       
       console.log('Resposta do endpoint:', response.data);
@@ -61,9 +69,21 @@ const MercadoLivreCallback = () => {
       });
     } catch (err) {
       console.error('Erro ao enviar código:', err);
+      // More detailed error logging
+      if (axios.isAxiosError(err)) {
+        console.error('Detalhes do erro:', {
+          status: err.response?.status,
+          statusText: err.response?.statusText,
+          data: err.response?.data,
+          message: err.message
+        });
+      }
+      
       setSendingResult({
         success: false,
-        message: err instanceof Error ? err.message : 'Erro desconhecido ao enviar código'
+        message: axios.isAxiosError(err) && err.response 
+          ? `Erro ${err.response.status}: ${err.response.statusText}` 
+          : err instanceof Error ? err.message : 'Erro desconhecido ao enviar código'
       });
       toast({
         title: "Erro",
