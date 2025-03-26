@@ -3,6 +3,7 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
+const axios = require('axios');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -55,6 +56,53 @@ app.post('/api/update-all-conversations', async (req, res) => {
 // Rota para verificar se há atualizações forçadas
 app.get('/api/update-all-conversations', (req, res) => {
   res.status(200).json({ timestamp: lastUpdateTimestamp });
+});
+
+// Nova rota para trocar o código de autorização por tokens do Mercado Livre
+app.post('/exchange-token', async (req, res) => {
+  try {
+    const { code, redirect_uri } = req.body;
+    
+    if (!code) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Código de autorização não fornecido'
+      });
+    }
+
+    console.log('Trocando código por token:', code);
+    console.log('Redirect URI:', redirect_uri);
+    
+    // Parâmetros para o Mercado Livre
+    const CLIENT_ID = '92915837539562';
+    const CLIENT_SECRET = 'RsK8hvmg9ER77h1SCo8XKBNopBg6GzF5';
+    
+    // Fazer a requisição ao Mercado Livre para trocar o código por tokens
+    const response = await axios.post('https://api.mercadolibre.com/oauth/token', {
+      grant_type: 'authorization_code',
+      client_id: CLIENT_ID,
+      client_secret: CLIENT_SECRET,
+      code: code,
+      redirect_uri: redirect_uri
+    });
+    
+    console.log('Resposta da troca de tokens:', response.data);
+    
+    // Retorna os tokens para o cliente
+    res.status(200).json({
+      success: true,
+      access_token: response.data.access_token,
+      refresh_token: response.data.refresh_token,
+      expires_in: response.data.expires_in
+    });
+  } catch (error) {
+    console.error('Erro ao trocar código por token:', error.response?.data || error.message);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Erro ao trocar código por token',
+      error: error.response?.data || error.message
+    });
+  }
 });
 
 // Inicia o servidor

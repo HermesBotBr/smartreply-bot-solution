@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,14 @@ const MercadoLivreCallback = () => {
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const isMounted = useRef(true);
+
+  useEffect(() => {
+    // Cleanup function to prevent state updates after unmounting
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
 
   useEffect(() => {
     // Extract the authorization code from URL parameters
@@ -30,12 +38,19 @@ const MercadoLivreCallback = () => {
   }, [location]);
 
   const exchangeCodeForToken = async (code: string) => {
+    if (!isMounted.current) return;
+    
     setLoading(true);
     setError(null);
     
     try {
+      console.log('Iniciando troca de código por token:', code);
+      
+      // The redirect URI should match exactly what was used in the authorization request
+      const redirectUri = window.location.origin + '/ml-callback';
+      console.log('Redirect URI:', redirectUri);
+      
       // Exchange the authorization code for tokens
-      // Using a proxy endpoint to avoid exposing client_secret in frontend
       const response = await fetch(getNgrokUrl('/exchange-token'), {
         method: 'POST',
         headers: {
@@ -43,34 +58,43 @@ const MercadoLivreCallback = () => {
         },
         body: JSON.stringify({
           code: code,
-          redirect_uri: window.location.origin + '/ml-callback' // Should match the redirect_uri in the authorization request
+          redirect_uri: redirectUri
         })
       });
 
+      const data = await response.json();
+      
       if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        throw new Error(errorData?.message || 'Erro ao trocar código por token');
+        throw new Error(data.message || data.error || 'Erro ao trocar código por token');
       }
 
-      const data = await response.json();
-      setRefreshToken(data.refresh_token);
-      setAccessToken(data.access_token);
+      console.log('Resposta recebida:', data);
       
-      toast({
-        title: "Sucesso",
-        description: "Autorização concluída com sucesso",
-      });
+      if (isMounted.current) {
+        setRefreshToken(data.refresh_token);
+        setAccessToken(data.access_token);
+        
+        toast({
+          title: "Sucesso",
+          description: "Autorização concluída com sucesso",
+        });
+      }
     } catch (error) {
       console.error("Erro ao trocar código por token:", error);
-      setError(error instanceof Error ? error.message : 'Erro ao trocar código por token');
       
-      toast({
-        title: "Erro",
-        description: error instanceof Error ? error.message : "Erro ao trocar código por token",
-        variant: "destructive",
-      });
+      if (isMounted.current) {
+        setError(error instanceof Error ? error.message : 'Erro ao trocar código por token');
+        
+        toast({
+          title: "Erro",
+          description: error instanceof Error ? error.message : "Erro ao trocar código por token",
+          variant: "destructive",
+        });
+      }
     } finally {
-      setLoading(false);
+      if (isMounted.current) {
+        setLoading(false);
+      }
     }
   };
 
