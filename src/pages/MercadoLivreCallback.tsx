@@ -49,7 +49,7 @@ const MercadoLivreCallback = () => {
       console.log('Enviando payload:', payload);
       
       // Use o endpoint direto do Projeto Hermes
-      const hermesEndpoint = '/proxy/getTokens';
+      const hermesEndpoint = '/api/proxy-getTokens';
       console.log('Usando endpoint:', hermesEndpoint);
       
       const response = await axios.post(
