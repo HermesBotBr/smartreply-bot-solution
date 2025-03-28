@@ -17,6 +17,7 @@ import Relatorio from "./pages/Relatorio";
 import MercadoLivreCallback from "./pages/MercadoLivreCallback";
 import TokenRequest from "./pages/TokenRequest";
 import Hermes from "./pages/Hermes";
+import DesenvolvedorSql from "./pages/DesenvolvedorSql";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -35,11 +36,12 @@ const AppLayout = () => {
   const isMlCallback = location.pathname === "/ml-callback";
   const isTokenRequest = location.pathname === "/token-request";
   const isHermes = location.pathname === "/hermes";
+  const isDesenvolvedorSql = location.pathname === "/desenvolvedorsql";
 
   return (
     <div className="min-h-screen flex flex-col">
-      {!isUserGiovaniBurgo && !isNotificationEndpoint && !isMlCallback && !isTokenRequest && !isHermes && <Header />}
-      <main className={`flex-grow ${!isUserGiovaniBurgo && !isNotificationEndpoint && !isMlCallback && !isTokenRequest && !isHermes ? "pt-16" : ""}`}>
+      {!isUserGiovaniBurgo && !isNotificationEndpoint && !isMlCallback && !isTokenRequest && !isHermes && !isDesenvolvedorSql && <Header />}
+      <main className={`flex-grow ${!isUserGiovaniBurgo && !isNotificationEndpoint && !isMlCallback && !isTokenRequest && !isHermes && !isDesenvolvedorSql ? "pt-16" : ""}`}>
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/obrigado" element={<ThankYou />} />
@@ -51,10 +53,11 @@ const AppLayout = () => {
           <Route path="/ml-callback" element={<MercadoLivreCallback />} />
           <Route path="/token-request" element={<TokenRequest />} />
           <Route path="/hermes" element={<Hermes />} />
+          <Route path="/desenvolvedorsql" element={<DesenvolvedorSql />} />
         </Routes>
       </main>
-      {!isUserGiovaniBurgo && !isNotificationEndpoint && !isMlCallback && !isTokenRequest && !isHermes && <Footer />}
-      {!isUserGiovaniBurgo && !isNotificationEndpoint && !isMlCallback && !isTokenRequest && !isHermes && <WhatsAppButton />}
+      {!isUserGiovaniBurgo && !isNotificationEndpoint && !isMlCallback && !isTokenRequest && !isHermes && !isDesenvolvedorSql && <Footer />}
+      {!isUserGiovaniBurgo && !isNotificationEndpoint && !isMlCallback && !isTokenRequest && !isHermes && !isDesenvolvedorSql && <WhatsAppButton />}
     </div>
   );
 };

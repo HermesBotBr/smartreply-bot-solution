@@ -1,9 +1,9 @@
-
 // server.js
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const axios = require('axios');
+const mysql = require('mysql2/promise');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -22,6 +22,114 @@ app.use(bodyParser.json());
 
 // Handle OPTIONS requests for CORS preflight
 app.options('*', cors());
+
+// Constante de conexão com o banco de dados MySQL
+const MYSQL_CONNECTION_STRING = 'mysql://y0pxd1g143rqh6op:yfpdemk5z2hhczyd@lmag6s0zwmcswp5w.cbetxkdyhwsb.us-east-1.rds.amazonaws.com:3306/p4zb0v2reda2hbui';
+
+// Função auxiliar para criar uma conexão com o banco de dados
+async function createDbConnection() {
+  try {
+    const connection = await mysql.createConnection(MYSQL_CONNECTION_STRING);
+    return connection;
+  } catch (error) {
+    console.error('Erro ao conectar ao banco de dados:', error);
+    throw error;
+  }
+}
+
+// Rota para obter todas as tabelas do banco de dados
+app.get('/api/db/tables', async (req, res) => {
+  try {
+    const connection = await createDbConnection();
+    const [rows] = await connection.execute('SHOW TABLES');
+    await connection.end();
+    
+    const tables = rows.map(row => {
+      // O nome da coluna varia dependendo do banco de dados, então pegamos o primeiro valor
+      const tableName = Object.values(row)[0];
+      return { tableName };
+    });
+    
+    res.status(200).json({ tables });
+  } catch (error) {
+    console.error('Erro ao buscar tabelas:', error);
+    res.status(500).json({ error: 'Erro ao buscar tabelas do banco de dados' });
+  }
+});
+
+// Rota para obter as colunas de uma tabela
+app.get('/api/db/columns', async (req, res) => {
+  const { table } = req.query;
+  
+  if (!table) {
+    return res.status(400).json({ error: 'Nome da tabela não fornecido' });
+  }
+  
+  try {
+    const connection = await createDbConnection();
+    const [columns] = await connection.execute(`DESCRIBE \`${table}\``);
+    await connection.end();
+    
+    res.status(200).json({ columns });
+  } catch (error) {
+    console.error(`Erro ao buscar colunas da tabela ${table}:`, error);
+    res.status(500).json({ error: `Erro ao buscar colunas da tabela ${table}` });
+  }
+});
+
+// Rota para obter dados de uma tabela
+app.get('/api/db/data', async (req, res) => {
+  const { table } = req.query;
+  
+  if (!table) {
+    return res.status(400).json({ error: 'Nome da tabela não fornecido' });
+  }
+  
+  try {
+    const connection = await createDbConnection();
+    const [data] = await connection.execute(`SELECT * FROM \`${table}\` LIMIT 100`);
+    await connection.end();
+    
+    res.status(200).json({ data });
+  } catch (error) {
+    console.error(`Erro ao buscar dados da tabela ${table}:`, error);
+    res.status(500).json({ error: `Erro ao buscar dados da tabela ${table}` });
+  }
+});
+
+// Rota para executar consultas SQL personalizadas
+app.post('/api/db/query', async (req, res) => {
+  const { query } = req.body;
+  
+  if (!query) {
+    return res.status(400).json({ error: 'Consulta SQL não fornecida' });
+  }
+  
+  try {
+    const connection = await createDbConnection();
+    const [results, fields] = await connection.execute(query);
+    await connection.end();
+    
+    // Verifica se é uma consulta SELECT
+    const isSelect = query.trim().toLowerCase().startsWith('select');
+    
+    if (isSelect) {
+      res.status(200).json({ 
+        isSelect, 
+        results,
+        fields
+      });
+    } else {
+      res.status(200).json({ 
+        isSelect, 
+        affectedRows: results.affectedRows || 0 
+      });
+    }
+  } catch (error) {
+    console.error('Erro ao executar consulta SQL:', error);
+    res.status(500).json({ error: `Erro ao executar consulta SQL: ${error.message}` });
+  }
+});
 
 // Rota para enviar notificação
 app.post('/notification-endpoint', (req, res) => {
