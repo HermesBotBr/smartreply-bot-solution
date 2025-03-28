@@ -1,3 +1,4 @@
+
 // server.js
 const express = require('express');
 const bodyParser = require('body-parser');
@@ -14,9 +15,13 @@ let lastUpdateTimestamp = null;
 app.use(cors({
   origin: '*',
   methods: ['GET', 'POST', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
 }));
 app.use(bodyParser.json());
+
+// Handle OPTIONS requests for CORS preflight
+app.options('*', cors());
 
 // Rota para enviar notificação
 app.post('/notification-endpoint', (req, res) => {

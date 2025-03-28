@@ -8,7 +8,7 @@ import NavSidebar from "@/components/dashboard/NavSidebar";
 import ConversationsTab from "@/components/dashboard/ConversationsTab";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import HermesLogin from "@/components/dashboard/HermesLogin";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { toast } from "sonner";
 
 const Hermes = () => {
@@ -81,6 +81,10 @@ const Hermes = () => {
       {/* Login Dialog */}
       <Dialog open={loginOpen} onOpenChange={setLoginOpen}>
         <DialogContent className="sm:max-w-md">
+          <DialogTitle className="sr-only">Login</DialogTitle>
+          <DialogDescription className="sr-only">
+            Faça login para acessar o sistema Hermes
+          </DialogDescription>
           <HermesLogin onLoginSuccess={handleLoginSuccess} />
         </DialogContent>
       </Dialog>
