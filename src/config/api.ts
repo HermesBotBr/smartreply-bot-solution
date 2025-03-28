@@ -9,7 +9,7 @@ export const NGROK_BASE_URL = (() => {
     // In preview, use relative URLs to avoid CORS issues
     return '';
   } else if (process.env.NODE_ENV === 'production') {
-    // In production, use the production API URL
+    // In production, use the API server (without the /api prefix)
     return 'https://www.hermesbot.com.br';
   } else {
     // In development, use localhost

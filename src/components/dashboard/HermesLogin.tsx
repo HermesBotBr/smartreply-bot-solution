@@ -51,20 +51,65 @@ const HermesLogin: React.FC<HermesLoginProps> = ({ onLoginSuccess }) => {
         }, 1000);
       } else {
         // Normal login flow for non-preview environments
-        const loginUrl = getNgrokUrl('/api/auth/login');
+        // Tente primeiro o caminho com /api no início
+        let loginUrl = getNgrokUrl('/api/auth/login');
         
         console.log("Attempting login at:", loginUrl);
         
-        // Call the authentication service
-        const response = await axios.post(loginUrl, {
-          sellerId: data.sellerId,
-          password: data.password,
-        });
-        
-        if (response.data.success) {
-          onLoginSuccess(data.sellerId);
-        } else {
-          toast.error("Falha na autenticação. Verifique suas credenciais.");
+        try {
+          // Tenta primeira opção: /api/auth/login
+          const response = await axios.post(loginUrl, {
+            sellerId: data.sellerId,
+            password: data.password,
+          });
+          
+          if (response.data.success) {
+            onLoginSuccess(data.sellerId);
+            toast.success("Login realizado com sucesso!");
+          } else {
+            toast.error("Falha na autenticação. Verifique suas credenciais.");
+          }
+        } catch (firstError) {
+          console.log("First login attempt failed, trying alternative URL");
+          
+          // Se falhar, tenta caminho sem /api no início
+          loginUrl = getNgrokUrl('/auth/login');
+          console.log("Trying alternative login at:", loginUrl);
+          
+          try {
+            const response = await axios.post(loginUrl, {
+              sellerId: data.sellerId,
+              password: data.password,
+            });
+            
+            if (response.data.success) {
+              onLoginSuccess(data.sellerId);
+              toast.success("Login realizado com sucesso!");
+            } else {
+              toast.error("Falha na autenticação. Verifique suas credenciais.");
+            }
+          } catch (secondError) {
+            // Se ainda falhar, tenta uma terceira opção - diretamente /login
+            loginUrl = getNgrokUrl('/login');
+            console.log("Trying final login URL:", loginUrl);
+            
+            try {
+              const response = await axios.post(loginUrl, {
+                sellerId: data.sellerId,
+                password: data.password,
+              });
+              
+              if (response.data.success) {
+                onLoginSuccess(data.sellerId);
+                toast.success("Login realizado com sucesso!");
+              } else {
+                toast.error("Falha na autenticação. Verifique suas credenciais.");
+              }
+            } catch (thirdError) {
+              console.error("All login attempts failed:", thirdError);
+              toast.error("Erro ao realizar login. Verifique o endpoint da API.");
+            }
+          }
         }
       }
     } catch (error) {
