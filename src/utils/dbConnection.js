@@ -1,7 +1,7 @@
 
 const mysql = require('mysql2/promise');
 
-// Cria um pool de conexões usando a variável JAWSDB_URL
+// Cria um pool de conexões usando a URL do JAWSDB
 const pool = mysql.createPool({
   uri: 'mysql://y0pxd1g143rqh6op:yfpdemk5z2hhczyd@lmag6s0zwmcswp5w.cbetxkdyhwsb.us-east-1.rds.amazonaws.com:3306/p4zb0v2reda2hbui',
   waitForConnections: true,

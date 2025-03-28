@@ -6,11 +6,17 @@ const { pool } = require('../utils/dbConnection');
 // Rota para listar todas as tabelas
 router.get('/tables', async (req, res) => {
   try {
+    // Consulta para listar todas as tabelas do banco de dados atual
     const [rows] = await pool.query('SHOW TABLES');
-    const tables = rows.map(row => {
-      const tableName = Object.values(row)[0];
-      return { tableName };
-    });
+    
+    // O nome da coluna depende do nome do banco de dados, então pegamos a chave do primeiro objeto
+    const tables = Array.isArray(rows) && rows.length > 0 
+      ? rows.map(row => {
+          const key = Object.keys(row)[0];
+          return { TABLE_NAME: row[key] };
+        })
+      : [];
+      
     res.json({ tables });
   } catch (error) {
     console.error('Erro ao buscar tabelas:', error);
