@@ -80,7 +80,7 @@ const Hermes = () => {
     <div className="flex h-screen overflow-hidden">
       {/* Login Dialog */}
       <Dialog open={loginOpen} onOpenChange={setLoginOpen}>
-        <DialogContent className="sm:max-w-md" showClose={false}>
+        <DialogContent className="sm:max-w-md">
           <HermesLogin onLoginSuccess={handleLoginSuccess} />
         </DialogContent>
       </Dialog>
