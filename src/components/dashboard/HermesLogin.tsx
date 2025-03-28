@@ -2,13 +2,13 @@
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import axios from 'axios';
+import { getNgrokUrl } from "@/config/api";
 
 // Define form schema
 const formSchema = z.object({
@@ -38,8 +38,11 @@ const HermesLogin: React.FC<HermesLoginProps> = ({ onLoginSuccess }) => {
     setIsLoading(true);
     
     try {
+      // Use the correct URL from our config
+      const loginUrl = getNgrokUrl('/api/auth/login');
+      
       // Call the authentication service
-      const response = await axios.post('/api/auth/login', {
+      const response = await axios.post(loginUrl, {
         sellerId: data.sellerId,
         password: data.password,
       });
