@@ -16,6 +16,7 @@ import WhatsAppButton from "./components/WhatsAppButton";
 import Relatorio from "./pages/Relatorio";
 import MercadoLivreCallback from "./pages/MercadoLivreCallback";
 import TokenRequest from "./pages/TokenRequest";
+import Hermes from "./pages/Hermes";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -33,11 +34,12 @@ const AppLayout = () => {
   const isNotificationEndpoint = location.pathname === "/notification-endpoint";
   const isMlCallback = location.pathname === "/ml-callback";
   const isTokenRequest = location.pathname === "/token-request";
+  const isHermes = location.pathname === "/hermes";
 
   return (
     <div className="min-h-screen flex flex-col">
-      {!isUserGiovaniBurgo && !isNotificationEndpoint && !isMlCallback && !isTokenRequest && <Header />}
-      <main className={`flex-grow ${!isUserGiovaniBurgo && !isNotificationEndpoint && !isMlCallback && !isTokenRequest ? "pt-16" : ""}`}>
+      {!isUserGiovaniBurgo && !isNotificationEndpoint && !isMlCallback && !isTokenRequest && !isHermes && <Header />}
+      <main className={`flex-grow ${!isUserGiovaniBurgo && !isNotificationEndpoint && !isMlCallback && !isTokenRequest && !isHermes ? "pt-16" : ""}`}>
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/obrigado" element={<ThankYou />} />
@@ -48,10 +50,11 @@ const AppLayout = () => {
           <Route path="/relatorio" element={<Relatorio />} />
           <Route path="/ml-callback" element={<MercadoLivreCallback />} />
           <Route path="/token-request" element={<TokenRequest />} />
+          <Route path="/hermes" element={<Hermes />} />
         </Routes>
       </main>
-      {!isUserGiovaniBurgo && !isNotificationEndpoint && !isMlCallback && !isTokenRequest && <Footer />}
-      {!isUserGiovaniBurgo && !isNotificationEndpoint && !isMlCallback && !isTokenRequest && <WhatsAppButton />}
+      {!isUserGiovaniBurgo && !isNotificationEndpoint && !isMlCallback && !isTokenRequest && !isHermes && <Footer />}
+      {!isUserGiovaniBurgo && !isNotificationEndpoint && !isMlCallback && !isTokenRequest && !isHermes && <WhatsAppButton />}
     </div>
   );
 };
