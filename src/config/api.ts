@@ -5,14 +5,8 @@ export const NGROK_BASE_URL = (() => {
   const isPreview = typeof window !== 'undefined' && 
     window.location.hostname.includes('preview--smartreply-bot-solution.lovable.app');
   
-  if (isPreview) {
-    // In preview, use relative URLs to avoid CORS issues
-    return '';
-  } else {
-    // In production and development, use the local server
-    // Isso garante que usaremos nosso próprio servidor em vez de tentar acessar hermesbot.com.br
-    return window.location.origin;
-  }
+  // Always use our local server/relative URLs to avoid CORS issues
+  return '';
 })();
 
 // Helper function to construct full URLs

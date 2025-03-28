@@ -53,7 +53,9 @@ const DesenvolvedorSql: React.FC = () => {
     setIsLoading(true);
     setError(null);
     try {
+      // Use local endpoint instead of hermesbot.com.br
       const response = await axios.get(getNgrokUrl('/api/db/tables'));
+      console.log('Tables response:', response.data);
       setTables(response.data.tables);
       if (response.data.tables.length > 0) {
         setSelectedTable(response.data.tables[0].tableName);
@@ -71,7 +73,9 @@ const DesenvolvedorSql: React.FC = () => {
     setIsLoading(true);
     setError(null);
     try {
+      // Use local endpoint instead of hermesbot.com.br
       const response = await axios.get(getNgrokUrl(`/api/db/columns?table=${selectedTable}`));
+      console.log('Columns response:', response.data);
       setColumns(response.data.columns);
     } catch (err) {
       console.error('Error fetching columns:', err);
@@ -86,7 +90,9 @@ const DesenvolvedorSql: React.FC = () => {
     setIsLoading(true);
     setError(null);
     try {
+      // Use local endpoint instead of hermesbot.com.br
       const response = await axios.get(getNgrokUrl(`/api/db/data?table=${selectedTable}`));
+      console.log('Data response:', response.data);
       setData(response.data.data);
     } catch (err) {
       console.error('Error fetching data:', err);
@@ -106,7 +112,9 @@ const DesenvolvedorSql: React.FC = () => {
     setIsQueryLoading(true);
     setError(null);
     try {
+      // Use local endpoint instead of hermesbot.com.br
       const response = await axios.post(getNgrokUrl('/api/db/query'), { query });
+      console.log('Query response:', response.data);
       setQueryResult(response.data);
       toast.success('Consulta executada com sucesso');
     } catch (err) {
