@@ -38,19 +38,34 @@ const HermesLogin: React.FC<HermesLoginProps> = ({ onLoginSuccess }) => {
     setIsLoading(true);
     
     try {
-      // Use the correct URL from our config
-      const loginUrl = getNgrokUrl('/api/auth/login');
+      // Check if we're in the preview environment
+      const isPreview = typeof window !== 'undefined' && 
+        window.location.hostname.includes('preview--smartreply-bot-solution.lovable.app');
       
-      // Call the authentication service
-      const response = await axios.post(loginUrl, {
-        sellerId: data.sellerId,
-        password: data.password,
-      });
-      
-      if (response.data.success) {
-        onLoginSuccess(data.sellerId);
+      if (isPreview) {
+        // In preview mode, simulate successful login for any credentials
+        console.log("Preview mode: Simulating successful login");
+        setTimeout(() => {
+          onLoginSuccess(data.sellerId);
+          toast.success("Login simulado com sucesso (ambiente de preview)");
+        }, 1000);
       } else {
-        toast.error("Falha na autenticação. Verifique suas credenciais.");
+        // Normal login flow for non-preview environments
+        const loginUrl = getNgrokUrl('/api/auth/login');
+        
+        console.log("Attempting login at:", loginUrl);
+        
+        // Call the authentication service
+        const response = await axios.post(loginUrl, {
+          sellerId: data.sellerId,
+          password: data.password,
+        });
+        
+        if (response.data.success) {
+          onLoginSuccess(data.sellerId);
+        } else {
+          toast.error("Falha na autenticação. Verifique suas credenciais.");
+        }
       }
     } catch (error) {
       console.error("Login error:", error);
