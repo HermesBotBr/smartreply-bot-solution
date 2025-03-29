@@ -10,6 +10,8 @@ import { useMediaQuery } from "@/hooks/useMediaQuery";
 import HermesLogin from "@/components/dashboard/HermesLogin";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { usePackData } from "@/hooks/usePackData";
+import PacksList from "@/components/dashboard/PacksList";
 
 const Hermes = () => {
   const [activeTab, setActiveTab] = useState('conversas');
@@ -20,6 +22,11 @@ const Hermes = () => {
   const isMobile = useMediaQuery('(max-width: 768px)');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loginOpen, setLoginOpen] = useState(true);
+  const [sellerId, setSellerId] = useState<string | null>(null);
+  const [selectedPackId, setSelectedPackId] = useState<string | null>(null);
+  
+  // Use our custom hook to fetch packs data
+  const { packs, isLoading: packsLoading, error: packsError } = usePackData(sellerId);
   
   // Check if user is already authenticated
   useEffect(() => {
@@ -32,6 +39,7 @@ const Hermes = () => {
           const now = new Date().getTime();
           if (now - authData.timestamp < 24 * 60 * 60 * 1000) {
             setIsAuthenticated(true);
+            setSellerId(authData.sellerId);
             setLoginOpen(false);
             toast.success("Sessão recuperada");
             return;
@@ -43,12 +51,14 @@ const Hermes = () => {
     }
     // If we get here, either no auth or expired auth
     setIsAuthenticated(false);
+    setSellerId(null);
     setLoginOpen(true);
     localStorage.removeItem('hermesAuth');
   }, []);
 
   const handleLoginSuccess = (sellerId: string) => {
     setIsAuthenticated(true);
+    setSellerId(sellerId);
     setLoginOpen(false);
     
     // Save auth data in localStorage with timestamp
@@ -59,6 +69,13 @@ const Hermes = () => {
     localStorage.setItem('hermesAuth', JSON.stringify(authData));
     
     toast.success("Login realizado com sucesso!");
+  };
+
+  const handleSelectPack = (packId: string) => {
+    setSelectedPackId(packId);
+    // Here you would typically load conversations for this pack
+    // For now we're just selecting the pack
+    toast.info(`Pacote ${packId} selecionado`);
   };
   
   // Placeholder data and functions
@@ -100,28 +117,45 @@ const Hermes = () => {
           {/* Main content area - adjust height for mobile to account for bottom navbar */}
           <div className={`flex-1 flex w-${isMobile ? 'full' : '[calc(100%-3.5rem)]'} ${isMobile ? 'h-[calc(100vh-56px)]' : 'h-screen'}`}>
             {activeTab === 'conversas' ? (
-              <ConversationsTab 
-                conversations={conversations}
-                selectedConv={selectedConv}
-                setSelectedConv={setSelectedConv}
-                initialAutoScrollDone={initialAutoScrollDone}
-                setInitialAutoScrollDone={setInitialAutoScrollDone}
-                refreshing={refreshing}
-                readConversations={readConversations}
-                markAsRead={markAsRead}
-                showSaleDetails={showSaleDetails}
-                setShowSaleDetails={setShowSaleDetails}
-                gptIds={gptIds}
-                mlToken={mlToken}
-                setFullScreenImage={setFullScreenImage}
-                orderDetails={orderDetails}
-                shippingDetails={shippingDetails}
-                expandedInfo={expandedInfo}
-                setExpandedInfo={setExpandedInfo}
-                detailedInfo={detailedInfo}
-                fetchDetailedInfo={fetchDetailedInfo}
-                fetchSaleDetails={fetchSaleDetails}
-              />
+              <>
+                {/* Left panel - Packs List */}
+                <div className="w-1/3 h-full overflow-auto border-r">
+                  <div className="p-4 border-b bg-white">
+                    <h2 className="text-lg font-medium">Pacotes</h2>
+                    <p className="text-sm text-gray-500">Seller ID: {sellerId}</p>
+                  </div>
+                  <PacksList 
+                    packs={packs} 
+                    isLoading={packsLoading} 
+                    error={packsError}
+                    onSelectPack={handleSelectPack}
+                    selectedPackId={selectedPackId}
+                  />
+                </div>
+                
+                {/* Right panel - Conversation or placeholder */}
+                <div className="w-2/3 h-full overflow-auto">
+                  {selectedPackId ? (
+                    <div className="flex items-center justify-center h-full">
+                      <div className="text-center p-6">
+                        <h3 className="text-xl font-bold mb-2">Pack ID: {selectedPackId}</h3>
+                        <p className="text-gray-500">
+                          Detalhes da conversa serão exibidos aqui
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center h-full">
+                      <div className="text-center p-6">
+                        <h3 className="text-xl font-bold mb-2">Nenhum pacote selecionado</h3>
+                        <p className="text-gray-500">
+                          Selecione um pacote para ver detalhes
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </>
             ) : activeTab === 'perguntas' ? (
               <div className="w-full h-full overflow-auto">
                 <QuestionsList />

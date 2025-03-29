@@ -37,6 +37,17 @@ router.get('/columns', asyncHandler(async (req, res) => {
   res.json({ columns });
 }));
 
+// Rota para obter colunas de uma tabela específica
+router.get('/columns/:table', asyncHandler(async (req, res) => {
+  const { table } = req.params;
+  if (!table) {
+    return res.status(400).json({ error: 'Nome da tabela não fornecido' });
+  }
+  
+  const [columns] = await pool.query(`DESCRIBE ${table}`);
+  res.json({ columns });
+}));
+
 // Rota para obter dados da tabela
 router.get('/data', asyncHandler(async (req, res) => {
   const { table } = req.query;
@@ -46,6 +57,17 @@ router.get('/data', asyncHandler(async (req, res) => {
   
   const [data] = await pool.query(`SELECT * FROM ${table} LIMIT 100`);
   res.json({ data });
+}));
+
+// Rota para obter linhas de uma tabela específica
+router.get('/rows/:table', asyncHandler(async (req, res) => {
+  const { table } = req.params;
+  if (!table) {
+    return res.status(400).json({ error: 'Nome da tabela não fornecido' });
+  }
+  
+  const [rows] = await pool.query(`SELECT * FROM ${table} LIMIT 100`);
+  res.json({ rows });
 }));
 
 // Rota para executar consultas SQL personalizadas
