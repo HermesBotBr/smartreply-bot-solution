@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,8 +27,8 @@ interface TableData {
   [key: string]: any;
 }
 
-// MySQL connection string
-const CONNECTION_STRING = 'mysql://y0pxd1g143rqh6op:yfpdemk5z2hhczyd@lmag6s0zwmcswp5w.cbetxkdyhwsb.us-east-1.rds.amazonaws.com:3306/p4zb0v2reda2hbui';
+// Base API URL for external services
+const API_BASE_URL = "https://745c73a422c3.ngrok.app/api/db";
 
 const DesenvolvedorSql: React.FC = () => {
   const [tables, setTables] = useState<TableInfo[]>([]);
@@ -55,9 +56,9 @@ const DesenvolvedorSql: React.FC = () => {
     setIsLoading(true);
     setError(null);
     try {
-      console.log('Fetching tables from API endpoint...');
+      console.log('Fetching tables from external API...');
       
-      const response = await fetch('/api/db/tables');
+      const response = await fetch(`${API_BASE_URL}/tables`);
       if (!response.ok) {
         const errorText = await response.text();
         console.error('API Response text:', errorText);
@@ -85,7 +86,7 @@ const DesenvolvedorSql: React.FC = () => {
     } catch (err) {
       console.error('Error fetching tables:', err);
       setError(`Erro ao buscar tabelas: ${err instanceof Error ? err.message : 'Erro desconhecido'}`);
-      toast.error('Falha ao conectar à API de banco de dados');
+      toast.error('Falha ao conectar à API de banco de dados externa');
     } finally {
       setIsLoading(false);
     }
@@ -97,29 +98,39 @@ const DesenvolvedorSql: React.FC = () => {
       console.log(`Fetching details for table: ${tableName}`);
       
       // Fetch columns
-      const columnsResponse = await fetch(`/api/db/columns?table=${encodeURIComponent(tableName)}`);
+      const columnsResponse = await fetch(`${API_BASE_URL}/columns/${encodeURIComponent(tableName)}`);
       if (!columnsResponse.ok) {
+        const errorText = await columnsResponse.text();
+        console.error('Columns API Response text:', errorText);
         throw new Error(`HTTP error! Status: ${columnsResponse.status}`);
       }
       
       const columnsData = await columnsResponse.json();
+      console.log('Received columns data:', columnsData);
+      
       if (columnsData.columns && Array.isArray(columnsData.columns)) {
         setColumns(columnsData.columns);
       } else {
         setColumns([]);
+        console.warn('No columns received or invalid format');
       }
       
-      // Fetch data
-      const dataResponse = await fetch(`/api/db/data?table=${encodeURIComponent(tableName)}`);
+      // Fetch rows
+      const dataResponse = await fetch(`${API_BASE_URL}/rows/${encodeURIComponent(tableName)}?limit=100`);
       if (!dataResponse.ok) {
+        const errorText = await dataResponse.text();
+        console.error('Rows API Response text:', errorText);
         throw new Error(`HTTP error! Status: ${dataResponse.status}`);
       }
       
       const tableData = await dataResponse.json();
-      if (tableData.data && Array.isArray(tableData.data)) {
-        setData(tableData.data);
+      console.log('Received rows data:', tableData);
+      
+      if (tableData.rows && Array.isArray(tableData.rows)) {
+        setData(tableData.rows);
       } else {
         setData([]);
+        console.warn('No rows received or invalid format');
       }
       
     } catch (err) {
@@ -139,9 +150,9 @@ const DesenvolvedorSql: React.FC = () => {
 
     setIsQueryLoading(true);
     try {
-      console.log('Executing query via API:', query);
+      console.log('Executing query via external API:', query);
       
-      const response = await fetch('/api/db/query', {
+      const response = await fetch(`${API_BASE_URL}/query`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -186,7 +197,7 @@ const DesenvolvedorSql: React.FC = () => {
       <div className="container mx-auto py-12 px-4">
         <h1 className="text-3xl font-bold mb-8">Desenvolvedor SQL</h1>
         <div className="flex justify-center items-center h-40">
-          <p>Conectando diretamente ao MySQL...</p>
+          <p>Conectando ao serviço MySQL externo...</p>
         </div>
       </div>
     );
@@ -195,14 +206,14 @@ const DesenvolvedorSql: React.FC = () => {
   return (
     <div className="container mx-auto py-8 px-4">
       <h1 className="text-3xl font-bold mb-2">Desenvolvedor SQL</h1>
-      <p className="mb-4 text-gray-500">Conectado a: {CONNECTION_STRING}</p>
+      <p className="mb-4 text-gray-500">Conectado a API externa: {API_BASE_URL}</p>
       
       <Alert variant="destructive" className="mb-6">
         <AlertTriangle className="h-4 w-4" />
         <AlertTitle>Aviso de Segurança</AlertTitle>
         <AlertDescription>
-          Esta página está tentando se conectar diretamente ao MySQL a partir do navegador, o que é inseguro e expõe as credenciais do banco de dados.
-          Este é apenas um teste e não deve ser usado em produção.
+          Esta página está se conectando a um serviço MySQL externo através de um API gateway.
+          Os dados apresentados são reais e devem ser manipulados com cautela.
         </AlertDescription>
       </Alert>
       
