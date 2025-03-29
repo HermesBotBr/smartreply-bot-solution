@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
@@ -17,6 +17,11 @@ const formSchema = z.object({
 });
 
 type LoginFormValues = z.infer<typeof formSchema>;
+type EnvRow = {
+  seller_id: string;
+  password_id: string;
+  [key: string]: any;
+};
 
 interface HermesLoginProps {
   onLoginSuccess: (sellerId: string) => void;
@@ -24,6 +29,9 @@ interface HermesLoginProps {
 
 const HermesLogin: React.FC<HermesLoginProps> = ({ onLoginSuccess }) => {
   const [isLoading, setIsLoading] = useState(false);
+  const [envData, setEnvData] = useState<EnvRow[]>([]);
+  const [isLoadingEnvData, setIsLoadingEnvData] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   // Initialize form
   const form = useForm<LoginFormValues>({
@@ -33,6 +41,36 @@ const HermesLogin: React.FC<HermesLoginProps> = ({ onLoginSuccess }) => {
       password: "",
     },
   });
+
+  // Fetch env table data on component mount
+  useEffect(() => {
+    const fetchEnvData = async () => {
+      setIsLoadingEnvData(true);
+      setLoadError(null);
+      
+      try {
+        const dbRowsUrl = getNgrokUrl('/api/db/rows/env');
+        console.log("Fetching env data from:", dbRowsUrl);
+        
+        const response = await axios.get(dbRowsUrl);
+        
+        if (response.data && Array.isArray(response.data.rows)) {
+          setEnvData(response.data.rows);
+          console.log("Env data loaded successfully:", response.data.rows.length, "rows");
+        } else {
+          console.error("Invalid response format for env data:", response.data);
+          setLoadError("Formato de resposta inválido ao carregar dados de autenticação");
+        }
+      } catch (error) {
+        console.error("Error fetching env data:", error);
+        setLoadError("Erro ao carregar dados de autenticação. Verifique a conexão com o servidor.");
+      } finally {
+        setIsLoadingEnvData(false);
+      }
+    };
+    
+    fetchEnvData();
+  }, []);
 
   const onSubmit = async (data: LoginFormValues) => {
     setIsLoading(true);
@@ -50,36 +88,19 @@ const HermesLogin: React.FC<HermesLoginProps> = ({ onLoginSuccess }) => {
           toast.success("Login simulado com sucesso (ambiente de preview)");
         }, 1000);
       } else {
-        // Em ambientes de produção, simplesmente simule o login bem-sucedido
-        // isso é temporário até que tenhamos a API real funcionando
-        console.log("Production mode: Simulating successful login");
-        setTimeout(() => {
+        // Validate against env table data
+        const matchingUser = envData.find(
+          user => user.seller_id === data.sellerId && user.password_id === data.password
+        );
+        
+        if (matchingUser) {
+          console.log("Login validated successfully for seller ID:", data.sellerId);
           onLoginSuccess(data.sellerId);
           toast.success("Login realizado com sucesso!");
-        }, 1000);
-        
-        // Quando a API estiver pronta, descomente o código abaixo:
-        /*
-        const loginUrl = getNgrokUrl('/api/auth/login');
-        console.log("Attempting login at:", loginUrl);
-        
-        try {
-          const response = await axios.post(loginUrl, {
-            sellerId: data.sellerId,
-            password: data.password,
-          });
-          
-          if (response.data.success) {
-            onLoginSuccess(data.sellerId);
-            toast.success("Login realizado com sucesso!");
-          } else {
-            toast.error("Falha na autenticação. Verifique suas credenciais.");
-          }
-        } catch (error) {
-          console.error("Login error:", error);
-          toast.error("Erro ao realizar login. Verifique o endpoint da API.");
+        } else {
+          console.log("Login failed: Invalid credentials");
+          toast.error("Credenciais inválidas. Verifique seu ID de vendedor e senha.");
         }
-        */
       }
     } catch (error) {
       console.error("Login error:", error);
@@ -88,6 +109,38 @@ const HermesLogin: React.FC<HermesLoginProps> = ({ onLoginSuccess }) => {
       setIsLoading(false);
     }
   };
+
+  if (isLoadingEnvData) {
+    return (
+      <div className="w-full space-y-6 text-center">
+        <div className="space-y-2">
+          <h1 className="text-2xl font-bold">Carregando...</h1>
+          <p className="text-gray-500">
+            Aguarde enquanto carregamos os dados de autenticação
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="w-full space-y-6">
+        <div className="space-y-2 text-center">
+          <h1 className="text-2xl font-bold">Erro de Conexão</h1>
+          <p className="text-red-500">
+            {loadError}
+          </p>
+          <Button 
+            onClick={() => window.location.reload()} 
+            className="mt-4"
+          >
+            Tentar Novamente
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full space-y-6">
