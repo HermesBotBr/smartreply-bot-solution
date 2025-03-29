@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -43,7 +42,6 @@ const DesenvolvedorSql: React.FC = () => {
   const [isQueryDialogOpen, setIsQueryDialogOpen] = useState<boolean>(false);
 
   useEffect(() => {
-    // Attempt to directly connect to MySQL and fetch tables
     fetchTables();
   }, []);
 
@@ -55,42 +53,39 @@ const DesenvolvedorSql: React.FC = () => {
 
   const fetchTables = async () => {
     setIsLoading(true);
+    setError(null);
     try {
-      console.log('Connecting directly to MySQL to fetch tables...');
+      console.log('Fetching tables from API endpoint...');
       
       const response = await fetch('/api/db/tables');
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error('API Response text:', errorText);
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
       
       const data = await response.json();
+      console.log('Received tables data:', data);
+      
       const tablesData = data.tables || [];
       
-      // Process the results to match the expected interface
-      const formattedTables = tablesData.map((table: any) => {
-        const tableName = Object.values(table)[0] as string;
-        return { TABLE_NAME: tableName };
-      });
-      
-      console.log('Received tables:', formattedTables);
-      
-      if (formattedTables && Array.isArray(formattedTables)) {
-        setTables(formattedTables);
+      if (Array.isArray(tablesData)) {
+        setTables(tablesData);
         
-        if (formattedTables.length > 0) {
-          setSelectedTable(formattedTables[0].TABLE_NAME);
+        if (tablesData.length > 0) {
+          setSelectedTable(tablesData[0].TABLE_NAME);
         }
         
         toast.success('Tabelas carregadas com sucesso');
       } else {
         setTables([]);
-        toast.error('Não foi possível carregar as tabelas');
-        setError('Não foi possível carregar as tabelas');
+        toast.error('Formato de resposta inválido');
+        setError('Formato de resposta inválido ao carregar tabelas');
       }
     } catch (err) {
-      console.error('Error connecting to MySQL:', err);
-      setError(`Erro ao conectar ao MySQL: ${err instanceof Error ? err.message : 'Erro desconhecido'}`);
-      toast.error('Falha ao conectar diretamente ao banco de dados MySQL');
+      console.error('Error fetching tables:', err);
+      setError(`Erro ao buscar tabelas: ${err instanceof Error ? err.message : 'Erro desconhecido'}`);
+      toast.error('Falha ao conectar à API de banco de dados');
     } finally {
       setIsLoading(false);
     }
@@ -102,7 +97,7 @@ const DesenvolvedorSql: React.FC = () => {
       console.log(`Fetching details for table: ${tableName}`);
       
       // Fetch columns
-      const columnsResponse = await fetch(`/api/db/columns?table=${tableName}`);
+      const columnsResponse = await fetch(`/api/db/columns?table=${encodeURIComponent(tableName)}`);
       if (!columnsResponse.ok) {
         throw new Error(`HTTP error! Status: ${columnsResponse.status}`);
       }
@@ -115,7 +110,7 @@ const DesenvolvedorSql: React.FC = () => {
       }
       
       // Fetch data
-      const dataResponse = await fetch(`/api/db/data?table=${tableName}`);
+      const dataResponse = await fetch(`/api/db/data?table=${encodeURIComponent(tableName)}`);
       if (!dataResponse.ok) {
         throw new Error(`HTTP error! Status: ${dataResponse.status}`);
       }
@@ -161,20 +156,12 @@ const DesenvolvedorSql: React.FC = () => {
       
       const results = await response.json();
       
-      // Determine if it's a SELECT query by checking if results is an array of objects
-      const isSelect = results.isSelect || (Array.isArray(results.results) && results.results.length > 0);
-      
-      if (isSelect) {
+      if (results.isSelect) {
         // For SELECT queries
-        const resultsData = results.results || [];
-        const fields = resultsData.length > 0 
-          ? Object.keys(resultsData[0]).map(name => ({ name })) 
-          : [];
-          
         setQueryResult({
           isSelect: true,
-          fields,
-          results: resultsData
+          fields: results.fields || [],
+          results: results.results || []
         });
       } else {
         // For other queries (INSERT, UPDATE, DELETE)
@@ -191,38 +178,6 @@ const DesenvolvedorSql: React.FC = () => {
       toast.error(`Falha ao executar consulta SQL: ${err instanceof Error ? err.message : 'Erro desconhecido'}`);
     } finally {
       setIsQueryLoading(false);
-    }
-  };
-
-  // This function simulates a direct MySQL connection (which isn't actually possible in a browser)
-  // In a real implementation, we would need to use a server-side proxy or a specialized library
-  const simulateDirectMySQLQuery = async (query: string) => {
-    // In reality, this would be a direct call to a MySQL client library
-    // However, browsers can't directly connect to MySQL databases due to security restrictions
-    
-    console.log(`Attempting to execute query: ${query}`);
-    
-    // For demonstration, we'll make a fetch request to our API
-    // In production, this should NOT be done this way - it's just for testing
-    try {
-      const response = await fetch('/api/db/query', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ query }),
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || `HTTP error ${response.status}`);
-      }
-      
-      const result = await response.json();
-      return result.results || result.data || [];
-    } catch (error) {
-      console.error('Error executing query:', error);
-      throw error;
     }
   };
 

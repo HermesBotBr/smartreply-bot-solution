@@ -15,14 +15,14 @@ app.use(express.json());
 // Import the database routes
 const dbRoutes = require('./src/api/dbRoutes');
 
-// Use the database routes
+// Use the database routes - make sure this comes BEFORE the static files middleware
 app.use('/api/db', dbRoutes);
 
 // Serve static files from the 'public' directory
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Serve the index.html file for all other requests
-app.get('*', (req, res) => {
+// Serve the index.html file for all other requests EXCEPT /api routes
+app.get(/^(?!\/api\/).*/, (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
