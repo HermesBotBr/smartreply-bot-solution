@@ -33,7 +33,8 @@ interface MessagesResponse {
 
 export function usePackMessages(
   packId: string | null, 
-  sellerId: string | null
+  sellerId: string | null,
+  refreshTrigger: number = 0
 ) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -91,7 +92,7 @@ export function usePackMessages(
         clearInterval(intervalId);
       }
     };
-  }, [packId, sellerId]);
+  }, [packId, sellerId, refreshTrigger]);
 
   return { messages, isLoading, error };
 }

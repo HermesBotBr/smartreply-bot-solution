@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import QuestionsList from "@/components/dashboard/QuestionsList";
 import MetricsDisplay from "@/components/dashboard/MetricsDisplay";
@@ -25,12 +26,14 @@ const Hermes = () => {
   const [loginOpen, setLoginOpen] = useState(true);
   const [sellerId, setSellerId] = useState<string | null>(null);
   const [selectedPackId, setSelectedPackId] = useState<string | null>(null);
+  const [messagesRefreshTrigger, setMessagesRefreshTrigger] = useState(0);
   
   // Use our custom hooks to fetch data
   const { packs, isLoading: packsLoading, error: packsError } = usePackData(sellerId);
   const { messages, isLoading: messagesLoading, error: messagesError } = usePackMessages(
     selectedPackId, 
-    sellerId
+    sellerId,
+    messagesRefreshTrigger
   );
   
   // Check if user is already authenticated
@@ -90,6 +93,11 @@ const Hermes = () => {
     
     toast.info(`Carregando mensagens do pacote ${packId}`);
   };
+
+  const handleMessageSent = () => {
+    // Trigger a refresh of the messages list
+    setMessagesRefreshTrigger(prev => prev + 1);
+  };
   
   // Placeholder data and functions
   const conversations: any[] = [];
@@ -147,7 +155,7 @@ const Hermes = () => {
                 </div>
                 
                 {/* Right panel - Messages or placeholder */}
-                <div className="w-2/3 h-full overflow-auto">
+                <div className="w-2/3 h-full overflow-hidden">
                   {selectedPackId ? (
                     <div className="flex flex-col h-full">
                       <div className="p-4 border-b bg-white">
@@ -158,12 +166,14 @@ const Hermes = () => {
                            `${messages.length} mensagens`}
                         </p>
                       </div>
-                      <div className="flex-1 overflow-y-auto bg-gray-50">
+                      <div className="flex-1 overflow-hidden bg-gray-50">
                         <MessagesList 
                           messages={messages}
                           isLoading={messagesLoading}
                           error={messagesError}
                           sellerId={sellerId}
+                          packId={selectedPackId}
+                          onMessageSent={handleMessageSent}
                         />
                       </div>
                     </div>
