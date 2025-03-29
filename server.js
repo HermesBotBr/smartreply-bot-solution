@@ -9,17 +9,17 @@ const port = process.env.PORT || 3001;
 // Enable CORS for all routes
 app.use(cors());
 
-// Serve static files from the 'public' directory
-app.use(express.static(path.join(__dirname, 'public')));
-
 // Parse JSON request bodies
 app.use(express.json());
 
-// Importa o roteador de banco de dados
+// Import the database routes
 const dbRoutes = require('./src/api/dbRoutes');
 
 // Use the database routes
 app.use('/api/db', dbRoutes);
+
+// Serve static files from the 'public' directory
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Serve the index.html file for all other requests
 app.get('*', (req, res) => {

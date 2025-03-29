@@ -57,11 +57,14 @@ const DesenvolvedorSql: React.FC = () => {
     setIsLoading(true);
     try {
       console.log('Connecting directly to MySQL to fetch tables...');
-      // Note: This won't work directly in the browser due to CORS and browser security restrictions
-      // This is for demonstration purposes only
       
-      // Create a direct connection object (simulated for demonstration)
-      const tablesData = await simulateDirectMySQLQuery('SHOW TABLES');
+      const response = await fetch('/api/db/tables');
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      const tablesData = data.tables || [];
       
       // Process the results to match the expected interface
       const formattedTables = tablesData.map((table: any) => {
@@ -98,18 +101,28 @@ const DesenvolvedorSql: React.FC = () => {
     try {
       console.log(`Fetching details for table: ${tableName}`);
       
-      // Fetch columns with direct MySQL connection
-      const columnsData = await simulateDirectMySQLQuery(`SHOW COLUMNS FROM ${tableName}`);
-      if (columnsData && Array.isArray(columnsData)) {
-        setColumns(columnsData);
+      // Fetch columns
+      const columnsResponse = await fetch(`/api/db/columns?table=${tableName}`);
+      if (!columnsResponse.ok) {
+        throw new Error(`HTTP error! Status: ${columnsResponse.status}`);
+      }
+      
+      const columnsData = await columnsResponse.json();
+      if (columnsData.columns && Array.isArray(columnsData.columns)) {
+        setColumns(columnsData.columns);
       } else {
         setColumns([]);
       }
       
-      // Fetch data with direct MySQL connection
-      const tableData = await simulateDirectMySQLQuery(`SELECT * FROM ${tableName} LIMIT 100`);
-      if (tableData && Array.isArray(tableData)) {
-        setData(tableData);
+      // Fetch data
+      const dataResponse = await fetch(`/api/db/data?table=${tableName}`);
+      if (!dataResponse.ok) {
+        throw new Error(`HTTP error! Status: ${dataResponse.status}`);
+      }
+      
+      const tableData = await dataResponse.json();
+      if (tableData.data && Array.isArray(tableData.data)) {
+        setData(tableData.data);
       } else {
         setData([]);
       }
@@ -131,29 +144,43 @@ const DesenvolvedorSql: React.FC = () => {
 
     setIsQueryLoading(true);
     try {
-      console.log('Executing query via direct MySQL connection:', query);
+      console.log('Executing query via API:', query);
       
-      const results = await simulateDirectMySQLQuery(query);
+      const response = await fetch('/api/db/query', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ query }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `HTTP error ${response.status}`);
+      }
+      
+      const results = await response.json();
       
       // Determine if it's a SELECT query by checking if results is an array of objects
-      const isSelect = Array.isArray(results) && results.length > 0 && typeof results[0] === 'object';
+      const isSelect = results.isSelect || (Array.isArray(results.results) && results.results.length > 0);
       
       if (isSelect) {
         // For SELECT queries
-        const fields = results.length > 0 
-          ? Object.keys(results[0]).map(name => ({ name })) 
+        const resultsData = results.results || [];
+        const fields = resultsData.length > 0 
+          ? Object.keys(resultsData[0]).map(name => ({ name })) 
           : [];
           
         setQueryResult({
           isSelect: true,
           fields,
-          results
+          results: resultsData
         });
       } else {
         // For other queries (INSERT, UPDATE, DELETE)
         setQueryResult({
           isSelect: false,
-          affectedRows: typeof results === 'object' ? results.affectedRows || 0 : 0
+          affectedRows: results.affectedRows || 0
         });
       }
       
@@ -410,4 +437,3 @@ const DesenvolvedorSql: React.FC = () => {
 };
 
 export default DesenvolvedorSql;
-

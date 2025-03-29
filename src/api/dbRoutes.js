@@ -20,7 +20,7 @@ router.get('/tables', async (req, res) => {
     res.json({ tables });
   } catch (error) {
     console.error('Erro ao buscar tabelas:', error);
-    res.status(500).json({ error: 'Erro ao buscar tabelas' });
+    res.status(500).json({ error: 'Erro ao buscar tabelas: ' + error.message });
   }
 });
 
@@ -36,7 +36,7 @@ router.get('/columns', async (req, res) => {
     res.json({ columns });
   } catch (error) {
     console.error('Erro ao buscar colunas:', error);
-    res.status(500).json({ error: 'Erro ao buscar colunas' });
+    res.status(500).json({ error: 'Erro ao buscar colunas: ' + error.message });
   }
 });
 
@@ -52,7 +52,7 @@ router.get('/data', async (req, res) => {
     res.json({ data });
   } catch (error) {
     console.error('Erro ao buscar dados:', error);
-    res.status(500).json({ error: 'Erro ao buscar dados' });
+    res.status(500).json({ error: 'Erro ao buscar dados: ' + error.message });
   }
 });
 
