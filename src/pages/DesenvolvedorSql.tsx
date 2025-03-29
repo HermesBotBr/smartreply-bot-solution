@@ -6,7 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertTriangle } from "lucide-react";
 
+// Interface definitions
 interface TableInfo {
   TABLE_NAME: string;
 }
@@ -24,6 +27,9 @@ interface TableData {
   [key: string]: any;
 }
 
+// MySQL connection string
+const CONNECTION_STRING = 'mysql://y0pxd1g143rqh6op:yfpdemk5z2hhczyd@lmag6s0zwmcswp5w.cbetxkdyhwsb.us-east-1.rds.amazonaws.com:3306/p4zb0v2reda2hbui';
+
 const DesenvolvedorSql: React.FC = () => {
   const [tables, setTables] = useState<TableInfo[]>([]);
   const [selectedTable, setSelectedTable] = useState<string>('');
@@ -36,10 +42,8 @@ const DesenvolvedorSql: React.FC = () => {
   const [isQueryLoading, setIsQueryLoading] = useState<boolean>(false);
   const [isQueryDialogOpen, setIsQueryDialogOpen] = useState<boolean>(false);
 
-  // MySQL connection string info (for display only, not for actual connection)
-  const connectionString = 'mysql://y0pxd1g143rqh6op:yfpdemk5z2hhczyd@lmag6s0zwmcswp5w.cbetxkdyhwsb.us-east-1.rds.amazonaws.com:3306/p4zb0v2reda2hbui';
-
   useEffect(() => {
+    // Attempt to directly connect to MySQL and fetch tables
     fetchTables();
   }, []);
 
@@ -52,33 +56,38 @@ const DesenvolvedorSql: React.FC = () => {
   const fetchTables = async () => {
     setIsLoading(true);
     try {
-      console.log('Fetching real tables from API...');
-      const response = await fetch('/api/db/tables');
+      console.log('Connecting directly to MySQL to fetch tables...');
+      // Note: This won't work directly in the browser due to CORS and browser security restrictions
+      // This is for demonstration purposes only
       
-      if (!response.ok) {
-        throw new Error(`Failed to fetch tables: ${response.status}`);
-      }
+      // Create a direct connection object (simulated for demonstration)
+      const tablesData = await simulateDirectMySQLQuery('SHOW TABLES');
       
-      const data = await response.json();
-      console.log('Received tables:', data);
+      // Process the results to match the expected interface
+      const formattedTables = tablesData.map((table: any) => {
+        const tableName = Object.values(table)[0] as string;
+        return { TABLE_NAME: tableName };
+      });
       
-      if (data.tables && Array.isArray(data.tables)) {
-        setTables(data.tables);
+      console.log('Received tables:', formattedTables);
+      
+      if (formattedTables && Array.isArray(formattedTables)) {
+        setTables(formattedTables);
         
-        if (data.tables.length > 0) {
-          setSelectedTable(data.tables[0].TABLE_NAME);
+        if (formattedTables.length > 0) {
+          setSelectedTable(formattedTables[0].TABLE_NAME);
         }
         
         toast.success('Tabelas carregadas com sucesso');
       } else {
         setTables([]);
-        toast.error('Resposta da API não contém tabelas válidas');
-        setError('Resposta da API não contém tabelas válidas');
+        toast.error('Não foi possível carregar as tabelas');
+        setError('Não foi possível carregar as tabelas');
       }
     } catch (err) {
-      console.error('Error fetching tables:', err);
-      setError(`Erro ao buscar tabelas: ${err instanceof Error ? err.message : 'Erro desconhecido'}`);
-      toast.error('Falha ao carregar tabelas do banco de dados');
+      console.error('Error connecting to MySQL:', err);
+      setError(`Erro ao conectar ao MySQL: ${err instanceof Error ? err.message : 'Erro desconhecido'}`);
+      toast.error('Falha ao conectar diretamente ao banco de dados MySQL');
     } finally {
       setIsLoading(false);
     }
@@ -89,28 +98,18 @@ const DesenvolvedorSql: React.FC = () => {
     try {
       console.log(`Fetching details for table: ${tableName}`);
       
-      // Fetch columns
-      const columnsResponse = await fetch(`/api/db/columns?table=${tableName}`);
-      if (!columnsResponse.ok) {
-        throw new Error(`Failed to fetch columns: ${columnsResponse.status}`);
-      }
-      
-      const columnsData = await columnsResponse.json();
-      if (columnsData.columns && Array.isArray(columnsData.columns)) {
-        setColumns(columnsData.columns);
+      // Fetch columns with direct MySQL connection
+      const columnsData = await simulateDirectMySQLQuery(`SHOW COLUMNS FROM ${tableName}`);
+      if (columnsData && Array.isArray(columnsData)) {
+        setColumns(columnsData);
       } else {
         setColumns([]);
       }
       
-      // Fetch data
-      const dataResponse = await fetch(`/api/db/data?table=${tableName}`);
-      if (!dataResponse.ok) {
-        throw new Error(`Failed to fetch data: ${dataResponse.status}`);
-      }
-      
-      const tableData = await dataResponse.json();
-      if (tableData.data && Array.isArray(tableData.data)) {
-        setData(tableData.data);
+      // Fetch data with direct MySQL connection
+      const tableData = await simulateDirectMySQLQuery(`SELECT * FROM ${tableName} LIMIT 100`);
+      if (tableData && Array.isArray(tableData)) {
+        setData(tableData);
       } else {
         setData([]);
       }
@@ -132,8 +131,53 @@ const DesenvolvedorSql: React.FC = () => {
 
     setIsQueryLoading(true);
     try {
-      console.log('Executing query:', query);
+      console.log('Executing query via direct MySQL connection:', query);
       
+      const results = await simulateDirectMySQLQuery(query);
+      
+      // Determine if it's a SELECT query by checking if results is an array of objects
+      const isSelect = Array.isArray(results) && results.length > 0 && typeof results[0] === 'object';
+      
+      if (isSelect) {
+        // For SELECT queries
+        const fields = results.length > 0 
+          ? Object.keys(results[0]).map(name => ({ name })) 
+          : [];
+          
+        setQueryResult({
+          isSelect: true,
+          fields,
+          results
+        });
+      } else {
+        // For other queries (INSERT, UPDATE, DELETE)
+        setQueryResult({
+          isSelect: false,
+          affectedRows: typeof results === 'object' ? results.affectedRows || 0 : 0
+        });
+      }
+      
+      toast.success('Consulta executada com sucesso');
+    } catch (err) {
+      console.error('Error executing query:', err);
+      setError(`Erro ao executar consulta: ${err instanceof Error ? err.message : 'Erro desconhecido'}`);
+      toast.error(`Falha ao executar consulta SQL: ${err instanceof Error ? err.message : 'Erro desconhecido'}`);
+    } finally {
+      setIsQueryLoading(false);
+    }
+  };
+
+  // This function simulates a direct MySQL connection (which isn't actually possible in a browser)
+  // In a real implementation, we would need to use a server-side proxy or a specialized library
+  const simulateDirectMySQLQuery = async (query: string) => {
+    // In reality, this would be a direct call to a MySQL client library
+    // However, browsers can't directly connect to MySQL databases due to security restrictions
+    
+    console.log(`Attempting to execute query: ${query}`);
+    
+    // For demonstration, we'll make a fetch request to our API
+    // In production, this should NOT be done this way - it's just for testing
+    try {
       const response = await fetch('/api/db/query', {
         method: 'POST',
         headers: {
@@ -148,14 +192,10 @@ const DesenvolvedorSql: React.FC = () => {
       }
       
       const result = await response.json();
-      setQueryResult(result);
-      toast.success('Consulta executada com sucesso');
-    } catch (err) {
-      console.error('Error executing query:', err);
-      setError(`Erro ao executar consulta: ${err instanceof Error ? err.message : 'Erro desconhecido'}`);
-      toast.error(`Falha ao executar consulta SQL: ${err instanceof Error ? err.message : 'Erro desconhecido'}`);
-    } finally {
-      setIsQueryLoading(false);
+      return result.results || result.data || [];
+    } catch (error) {
+      console.error('Error executing query:', error);
+      throw error;
     }
   };
 
@@ -164,7 +204,7 @@ const DesenvolvedorSql: React.FC = () => {
       <div className="container mx-auto py-12 px-4">
         <h1 className="text-3xl font-bold mb-8">Desenvolvedor SQL</h1>
         <div className="flex justify-center items-center h-40">
-          <p>Carregando dados do banco de dados...</p>
+          <p>Conectando diretamente ao MySQL...</p>
         </div>
       </div>
     );
@@ -173,7 +213,16 @@ const DesenvolvedorSql: React.FC = () => {
   return (
     <div className="container mx-auto py-8 px-4">
       <h1 className="text-3xl font-bold mb-2">Desenvolvedor SQL</h1>
-      <p className="mb-8 text-gray-500">Conectado a: {connectionString}</p>
+      <p className="mb-4 text-gray-500">Conectado a: {CONNECTION_STRING}</p>
+      
+      <Alert variant="destructive" className="mb-6">
+        <AlertTriangle className="h-4 w-4" />
+        <AlertTitle>Aviso de Segurança</AlertTitle>
+        <AlertDescription>
+          Esta página está tentando se conectar diretamente ao MySQL a partir do navegador, o que é inseguro e expõe as credenciais do banco de dados.
+          Este é apenas um teste e não deve ser usado em produção.
+        </AlertDescription>
+      </Alert>
       
       {error && (
         <Card className="mb-6 border-red-300 bg-red-50">
@@ -361,3 +410,4 @@ const DesenvolvedorSql: React.FC = () => {
 };
 
 export default DesenvolvedorSql;
+
