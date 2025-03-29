@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import initSqlJs from 'sql.js';
 
 interface TableInfo {
   TABLE_NAME: string;
@@ -36,170 +35,96 @@ const DesenvolvedorSql: React.FC = () => {
   const [queryResult, setQueryResult] = useState<any>(null);
   const [isQueryLoading, setIsQueryLoading] = useState<boolean>(false);
   const [isQueryDialogOpen, setIsQueryDialogOpen] = useState<boolean>(false);
-  const [db, setDb] = useState<any>(null);
 
-  // MySQL connection string (WARNING: This is extremely insecure for production)
+  // MySQL connection string info (for display only, not for actual connection)
   const connectionString = 'mysql://y0pxd1g143rqh6op:yfpdemk5z2hhczyd@lmag6s0zwmcswp5w.cbetxkdyhwsb.us-east-1.rds.amazonaws.com:3306/p4zb0v2reda2hbui';
 
   useEffect(() => {
-    initializeSqlJs();
+    fetchTables();
   }, []);
 
   useEffect(() => {
-    if (db) {
-      fetchInitialData();
-    }
-  }, [db]);
-
-  useEffect(() => {
-    if (selectedTable && db) {
+    if (selectedTable) {
       fetchTableDetails(selectedTable);
     }
-  }, [selectedTable, db]);
+  }, [selectedTable]);
 
-  const initializeSqlJs = async () => {
-    try {
-      // Initialize SQL.js
-      const SQL = await initSqlJs({
-        locateFile: file => `https://sql.js.org/dist/${file}`
-      });
-      
-      // Create a new database instance
-      const database = new SQL.Database();
-      setDb(database);
-      
-      // Let the user know we're connected (this is a simplified version and doesn't actually connect to MySQL)
-      console.log('SQL.js initialized successfully');
-      toast.success('SQL.js inicializado com sucesso');
-      
-      // Parse the connection string (for demonstration only)
-      const connectionParts = connectionString.replace('mysql://', '').split('@');
-      const credentials = connectionParts[0].split(':');
-      const user = credentials[0];
-      const password = credentials[1];
-      const hostPort = connectionParts[1].split('/')[0].split(':');
-      const host = hostPort[0];
-      const port = hostPort[1];
-      const dbName = connectionParts[1].split('/')[1];
-      
-      console.log(`Connection info (demo only): ${user}@${host}:${port}/${dbName}`);
-      
-    } catch (err) {
-      console.error('Error initializing SQL.js:', err);
-      setError('Erro ao inicializar SQL.js. Verifique o console para mais detalhes.');
-      toast.error('Falha ao inicializar SQL.js');
-      setIsLoading(false);
-    }
-  };
-
-  const fetchInitialData = () => {
+  const fetchTables = async () => {
     setIsLoading(true);
     try {
-      // Simulate fetching tables (since SQL.js can't directly connect to MySQL)
-      // In a real implementation, we would be running the SHOW TABLES query against the MySQL server
-      console.log('Fetching tables (simulated)...');
+      console.log('Fetching real tables from API...');
+      const response = await fetch('/api/db/tables');
       
-      // For demonstration purposes, let's create some mock tables
-      const mockTables = [
-        { TABLE_NAME: 'users' },
-        { TABLE_NAME: 'products' },
-        { TABLE_NAME: 'orders' },
-        { TABLE_NAME: 'categories' }
-      ];
-      
-      setTables(mockTables);
-      
-      if (mockTables.length > 0) {
-        setSelectedTable(mockTables[0].TABLE_NAME);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch tables: ${response.status}`);
       }
       
-      toast.success('Tabelas carregadas com sucesso (simulado)');
+      const data = await response.json();
+      console.log('Received tables:', data);
+      
+      if (data.tables && Array.isArray(data.tables)) {
+        setTables(data.tables);
+        
+        if (data.tables.length > 0) {
+          setSelectedTable(data.tables[0].TABLE_NAME);
+        }
+        
+        toast.success('Tabelas carregadas com sucesso');
+      } else {
+        setTables([]);
+        toast.error('Resposta da API não contém tabelas válidas');
+        setError('Resposta da API não contém tabelas válidas');
+      }
     } catch (err) {
       console.error('Error fetching tables:', err);
-      setError('Erro ao buscar tabelas. Verifique o console para mais detalhes.');
+      setError(`Erro ao buscar tabelas: ${err instanceof Error ? err.message : 'Erro desconhecido'}`);
       toast.error('Falha ao carregar tabelas do banco de dados');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const fetchTableDetails = (tableName: string) => {
+  const fetchTableDetails = async (tableName: string) => {
     setIsLoading(true);
     try {
-      console.log(`Fetching details for table: ${tableName} (simulated)`);
+      console.log(`Fetching details for table: ${tableName}`);
       
-      // Simulate structure for different tables
-      let mockColumns: ColumnInfo[] = [];
-      let mockData: TableData[] = [];
-      
-      if (tableName === 'users') {
-        mockColumns = [
-          { Field: 'id', Type: 'int(11)', Null: 'NO', Key: 'PRI', Default: null, Extra: 'auto_increment' },
-          { Field: 'name', Type: 'varchar(255)', Null: 'NO', Key: '', Default: null, Extra: '' },
-          { Field: 'email', Type: 'varchar(255)', Null: 'NO', Key: 'UNI', Default: null, Extra: '' },
-          { Field: 'created_at', Type: 'timestamp', Null: 'NO', Key: '', Default: 'CURRENT_TIMESTAMP', Extra: '' }
-        ];
-        
-        mockData = [
-          { id: 1, name: 'John Doe', email: 'john@example.com', created_at: '2023-01-01 12:00:00' },
-          { id: 2, name: 'Jane Smith', email: 'jane@example.com', created_at: '2023-01-02 10:30:00' },
-          { id: 3, name: 'Bob Johnson', email: 'bob@example.com', created_at: '2023-01-03 15:45:00' }
-        ];
-      } else if (tableName === 'products') {
-        mockColumns = [
-          { Field: 'id', Type: 'int(11)', Null: 'NO', Key: 'PRI', Default: null, Extra: 'auto_increment' },
-          { Field: 'name', Type: 'varchar(255)', Null: 'NO', Key: '', Default: null, Extra: '' },
-          { Field: 'price', Type: 'decimal(10,2)', Null: 'NO', Key: '', Default: null, Extra: '' },
-          { Field: 'stock', Type: 'int(11)', Null: 'NO', Key: '', Default: '0', Extra: '' },
-          { Field: 'category_id', Type: 'int(11)', Null: 'YES', Key: 'MUL', Default: null, Extra: '' }
-        ];
-        
-        mockData = [
-          { id: 1, name: 'Laptop', price: 1299.99, stock: 50, category_id: 1 },
-          { id: 2, name: 'Smartphone', price: 699.99, stock: 100, category_id: 1 },
-          { id: 3, name: 'Headphones', price: 149.99, stock: 200, category_id: 2 }
-        ];
-      } else if (tableName === 'orders') {
-        mockColumns = [
-          { Field: 'id', Type: 'int(11)', Null: 'NO', Key: 'PRI', Default: null, Extra: 'auto_increment' },
-          { Field: 'user_id', Type: 'int(11)', Null: 'NO', Key: 'MUL', Default: null, Extra: '' },
-          { Field: 'total', Type: 'decimal(10,2)', Null: 'NO', Key: '', Default: null, Extra: '' },
-          { Field: 'status', Type: 'varchar(50)', Null: 'NO', Key: '', Default: 'pending', Extra: '' },
-          { Field: 'created_at', Type: 'timestamp', Null: 'NO', Key: '', Default: 'CURRENT_TIMESTAMP', Extra: '' }
-        ];
-        
-        mockData = [
-          { id: 1, user_id: 1, total: 2149.97, status: 'completed', created_at: '2023-02-01 09:15:00' },
-          { id: 2, user_id: 2, total: 699.99, status: 'processing', created_at: '2023-02-05 14:20:00' },
-          { id: 3, user_id: 1, total: 149.99, status: 'completed', created_at: '2023-02-10 11:30:00' }
-        ];
-      } else if (tableName === 'categories') {
-        mockColumns = [
-          { Field: 'id', Type: 'int(11)', Null: 'NO', Key: 'PRI', Default: null, Extra: 'auto_increment' },
-          { Field: 'name', Type: 'varchar(100)', Null: 'NO', Key: 'UNI', Default: null, Extra: '' },
-          { Field: 'description', Type: 'text', Null: 'YES', Key: '', Default: null, Extra: '' }
-        ];
-        
-        mockData = [
-          { id: 1, name: 'Electronics', description: 'Electronic devices and gadgets' },
-          { id: 2, name: 'Accessories', description: 'Accessories for electronic devices' },
-          { id: 3, name: 'Furniture', description: 'Home and office furniture' }
-        ];
+      // Fetch columns
+      const columnsResponse = await fetch(`/api/db/columns?table=${tableName}`);
+      if (!columnsResponse.ok) {
+        throw new Error(`Failed to fetch columns: ${columnsResponse.status}`);
       }
       
-      setColumns(mockColumns);
-      setData(mockData);
+      const columnsData = await columnsResponse.json();
+      if (columnsData.columns && Array.isArray(columnsData.columns)) {
+        setColumns(columnsData.columns);
+      } else {
+        setColumns([]);
+      }
+      
+      // Fetch data
+      const dataResponse = await fetch(`/api/db/data?table=${tableName}`);
+      if (!dataResponse.ok) {
+        throw new Error(`Failed to fetch data: ${dataResponse.status}`);
+      }
+      
+      const tableData = await dataResponse.json();
+      if (tableData.data && Array.isArray(tableData.data)) {
+        setData(tableData.data);
+      } else {
+        setData([]);
+      }
       
     } catch (err) {
       console.error('Error fetching table details:', err);
-      setError('Erro ao buscar detalhes da tabela');
+      setError(`Erro ao buscar detalhes da tabela: ${err instanceof Error ? err.message : 'Erro desconhecido'}`);
       toast.error('Falha ao carregar estrutura ou dados da tabela');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const executeQuery = () => {
+  const executeQuery = async () => {
     if (!query.trim()) {
       toast.warning('Por favor, insira uma consulta SQL');
       return;
@@ -209,60 +134,26 @@ const DesenvolvedorSql: React.FC = () => {
     try {
       console.log('Executing query:', query);
       
-      // Parse the query to determine if it's a SELECT or another type
-      const isSelect = query.trim().toUpperCase().startsWith('SELECT');
-      
-      let results: any[] = [];
-      let fields: any[] = [];
-      let affectedRows = 0;
-      
-      // Simulate query execution based on the query text
-      if (query.includes('users') || query.includes('USER')) {
-        results = [
-          { id: 1, name: 'John Doe', email: 'john@example.com', created_at: '2023-01-01 12:00:00' },
-          { id: 2, name: 'Jane Smith', email: 'jane@example.com', created_at: '2023-01-02 10:30:00' },
-          { id: 3, name: 'Bob Johnson', email: 'bob@example.com', created_at: '2023-01-03 15:45:00' }
-        ];
-        fields = [
-          { name: 'id' },
-          { name: 'name' },
-          { name: 'email' },
-          { name: 'created_at' }
-        ];
-      } else if (query.includes('products') || query.includes('PRODUCT')) {
-        results = [
-          { id: 1, name: 'Laptop', price: 1299.99, stock: 50, category_id: 1 },
-          { id: 2, name: 'Smartphone', price: 699.99, stock: 100, category_id: 1 },
-          { id: 3, name: 'Headphones', price: 149.99, stock: 200, category_id: 2 }
-        ];
-        fields = [
-          { name: 'id' },
-          { name: 'name' },
-          { name: 'price' },
-          { name: 'stock' },
-          { name: 'category_id' }
-        ];
-      } else if (!isSelect) {
-        // For non-SELECT queries, simulate affected rows
-        affectedRows = Math.floor(Math.random() * 10) + 1;
-      } else {
-        // Generic result for other queries
-        results = [{ result: 'Simulated query result' }];
-        fields = [{ name: 'result' }];
-      }
-      
-      setQueryResult({
-        isSelect,
-        results,
-        fields,
-        affectedRows
+      const response = await fetch('/api/db/query', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ query }),
       });
       
-      toast.success('Consulta executada com sucesso (simulado)');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `HTTP error ${response.status}`);
+      }
+      
+      const result = await response.json();
+      setQueryResult(result);
+      toast.success('Consulta executada com sucesso');
     } catch (err) {
       console.error('Error executing query:', err);
-      setError('Erro ao executar consulta');
-      toast.error('Falha ao executar consulta SQL');
+      setError(`Erro ao executar consulta: ${err instanceof Error ? err.message : 'Erro desconhecido'}`);
+      toast.error(`Falha ao executar consulta SQL: ${err instanceof Error ? err.message : 'Erro desconhecido'}`);
     } finally {
       setIsQueryLoading(false);
     }
@@ -271,9 +162,9 @@ const DesenvolvedorSql: React.FC = () => {
   if (isLoading && tables.length === 0) {
     return (
       <div className="container mx-auto py-12 px-4">
-        <h1 className="text-3xl font-bold mb-8">Desenvolvedor SQL (Modo de Teste)</h1>
+        <h1 className="text-3xl font-bold mb-8">Desenvolvedor SQL</h1>
         <div className="flex justify-center items-center h-40">
-          <p>Inicializando SQL.js e carregando dados simulados...</p>
+          <p>Carregando dados do banco de dados...</p>
         </div>
       </div>
     );
@@ -281,8 +172,8 @@ const DesenvolvedorSql: React.FC = () => {
 
   return (
     <div className="container mx-auto py-8 px-4">
-      <h1 className="text-3xl font-bold mb-2">Desenvolvedor SQL (Modo de Teste)</h1>
-      <p className="text-red-500 mb-8">ATENÇÃO: Esta versão utiliza SQL.js com dados simulados apenas para fins de demonstração.</p>
+      <h1 className="text-3xl font-bold mb-2">Desenvolvedor SQL</h1>
+      <p className="mb-8 text-gray-500">Conectado a: {connectionString}</p>
       
       {error && (
         <Card className="mb-6 border-red-300 bg-red-50">
@@ -406,7 +297,7 @@ const DesenvolvedorSql: React.FC = () => {
       <Dialog open={isQueryDialogOpen} onOpenChange={setIsQueryDialogOpen}>
         <DialogContent className="sm:max-w-[800px]">
           <DialogHeader>
-            <DialogTitle>Consulta SQL (Modo de Teste)</DialogTitle>
+            <DialogTitle>Consulta SQL</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
@@ -418,9 +309,7 @@ const DesenvolvedorSql: React.FC = () => {
               />
             </div>
             <Button 
-              onClick={() => {
-                executeQuery();
-              }} 
+              onClick={executeQuery} 
               disabled={isQueryLoading}
             >
               {isQueryLoading ? 'Executando...' : 'Executar Consulta'}
