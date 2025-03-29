@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import QuestionsList from "@/components/dashboard/QuestionsList";
 import MetricsDisplay from "@/components/dashboard/MetricsDisplay";
@@ -11,7 +10,6 @@ import HermesLogin from "@/components/dashboard/HermesLogin";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { usePackData } from "@/hooks/usePackData";
-import { useAccessToken } from "@/hooks/useAccessToken";
 import { usePackMessages } from "@/hooks/usePackMessages";
 import PacksList from "@/components/dashboard/PacksList";
 import MessagesList from "@/components/dashboard/MessagesList";
@@ -30,11 +28,9 @@ const Hermes = () => {
   
   // Use our custom hooks to fetch data
   const { packs, isLoading: packsLoading, error: packsError } = usePackData(sellerId);
-  const { accessToken, isLoading: tokenLoading, error: tokenError } = useAccessToken(sellerId);
   const { messages, isLoading: messagesLoading, error: messagesError } = usePackMessages(
     selectedPackId, 
-    sellerId, 
-    accessToken
+    sellerId
   );
   
   // Check if user is already authenticated
@@ -65,13 +61,12 @@ const Hermes = () => {
     localStorage.removeItem('hermesAuth');
   }, []);
 
-  // Log when the access token is loaded or updated
+  // Log when a pack is selected
   useEffect(() => {
-    if (accessToken && !tokenLoading) {
-      console.log("Access token available for seller:", sellerId);
-      // We don't show this to the user, it's just for internal tracking
+    if (selectedPackId) {
+      console.log("Selected pack ID:", selectedPackId, "for seller:", sellerId);
     }
-  }, [accessToken, tokenLoading, sellerId]);
+  }, [selectedPackId, sellerId]);
 
   const handleLoginSuccess = (sellerId: string) => {
     setIsAuthenticated(true);
@@ -93,11 +88,7 @@ const Hermes = () => {
     // Reset any previous conversation selection
     setSelectedConv(null);
     
-    if (accessToken) {
-      toast.info(`Carregando mensagens do pacote ${packId}`);
-    } else {
-      toast.error("Token de acesso não disponível");
-    }
+    toast.info(`Carregando mensagens do pacote ${packId}`);
   };
   
   // Placeholder data and functions

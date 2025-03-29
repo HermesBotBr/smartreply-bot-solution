@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { NGROK_BASE_URL } from '@/config/api';
 
 interface MessageAttachment {
   filename: string;
@@ -24,22 +25,15 @@ interface Message {
 }
 
 interface MessagesResponse {
-  paging: {
-    limit: number;
-    offset: number;
-    total: number;
-  };
-  conversation_status: {
-    status: string;
-    substatus: string | null;
-  };
+  total: number;
+  limit: number;
+  offset: number;
   messages: Message[];
 }
 
 export function usePackMessages(
   packId: string | null, 
-  sellerId: string | null, 
-  accessToken: string | null
+  sellerId: string | null
 ) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -52,19 +46,20 @@ export function usePackMessages(
       setError(null);
       
       // Skip if we don't have all required data
-      if (!packId || !sellerId || !accessToken) {
+      if (!packId || !sellerId) {
         return;
       }
       
       setIsLoading(true);
       
       try {
-        // Call the proxy endpoint which will handle the actual API call to Mercado Libre
-        const response = await axios.get(`/api/proxy-getMessages`, {
+        // Call the custom endpoint to fetch messages
+        const response = await axios.get(`${NGROK_BASE_URL}/conversas`, {
           params: {
-            packId,
-            sellerId,
-            accessToken
+            seller_id: sellerId,
+            pack_id: packId,
+            limit: 100,
+            offset: 0
           }
         });
         
@@ -77,10 +72,7 @@ export function usePackMessages(
         }
       } catch (error: any) {
         console.error("Error fetching messages:", error);
-        const errorMessage = error.response?.status === 401 
-          ? "Token de acesso inválido ou expirado"
-          : "Erro ao carregar mensagens";
-        setError(errorMessage);
+        setError("Erro ao carregar mensagens");
       } finally {
         setIsLoading(false);
       }
@@ -90,7 +82,7 @@ export function usePackMessages(
     
     // Refresh messages every 30 seconds if we have all required data
     let intervalId: number | null = null;
-    if (packId && sellerId && accessToken) {
+    if (packId && sellerId) {
       intervalId = window.setInterval(fetchMessages, 30000);
     }
     
@@ -99,7 +91,7 @@ export function usePackMessages(
         clearInterval(intervalId);
       }
     };
-  }, [packId, sellerId, accessToken]);
+  }, [packId, sellerId]);
 
   return { messages, isLoading, error };
 }

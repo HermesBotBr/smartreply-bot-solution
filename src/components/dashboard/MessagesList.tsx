@@ -110,6 +110,6 @@ const MessagesList: React.FC<MessagesListProps> = ({
       ))}
     </div>
   );
-};
+}
 
 export default MessagesList;
