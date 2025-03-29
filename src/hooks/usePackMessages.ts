@@ -61,7 +61,7 @@ export function usePackMessages(
       
       try {
         // Instead of calling the Mercado Libre API directly, use our proxy endpoint
-        const response = await axios.get(`${getNgrokUrl('/api/proxy-getMessages')}`, {
+        const response = await axios.get(`/api/proxy-getMessages`, {
           params: {
             packId,
             sellerId,
