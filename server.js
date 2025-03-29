@@ -1,3 +1,4 @@
+
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
@@ -17,16 +18,7 @@ app.use(express.json());
 // Importa o roteador de banco de dados
 const dbRoutes = require('./src/api/dbRoutes');
 
-// Enable CORS for all routes
-app.use(cors());
-
-// Serve static files from the 'public' directory
-app.use(express.static(path.join(__dirname, 'public')));
-
-// Parse JSON request bodies
-app.use(express.json());
-
-// Adiciona as rotas de banco de dados
+// Use the database routes
 app.use('/api/db', dbRoutes);
 
 // Serve the index.html file for all other requests
