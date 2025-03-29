@@ -2,6 +2,7 @@
 import React, { useRef, useEffect } from 'react';
 import { formatDate } from '@/utils/dateFormatters';
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useAllGptData } from '@/hooks/useAllGptData';
 
 interface Message {
   id: string;
@@ -32,6 +33,9 @@ const MessagesList: React.FC<MessagesListProps> = ({
 }) => {
   // Create a ref for the messages container to scroll to bottom
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  // Fetch GPT message IDs from the allgpt table
+  const { gptMessageIds } = useAllGptData(sellerId);
   
   // Auto-scroll to bottom when messages change
   useEffect(() => {
@@ -99,6 +103,8 @@ const MessagesList: React.FC<MessagesListProps> = ({
             
             {dateMessages.map((message) => {
               const isSeller = message.from.user_id === sellerIdNum;
+              // Check if this message is a GPT message (only for seller messages)
+              const isGptMessage = isSeller && gptMessageIds.includes(message.id);
               
               return (
                 <div 
@@ -107,7 +113,11 @@ const MessagesList: React.FC<MessagesListProps> = ({
                 >
                   <div 
                     className={`rounded-lg p-3 max-w-[70%] shadow-sm ${
-                      isSeller ? 'bg-green-100 text-gray-800' : 'bg-white text-gray-800'
+                      isSeller 
+                        ? isGptMessage 
+                          ? 'bg-blue-100 text-gray-800' // GPT message from seller
+                          : 'bg-green-100 text-gray-800' // Regular message from seller
+                        : 'bg-white text-gray-800'  // Message from buyer
                     }`}
                   >
                     <p className="whitespace-pre-wrap">{message.text}</p>
