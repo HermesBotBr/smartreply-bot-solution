@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { getNgrokUrl } from "@/config/api";
 
 interface MessageAttachment {
   filename: string;
@@ -59,14 +60,14 @@ export function usePackMessages(
       setIsLoading(true);
       
       try {
-        const response = await axios.get<MessagesResponse>(
-          `https://api.mercadolibre.com/messages/packs/${packId}/sellers/${sellerId}?tag=post_sale`,
-          {
-            headers: {
-              Authorization: `Bearer ${accessToken}`
-            }
+        // Instead of calling the Mercado Libre API directly, use our proxy endpoint
+        const response = await axios.get(`${getNgrokUrl('/api/proxy-getMessages')}`, {
+          params: {
+            packId,
+            sellerId,
+            accessToken
           }
-        );
+        });
         
         if (response.data && Array.isArray(response.data.messages)) {
           setMessages(response.data.messages);
