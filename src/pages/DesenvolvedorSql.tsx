@@ -68,17 +68,17 @@ const DesenvolvedorSql: React.FC = () => {
       const data = await response.json();
       console.log('Received tables data:', data);
       
-      const tablesData = data.tables || [];
-      
-      if (Array.isArray(tablesData)) {
-        setTables(tablesData);
+      // Check data structure
+      if (data && Array.isArray(data.tables)) {
+        setTables(data.tables);
         
-        if (tablesData.length > 0) {
-          setSelectedTable(tablesData[0].TABLE_NAME);
+        if (data.tables.length > 0) {
+          setSelectedTable(data.tables[0].TABLE_NAME);
         }
         
         toast.success('Tabelas carregadas com sucesso');
       } else {
+        console.error('Invalid data structure:', data);
         setTables([]);
         toast.error('Formato de resposta inválido');
         setError('Formato de resposta inválido ao carregar tabelas');
@@ -108,11 +108,12 @@ const DesenvolvedorSql: React.FC = () => {
       const columnsData = await columnsResponse.json();
       console.log('Received columns data:', columnsData);
       
-      if (columnsData.columns && Array.isArray(columnsData.columns)) {
+      if (columnsData && Array.isArray(columnsData.columns)) {
         setColumns(columnsData.columns);
       } else {
+        console.error('Invalid columns data structure:', columnsData);
         setColumns([]);
-        console.warn('No columns received or invalid format');
+        toast.warning('Estrutura de colunas não encontrada ou inválida');
       }
       
       // Fetch rows
@@ -126,11 +127,15 @@ const DesenvolvedorSql: React.FC = () => {
       const tableData = await dataResponse.json();
       console.log('Received rows data:', tableData);
       
-      if (tableData.rows && Array.isArray(tableData.rows)) {
+      if (tableData && Array.isArray(tableData.rows)) {
         setData(tableData.rows);
+        if (tableData.rows.length === 0) {
+          toast.info(`A tabela ${tableName} não possui dados para exibir`);
+        }
       } else {
+        console.error('Invalid rows data structure:', tableData);
         setData([]);
-        console.warn('No rows received or invalid format');
+        toast.warning('Dados da tabela não encontrados ou formato inválido');
       }
       
     } catch (err) {
@@ -161,11 +166,12 @@ const DesenvolvedorSql: React.FC = () => {
       });
       
       if (!response.ok) {
-        const errorData = await response.json();
+        const errorData = await response.json().catch(() => ({ error: `HTTP error ${response.status}` }));
         throw new Error(errorData.error || `HTTP error ${response.status}`);
       }
       
       const results = await response.json();
+      console.log('Query results:', results);
       
       if (results.isSelect) {
         // For SELECT queries
@@ -174,15 +180,15 @@ const DesenvolvedorSql: React.FC = () => {
           fields: results.fields || [],
           results: results.results || []
         });
+        toast.success(`Consulta retornou ${results.results?.length || 0} resultados`);
       } else {
         // For other queries (INSERT, UPDATE, DELETE)
         setQueryResult({
           isSelect: false,
           affectedRows: results.affectedRows || 0
         });
+        toast.success(`Consulta afetou ${results.affectedRows || 0} linha(s)`);
       }
-      
-      toast.success('Consulta executada com sucesso');
     } catch (err) {
       console.error('Error executing query:', err);
       setError(`Erro ao executar consulta: ${err instanceof Error ? err.message : 'Erro desconhecido'}`);
@@ -240,22 +246,26 @@ const DesenvolvedorSql: React.FC = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-2 max-h-[60vh] overflow-y-auto">
-                {tables.length === 0 ? (
-                  <p>Nenhuma tabela encontrada.</p>
-                ) : (
-                  tables.map((table) => (
-                    <Button
-                      key={table.TABLE_NAME}
-                      variant={selectedTable === table.TABLE_NAME ? "default" : "outline"}
-                      className="w-full justify-start"
-                      onClick={() => setSelectedTable(table.TABLE_NAME)}
-                    >
-                      {table.TABLE_NAME}
-                    </Button>
-                  ))
-                )}
-              </div>
+              {isLoading && tables.length > 0 ? (
+                <div className="py-4">Carregando tabelas...</div>
+              ) : (
+                <div className="space-y-2 max-h-[60vh] overflow-y-auto">
+                  {tables.length === 0 ? (
+                    <p>Nenhuma tabela encontrada.</p>
+                  ) : (
+                    tables.map((table, index) => (
+                      <Button
+                        key={index}
+                        variant={selectedTable === table.TABLE_NAME ? "default" : "outline"}
+                        className="w-full justify-start"
+                        onClick={() => setSelectedTable(table.TABLE_NAME)}
+                      >
+                        {table.TABLE_NAME}
+                      </Button>
+                    ))
+                  )}
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -281,7 +291,11 @@ const DesenvolvedorSql: React.FC = () => {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {columns.length === 0 ? (
+                      {isLoading ? (
+                        <TableRow>
+                          <TableCell colSpan={6} className="text-center">Carregando estrutura da tabela...</TableCell>
+                        </TableRow>
+                      ) : columns.length === 0 ? (
                         <TableRow>
                           <TableCell colSpan={6} className="text-center">Nenhuma coluna encontrada</TableCell>
                         </TableRow>
@@ -302,23 +316,25 @@ const DesenvolvedorSql: React.FC = () => {
                 </div>
                 
                 <h3 className="text-lg font-medium mb-2">Dados da Tabela</h3>
-                {data.length === 0 ? (
+                {isLoading ? (
+                  <div className="py-4">Carregando dados da tabela...</div>
+                ) : data.length === 0 ? (
                   <p>Nenhum dado encontrado nesta tabela.</p>
                 ) : (
                   <div className="overflow-x-auto">
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          {columns.map((column) => (
-                            <TableHead key={column.Field}>{column.Field}</TableHead>
+                          {columns.map((column, index) => (
+                            <TableHead key={index}>{column.Field}</TableHead>
                           ))}
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {data.map((row, rowIndex) => (
                           <TableRow key={rowIndex}>
-                            {columns.map((column) => (
-                              <TableCell key={`${rowIndex}-${column.Field}`}>
+                            {columns.map((column, colIndex) => (
+                              <TableCell key={`${rowIndex}-${colIndex}`}>
                                 {row[column.Field] !== null && row[column.Field] !== undefined
                                   ? String(row[column.Field])
                                   : 'NULL'}
@@ -403,3 +419,4 @@ const DesenvolvedorSql: React.FC = () => {
 };
 
 export default DesenvolvedorSql;
+
