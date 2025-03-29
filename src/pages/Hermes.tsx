@@ -11,6 +11,7 @@ import HermesLogin from "@/components/dashboard/HermesLogin";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { usePackData } from "@/hooks/usePackData";
+import { useAccessToken } from "@/hooks/useAccessToken";
 import PacksList from "@/components/dashboard/PacksList";
 
 const Hermes = () => {
@@ -25,8 +26,9 @@ const Hermes = () => {
   const [sellerId, setSellerId] = useState<string | null>(null);
   const [selectedPackId, setSelectedPackId] = useState<string | null>(null);
   
-  // Use our custom hook to fetch packs data
+  // Use our custom hooks to fetch data
   const { packs, isLoading: packsLoading, error: packsError } = usePackData(sellerId);
+  const { accessToken, isLoading: tokenLoading, error: tokenError } = useAccessToken(sellerId);
   
   // Check if user is already authenticated
   useEffect(() => {
@@ -55,6 +57,14 @@ const Hermes = () => {
     setLoginOpen(true);
     localStorage.removeItem('hermesAuth');
   }, []);
+
+  // Log when the access token is loaded or updated
+  useEffect(() => {
+    if (accessToken && !tokenLoading) {
+      console.log("Access token available for seller:", sellerId);
+      // We don't show this to the user, it's just for internal tracking
+    }
+  }, [accessToken, tokenLoading, sellerId]);
 
   const handleLoginSuccess = (sellerId: string) => {
     setIsAuthenticated(true);
