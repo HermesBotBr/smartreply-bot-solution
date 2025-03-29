@@ -1,6 +1,7 @@
 
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import { formatDate } from '@/utils/dateFormatters';
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface Message {
   id: string;
@@ -29,6 +30,19 @@ const MessagesList: React.FC<MessagesListProps> = ({
   error, 
   sellerId 
 }) => {
+  // Create a ref for the messages container to scroll to bottom
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  // Auto-scroll to bottom when messages change
+  useEffect(() => {
+    if (messages.length > 0 && !isLoading) {
+      // Use setTimeout to ensure the DOM has updated
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+    }
+  }, [messages, isLoading]);
+
   // Convert sellerId to number for comparison
   const sellerIdNum = sellerId ? parseInt(sellerId, 10) : null;
   
@@ -73,42 +87,46 @@ const MessagesList: React.FC<MessagesListProps> = ({
   });
 
   return (
-    <div className="p-4">
-      {Object.entries(messagesByDate).map(([date, dateMessages]) => (
-        <div key={date}>
-          <div className="flex justify-center my-3">
-            <div className="bg-blue-500 text-white px-4 py-1 rounded-full text-sm">
-              {date}
-            </div>
-          </div>
-          
-          {dateMessages.map((message) => {
-            const isSeller = message.from.user_id === sellerIdNum;
-            
-            return (
-              <div 
-                key={message.id} 
-                className={`flex ${isSeller ? 'justify-end' : 'justify-start'} mb-4`}
-              >
-                <div 
-                  className={`rounded-lg p-3 max-w-[70%] shadow-sm ${
-                    isSeller ? 'bg-green-100 text-gray-800' : 'bg-white text-gray-800'
-                  }`}
-                >
-                  <p className="whitespace-pre-wrap">{message.text}</p>
-                  <p className="text-xs text-gray-500 text-right mt-1">
-                    {new Date(message.message_date.created).toLocaleTimeString([], {
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
-                  </p>
-                </div>
+    <ScrollArea className="h-full">
+      <div className="p-4">
+        {Object.entries(messagesByDate).map(([date, dateMessages]) => (
+          <div key={date}>
+            <div className="flex justify-center my-3">
+              <div className="bg-blue-500 text-white px-4 py-1 rounded-full text-sm">
+                {date}
               </div>
-            );
-          })}
-        </div>
-      ))}
-    </div>
+            </div>
+            
+            {dateMessages.map((message) => {
+              const isSeller = message.from.user_id === sellerIdNum;
+              
+              return (
+                <div 
+                  key={message.id} 
+                  className={`flex ${isSeller ? 'justify-end' : 'justify-start'} mb-4`}
+                >
+                  <div 
+                    className={`rounded-lg p-3 max-w-[70%] shadow-sm ${
+                      isSeller ? 'bg-green-100 text-gray-800' : 'bg-white text-gray-800'
+                    }`}
+                  >
+                    <p className="whitespace-pre-wrap">{message.text}</p>
+                    <p className="text-xs text-gray-500 text-right mt-1">
+                      {new Date(message.message_date.created).toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ))}
+        {/* This is the element we'll scroll to */}
+        <div ref={messagesEndRef} />
+      </div>
+    </ScrollArea>
   );
 }
 
