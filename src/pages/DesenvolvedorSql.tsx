@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,9 +8,10 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertTriangle } from "lucide-react";
+import { getNgrokUrl } from "@/config/api";
 
 interface TableInfo {
-  TABLE_NAME: string;
+  name: string;
 }
 
 interface ColumnInfo {
@@ -25,10 +27,10 @@ interface TableData {
   [key: string]: any;
 }
 
-const API_BASE_URL = "https://52851e6b9a95.ngrok.app/api/db";
+const API_BASE_URL = getNgrokUrl("/api/db");
 
 const DesenvolvedorSql: React.FC = () => {
-  const [tables, setTables] = useState<TableInfo[]>([]);
+  const [tables, setTables] = useState<string[]>([]);
   const [selectedTable, setSelectedTable] = useState<string>('');
   const [columns, setColumns] = useState<ColumnInfo[]>([]);
   const [data, setData] = useState<TableData[]>([]);
@@ -54,6 +56,7 @@ const DesenvolvedorSql: React.FC = () => {
     setError(null);
     try {
       console.log('Fetching tables from external API...');
+      console.log(`API URL: ${API_BASE_URL}/tables`);
       
       const response = await fetch(`${API_BASE_URL}/tables`);
       if (!response.ok) {
@@ -66,10 +69,11 @@ const DesenvolvedorSql: React.FC = () => {
       console.log('Received tables data:', data);
       
       if (data && Array.isArray(data.tables)) {
+        // Directly use the array of table names from the response
         setTables(data.tables);
         
         if (data.tables.length > 0) {
-          setSelectedTable(data.tables[0].TABLE_NAME);
+          setSelectedTable(data.tables[0]);
         }
         
         toast.success('Tabelas carregadas com sucesso');
@@ -248,11 +252,11 @@ const DesenvolvedorSql: React.FC = () => {
                     tables.map((table, index) => (
                       <Button
                         key={index}
-                        variant={selectedTable === table.TABLE_NAME ? "default" : "outline"}
+                        variant={selectedTable === table ? "default" : "outline"}
                         className="w-full justify-start"
-                        onClick={() => setSelectedTable(table.TABLE_NAME)}
+                        onClick={() => setSelectedTable(table)}
                       >
-                        {table.TABLE_NAME}
+                        {table}
                       </Button>
                     ))
                   )}
