@@ -27,17 +27,16 @@ export function usePackData(sellerId: string | null) {
       setError(null);
       
       try {
-        // Construct the SQL query to get packs for the specific seller_id
-        const query = `SELECT pack_id, gpt, seller_id FROM all_packs WHERE seller_id = '${sellerId}'`;
-        const encodedQuery = encodeURIComponent(query);
-        
-        const response = await axios.post(getNgrokUrl('/api/db/query'), {
-          query: query
-        });
+        // Use the correct endpoint to fetch all packs
+        const response = await axios.get(getNgrokUrl('/api/db/rows/all_packs'));
 
-        if (response.data && response.data.results) {
-          setPacks(response.data.results);
-          console.log("Pack data loaded successfully:", response.data.results.length, "packs");
+        if (response.data && response.data.rows) {
+          // Filter packs by sellerId on the client side
+          const sellerPacks = response.data.rows.filter(
+            (pack: Pack) => pack.seller_id === sellerId
+          );
+          setPacks(sellerPacks);
+          console.log("Pack data loaded successfully:", sellerPacks.length, "packs");
         } else {
           console.error("Invalid response format for pack data:", response.data);
           setError("Formato de resposta inválido ao carregar dados de pacotes");
