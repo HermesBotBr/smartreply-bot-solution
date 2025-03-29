@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,7 +8,6 @@ import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertTriangle } from "lucide-react";
 
-// Interface definitions
 interface TableInfo {
   TABLE_NAME: string;
 }
@@ -27,8 +25,7 @@ interface TableData {
   [key: string]: any;
 }
 
-// Base API URL for external services
-const API_BASE_URL = "https://745c73a422c3.ngrok.app/api/db";
+const API_BASE_URL = "https://52851e6b9a95.ngrok.app/api/db";
 
 const DesenvolvedorSql: React.FC = () => {
   const [tables, setTables] = useState<TableInfo[]>([]);
@@ -68,7 +65,6 @@ const DesenvolvedorSql: React.FC = () => {
       const data = await response.json();
       console.log('Received tables data:', data);
       
-      // Check data structure
       if (data && Array.isArray(data.tables)) {
         setTables(data.tables);
         
@@ -97,7 +93,6 @@ const DesenvolvedorSql: React.FC = () => {
     try {
       console.log(`Fetching details for table: ${tableName}`);
       
-      // Fetch columns
       const columnsResponse = await fetch(`${API_BASE_URL}/columns/${encodeURIComponent(tableName)}`);
       if (!columnsResponse.ok) {
         const errorText = await columnsResponse.text();
@@ -116,7 +111,6 @@ const DesenvolvedorSql: React.FC = () => {
         toast.warning('Estrutura de colunas não encontrada ou inválida');
       }
       
-      // Fetch rows
       const dataResponse = await fetch(`${API_BASE_URL}/rows/${encodeURIComponent(tableName)}?limit=100`);
       if (!dataResponse.ok) {
         const errorText = await dataResponse.text();
@@ -174,7 +168,6 @@ const DesenvolvedorSql: React.FC = () => {
       console.log('Query results:', results);
       
       if (results.isSelect) {
-        // For SELECT queries
         setQueryResult({
           isSelect: true,
           fields: results.fields || [],
@@ -182,7 +175,6 @@ const DesenvolvedorSql: React.FC = () => {
         });
         toast.success(`Consulta retornou ${results.results?.length || 0} resultados`);
       } else {
-        // For other queries (INSERT, UPDATE, DELETE)
         setQueryResult({
           isSelect: false,
           affectedRows: results.affectedRows || 0
@@ -419,4 +411,3 @@ const DesenvolvedorSql: React.FC = () => {
 };
 
 export default DesenvolvedorSql;
-
