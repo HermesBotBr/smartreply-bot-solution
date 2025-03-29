@@ -12,7 +12,9 @@ import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/compone
 import { toast } from "sonner";
 import { usePackData } from "@/hooks/usePackData";
 import { useAccessToken } from "@/hooks/useAccessToken";
+import { usePackMessages } from "@/hooks/usePackMessages";
 import PacksList from "@/components/dashboard/PacksList";
+import MessagesList from "@/components/dashboard/MessagesList";
 
 const Hermes = () => {
   const [activeTab, setActiveTab] = useState('conversas');
@@ -29,6 +31,11 @@ const Hermes = () => {
   // Use our custom hooks to fetch data
   const { packs, isLoading: packsLoading, error: packsError } = usePackData(sellerId);
   const { accessToken, isLoading: tokenLoading, error: tokenError } = useAccessToken(sellerId);
+  const { messages, isLoading: messagesLoading, error: messagesError } = usePackMessages(
+    selectedPackId, 
+    sellerId, 
+    accessToken
+  );
   
   // Check if user is already authenticated
   useEffect(() => {
@@ -83,9 +90,14 @@ const Hermes = () => {
 
   const handleSelectPack = (packId: string) => {
     setSelectedPackId(packId);
-    // Here you would typically load conversations for this pack
-    // For now we're just selecting the pack
-    toast.info(`Pacote ${packId} selecionado`);
+    // Reset any previous conversation selection
+    setSelectedConv(null);
+    
+    if (accessToken) {
+      toast.info(`Carregando mensagens do pacote ${packId}`);
+    } else {
+      toast.error("Token de acesso não disponível");
+    }
   };
   
   // Placeholder data and functions
@@ -143,15 +155,25 @@ const Hermes = () => {
                   />
                 </div>
                 
-                {/* Right panel - Conversation or placeholder */}
+                {/* Right panel - Messages or placeholder */}
                 <div className="w-2/3 h-full overflow-auto">
                   {selectedPackId ? (
-                    <div className="flex items-center justify-center h-full">
-                      <div className="text-center p-6">
-                        <h3 className="text-xl font-bold mb-2">Pack ID: {selectedPackId}</h3>
-                        <p className="text-gray-500">
-                          Detalhes da conversa serão exibidos aqui
+                    <div className="flex flex-col h-full">
+                      <div className="p-4 border-b bg-white">
+                        <h3 className="text-lg font-medium">Pack ID: {selectedPackId}</h3>
+                        <p className="text-sm text-gray-500">
+                          {messagesLoading ? 'Carregando mensagens...' : 
+                           messagesError ? 'Erro ao carregar mensagens' : 
+                           `${messages.length} mensagens`}
                         </p>
+                      </div>
+                      <div className="flex-1 overflow-y-auto bg-gray-50">
+                        <MessagesList 
+                          messages={messages}
+                          isLoading={messagesLoading}
+                          error={messagesError}
+                          sellerId={sellerId}
+                        />
                       </div>
                     </div>
                   ) : (
@@ -159,7 +181,7 @@ const Hermes = () => {
                       <div className="text-center p-6">
                         <h3 className="text-xl font-bold mb-2">Nenhum pacote selecionado</h3>
                         <p className="text-gray-500">
-                          Selecione um pacote para ver detalhes
+                          Selecione um pacote para ver as mensagens
                         </p>
                       </div>
                     </div>
