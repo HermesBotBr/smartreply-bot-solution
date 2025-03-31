@@ -6,12 +6,8 @@ const path = require('path');
 const app = express();
 const port = process.env.PORT || 3001;
 
-// Enable CORS for all routes with more specific configuration
-app.use(cors({
-  origin: '*',
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
+// Enable CORS for all routes
+app.use(cors());
 
 // Parse JSON request bodies
 app.use(express.json());
@@ -23,12 +19,12 @@ const uploadRoutes = require('./src/api/uploadRoutes');
 // Import the message routes
 const messageRoutes = require('./src/api/messageRoutes');
 
-// Make message routes accessible at /api/messages
-app.use('/api/messages', messageRoutes);
-// Use the database routes
+// Use the database routes - make sure this comes BEFORE the static files middleware
 app.use('/api/db', dbRoutes);
 // Use the upload routes
 app.use('/api/uploads', uploadRoutes);
+// Use the message routes
+app.use('/api/messages', messageRoutes);
 
 // Create uploads directory if it doesn't exist
 const uploadDir = path.join(__dirname, 'public/uploads');
@@ -40,12 +36,6 @@ if (!require('fs').existsSync(uploadDir)) {
 app.use(express.static(path.join(__dirname, 'public')));
 // Serve uploaded files at the /uploads path
 app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
-
-// Handle 404 for API routes
-app.use('/api/*', (req, res) => {
-  console.log(`API route not found: ${req.originalUrl}`);
-  res.status(404).json({ error: 'API endpoint not found' });
-});
 
 // Serve the index.html file for all other requests EXCEPT /api routes and /uploads routes
 app.get(/^(?!\/api\/|\/uploads\/).*/, (req, res) => {
@@ -63,14 +53,8 @@ testConnection()
     }
   });
 
-// Export the Express app for serverless environments like Vercel
-module.exports = app;
-
-// Only listen directly when running as a standalone server (not in Vercel)
-if (!process.env.VERCEL) {
-  app.listen(port, () => {
-    console.log(`Server is running on port ${port}`);
-    console.log(`Uploads directory: ${uploadDir}`);
-    console.log(`Uploads URL: http://localhost:${port}/uploads`);
-  });
-}
+app.listen(port, () => {
+  console.log(`Server is running on port ${port}`);
+  console.log(`Uploads directory: ${uploadDir}`);
+  console.log(`Uploads URL: http://localhost:${port}/uploads`);
+});

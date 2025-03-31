@@ -3,14 +3,7 @@ const express = require('express');
 const router = express.Router();
 const axios = require('axios');
 
-/**
- * @route   GET /api/messages/refresh-messages
- * @desc    Manually refresh messages for a specific pack
- * @access  Public
- * @params  seller_id - The ID of the seller
- *          pack_id - The ID of the pack to refresh messages for
- * @example https://www.hermesbot.com.br/api/messages/refresh-messages?seller_id=123&pack_id=456
- */
+// Endpoint to manually refresh messages for a specific pack
 router.get('/refresh-messages', async (req, res) => {
   try {
     const { seller_id, pack_id } = req.query;
@@ -57,33 +50,6 @@ router.get('/refresh-messages', async (req, res) => {
     return res.status(500).json({ 
       success: false, 
       error: error.message || 'Failed to refresh messages' 
-    });
-  }
-});
-
-/**
- * @route   GET /api/messages/force-refresh
- * @desc    Force refresh the messages UI by triggering the refresh mechanism
- * @access  Public
- * @params  None required
- * @example https://www.hermesbot.com.br/api/messages/force-refresh
- */
-router.get('/force-refresh', async (req, res) => {
-  try {
-    const timestamp = new Date().toISOString();
-    console.log(`Force refresh triggered at ${timestamp}`);
-    
-    // Return a success message with timestamp
-    return res.status(200).json({
-      success: true,
-      message: 'Force refresh triggered successfully',
-      timestamp: timestamp
-    });
-  } catch (error) {
-    console.error('Error triggering force refresh:', error);
-    return res.status(500).json({ 
-      success: false, 
-      error: error.message || 'Failed to trigger force refresh' 
     });
   }
 });
