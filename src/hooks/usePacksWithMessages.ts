@@ -30,7 +30,7 @@ export function usePacksWithMessages(packs: Pack[], sellerId: string | null) {
         console.log("Fetching messages for", packs.length, "packs");
         
         // Process each pack individually instead of using a batch endpoint
-        const fetchPromises = packs.map(pack => fetchSinglePackMessage(pack.pack_id, sellerId));
+        const fetchPromises = packs.map(pack => fetchLatestMessageWithPagination(pack.pack_id, sellerId));
         const results = await Promise.allSettled(fetchPromises);
         
         // Process results
@@ -62,24 +62,55 @@ export function usePacksWithMessages(packs: Pack[], sellerId: string | null) {
       }
     };
     
-    // Function to fetch message for a single pack
-    const fetchSinglePackMessage = async (packId: string, sellerId: string): Promise<string | null> => {
+    // Enhanced function to fetch message with pagination to ensure getting the truly latest message
+    const fetchLatestMessageWithPagination = async (packId: string, sellerId: string): Promise<string | null> => {
+      let offset = 0;
+      const limit = 10;
+      let allMessages: any[] = [];
+      let hasMoreMessages = true;
+      
       try {
-        const response = await axios.get(`${NGROK_BASE_URL}/conversas`, {
-          params: {
-            seller_id: sellerId,
-            pack_id: packId,
-            limit: 10,  // Get the 10 most recent messages
-            offset: 0
+        // Fetch messages with pagination until we find no more messages or reach a reasonable limit
+        while (hasMoreMessages && offset < 100) { // Set a reasonable upper limit to prevent infinite loops
+          console.log(`Fetching messages for pack ${packId}, offset: ${offset}, limit: ${limit}`);
+          
+          const response = await axios.get(`${NGROK_BASE_URL}/conversas`, {
+            params: {
+              seller_id: sellerId,
+              pack_id: packId,
+              limit: limit,
+              offset: offset
+            }
+          });
+          
+          if (response.data && Array.isArray(response.data.messages)) {
+            const fetchedMessages = response.data.messages;
+            
+            // If we got less messages than the limit, there are no more messages to fetch
+            if (fetchedMessages.length < limit) {
+              hasMoreMessages = false;
+            }
+            
+            // Add fetched messages to our collection
+            allMessages = [...allMessages, ...fetchedMessages];
+            
+            // If this is the first batch and it's empty, no need to continue
+            if (offset === 0 && fetchedMessages.length === 0) {
+              break;
+            }
+            
+            // Increase offset for next page
+            offset += limit;
+          } else {
+            // If the response doesn't contain messages array, stop pagination
+            hasMoreMessages = false;
           }
-        });
+        }
         
-        if (response.data && 
-            Array.isArray(response.data.messages) && 
-            response.data.messages.length > 0) {
-          // Get the newest message - sort by date in descending order
-          const sortedMessages = [...response.data.messages].sort((a, b) => {
-            // Compare created dates - we want the newest message (highest date value)
+        // If we found any messages
+        if (allMessages.length > 0) {
+          // Sort all collected messages by date in descending order (newest first)
+          const sortedMessages = [...allMessages].sort((a, b) => {
             const dateA = new Date(a.message_date.created).getTime();
             const dateB = new Date(b.message_date.created).getTime();
             return dateB - dateA; // Descending order (newest first)
@@ -89,6 +120,9 @@ export function usePacksWithMessages(packs: Pack[], sellerId: string | null) {
           const latestMessage = sortedMessages[0];
           const messageText = latestMessage.text || "Sem mensagem";
           
+          console.log(`Latest message for pack ${packId} (from ${allMessages.length} messages):`, 
+            messageText.substring(0, 30) + (messageText.length > 30 ? '...' : ''));
+          
           // Truncate if needed
           return messageText.length > 50 
             ? `${messageText.substring(0, 50)}...` 
@@ -97,7 +131,7 @@ export function usePacksWithMessages(packs: Pack[], sellerId: string | null) {
         
         return "Sem mensagem";
       } catch (error) {
-        console.error(`Error fetching message for pack ${packId}:`, error);
+        console.error(`Error fetching messages for pack ${packId}:`, error);
         return "Erro ao carregar mensagem";
       }
     };
