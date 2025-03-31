@@ -67,7 +67,7 @@
     "tailwindcss-animate": "^1.0.7",
     "vaul": "^0.9.3",
     "web-push": "^3.4.5",
-    "zod": "^3.23.8"
+    "zod": "^3.23.8",
       "socket.io-client": "^4.5.0"
   },
   "devDependencies": {
