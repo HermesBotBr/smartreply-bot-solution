@@ -18,6 +18,7 @@ import MercadoLivreCallback from "./pages/MercadoLivreCallback";
 import TokenRequest from "./pages/TokenRequest";
 import Hermes from "./pages/Hermes";
 import DesenvolvedorSql from "./pages/DesenvolvedorSql";
+import EndpointTest from "./pages/EndpointTest";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -37,11 +38,12 @@ const AppLayout = () => {
   const isTokenRequest = location.pathname === "/token-request";
   const isHermes = location.pathname === "/hermes";
   const isDesenvolvedorSql = location.pathname === "/desenvolvedorsql";
+  const isEndpointTest = location.pathname === "/endpointtest";
 
   return (
     <div className="min-h-screen flex flex-col">
-      {!isUserGiovaniBurgo && !isNotificationEndpoint && !isMlCallback && !isTokenRequest && !isHermes && !isDesenvolvedorSql && <Header />}
-      <main className={`flex-grow ${!isUserGiovaniBurgo && !isNotificationEndpoint && !isMlCallback && !isTokenRequest && !isHermes && !isDesenvolvedorSql ? "pt-16" : ""}`}>
+      {!isUserGiovaniBurgo && !isNotificationEndpoint && !isMlCallback && !isTokenRequest && !isHermes && !isDesenvolvedorSql && !isEndpointTest && <Header />}
+      <main className={`flex-grow ${!isUserGiovaniBurgo && !isNotificationEndpoint && !isMlCallback && !isTokenRequest && !isHermes && !isDesenvolvedorSql && !isEndpointTest ? "pt-16" : ""}`}>
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/obrigado" element={<ThankYou />} />
@@ -54,10 +56,11 @@ const AppLayout = () => {
           <Route path="/token-request" element={<TokenRequest />} />
           <Route path="/hermes" element={<Hermes />} />
           <Route path="/desenvolvedorsql" element={<DesenvolvedorSql />} />
+          <Route path="/endpointtest" element={<EndpointTest />} />
         </Routes>
       </main>
-      {!isUserGiovaniBurgo && !isNotificationEndpoint && !isMlCallback && !isTokenRequest && !isHermes && !isDesenvolvedorSql && <Footer />}
-      {!isUserGiovaniBurgo && !isNotificationEndpoint && !isMlCallback && !isTokenRequest && !isHermes && !isDesenvolvedorSql && <WhatsAppButton />}
+      {!isUserGiovaniBurgo && !isNotificationEndpoint && !isMlCallback && !isTokenRequest && !isHermes && !isDesenvolvedorSql && !isEndpointTest && <Footer />}
+      {!isUserGiovaniBurgo && !isNotificationEndpoint && !isMlCallback && !isTokenRequest && !isHermes && !isDesenvolvedorSql && !isEndpointTest && <WhatsAppButton />}
     </div>
   );
 };

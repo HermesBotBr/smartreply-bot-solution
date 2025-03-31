@@ -18,6 +18,8 @@ const dbRoutes = require('./src/api/dbRoutes');
 const uploadRoutes = require('./src/api/uploadRoutes');
 // Import the message routes
 const messageRoutes = require('./src/api/messageRoutes');
+// Import the endpoint test routes
+const endpointRoutes = require('./src/api/endpointRoutes');
 
 // Use the database routes - make sure this comes BEFORE the static files middleware
 app.use('/api/db', dbRoutes);
@@ -25,6 +27,8 @@ app.use('/api/db', dbRoutes);
 app.use('/api/uploads', uploadRoutes);
 // Use the message routes
 app.use('/api/messages', messageRoutes);
+// Use the endpoint test routes
+app.use('/api', endpointRoutes);
 
 // Create uploads directory if it doesn't exist
 const uploadDir = path.join(__dirname, 'public/uploads');
@@ -71,4 +75,3 @@ server.listen(port, () => {
   console.log(`Uploads directory: ${uploadDir}`);
   console.log(`Uploads URL: http://localhost:${port}/uploads`);
 });
-
