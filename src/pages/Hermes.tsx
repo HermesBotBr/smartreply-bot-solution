@@ -1,11 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import QuestionsList from "@/components/dashboard/QuestionsList";
 import MetricsDisplay from "@/components/dashboard/MetricsDisplay";
 import EtiquetasList from "@/components/dashboard/EtiquetasList";
-import FullScreenImage from "@/components/dashboard/FullScreenImage";
 import NavSidebar from "@/components/dashboard/NavSidebar";
-import ConversationsTab from "@/components/dashboard/ConversationsTab";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import HermesLogin from "@/components/dashboard/HermesLogin";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -17,7 +14,6 @@ import MessagesList from "@/components/dashboard/MessagesList";
 
 const Hermes = () => {
   const [activeTab, setActiveTab] = useState('conversas');
-  const [fullScreenImage, setFullScreenImage] = useState<string | null>(null);
   const [selectedConv, setSelectedConv] = useState<any>(null);
   const [initialAutoScrollDone, setInitialAutoScrollDone] = useState(false);
   const [showSaleDetails, setShowSaleDetails] = useState(false);
@@ -212,8 +208,6 @@ const Hermes = () => {
           {isMobile && (
             <NavSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
           )}
-
-          <FullScreenImage imageUrl={fullScreenImage} onClose={() => setFullScreenImage(null)} />
         </>
       )}
     </div>

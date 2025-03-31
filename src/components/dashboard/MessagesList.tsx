@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Send } from "lucide-react";
 import { toast } from "sonner";
 import axios from 'axios';
-import { getNgrokUrl } from '@/config/api';
+import { getNgrokUrl, NGROK_BASE_URL } from '@/config/api';
+import { useMlToken } from '@/hooks/useMlToken';
 
 interface Message {
   id: string;
@@ -48,6 +49,10 @@ const MessagesList: React.FC<MessagesListProps> = ({
   const prevMessagesLengthRef = useRef<number>(0);
   // Track displayed message IDs to prevent duplicates
   const displayedMessageIdsRef = useRef<Set<string>>(new Set());
+  // Get ML token for accessing the image attachments
+  const mlToken = useMlToken();
+  // Add state to track the fullscreen image
+  const [fullScreenImage, setFullScreenImage] = useState<string | null>(null);
   
   // Fetch GPT message IDs from the allgpt table
   const { gptMessageIds } = useAllGptData(sellerId);
@@ -188,7 +193,39 @@ const MessagesList: React.FC<MessagesListProps> = ({
                           : 'bg-white text-gray-800'  // Message from buyer
                       }`}
                     >
+                      {/* Display attachments if present */}
+                      {message.message_attachments && message.message_attachments.length > 0 && (
+                        <div className="mb-2">
+                          {message.message_attachments.map((attachment, idx) => {
+                            if (attachment.filename && attachment.filename.trim()) {
+                              const attachmentUrl = `https://api.mercadolibre.com/messages/attachments/${attachment.filename.trim()}?site_id=MLB${mlToken ? `&access_token=${mlToken}` : ''}`;
+                              return (
+                                <div 
+                                  key={idx}
+                                  className="mb-2 cursor-pointer" 
+                                  onClick={() => setFullScreenImage(attachmentUrl)}
+                                >
+                                  <img
+                                    src={attachmentUrl}
+                                    alt={`Anexo ${idx + 1}`}
+                                    className="w-24 h-24 object-cover rounded"
+                                    onError={(e) => {
+                                      console.error("Erro ao carregar imagem:", e);
+                                      (e.target as HTMLImageElement).style.display = 'none';
+                                    }}
+                                  />
+                                </div>
+                              );
+                            }
+                            return null;
+                          })}
+                        </div>
+                      )}
+                      
+                      {/* Display message text */}
                       <p className="whitespace-pre-wrap">{message.text}</p>
+                      
+                      {/* Display message time */}
                       <p className="text-xs text-gray-500 text-right mt-1">
                         {new Date(message.message_date.created).toLocaleTimeString([], {
                           hour: '2-digit',
@@ -234,6 +271,33 @@ const MessagesList: React.FC<MessagesListProps> = ({
           Enviar
         </Button>
       </div>
+      
+      {/* Full Screen Image Modal */}
+      {fullScreenImage && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center"
+          onClick={() => setFullScreenImage(null)}
+        >
+          <div className="relative max-w-full max-h-full">
+            <img 
+              src={fullScreenImage} 
+              alt="Imagem ampliada" 
+              className="max-w-[90vw] max-h-[90vh] object-contain"
+              onError={(e) => {
+                console.error("Erro ao carregar imagem em tela cheia:", e);
+                setFullScreenImage(null);
+                toast.error("Não foi possível carregar a imagem");
+              }}
+            />
+            <button 
+              className="absolute top-2 right-2 bg-white rounded-full p-2 text-black"
+              onClick={() => setFullScreenImage(null)}
+            >
+              X
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
