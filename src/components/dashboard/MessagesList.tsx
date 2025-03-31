@@ -53,6 +53,8 @@ const MessagesList: React.FC<MessagesListProps> = ({
   const mlToken = useMlToken();
   // Add state to track the fullscreen image
   const [fullScreenImage, setFullScreenImage] = useState<string | null>(null);
+  // Track failed image loads to prevent retries
+  const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
   
   // Fetch GPT message IDs from the allgpt table
   const { gptMessageIds } = useAllGptData(sellerId);
@@ -92,6 +94,17 @@ const MessagesList: React.FC<MessagesListProps> = ({
   // Convert sellerId to number for comparison
   const sellerIdNum = sellerId ? parseInt(sellerId, 10) : null;
 
+  // Function to get proper attachment URL with error handling
+  const getAttachmentUrl = (filename: string): string => {
+    if (!filename || !filename.trim()) return '';
+    
+    // Ensure we have a valid token
+    const tokenParam = mlToken ? `&access_token=${mlToken}` : '';
+    
+    // Construct the full URL
+    return `https://api.mercadolibre.com/messages/attachments/${filename.trim()}?site_id=MLB${tokenParam}`;
+  };
+
   // Handle sending a message
   const handleSendMessage = async () => {
     if (!messageText.trim() || !sellerId || !packId) {
@@ -100,7 +113,7 @@ const MessagesList: React.FC<MessagesListProps> = ({
 
     setSending(true);
     try {
-      const response = await axios.post(`${getNgrokUrl('/enviamsg')}`, {
+      const response = await axios.post(getNgrokUrl('/enviamsg'), {
         seller_id: sellerId,
         pack_id: packId,
         text: messageText
@@ -118,6 +131,17 @@ const MessagesList: React.FC<MessagesListProps> = ({
       toast.error("Erro ao enviar mensagem");
     } finally {
       setSending(false);
+    }
+  };
+
+  // Handle image load error
+  const handleImageError = (imageUrl: string, errorEvent: React.SyntheticEvent<HTMLImageElement>) => {
+    console.error("Failed to load image:", imageUrl, errorEvent);
+    // Add to failed images set
+    setFailedImages(prev => new Set(prev).add(imageUrl));
+    // Show error toast only once per session
+    if (!failedImages.has(imageUrl)) {
+      toast.error("Não foi possível carregar uma imagem. Tente recarregar a página.");
     }
   };
   
@@ -198,7 +222,17 @@ const MessagesList: React.FC<MessagesListProps> = ({
                         <div className="mb-2">
                           {message.message_attachments.map((attachment, idx) => {
                             if (attachment.filename && attachment.filename.trim()) {
-                              const attachmentUrl = `https://api.mercadolibre.com/messages/attachments/${attachment.filename.trim()}?site_id=MLB${mlToken ? `&access_token=${mlToken}` : ''}`;
+                              const attachmentUrl = getAttachmentUrl(attachment.filename);
+                              
+                              // Skip rendering if this image previously failed to load
+                              if (failedImages.has(attachmentUrl)) {
+                                return (
+                                  <div key={idx} className="mb-2 p-2 bg-gray-100 rounded text-sm text-gray-500">
+                                    [Imagem indisponível]
+                                  </div>
+                                );
+                              }
+                              
                               return (
                                 <div 
                                   key={idx}
@@ -209,10 +243,8 @@ const MessagesList: React.FC<MessagesListProps> = ({
                                     src={attachmentUrl}
                                     alt={`Anexo ${idx + 1}`}
                                     className="w-24 h-24 object-cover rounded"
-                                    onError={(e) => {
-                                      console.error("Erro ao carregar imagem:", e);
-                                      (e.target as HTMLImageElement).style.display = 'none';
-                                    }}
+                                    onError={(e) => handleImageError(attachmentUrl, e)}
+                                    loading="lazy"
                                   />
                                 </div>
                               );
