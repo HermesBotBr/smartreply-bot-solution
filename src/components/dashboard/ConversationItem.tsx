@@ -32,9 +32,9 @@ const ConversationItem: React.FC<ConversationItemProps> = ({
     ? `${item.buyer.substring(0, 25)}...` 
     : item.buyer;
 
-  // Truncate message if longer than 30 characters
-  const truncatedMessage = formattedMessage.length > 30 
-    ? `${formattedMessage.substring(0, 30)}...` 
+  // Truncate message if longer than 50 characters (increased from 30)
+  const truncatedMessage = formattedMessage.length > 50 
+    ? `${formattedMessage.substring(0, 50)}...` 
     : formattedMessage;
 
   return (
@@ -53,11 +53,14 @@ const ConversationItem: React.FC<ConversationItemProps> = ({
             <h3 className={`font-medium truncate ${hasBuyerMessage ? 'text-blue-700' : 'text-gray-900'}`}>
               {truncatedBuyerName} {hasBuyerMessage && <span className="inline-block ml-1 h-2 w-2 rounded-full bg-blue-500"></span>}
             </h3>
-            {item.messages.length > 0 && (
-              <p className={`text-sm truncate ${hasBuyerMessage ? 'text-blue-600' : 'text-gray-500'}`}>
-                {truncatedMessage}
-              </p>
-            )}
+            <div className="text-sm text-gray-500">
+              {item.title && <p className="truncate font-medium">{item.title}</p>}
+              {item.messages.length > 0 && (
+                <p className={`truncate text-xs ${hasBuyerMessage ? 'text-blue-600' : 'text-gray-400'}`}>
+                  {truncatedMessage}
+                </p>
+              )}
+            </div>
           </div>
         </div>
         <SaleSwitch orderId={item.orderId} />

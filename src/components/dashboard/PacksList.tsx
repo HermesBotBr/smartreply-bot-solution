@@ -1,11 +1,11 @@
 
 import React from 'react';
 import { Pack } from '@/hooks/usePackData';
-import { MessageSquare, User } from "lucide-react";
+import { User } from "lucide-react";
 import { usePackClientData } from '@/hooks/usePackClientData';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import ProductThumbnail from './ProductThumbnail';
+import { usePacksWithMessages } from '@/hooks/usePacksWithMessages';
 
 interface PacksListProps {
   packs: Pack[];
@@ -24,8 +24,9 @@ const PacksList: React.FC<PacksListProps> = ({
   selectedPackId,
   sellerId
 }) => {
-  // Use our new hook to fetch client data for each pack
+  // Use our hooks to fetch client data and latest messages for each pack
   const { clientDataMap, isLoading: clientDataLoading } = usePackClientData(sellerId, packs);
+  const { latestMessages, isLoading: messagesLoading } = usePacksWithMessages(packs, sellerId);
 
   if (isLoading) {
     return (
@@ -62,12 +63,9 @@ const PacksList: React.FC<PacksListProps> = ({
       {packs.map((pack) => {
         const clientData = clientDataMap[pack.pack_id];
         const clientName = clientData ? clientData["Nome completo do cliente"] : null;
-        const nickname = clientData ? clientData["Nickname do cliente"] : null;
         const productTitle = clientData ? clientData["Título do anúncio"] : null;
         const itemId = clientData ? clientData["Item ID"] : null;
-        
-        console.log(`Pack ${pack.pack_id} client data:`, clientData ? 'available' : 'null');
-        console.log(`Item ID for pack ${pack.pack_id}:`, itemId);
+        const latestMessage = latestMessages[pack.pack_id] || "Sem mensagens";
         
         return (
           <div
@@ -97,8 +95,10 @@ const PacksList: React.FC<PacksListProps> = ({
                       {clientName || `Cliente (Pack ID: ${pack.pack_id})`}
                     </h3>
                     <div className="text-sm text-gray-500">
-                      {nickname && <p className="truncate">{nickname}</p>}
-                      {productTitle && <p className="truncate text-xs">{productTitle}</p>}
+                      {productTitle && <p className="truncate font-medium">{productTitle}</p>}
+                      <p className="truncate text-xs text-gray-400">
+                        {messagesLoading ? <Skeleton className="h-2 w-24" /> : latestMessage}
+                      </p>
                     </div>
                   </>
                 )}
