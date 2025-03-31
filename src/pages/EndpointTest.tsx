@@ -1,93 +1,74 @@
 
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { AlertCircle, CheckCircle } from "lucide-react";
-import { io } from "socket.io-client";
-import { NGROK_BASE_URL, getLocalApiUrl } from '@/config/api';
+import { AlertCircle, CheckCircle, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
+import axios from 'axios';
+import { Button } from "@/components/ui/button";
+import { getLocalApiUrl } from '@/config/api';
+
+interface EndpointCall {
+  message: string;
+  timestamp: string;
+  method: string;
+}
+
+interface EndpointStatus {
+  lastCalls: EndpointCall[];
+  totalCalls: number;
+}
 
 const EndpointTest: React.FC = () => {
-  const [lastCall, setLastCall] = useState<Date | null>(null);
-  const [callCount, setCallCount] = useState(0);
-  const [message, setMessage] = useState<string>("");
-  const [socketConnected, setSocketConnected] = useState(false);
-  const [connectionError, setConnectionError] = useState<string | null>(null);
+  const [endpointStatus, setEndpointStatus] = useState<EndpointStatus | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [polling, setPolling] = useState(true);
 
-  useEffect(() => {
-    let socket;
-    
+  const fetchEndpointStatus = async () => {
     try {
-      // Se estivermos em um ambiente de produção conhecido
-      if (window.location.hostname === 'www.hermesbot.com.br') {
-        // Use a mesma origem para o Socket.IO
-        console.log('Usando conexão Socket.IO na mesma origem (produção)');
-        socket = io(window.location.origin);
-      } 
-      // Se estivermos no ambiente de preview do Lovable
-      else if (window.location.hostname.includes('preview--')) {
-        console.log('Usando conexão Socket.IO relativa (ambiente preview)');
-        socket = io();  // Conexão relativa
-      } 
-      // Caso contrário, tente usar a URL do Ngrok
-      else {
-        console.log(`Tentando conexão Socket.IO com: ${NGROK_BASE_URL}`);
-        socket = io(NGROK_BASE_URL);
+      setLoading(true);
+      setError(null);
+      
+      // Usar caminho relativo para o endpoint
+      const response = await axios.get('/api/endpoint-test/status');
+      
+      if (response.data && response.data.success) {
+        setEndpointStatus(response.data.data);
+        if (endpointStatus && 
+            response.data.data.totalCalls > endpointStatus.totalCalls) {
+          toast.success("Nova chamada ao endpoint detectada!");
+        }
+      } else {
+        setError("Resposta inválida do servidor");
       }
+    } catch (err) {
+      console.error("Erro ao buscar status do endpoint:", err);
+      setError(err instanceof Error ? err.message : "Erro desconhecido");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-      console.log('Tentando conectar Socket.IO...');
-      
-      socket.on('connect', () => {
-        console.log('Socket conectado com sucesso:', socket.id);
-        setSocketConnected(true);
-        setConnectionError(null);
-        toast.success("Socket.IO conectado com sucesso!");
-      });
-
-      socket.on('connect_error', (err) => {
-        console.error('Erro de conexão com Socket.IO:', err);
-        setSocketConnected(false);
-        setConnectionError(err.message);
-        toast.error(`Erro de conexão com Socket.IO: ${err.message}`);
-      });
-      
-      socket.on('disconnect', (reason) => {
-        console.log('Socket.IO desconectado:', reason);
-        setSocketConnected(false);
-        toast.warning(`Socket.IO desconectado: ${reason}`);
-      });
-      
-      socket.on('endpointTest', (data) => {
-        console.log('Recebeu chamada de endpoint:', data);
-        setLastCall(new Date());
-        setCallCount(prev => prev + 1);
-        setMessage(data.message || "Chamada recebida sem mensagem");
-        
-        toast.success("Endpoint foi chamado!", {
-          description: data.message || "Chamada recebida com sucesso",
-        });
-      });
-    } catch (error) {
-      console.error('Erro ao inicializar Socket.IO:', error);
-      setConnectionError(error.message);
-      toast.error(`Erro ao inicializar Socket.IO: ${error.message}`);
+  // Efeito para polling
+  useEffect(() => {
+    fetchEndpointStatus();
+    
+    let interval: NodeJS.Timeout | null = null;
+    
+    if (polling) {
+      interval = setInterval(() => {
+        fetchEndpointStatus();
+      }, 3000); // Verificar a cada 3 segundos
     }
     
     return () => {
-      if (socket) {
-        console.log('Desconectando Socket.IO');
-        socket.disconnect();
-      }
+      if (interval) clearInterval(interval);
     };
-  }, []);
+  }, [polling, endpointStatus?.totalCalls]);
 
   // Função para obter a URL correta do endpoint para exibição
   const getEndpointUrl = () => {
-    if (window.location.hostname === 'www.hermesbot.com.br') {
-      return `${window.location.origin}/api/endpoint-test`;
-    } else if (window.location.hostname.includes('preview--')) {
-      return `${window.location.origin}/api/endpoint-test`;
-    }
-    return `${NGROK_BASE_URL}/api/endpoint-test`;
+    return `${window.location.origin}/api/endpoint-test`;
   };
 
   return (
@@ -119,64 +100,78 @@ const EndpointTest: React.FC = () => {
             </div>
 
             <div className="border rounded-lg p-6">
-              <h3 className="text-xl font-semibold mb-4">Status do Endpoint</h3>
-              
-              <div className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <span className="font-medium">Status do Socket.IO:</span>
-                  {socketConnected ? (
-                    <span className="flex items-center gap-1 text-green-600">
-                      <CheckCircle className="h-4 w-4" /> Conectado
-                    </span>
-                  ) : (
-                    <span className="flex items-center gap-1 text-red-500">
-                      <AlertCircle className="h-4 w-4" /> Desconectado
-                    </span>
-                  )}
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-xl font-semibold">Status do Endpoint</h3>
+                <div className="flex gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={fetchEndpointStatus}
+                    disabled={loading}
+                  >
+                    <RefreshCw className={`h-4 w-4 mr-1 ${loading ? 'animate-spin' : ''}`} />
+                    Atualizar
+                  </Button>
+                  <Button 
+                    variant={polling ? "default" : "outline"} 
+                    size="sm" 
+                    onClick={() => setPolling(!polling)}
+                  >
+                    {polling ? "Parar" : "Iniciar"} Auto Atualização
+                  </Button>
                 </div>
-                
-                {connectionError && (
-                  <div className="bg-red-50 border border-red-200 p-3 rounded-md text-red-800">
-                    <p className="font-medium">Erro de conexão:</p>
-                    <p className="text-sm">{connectionError}</p>
-                    <p className="text-sm mt-2">
-                      Verifique se o servidor Socket.IO está rodando e acessível.
-                    </p>
-                  </div>
-                )}
-
-                <div className="flex items-center gap-2">
-                  <span className="font-medium">Status do Endpoint:</span>
-                  {lastCall ? (
+              </div>
+              
+              {error && (
+                <div className="bg-red-50 border border-red-200 p-3 rounded-md text-red-800 mb-4">
+                  <p className="font-medium">Erro:</p>
+                  <p className="text-sm">{error}</p>
+                </div>
+              )}
+              
+              {!endpointStatus ? (
+                <div className="flex items-center gap-2 p-4 bg-yellow-50 rounded-md">
+                  <AlertCircle className="h-5 w-5 text-yellow-500" />
+                  <span>Aguardando dados do endpoint...</span>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium">Status do Endpoint:</span>
                     <span className="flex items-center gap-1 text-green-600">
                       <CheckCircle className="h-4 w-4" /> Ativo e funcionando
                     </span>
+                  </div>
+                  
+                  <div>
+                    <span className="font-medium">Total de chamadas:</span> {endpointStatus.totalCalls}
+                  </div>
+                  
+                  {endpointStatus.lastCalls && endpointStatus.lastCalls.length > 0 ? (
+                    <div>
+                      <h4 className="font-medium mb-2">Últimas chamadas:</h4>
+                      <div className="space-y-2">
+                        {endpointStatus.lastCalls.map((call, index) => (
+                          <div 
+                            key={index}
+                            className={`p-3 rounded-md ${index === 0 ? 'bg-blue-50 border border-blue-100' : 'bg-muted'}`}
+                          >
+                            <div className="flex justify-between text-sm text-muted-foreground">
+                              <span>Método: {call.method}</span>
+                              <span>{new Date(call.timestamp).toLocaleString()}</span>
+                            </div>
+                            <div className="mt-1 font-medium">
+                              {call.message}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   ) : (
-                    <span className="flex items-center gap-1 text-orange-500">
-                      <AlertCircle className="h-4 w-4" /> Aguardando primeira chamada
-                    </span>
+                    <p>Nenhuma chamada ao endpoint ainda.</p>
                   )}
                 </div>
-                
-                <div>
-                  <span className="font-medium">Número de chamadas:</span> {callCount}
-                </div>
-                
-                {lastCall && (
-                  <div>
-                    <span className="font-medium">Última chamada:</span> {lastCall.toLocaleString()}
-                  </div>
-                )}
-                
-                {message && (
-                  <div>
-                    <span className="font-medium">Última mensagem:</span>
-                    <div className="mt-2 p-3 bg-muted rounded-md">
-                      {message}
-                    </div>
-                  </div>
-                )}
-              </div>
+              )}
             </div>
           </div>
         </CardContent>
