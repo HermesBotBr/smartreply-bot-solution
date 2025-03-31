@@ -43,8 +43,18 @@ export function usePackMessages(
   const backgroundRefreshingRef = useRef(false);
   // Add a ref to track existing message IDs
   const existingMessageIdsRef = useRef<Set<string>>(new Set());
+  // Add a ref to track the current packId
+  const currentPackIdRef = useRef<string | null>(null);
 
   useEffect(() => {
+    // Clear messages and reset state when packId changes
+    if (packId !== currentPackIdRef.current) {
+      setMessages([]);
+      existingMessageIdsRef.current.clear();
+      isInitialLoadRef.current = true;
+      currentPackIdRef.current = packId;
+    }
+    
     const fetchMessages = async (isBackgroundRefresh = false) => {
       // Skip if we don't have all required data
       if (!packId || !sellerId) {
@@ -151,10 +161,8 @@ export function usePackMessages(
       }
     }, 30000);
     
-    // Reset the existingMessageIds when packId or sellerId changes
     return () => {
       clearInterval(intervalId);
-      existingMessageIdsRef.current = new Set();
     };
   }, [packId, sellerId, refreshTrigger]);
 
