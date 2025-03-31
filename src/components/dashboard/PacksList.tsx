@@ -66,6 +66,9 @@ const PacksList: React.FC<PacksListProps> = ({
         const productTitle = clientData ? clientData["Título do anúncio"] : null;
         const itemId = clientData ? clientData["Item ID"] : null;
         
+        console.log(`Pack ${pack.pack_id} client data:`, clientData ? 'available' : 'null');
+        console.log(`Item ID for pack ${pack.pack_id}:`, itemId);
+        
         return (
           <div
             key={pack.pack_id}

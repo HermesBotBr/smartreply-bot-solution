@@ -11,6 +11,7 @@ export interface ClientData {
   "Valor da venda": number;
   "MLB do anúncio": string;
   "Título do anúncio": string;
+  "Item ID": string;  // Ensure this field is properly defined
   Cor: string;
   Garantia: string;
   Quantidade: number;
@@ -58,6 +59,8 @@ export function usePackClientData(sellerId: string | null, packs: { pack_id: str
                   pack_id: pack.pack_id
                 }
               });
+              
+              console.log(`Data for pack ${pack.pack_id}:`, response.data);
               
               return { 
                 packId: pack.pack_id, 
