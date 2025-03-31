@@ -30,11 +30,11 @@ if (!require('fs').existsSync(uploadDir)) {
 
 // Serve static files from the 'public' directory
 app.use(express.static(path.join(__dirname, 'public')));
-// Specify uploads folder as static to serve uploaded files
+// Serve uploaded files at the /uploads path
 app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
 
-// Serve the index.html file for all other requests EXCEPT /api routes
-app.get(/^(?!\/api\/).*/, (req, res) => {
+// Serve the index.html file for all other requests EXCEPT /api routes and /uploads routes
+app.get(/^(?!\/api\/|\/uploads\/).*/, (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
@@ -51,4 +51,6 @@ testConnection()
 
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
+  console.log(`Uploads directory: ${uploadDir}`);
+  console.log(`Uploads URL: http://localhost:${port}/uploads`);
 });

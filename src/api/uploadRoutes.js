@@ -60,12 +60,19 @@ router.post('/upload', upload.single('file'), (req, res) => {
       return res.status(400).json({ error: 'Nenhum arquivo foi enviado' });
     }
     
-    // Return file URL
+    // Return the correct file URL path that will work when accessed from the frontend
     const fileUrl = `/uploads/${req.file.filename}`;
+    
+    console.log('File uploaded:', req.file);
+    console.log('File URL path:', fileUrl);
     
     res.status(200).json({
       success: true,
-      fileUrl: fileUrl
+      fileUrl: fileUrl,
+      fileName: req.file.filename,
+      originalName: req.file.originalname,
+      mimeType: req.file.mimetype,
+      size: req.file.size
     });
   } catch (error) {
     console.error('Erro no upload de arquivo:', error);

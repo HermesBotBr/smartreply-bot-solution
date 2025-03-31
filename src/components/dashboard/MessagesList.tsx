@@ -4,7 +4,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAllGptData } from '@/hooks/useAllGptData';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Send, Paperclip, X } from "lucide-react";
+import { Send, Paperclip, X, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import axios from 'axios';
 import { getNgrokUrl } from '@/config/api';
@@ -113,10 +113,13 @@ const MessagesList: React.FC<MessagesListProps> = ({
         setUploadingFile(false);
       }
 
+      const baseUrl = window.location.origin;
+      const finalAttachmentUrl = attachmentUrl ? (attachmentUrl.startsWith('http') ? attachmentUrl : `${baseUrl}${attachmentUrl}`) : '';
+      
       const finalMessageText = selectedFile
         ? messageText.trim()
-          ? `${messageText}\n\nAnexo: ${window.location.origin}${attachmentUrl}`
-          : `Anexo: ${window.location.origin}${attachmentUrl}`
+          ? `${messageText}\n\nAnexo: ${finalAttachmentUrl}`
+          : `Anexo: ${finalAttachmentUrl}`
         : messageText;
 
       const response = await axios.post(getNgrokUrl('/enviamsg'), {
@@ -178,6 +181,61 @@ const MessagesList: React.FC<MessagesListProps> = ({
     if (!failedImages.has(imageUrl)) {
       toast.error("Não foi possível carregar uma imagem. Tente recarregar a página.");
     }
+  };
+
+  const isValidUrl = (str: string): boolean => {
+    try {
+      new URL(str);
+      return true;
+    } catch (_) {
+      return false;
+    }
+  };
+
+  const extractUrlFromText = (text: string): string | null => {
+    if (!text) return null;
+    
+    const anexoMatch = text.match(/Anexo:\s*(https?:\/\/[^\s]+)/i);
+    if (anexoMatch && anexoMatch[1]) {
+      return anexoMatch[1];
+    }
+    
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    const matches = text.match(urlRegex);
+    return matches ? matches[0] : null;
+  };
+
+  const renderMessageText = (text: string) => {
+    const extractedUrl = extractUrlFromText(text);
+    const isImageUrl = extractedUrl && (
+      extractedUrl.match(/\.(jpeg|jpg|gif|png)$/) || 
+      extractedUrl.includes('/uploads/')
+    );
+    
+    if (isImageUrl) {
+      const textWithoutUrl = text.replace(extractedUrl, '').replace(/Anexo:\s*/i, '').trim();
+      
+      return (
+        <>
+          {textWithoutUrl && <p className="whitespace-pre-wrap mb-2">{textWithoutUrl}</p>}
+          <div className="mb-2">
+            <img 
+              src={extractedUrl} 
+              alt="Imagem anexada" 
+              className="max-w-full rounded max-h-60 object-contain cursor-pointer"
+              onClick={() => setFullScreenImage(extractedUrl)}
+              onError={(e) => {
+                console.error("Error loading attachment image:", e);
+                (e.target as HTMLImageElement).style.display = 'none';
+                toast.error("Não foi possível carregar a imagem anexada");
+              }}
+            />
+          </div>
+        </>
+      );
+    }
+    
+    return <p className="whitespace-pre-wrap">{text}</p>;
   };
 
   if (isLoading && messages.length === 0) {
@@ -284,7 +342,7 @@ const MessagesList: React.FC<MessagesListProps> = ({
                         </div>
                       )}
                       
-                      <p className="whitespace-pre-wrap">{message.text}</p>
+                      {renderMessageText(message.text)}
                       
                       <p className="text-xs text-gray-500 text-right mt-1">
                         {new Date(message.message_date.created).toLocaleTimeString([], {
@@ -371,7 +429,7 @@ const MessagesList: React.FC<MessagesListProps> = ({
             className="flex-shrink-0"
           >
             {sending || uploadingFile ? (
-              <div className="animate-spin h-4 w-4 border-2 border-t-transparent border-white rounded-full" />
+              <Loader2 size={18} className="mr-1 animate-spin" />
             ) : (
               <Send size={18} className="mr-1" />
             )}
