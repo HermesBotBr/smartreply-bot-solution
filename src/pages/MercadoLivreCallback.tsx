@@ -54,7 +54,7 @@ const MercadoLivreCallback = () => {
 
     try {
       const response = await axios.post(
-        'https://2b25e62d2f97.ngrok.app/getTokens',
+        'https://projetohermes-dda7e0c8d836.herokuapp.com/getTokens',
         { authorization_code: code },
         { headers: { 'Content-Type': 'application/json' } }
       );

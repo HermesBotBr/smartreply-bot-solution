@@ -1,3 +1,4 @@
+
 const axios = require('axios');
 
 // Função handler para processar a requisição
@@ -18,7 +19,7 @@ export default async function handler(req, res) {
   try {
     console.log('Encaminhando código para o servidor Hermes:', authorization_code);
 
-    // Faz a requisição para o endpoint do Projeto Hermes
+    // Faz a requisição para o endpoint do Projeto Hermes no Heroku
     const response = await axios.post(
       'https://projetohermes-dda7e0c8d836.herokuapp.com/getTokens',
       { authorization_code },
@@ -43,5 +44,4 @@ export default async function handler(req, res) {
       error: error.response ? error.response.data : error.message,
     });
   }
-
 }
