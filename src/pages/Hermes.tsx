@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import QuestionsList from "@/components/dashboard/QuestionsList";
 import MetricsDisplay from "@/components/dashboard/MetricsDisplay";
@@ -9,6 +10,7 @@ import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/compone
 import { toast } from "sonner";
 import { usePackData } from "@/hooks/usePackData";
 import { usePackMessages } from "@/hooks/usePackMessages";
+import { useMessageNotifications } from "@/hooks/useMessageNotifications";
 import PacksList from "@/components/dashboard/PacksList";
 import MessagesList from "@/components/dashboard/MessagesList";
 
@@ -25,11 +27,24 @@ const Hermes = () => {
   const [messagesRefreshTrigger, setMessagesRefreshTrigger] = useState(0);
   
   const { packs, isLoading: packsLoading, error: packsError } = usePackData(sellerId);
-  const { messages, isLoading: messagesLoading, error: messagesError } = usePackMessages(
+  const { messages, isLoading: messagesLoading, error: messagesError, updatePackMessages } = usePackMessages(
     selectedPackId, 
     sellerId,
     messagesRefreshTrigger
   );
+  
+  // Use the notification hook to automatically update messages
+  useMessageNotifications(sellerId, (packId) => {
+    console.log(`Notification received for pack ${packId}, updating messages`);
+    updatePackMessages(packId);
+    
+    // Show toast notification for non-selected packs
+    if (packId !== selectedPackId) {
+      toast.info(`Nova mensagem recebida para o pacote ${packId}`, {
+        duration: 3000,
+      });
+    }
+  });
   
   useEffect(() => {
     const auth = localStorage.getItem('hermesAuth');
