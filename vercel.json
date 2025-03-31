@@ -1,6 +1,15 @@
 
 {
+  "version": 2,
   "rewrites": [
+    {
+      "source": "/api/messages/refresh-messages",
+      "destination": "/api/messages/refresh-messages"
+    },
+    {
+      "source": "/api/messages/force-refresh",
+      "destination": "/api/messages/force-refresh"
+    },
     {
       "source": "/api/:path*",
       "destination": "/api/:path*"
@@ -13,5 +22,10 @@
       "source": "/((?!api/|uploads/).*)",
       "destination": "/index.html"
     }
-  ]
+  ],
+  "functions": {
+    "api/**/*.js": {
+      "runtime": "nodejs18.x"
+    }
+  }
 }
