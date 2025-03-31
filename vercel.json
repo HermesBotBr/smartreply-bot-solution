@@ -1,15 +1,6 @@
 
 {
-  "version": 2,
   "rewrites": [
-    {
-      "source": "/api/messages/refresh-messages",
-      "destination": "/api/messages/refresh-messages"
-    },
-    {
-      "source": "/api/messages/force-refresh",
-      "destination": "/api/messages/force-refresh"
-    },
     {
       "source": "/api/:path*",
       "destination": "/api/:path*"
@@ -23,9 +14,18 @@
       "destination": "/index.html"
     }
   ],
-  "functions": {
-    "api/**/*.js": {
-      "runtime": "nodejs18.x"
+  "routes": [
+    {
+      "src": "/api/messages/refresh-messages",
+      "dest": "/api/messages/refresh-messages"
+    },
+    {
+      "src": "/api/messages/force-refresh",
+      "dest": "/api/messages/force-refresh"
+    },
+    {
+      "src": "/api/(.*)",
+      "dest": "/api/$1"
     }
-  }
+  ]
 }
