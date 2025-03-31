@@ -19,11 +19,11 @@ const ConversationItem: React.FC<ConversationItemProps> = ({
   // Extract the latest message
   let formattedMessage = "";
   if (item.messages && item.messages.length > 0) {
-    // Reverse the logic - find the oldest message by date instead of newest
-    // This counterintuitive approach is needed because the system seems to handle dates in reverse
+    // Find the most recent message by date (newest first)
+    // The system has inverted date handling, so we need to find the "newest" by comparing for greater dates
     const mostRecentMessage = item.messages.reduce(
-      (oldest: any, current: any) => {
-        return new Date(current.date) < new Date(oldest.date) ? current : oldest;
+      (latest: any, current: any) => {
+        return new Date(current.date) > new Date(latest.date) ? current : latest;
       },
       item.messages[0]
     );
