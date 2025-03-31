@@ -3,14 +3,7 @@ const express = require('express');
 const router = express.Router();
 const axios = require('axios');
 
-/**
- * @route   GET /api/messages/refresh-messages
- * @desc    Manually refresh messages for a specific pack
- * @access  Public
- * @params  seller_id - The ID of the seller
- *          pack_id - The ID of the pack to refresh messages for
- * @example https://www.hermesbot.com.br/api/messages/refresh-messages?seller_id=123&pack_id=456
- */
+// Endpoint to manually refresh messages for a specific pack
 router.get('/refresh-messages', async (req, res) => {
   try {
     const { seller_id, pack_id } = req.query;
