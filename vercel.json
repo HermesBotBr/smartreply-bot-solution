@@ -13,5 +13,15 @@
       "source": "/((?!api/|uploads/).*)",
       "destination": "/index.html"
     }
+  ],
+  "routes": [
+    {
+      "src": "/api/messages/refresh-messages",
+      "dest": "/api/messages/refresh-messages"
+    },
+    {
+      "src": "/api/(.*)",
+      "dest": "/api/$1"
+    }
   ]
 }
