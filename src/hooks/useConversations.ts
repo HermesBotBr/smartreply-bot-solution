@@ -10,6 +10,8 @@ export function useConversations() {
   const [initialAutoScrollDone, setInitialAutoScrollDone] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<string | null>(null);
   const backgroundRefreshingRef = useRef(false);
+  // Add a ref to track conversation IDs
+  const existingConvIdsRef = useRef<Set<string>>(new Set());
 
   const loadData = async (isBackgroundRefresh = false) => {
     try {
@@ -24,31 +26,63 @@ export function useConversations() {
       console.log(isBackgroundRefresh ? "Background refreshing conversations..." : "Loading conversation data...");
       const response = await fetch(getNgrokUrl('all_msg.txt'));
       const textData = await response.text();
-      const convs = parseMessages(textData);
+      const newConvs = parseMessages(textData);
       
       if (isBackgroundRefresh) {
         // For background refreshes, update state more carefully
-        // Compare and only update what's needed
+        // Compare and only add conversations that don't already exist
         setConversations(prevConvs => {
-          // Check if there are any actual changes
-          const hasChanges = JSON.stringify(prevConvs) !== JSON.stringify(convs);
-          return hasChanges ? convs : prevConvs;
+          // If this is the first time, initialize our tracking set
+          if (existingConvIdsRef.current.size === 0) {
+            prevConvs.forEach(conv => existingConvIdsRef.current.add(conv.orderId));
+          }
+          
+          // Filter out conversations we already have
+          const convsToAdd = newConvs.filter(newConv => 
+            !existingConvIdsRef.current.has(newConv.orderId)
+          );
+          
+          // If we found new conversations, update our state and tracking set
+          if (convsToAdd.length > 0) {
+            console.log(`Adding ${convsToAdd.length} new conversations from background refresh`);
+            // Add new conversation IDs to our tracking set
+            convsToAdd.forEach(conv => existingConvIdsRef.current.add(conv.orderId));
+            
+            // Return updated conversations
+            return [...prevConvs, ...convsToAdd];
+          }
+          
+          // Check if there are updates to existing conversations
+          let hasUpdates = false;
+          const updatedConvs = prevConvs.map(prevConv => {
+            const updatedConv = newConvs.find(newConv => newConv.orderId === prevConv.orderId);
+            if (updatedConv && JSON.stringify(updatedConv) !== JSON.stringify(prevConv)) {
+              hasUpdates = true;
+              return updatedConv;
+            }
+            return prevConv;
+          });
+          
+          return hasUpdates ? updatedConvs : prevConvs;
         });
         
         // Update the selectedConv if one is currently selected
         if (selectedConv) {
-          const updatedConv = convs.find(c => c.orderId === selectedConv.orderId);
+          const updatedConv = newConvs.find(c => c.orderId === selectedConv.orderId);
           if (updatedConv && JSON.stringify(updatedConv) !== JSON.stringify(selectedConv)) {
             setSelectedConv(updatedConv);
           }
         }
       } else {
         // For initial or manual refreshes, just replace everything
-        setConversations(convs);
+        setConversations(newConvs);
+        
+        // Reset and rebuild our tracking set
+        existingConvIdsRef.current = new Set(newConvs.map(conv => conv.orderId));
         
         // Update the selectedConv if one is currently selected
         if (selectedConv) {
-          const updatedConv = convs.find(c => c.orderId === selectedConv.orderId);
+          const updatedConv = newConvs.find(c => c.orderId === selectedConv.orderId);
           if (updatedConv) {
             setSelectedConv(updatedConv);
           }

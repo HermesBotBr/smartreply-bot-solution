@@ -41,6 +41,8 @@ export function usePackMessages(
   const [error, setError] = useState<string | null>(null);
   const isInitialLoadRef = useRef(true);
   const backgroundRefreshingRef = useRef(false);
+  // Add a ref to track existing message IDs
+  const existingMessageIdsRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     const fetchMessages = async (isBackgroundRefresh = false) => {
@@ -71,27 +73,41 @@ export function usePackMessages(
         });
         
         if (response.data && Array.isArray(response.data.messages)) {
-          // If this is a background refresh, compare new messages with existing
-          if (isBackgroundRefresh) {
-            const currentMessages = [...messages];
-            const newMessages = response.data.messages;
-            
-            // Find messages that don't exist in the current messages array
+          const newMessages = response.data.messages;
+          
+          // If this is a background refresh or any subsequent load, filter out messages we already have
+          if (!isInitialLoadRef.current || isBackgroundRefresh) {
+            // Find messages that don't exist in our existingMessageIds Set
             const messagesToAdd = newMessages.filter(newMsg => 
-              !currentMessages.some(currentMsg => currentMsg.id === newMsg.id)
+              !existingMessageIdsRef.current.has(newMsg.id)
             );
             
             // Only update state if there are new messages
             if (messagesToAdd.length > 0) {
               console.log(`Adding ${messagesToAdd.length} new messages from background refresh`);
-              setMessages(prev => [...prev, ...messagesToAdd].sort((a, b) => 
-                new Date(a.message_date.created).getTime() - new Date(b.message_date.created).getTime()
-              ));
+              
+              // Update our messages state with the new messages
+              setMessages(prev => {
+                const updatedMessages = [...prev, ...messagesToAdd].sort((a, b) => 
+                  new Date(a.message_date.created).getTime() - new Date(b.message_date.created).getTime()
+                );
+                
+                // Update our Set of existing message IDs
+                messagesToAdd.forEach(msg => existingMessageIdsRef.current.add(msg.id));
+                
+                return updatedMessages;
+              });
+            } else {
+              console.log('No new messages found during refresh');
             }
           } else {
-            // For initial loads or manual refreshes, replace all messages
-            setMessages(response.data.messages);
-            console.log(`Loaded ${response.data.messages.length} messages for pack ID: ${packId}`);
+            // For initial load, replace all messages and update our tracking Set
+            setMessages(newMessages);
+            
+            // Initialize our Set of existing message IDs
+            existingMessageIdsRef.current = new Set(newMessages.map(msg => msg.id));
+            
+            console.log(`Loaded ${newMessages.length} messages for pack ID: ${packId}`);
           }
         } else {
           // Only show error for non-background refreshes
@@ -135,8 +151,10 @@ export function usePackMessages(
       }
     }, 30000);
     
+    // Reset the existingMessageIds when packId or sellerId changes
     return () => {
       clearInterval(intervalId);
+      existingMessageIdsRef.current = new Set();
     };
   }, [packId, sellerId, refreshTrigger]);
 

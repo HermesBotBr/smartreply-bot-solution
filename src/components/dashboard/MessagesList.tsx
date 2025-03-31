@@ -46,9 +46,21 @@ const MessagesList: React.FC<MessagesListProps> = ({
   const [messageText, setMessageText] = useState('');
   const [sending, setSending] = useState(false);
   const prevMessagesLengthRef = useRef<number>(0);
+  // Track displayed message IDs to prevent duplicates
+  const displayedMessageIdsRef = useRef<Set<string>>(new Set());
   
   // Fetch GPT message IDs from the allgpt table
   const { gptMessageIds } = useAllGptData(sellerId);
+
+  // Update displayed message IDs when messages change
+  useEffect(() => {
+    if (messages && messages.length > 0) {
+      // Update our tracking of displayed messages
+      messages.forEach(msg => {
+        displayedMessageIdsRef.current.add(msg.id);
+      });
+    }
+  }, [messages]);
   
   // Auto-scroll to bottom when new messages are added
   useEffect(() => {
