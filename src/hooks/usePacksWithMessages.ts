@@ -16,7 +16,8 @@ export function usePacksWithMessages(packs: Pack[], sellerId: string | null) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchAllPackMessages = async () => {
+    // Fetch all pack messages at once
+    const fetchAllPackMessagesForPacks = async () => {
       if (!sellerId || packs.length === 0) {
         setIsLoading(false);
         return;
@@ -30,14 +31,14 @@ export function usePacksWithMessages(packs: Pack[], sellerId: string | null) {
         console.log("Fetching messages for", packs.length, "packs");
         
         // Process each pack individually
-        const fetchPromises = packs.map(pack => fetchAllPackMessages(pack.pack_id, sellerId));
+        const fetchPromises = packs.map(pack => fetchMessagesForPack(pack.pack_id, sellerId));
         const results = await Promise.allSettled(fetchPromises);
         
         // Process results
         results.forEach((result, index) => {
           const packId = packs[index].pack_id;
           
-          if (result.status === 'fulfilled' && result.value) {
+          if (result.status === 'fulfilled') {
             messagesMap[packId] = result.value;
           } else {
             console.error(`Error fetching message for pack ${packId}:`, 
@@ -62,8 +63,8 @@ export function usePacksWithMessages(packs: Pack[], sellerId: string | null) {
       }
     };
     
-    // Fetch all messages at once for a pack, similar to how usePackMessages works
-    const fetchAllPackMessages = async (packId: string, sellerId: string): Promise<string | null> => {
+    // Fetch all messages at once for a specific pack
+    const fetchMessagesForPack = async (packId: string, sellerId: string): Promise<string> => {
       try {
         console.log(`Fetching all messages for pack ${packId}`);
         
@@ -110,7 +111,7 @@ export function usePacksWithMessages(packs: Pack[], sellerId: string | null) {
       }
     };
 
-    fetchAllPackMessages();
+    fetchAllPackMessagesForPacks();
   }, [sellerId, packs]);
 
   return { latestMessages, isLoading, error };
