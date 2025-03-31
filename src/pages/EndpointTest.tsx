@@ -11,47 +11,80 @@ const EndpointTest: React.FC = () => {
   const [callCount, setCallCount] = useState(0);
   const [message, setMessage] = useState<string>("");
   const [socketConnected, setSocketConnected] = useState(false);
+  const [connectionError, setConnectionError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Determinar a URL do socket correta
-    // Se estivermos no ambiente de preview do Lovable, usamos uma conexão relativa
-    const socketUrl = window.location.hostname.includes('preview--') ? '' : NGROK_BASE_URL;
-    console.log('Conectando ao socket em:', socketUrl || 'conexão relativa');
+    let socket;
     
-    // Configurar Socket.IO para ouvir eventos
-    const socket = io(socketUrl);
-    
-    socket.on('connect', () => {
-      console.log('Socket conectado ao endpoint test:', socket.id);
-      setSocketConnected(true);
-      toast.success("Socket.IO conectado com sucesso!");
-    });
+    try {
+      // Se estivermos em um ambiente de produção conhecido
+      if (window.location.hostname === 'www.hermesbot.com.br') {
+        // Use a mesma origem para o Socket.IO
+        console.log('Usando conexão Socket.IO na mesma origem (produção)');
+        socket = io(window.location.origin);
+      } 
+      // Se estivermos no ambiente de preview do Lovable
+      else if (window.location.hostname.includes('preview--')) {
+        console.log('Usando conexão Socket.IO relativa (ambiente preview)');
+        socket = io();  // Conexão relativa
+      } 
+      // Caso contrário, tente usar a URL do Ngrok
+      else {
+        console.log(`Tentando conexão Socket.IO com: ${NGROK_BASE_URL}`);
+        socket = io(NGROK_BASE_URL);
+      }
 
-    socket.on('connect_error', (err) => {
-      console.error('Erro de conexão com Socket.IO:', err);
-      toast.error(`Erro de conexão com Socket.IO: ${err.message}`);
-    });
-    
-    socket.on('endpointTest', (data) => {
-      console.log('Recebeu chamada de endpoint:', data);
-      setLastCall(new Date());
-      setCallCount(prev => prev + 1);
-      setMessage(data.message || "Chamada recebida sem mensagem");
+      console.log('Tentando conectar Socket.IO...');
       
-      // Mostrar toast quando receber uma chamada
-      toast.success("Endpoint foi chamado!", {
-        description: data.message || "Chamada recebida com sucesso",
+      socket.on('connect', () => {
+        console.log('Socket conectado com sucesso:', socket.id);
+        setSocketConnected(true);
+        setConnectionError(null);
+        toast.success("Socket.IO conectado com sucesso!");
       });
-    });
+
+      socket.on('connect_error', (err) => {
+        console.error('Erro de conexão com Socket.IO:', err);
+        setSocketConnected(false);
+        setConnectionError(err.message);
+        toast.error(`Erro de conexão com Socket.IO: ${err.message}`);
+      });
+      
+      socket.on('disconnect', (reason) => {
+        console.log('Socket.IO desconectado:', reason);
+        setSocketConnected(false);
+        toast.warning(`Socket.IO desconectado: ${reason}`);
+      });
+      
+      socket.on('endpointTest', (data) => {
+        console.log('Recebeu chamada de endpoint:', data);
+        setLastCall(new Date());
+        setCallCount(prev => prev + 1);
+        setMessage(data.message || "Chamada recebida sem mensagem");
+        
+        toast.success("Endpoint foi chamado!", {
+          description: data.message || "Chamada recebida com sucesso",
+        });
+      });
+    } catch (error) {
+      console.error('Erro ao inicializar Socket.IO:', error);
+      setConnectionError(error.message);
+      toast.error(`Erro ao inicializar Socket.IO: ${error.message}`);
+    }
     
     return () => {
-      socket.disconnect();
+      if (socket) {
+        console.log('Desconectando Socket.IO');
+        socket.disconnect();
+      }
     };
   }, []);
 
   // Função para obter a URL correta do endpoint para exibição
   const getEndpointUrl = () => {
-    if (window.location.hostname.includes('preview--')) {
+    if (window.location.hostname === 'www.hermesbot.com.br') {
+      return `${window.location.origin}/api/endpoint-test`;
+    } else if (window.location.hostname.includes('preview--')) {
       return `${window.location.origin}/api/endpoint-test`;
     }
     return `${NGROK_BASE_URL}/api/endpoint-test`;
@@ -102,6 +135,16 @@ const EndpointTest: React.FC = () => {
                   )}
                 </div>
                 
+                {connectionError && (
+                  <div className="bg-red-50 border border-red-200 p-3 rounded-md text-red-800">
+                    <p className="font-medium">Erro de conexão:</p>
+                    <p className="text-sm">{connectionError}</p>
+                    <p className="text-sm mt-2">
+                      Verifique se o servidor Socket.IO está rodando e acessível.
+                    </p>
+                  </div>
+                )}
+
                 <div className="flex items-center gap-2">
                   <span className="font-medium">Status do Endpoint:</span>
                   {lastCall ? (
