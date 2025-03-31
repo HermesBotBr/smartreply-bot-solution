@@ -4,6 +4,8 @@ import { Pack } from '@/hooks/usePackData';
 import { MessageSquare, User } from "lucide-react";
 import { usePackClientData } from '@/hooks/usePackClientData';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import ProductThumbnail from './ProductThumbnail';
 
 interface PacksListProps {
   packs: Pack[];
@@ -62,6 +64,7 @@ const PacksList: React.FC<PacksListProps> = ({
         const clientName = clientData ? clientData["Nome completo do cliente"] : null;
         const nickname = clientData ? clientData["Nickname do cliente"] : null;
         const productTitle = clientData ? clientData["Título do anúncio"] : null;
+        const itemId = clientData ? clientData["Item ID"] : null;
         
         return (
           <div
@@ -72,9 +75,13 @@ const PacksList: React.FC<PacksListProps> = ({
             onClick={() => onSelectPack(pack.pack_id)}
           >
             <div className="flex items-center space-x-3">
-              <div className="bg-blue-100 p-2 rounded-full">
-                <User size={20} className="text-blue-600" />
-              </div>
+              {itemId ? (
+                <ProductThumbnail itemId={itemId} sellerId={sellerId} />
+              ) : (
+                <div className="bg-blue-100 p-2 rounded-full">
+                  <User size={20} className="text-blue-600" />
+                </div>
+              )}
               <div className="flex-1 min-w-0">
                 {clientDataLoading && !clientData ? (
                   <div className="space-y-2">

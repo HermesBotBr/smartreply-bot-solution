@@ -1,15 +1,17 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { getNgrokUrl } from '@/config/api';
+import { useMlToken } from '@/hooks/useMlToken';
 
 interface ProductThumbnailProps {
   itemId: string;
+  sellerId?: string | null;
 }
 
-const ProductThumbnail: React.FC<ProductThumbnailProps> = ({ itemId }) => {
+const ProductThumbnail: React.FC<ProductThumbnailProps> = ({ itemId, sellerId }) => {
   const [thumbnail, setThumbnail] = useState<string | null>(null);
   const previousItemIdRef = useRef<string | null>(null);
   const isMountedRef = useRef(true);
+  const mlToken = useMlToken(sellerId);
 
   useEffect(() => {
     isMountedRef.current = true;
@@ -20,7 +22,7 @@ const ProductThumbnail: React.FC<ProductThumbnailProps> = ({ itemId }) => {
 
   useEffect(() => {
     // Only fetch if itemId changed or doesn't match previous
-    if (!itemId || itemId === previousItemIdRef.current) {
+    if (!itemId || itemId === previousItemIdRef.current || !mlToken) {
       return;
     }
     
@@ -30,17 +32,14 @@ const ProductThumbnail: React.FC<ProductThumbnailProps> = ({ itemId }) => {
     async function fetchThumbnail() {
       try {
         console.log("Fetching thumbnail for itemId:", itemId);
-        const tokenResponse = await fetch(getNgrokUrl('mercadoLivreApiKey.txt'));
-        const token = (await tokenResponse.text()).trim();
         
         if (!isMountedRef.current) return;
-        console.log("ML Token:", token);
         
-        const response = await fetch(`https://api.mercadolibre.com/items/${itemId}?access_token=${token}`);
+        const response = await fetch(`https://api.mercadolibre.com/items/${itemId}?access_token=${mlToken}`);
         const data = await response.json();
         
         if (!isMountedRef.current) return;
-        console.log("Response data:", data);
+        console.log("Product data:", data);
         
         const imageUrl = data.secure_thumbnail || data.thumbnail;
         console.log("Original image URL:", imageUrl);
@@ -60,7 +59,7 @@ const ProductThumbnail: React.FC<ProductThumbnailProps> = ({ itemId }) => {
     }
     
     fetchThumbnail();
-  }, [itemId]);
+  }, [itemId, mlToken]);
 
   return (
     <div className="rounded-full overflow-hidden w-12 h-12 border border-gray-300">
