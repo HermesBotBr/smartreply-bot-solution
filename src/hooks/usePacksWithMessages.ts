@@ -113,7 +113,13 @@ export function usePacksWithMessages(packs: Pack[], sellerId: string | null) {
         if (response.data && 
             Array.isArray(response.data.messages) && 
             response.data.messages.length > 0) {
-          const latestMessage = response.data.messages[0];
+          // Sort messages by creation date in descending order (newest first)
+          const sortedMessages = [...response.data.messages].sort((a, b) => 
+            new Date(b.message_date.created).getTime() - new Date(a.message_date.created).getTime()
+          );
+          
+          // Get the newest message
+          const latestMessage = sortedMessages[0];
           const messageText = latestMessage.text || "Sem mensagem";
           
           // Truncate if needed

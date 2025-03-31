@@ -19,11 +19,14 @@ const ConversationItem: React.FC<ConversationItemProps> = ({
   // Extract the latest message
   let formattedMessage = "";
   if (item.messages && item.messages.length > 0) {
-    // Find the most recent message
+    // Find the most recent message by date (newest first)
     const mostRecentMessage = item.messages.reduce(
-      (prev: any, curr: any) => (new Date(curr.date) > new Date(prev.date) ? curr : prev),
+      (latest: any, current: any) => {
+        return new Date(current.date) > new Date(latest.date) ? current : latest;
+      },
       item.messages[0]
     );
+    
     formattedMessage = mostRecentMessage.message.replace(/\\n/g, "\n");
   } else {
     formattedMessage = "Sem mensagem";
