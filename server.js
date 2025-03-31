@@ -53,20 +53,7 @@ testConnection()
     }
   });
 
-const http = require('http');
-const server = http.createServer(app);
-const io = require('socket.io')(server, {
-  cors: { origin: "*" }
-});
-
-// Armazena o objeto io para acesso nas rotas
-app.set('socketio', io);
-
-io.on('connection', (socket) => {
-  console.log(`New client connected: ${socket.id}`);
-});
-
-server.listen(port, () => {
+app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
   console.log(`Uploads directory: ${uploadDir}`);
   console.log(`Uploads URL: http://localhost:${port}/uploads`);
