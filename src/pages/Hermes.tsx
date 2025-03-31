@@ -142,7 +142,7 @@ const Hermes = () => {
                 {/* Left panel - Packs List */}
                 <div className="w-1/3 h-full overflow-auto border-r">
                   <div className="p-4 border-b bg-white">
-                    <h2 className="text-lg font-medium">Pacotes</h2>
+                    <h2 className="text-lg font-medium">Clientes</h2>
                     <p className="text-sm text-gray-500">Seller ID: {sellerId}</p>
                   </div>
                   <PacksList 
@@ -151,6 +151,7 @@ const Hermes = () => {
                     error={packsError}
                     onSelectPack={handleSelectPack}
                     selectedPackId={selectedPackId}
+                    sellerId={sellerId}
                   />
                 </div>
                 
@@ -180,9 +181,9 @@ const Hermes = () => {
                   ) : (
                     <div className="flex items-center justify-center h-full">
                       <div className="text-center p-6">
-                        <h3 className="text-xl font-bold mb-2">Nenhum pacote selecionado</h3>
+                        <h3 className="text-xl font-bold mb-2">Nenhum cliente selecionado</h3>
                         <p className="text-gray-500">
-                          Selecione um pacote para ver as mensagens
+                          Selecione um cliente para ver as mensagens
                         </p>
                       </div>
                     </div>

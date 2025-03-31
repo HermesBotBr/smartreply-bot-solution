@@ -1,7 +1,9 @@
 
 import React from 'react';
 import { Pack } from '@/hooks/usePackData';
-import { MessageSquare } from "lucide-react";
+import { MessageSquare, User } from "lucide-react";
+import { usePackClientData } from '@/hooks/usePackClientData';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface PacksListProps {
   packs: Pack[];
@@ -9,6 +11,7 @@ interface PacksListProps {
   error: string | null;
   onSelectPack: (packId: string) => void;
   selectedPackId: string | null;
+  sellerId: string | null;
 }
 
 const PacksList: React.FC<PacksListProps> = ({ 
@@ -16,8 +19,12 @@ const PacksList: React.FC<PacksListProps> = ({
   isLoading, 
   error, 
   onSelectPack,
-  selectedPackId 
+  selectedPackId,
+  sellerId
 }) => {
+  // Use our new hook to fetch client data for each pack
+  const { clientDataMap, isLoading: clientDataLoading } = usePackClientData(sellerId, packs);
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-full">
@@ -50,25 +57,46 @@ const PacksList: React.FC<PacksListProps> = ({
 
   return (
     <div className="divide-y">
-      {packs.map((pack) => (
-        <div
-          key={pack.pack_id}
-          className={`p-4 hover:bg-gray-50 cursor-pointer ${
-            selectedPackId === pack.pack_id ? 'bg-gray-100' : ''
-          }`}
-          onClick={() => onSelectPack(pack.pack_id)}
-        >
-          <div className="flex items-center space-x-3">
-            <div className="bg-blue-100 p-2 rounded-full">
-              <MessageSquare size={20} className="text-blue-600" />
-            </div>
-            <div>
-              <h3 className="font-medium">Pack ID: {pack.pack_id}</h3>
-              <p className="text-sm text-gray-500">GPT: {pack.gpt || 'N/A'}</p>
+      {packs.map((pack) => {
+        const clientData = clientDataMap[pack.pack_id];
+        const clientName = clientData ? clientData["Nome completo do cliente"] : null;
+        const nickname = clientData ? clientData["Nickname do cliente"] : null;
+        const productTitle = clientData ? clientData["Título do anúncio"] : null;
+        
+        return (
+          <div
+            key={pack.pack_id}
+            className={`p-4 hover:bg-gray-50 cursor-pointer ${
+              selectedPackId === pack.pack_id ? 'bg-gray-100' : ''
+            }`}
+            onClick={() => onSelectPack(pack.pack_id)}
+          >
+            <div className="flex items-center space-x-3">
+              <div className="bg-blue-100 p-2 rounded-full">
+                <User size={20} className="text-blue-600" />
+              </div>
+              <div className="flex-1 min-w-0">
+                {clientDataLoading && !clientData ? (
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-3/4" />
+                    <Skeleton className="h-3 w-1/2" />
+                  </div>
+                ) : (
+                  <>
+                    <h3 className="font-medium truncate">
+                      {clientName || `Cliente (Pack ID: ${pack.pack_id})`}
+                    </h3>
+                    <div className="text-sm text-gray-500">
+                      {nickname && <p className="truncate">{nickname}</p>}
+                      {productTitle && <p className="truncate text-xs">{productTitle}</p>}
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 };
