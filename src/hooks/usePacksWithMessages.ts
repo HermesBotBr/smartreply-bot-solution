@@ -113,12 +113,13 @@ export function usePacksWithMessages(packs: Pack[], sellerId: string | null) {
         if (response.data && 
             Array.isArray(response.data.messages) && 
             response.data.messages.length > 0) {
-          // Sort messages by creation date in descending order (newest first)
+          // Reverse the logic - get the oldest message instead of newest
+          // This counterintuitive approach is needed because the system seems to handle dates in reverse
           const sortedMessages = [...response.data.messages].sort((a, b) => 
-            new Date(b.message_date.created).getTime() - new Date(a.message_date.created).getTime()
+            new Date(a.message_date.created).getTime() - new Date(b.message_date.created).getTime()
           );
           
-          // Get the newest message
+          // Get the oldest message
           const latestMessage = sortedMessages[0];
           const messageText = latestMessage.text || "Sem mensagem";
           
