@@ -45,6 +45,8 @@ export function usePackMessages(
   const existingMessageIdsRef = useRef<Set<string>>(new Set());
   // Add a ref to track the current packId
   const currentPackIdRef = useRef<string | null>(null);
+  // Add a ref to track the last refresh timestamp for the force refresh mechanism
+  const lastForceRefreshTimestampRef = useRef<string | null>(null);
 
   useEffect(() => {
     // Clear messages and reset state when packId changes
@@ -161,8 +163,37 @@ export function usePackMessages(
       }
     }, 30000);
     
+    // Set up check for force refresh
+    const checkForceRefreshIntervalId = setInterval(async () => {
+      if (packId && sellerId) {
+        try {
+          const response = await axios.get('/api/messages/force-refresh', {
+            headers: { 'Cache-Control': 'no-cache' }
+          });
+          
+          if (response.data && response.data.timestamp) {
+            const newTimestamp = response.data.timestamp;
+            
+            // If we have a new timestamp and it's different from our last one
+            if (lastForceRefreshTimestampRef.current !== newTimestamp) {
+              console.log('Force refresh detected, refreshing messages');
+              lastForceRefreshTimestampRef.current = newTimestamp;
+              
+              // Only refresh if we're not already refreshing
+              if (!backgroundRefreshingRef.current) {
+                fetchMessages(true);
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Error checking for force refresh:', error);
+        }
+      }
+    }, 5000);
+    
     return () => {
       clearInterval(intervalId);
+      clearInterval(checkForceRefreshIntervalId);
     };
   }, [packId, sellerId, refreshTrigger]);
 

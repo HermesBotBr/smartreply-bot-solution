@@ -61,4 +61,31 @@ router.get('/refresh-messages', async (req, res) => {
   }
 });
 
+/**
+ * @route   GET /api/messages/force-refresh
+ * @desc    Force refresh the messages UI by triggering the refresh mechanism
+ * @access  Public
+ * @params  None required
+ * @example https://www.hermesbot.com.br/api/messages/force-refresh
+ */
+router.get('/force-refresh', async (req, res) => {
+  try {
+    const timestamp = new Date().toISOString();
+    console.log(`Force refresh triggered at ${timestamp}`);
+    
+    // Return a success message with timestamp
+    return res.status(200).json({
+      success: true,
+      message: 'Force refresh triggered successfully',
+      timestamp: timestamp
+    });
+  } catch (error) {
+    console.error('Error triggering force refresh:', error);
+    return res.status(500).json({ 
+      success: false, 
+      error: error.message || 'Failed to trigger force refresh' 
+    });
+  }
+});
+
 module.exports = router;
