@@ -4,11 +4,12 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAllGptData } from '@/hooks/useAllGptData';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Send } from "lucide-react";
+import { Send, Paperclip, X } from "lucide-react";
 import { toast } from "sonner";
 import axios from 'axios';
 import { getNgrokUrl } from '@/config/api';
 import { useMlToken } from '@/hooks/useMlToken';
+import { uploadFile } from '@/utils/fileUpload';
 
 interface Message {
   id: string;
@@ -44,6 +45,10 @@ const MessagesList: React.FC<MessagesListProps> = ({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [messageText, setMessageText] = useState('');
   const [sending, setSending] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [filePreview, setFilePreview] = useState<string | null>(null);
+  const [uploadingFile, setUploadingFile] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const prevMessagesLengthRef = useRef<number>(0);
   const displayedMessageIdsRef = useRef<Set<string>>(new Set());
   const mlToken = useMlToken(sellerId);
@@ -85,20 +90,45 @@ const MessagesList: React.FC<MessagesListProps> = ({
   };
 
   const handleSendMessage = async () => {
-    if (!messageText.trim() || !sellerId || !packId) {
+    if ((!messageText.trim() && !selectedFile) || !sellerId || !packId) {
       return;
     }
 
     setSending(true);
     try {
+      let attachmentUrl = '';
+      
+      if (selectedFile) {
+        setUploadingFile(true);
+        try {
+          attachmentUrl = await uploadFile(selectedFile);
+          console.log("Uploaded file URL:", attachmentUrl);
+        } catch (error) {
+          console.error("Error uploading file:", error);
+          toast.error("Erro ao enviar o arquivo");
+          setSending(false);
+          setUploadingFile(false);
+          return;
+        }
+        setUploadingFile(false);
+      }
+
+      const finalMessageText = selectedFile
+        ? messageText.trim()
+          ? `${messageText}\n\nAnexo: ${window.location.origin}${attachmentUrl}`
+          : `Anexo: ${window.location.origin}${attachmentUrl}`
+        : messageText;
+
       const response = await axios.post(getNgrokUrl('/enviamsg'), {
         seller_id: sellerId,
         pack_id: packId,
-        text: messageText
+        text: finalMessageText
       });
 
       toast.success("Mensagem enviada com sucesso");
       setMessageText('');
+      setSelectedFile(null);
+      setFilePreview(null);
       
       if (onMessageSent) {
         onMessageSent();
@@ -108,6 +138,37 @@ const MessagesList: React.FC<MessagesListProps> = ({
       toast.error("Erro ao enviar mensagem");
     } finally {
       setSending(false);
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const file = e.target.files[0];
+      
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error("O arquivo é muito grande. O tamanho máximo é 5MB.");
+        return;
+      }
+      
+      setSelectedFile(file);
+      
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          setFilePreview(e.target?.result as string);
+        };
+        reader.readAsDataURL(file);
+      } else {
+        setFilePreview(null);
+      }
+    }
+  };
+
+  const handleRemoveFile = () => {
+    setSelectedFile(null);
+    setFilePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
   };
 
@@ -162,15 +223,15 @@ const MessagesList: React.FC<MessagesListProps> = ({
     <div className="flex flex-col h-full">
       <ScrollArea className="flex-1">
         <div className="p-4">
-          {Object.entries(messagesByDate).map(([date, dateMessages]) => (
-            <div key={date}>
+          {Object.entries(messagesByDate).map((dateEntry) => (
+            <div key={dateEntry[0]}>
               <div className="flex justify-center my-3">
                 <div className="bg-blue-500 text-white px-4 py-1 rounded-full text-sm">
-                  {date}
+                  {dateEntry[0]}
                 </div>
               </div>
               
-              {dateMessages.map((message) => {
+              {dateEntry[1].map((message) => {
                 const isSeller = message.from.user_id === sellerIdNum;
                 const isGptMessage = isSeller && gptMessageIds.includes(message.id);
                 
@@ -241,32 +302,82 @@ const MessagesList: React.FC<MessagesListProps> = ({
         </div>
       </ScrollArea>
       
-      <div className="p-3 bg-white border-t flex gap-2 sticky bottom-0">
-        <Input 
-          placeholder="Digite sua mensagem..." 
-          value={messageText}
-          onChange={(e) => setMessageText(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-              e.preventDefault();
-              handleSendMessage();
-            }
-          }}
-          disabled={!packId || sending}
-          className="flex-1"
-        />
-        <Button 
-          onClick={handleSendMessage} 
-          disabled={!packId || sending || !messageText.trim()} 
-          className="flex-shrink-0"
-        >
-          {sending ? (
-            <div className="animate-spin h-4 w-4 border-2 border-t-transparent border-white rounded-full" />
-          ) : (
-            <Send size={18} className="mr-1" />
+      {selectedFile && (
+        <div className="px-3 py-2 bg-blue-50 border-t">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <Paperclip size={16} className="mr-2 text-blue-500" />
+              <span className="text-sm truncate max-w-[200px]">{selectedFile.name}</span>
+            </div>
+            <button 
+              onClick={handleRemoveFile}
+              className="text-gray-500 hover:text-red-500"
+              aria-label="Remover arquivo"
+            >
+              <X size={16} />
+            </button>
+          </div>
+          {filePreview && (
+            <div className="mt-2 mb-1">
+              <img 
+                src={filePreview} 
+                alt="Preview" 
+                className="h-20 max-w-full object-contain rounded" 
+              />
+            </div>
           )}
-          Enviar
-        </Button>
+        </div>
+      )}
+      
+      <div className="p-3 bg-white border-t sticky bottom-0">
+        <div className="flex gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={sending || uploadingFile}
+            className="flex-shrink-0"
+            title="Anexar arquivo"
+          >
+            <Paperclip size={18} />
+          </Button>
+          
+          <input
+            ref={fileInputRef}
+            type="file"
+            onChange={handleFileChange}
+            accept="image/*,.pdf,.doc,.docx,.txt"
+            className="hidden"
+          />
+          
+          <Input 
+            placeholder="Digite sua mensagem..." 
+            value={messageText}
+            onChange={(e) => setMessageText(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSendMessage();
+              }
+            }}
+            disabled={!packId || sending || uploadingFile}
+            className="flex-1"
+          />
+          
+          <Button 
+            onClick={handleSendMessage} 
+            disabled={(!messageText.trim() && !selectedFile) || !packId || sending || uploadingFile} 
+            className="flex-shrink-0"
+          >
+            {sending || uploadingFile ? (
+              <div className="animate-spin h-4 w-4 border-2 border-t-transparent border-white rounded-full" />
+            ) : (
+              <Send size={18} className="mr-1" />
+            )}
+            {uploadingFile ? "Enviando..." : "Enviar"}
+          </Button>
+        </div>
       </div>
       
       {fullScreenImage && (
