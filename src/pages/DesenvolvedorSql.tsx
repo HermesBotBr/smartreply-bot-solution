@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -69,7 +68,6 @@ const DesenvolvedorSql: React.FC = () => {
       console.log('Received tables data:', data);
       
       if (data && Array.isArray(data.tables)) {
-        // Directly use the array of table names from the response
         setTables(data.tables);
         
         if (data.tables.length > 0) {
