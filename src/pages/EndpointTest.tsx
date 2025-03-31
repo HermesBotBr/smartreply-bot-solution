@@ -3,20 +3,33 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { AlertCircle, CheckCircle } from "lucide-react";
 import { io } from "socket.io-client";
-import { NGROK_BASE_URL } from '@/config/api';
+import { NGROK_BASE_URL, getLocalApiUrl } from '@/config/api';
 import { toast } from "sonner";
 
 const EndpointTest: React.FC = () => {
   const [lastCall, setLastCall] = useState<Date | null>(null);
   const [callCount, setCallCount] = useState(0);
   const [message, setMessage] = useState<string>("");
+  const [socketConnected, setSocketConnected] = useState(false);
 
   useEffect(() => {
+    // Determinar a URL do socket correta
+    // Se estivermos no ambiente de preview do Lovable, usamos uma conexão relativa
+    const socketUrl = window.location.hostname.includes('preview--') ? '' : NGROK_BASE_URL;
+    console.log('Conectando ao socket em:', socketUrl || 'conexão relativa');
+    
     // Configurar Socket.IO para ouvir eventos
-    const socket = io(NGROK_BASE_URL);
+    const socket = io(socketUrl);
     
     socket.on('connect', () => {
-      console.log('Socket connected to endpoint test:', socket.id);
+      console.log('Socket conectado ao endpoint test:', socket.id);
+      setSocketConnected(true);
+      toast.success("Socket.IO conectado com sucesso!");
+    });
+
+    socket.on('connect_error', (err) => {
+      console.error('Erro de conexão com Socket.IO:', err);
+      toast.error(`Erro de conexão com Socket.IO: ${err.message}`);
     });
     
     socket.on('endpointTest', (data) => {
@@ -36,6 +49,14 @@ const EndpointTest: React.FC = () => {
     };
   }, []);
 
+  // Função para obter a URL correta do endpoint para exibição
+  const getEndpointUrl = () => {
+    if (window.location.hostname.includes('preview--')) {
+      return `${window.location.origin}/api/endpoint-test`;
+    }
+    return `${NGROK_BASE_URL}/api/endpoint-test`;
+  };
+
   return (
     <div className="container mx-auto max-w-4xl py-12 px-4">
       <Card className="border-2 border-primary/20">
@@ -54,7 +75,7 @@ const EndpointTest: React.FC = () => {
               <h3 className="text-lg font-semibold mb-2">Como testar:</h3>
               <p className="mb-2">Faça uma requisição GET ou POST para:</p>
               <code className="bg-black text-white p-3 rounded-md block overflow-x-auto">
-                {window.location.origin}/api/endpoint-test
+                {getEndpointUrl()}
               </code>
               <p className="mt-2">Você pode enviar uma mensagem no corpo da requisição:</p>
               <pre className="bg-black text-white p-3 rounded-md overflow-x-auto">
@@ -69,7 +90,20 @@ const EndpointTest: React.FC = () => {
               
               <div className="space-y-4">
                 <div className="flex items-center gap-2">
-                  <span className="font-medium">Status:</span>
+                  <span className="font-medium">Status do Socket.IO:</span>
+                  {socketConnected ? (
+                    <span className="flex items-center gap-1 text-green-600">
+                      <CheckCircle className="h-4 w-4" /> Conectado
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-1 text-red-500">
+                      <AlertCircle className="h-4 w-4" /> Desconectado
+                    </span>
+                  )}
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <span className="font-medium">Status do Endpoint:</span>
                   {lastCall ? (
                     <span className="flex items-center gap-1 text-green-600">
                       <CheckCircle className="h-4 w-4" /> Ativo e funcionando
