@@ -146,6 +146,10 @@ useEffect(() => {
 useEffect(() => {
   const socket = io(NGROK_BASE_URL);
   
+  socket.on('connect', () => {
+    console.log('Socket connected:', socket.id);
+  });
+  
   socket.on('forceRefresh', () => {
     console.log('Received forceRefresh event, fetching messages');
     fetchMessages();
@@ -155,6 +159,7 @@ useEffect(() => {
     socket.disconnect();
   };
 }, []);
+
 
 
   return { messages, isLoading, error };
