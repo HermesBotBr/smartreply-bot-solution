@@ -16,49 +16,48 @@ export function useMessageNotifications(
 ) {
   const [isCheckingNotifications, setIsCheckingNotifications] = useState(false);
   const notificationCheckIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const activeNotificationsRef = useRef<Set<string>>(new Set()); // Track notifications being processed
+  const activeNotificationsRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     if (!sellerId) return;
 
-    // Clear any existing interval
     if (notificationCheckIntervalRef.current) {
       clearInterval(notificationCheckIntervalRef.current);
     }
 
-    // Set up check for notifications every 2 seconds
     notificationCheckIntervalRef.current = setInterval(async () => {
       if (isCheckingNotifications) {
-        return; // Don't overlap checks
+        return;
       }
 
       try {
         setIsCheckingNotifications(true);
         
-        // Get notifications from the database
         const response = await axios.get('/api/db/rows/notifica_mensagens');
         const notifications: MessageNotification[] = response.data.rows || [];
         
-        // Filter notifications for the current seller
+        console.log(`Notifications found: ${notifications.length}`); // Log total de notificações
+
         const sellerNotifications = notifications.filter(
           notification => notification.seller_id === sellerId
         );
         
-        // Process each notification
+        console.log(`Seller notifications found: ${sellerNotifications.length}`); // Log de notificações para o seller específico
+
+        if (sellerNotifications.length === 0) {
+          console.log('No notifications found for this seller'); // Log quando não há notificações para o seller
+        }
+        
         for (const notification of sellerNotifications) {
-          // Skip if we're already processing this notification
           if (activeNotificationsRef.current.has(notification.message_id)) {
             continue;
           }
           
-          // Mark notification as being processed
           activeNotificationsRef.current.add(notification.message_id);
           
-          // Trigger message update for the pack
-          console.log(`Notification received for pack ${notification.order_id}`);
+          console.log(`Processing notification for pack ${notification.order_id}`);
           onPackUpdate(notification.order_id);
           
-          // Delete the notification
           try {
             await axios.delete('https://projetohermes-dda7e0c8d836.herokuapp.com/erase_notifica_msg', {
               data: { message_id: notification.message_id }
@@ -67,7 +66,6 @@ export function useMessageNotifications(
           } catch (deleteError) {
             console.error('Error deleting notification:', deleteError);
           } finally {
-            // Remove from active processing list regardless of success/failure
             activeNotificationsRef.current.delete(notification.message_id);
           }
         }
@@ -76,9 +74,8 @@ export function useMessageNotifications(
       } finally {
         setIsCheckingNotifications(false);
       }
-    }, 2000); // Check every 2 seconds
+    }, 2000);
 
-    // Cleanup on unmount or sellerId change
     return () => {
       if (notificationCheckIntervalRef.current) {
         clearInterval(notificationCheckIntervalRef.current);
@@ -88,3 +85,4 @@ export function useMessageNotifications(
 
   return { isCheckingNotifications };
 }
+
