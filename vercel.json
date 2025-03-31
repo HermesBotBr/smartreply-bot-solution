@@ -20,10 +20,6 @@
       "dest": "/api/messages/refresh-messages"
     },
     {
-      "src": "/api/messages/force-refresh",
-      "dest": "/api/messages/force-refresh"
-    },
-    {
       "src": "/api/(.*)",
       "dest": "/api/$1"
     }
