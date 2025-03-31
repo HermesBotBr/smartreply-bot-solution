@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, useState } from 'react';
 import { formatDate } from '@/utils/dateFormatters';
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -8,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Send } from "lucide-react";
 import { toast } from "sonner";
 import axios from 'axios';
-import { getNgrokUrl, NGROK_BASE_URL } from '@/config/api';
+import { getNgrokUrl } from '@/config/api';
 import { useMlToken } from '@/hooks/useMlToken';
 
 interface Message {
@@ -42,70 +41,49 @@ const MessagesList: React.FC<MessagesListProps> = ({
   packId,
   onMessageSent
 }) => {
-  // Create a ref for the messages container to scroll to bottom
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [messageText, setMessageText] = useState('');
   const [sending, setSending] = useState(false);
   const prevMessagesLengthRef = useRef<number>(0);
-  // Track displayed message IDs to prevent duplicates
   const displayedMessageIdsRef = useRef<Set<string>>(new Set());
-  // Get ML token for accessing the image attachments
-  const mlToken = useMlToken();
-  // Add state to track the fullscreen image
+  const mlToken = useMlToken(sellerId);
   const [fullScreenImage, setFullScreenImage] = useState<string | null>(null);
-  // Track failed image loads to prevent retries
   const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
-  
-  // Fetch GPT message IDs from the allgpt table
+
   const { gptMessageIds } = useAllGptData(sellerId);
 
-  // Update displayed message IDs when messages change
   useEffect(() => {
     if (messages && messages.length > 0) {
-      // Update our tracking of displayed messages
       messages.forEach(msg => {
         displayedMessageIdsRef.current.add(msg.id);
       });
     }
   }, [messages]);
   
-  // Auto-scroll to bottom when new messages are added
   useEffect(() => {
-    // Check if messages length changed
     if (messages.length > 0) {
-      // Only scroll if:
-      // 1. This is the initial load (showing all messages)
-      // 2. New messages were added (length increased from previous render)
-      // 3. User just sent a message (which is at the bottom)
       const wasMessageAdded = messages.length > prevMessagesLengthRef.current;
       
       if (wasMessageAdded) {
-        // Use setTimeout to ensure the DOM has updated
         setTimeout(() => {
           messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
         }, 100);
       }
       
-      // Update the previous messages length reference
       prevMessagesLengthRef.current = messages.length;
     }
   }, [messages]);
 
-  // Convert sellerId to number for comparison
   const sellerIdNum = sellerId ? parseInt(sellerId, 10) : null;
 
-  // Function to get proper attachment URL with error handling
   const getAttachmentUrl = (filename: string): string => {
     if (!filename || !filename.trim()) return '';
     
-    // Ensure we have a valid token
     const tokenParam = mlToken ? `&access_token=${mlToken}` : '';
     
-    // Construct the full URL
     return `https://api.mercadolibre.com/messages/attachments/${filename.trim()}?site_id=MLB${tokenParam}`;
   };
 
-  // Handle sending a message
   const handleSendMessage = async () => {
     if (!messageText.trim() || !sellerId || !packId) {
       return;
@@ -122,7 +100,6 @@ const MessagesList: React.FC<MessagesListProps> = ({
       toast.success("Mensagem enviada com sucesso");
       setMessageText('');
       
-      // Notify parent component that a message was sent to refresh the list
       if (onMessageSent) {
         onMessageSent();
       }
@@ -134,19 +111,15 @@ const MessagesList: React.FC<MessagesListProps> = ({
     }
   };
 
-  // Handle image load error
   const handleImageError = (imageUrl: string, errorEvent: React.SyntheticEvent<HTMLImageElement>) => {
     console.error("Failed to load image:", imageUrl, errorEvent);
-    // Add to failed images set
     setFailedImages(prev => new Set(prev).add(imageUrl));
-    // Show error toast only once per session
     if (!failedImages.has(imageUrl)) {
       toast.error("Não foi possível carregar uma imagem. Tente recarregar a página.");
     }
   };
-  
+
   if (isLoading && messages.length === 0) {
-    // Only show loading when there are no messages yet
     return (
       <div className="flex justify-center items-center h-full">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -176,7 +149,6 @@ const MessagesList: React.FC<MessagesListProps> = ({
     );
   }
 
-  // Group messages by date
   const messagesByDate: Record<string, Message[]> = {};
   messages.forEach((message) => {
     const date = formatDate(message.message_date.created);
@@ -200,7 +172,6 @@ const MessagesList: React.FC<MessagesListProps> = ({
               
               {dateMessages.map((message) => {
                 const isSeller = message.from.user_id === sellerIdNum;
-                // Check if this message is a GPT message (only for seller messages)
                 const isGptMessage = isSeller && gptMessageIds.includes(message.id);
                 
                 return (
@@ -212,19 +183,17 @@ const MessagesList: React.FC<MessagesListProps> = ({
                       className={`rounded-lg p-3 max-w-[70%] shadow-sm ${
                         isSeller 
                           ? isGptMessage 
-                            ? 'bg-blue-100 text-gray-800' // GPT message from seller
-                            : 'bg-green-100 text-gray-800' // Regular message from seller
-                          : 'bg-white text-gray-800'  // Message from buyer
+                            ? 'bg-blue-100 text-gray-800'
+                            : 'bg-green-100 text-gray-800'
+                          : 'bg-white text-gray-800'
                       }`}
                     >
-                      {/* Display attachments if present */}
                       {message.message_attachments && message.message_attachments.length > 0 && (
                         <div className="mb-2">
                           {message.message_attachments.map((attachment, idx) => {
                             if (attachment.filename && attachment.filename.trim()) {
                               const attachmentUrl = getAttachmentUrl(attachment.filename);
                               
-                              // Skip rendering if this image previously failed to load
                               if (failedImages.has(attachmentUrl)) {
                                 return (
                                   <div key={idx} className="mb-2 p-2 bg-gray-100 rounded text-sm text-gray-500">
@@ -254,10 +223,8 @@ const MessagesList: React.FC<MessagesListProps> = ({
                         </div>
                       )}
                       
-                      {/* Display message text */}
                       <p className="whitespace-pre-wrap">{message.text}</p>
                       
-                      {/* Display message time */}
                       <p className="text-xs text-gray-500 text-right mt-1">
                         {new Date(message.message_date.created).toLocaleTimeString([], {
                           hour: '2-digit',
@@ -270,12 +237,10 @@ const MessagesList: React.FC<MessagesListProps> = ({
               })}
             </div>
           ))}
-          {/* This is the element we'll scroll to */}
           <div ref={messagesEndRef} />
         </div>
       </ScrollArea>
       
-      {/* Message input area */}
       <div className="p-3 bg-white border-t flex gap-2 sticky bottom-0">
         <Input 
           placeholder="Digite sua mensagem..." 
@@ -304,7 +269,6 @@ const MessagesList: React.FC<MessagesListProps> = ({
         </Button>
       </div>
       
-      {/* Full Screen Image Modal */}
       {fullScreenImage && (
         <div 
           className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center"

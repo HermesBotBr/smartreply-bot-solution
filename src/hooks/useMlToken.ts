@@ -1,22 +1,19 @@
 
 import { useState, useEffect } from 'react';
-import { getNgrokUrl } from '@/config/api';
+import { useAccessToken } from './useAccessToken';
 
-export function useMlToken() {
+export function useMlToken(sellerId: string | null = null) {
   const [mlToken, setMlToken] = useState<string | null>(null);
+  const { accessToken } = useAccessToken(sellerId);
 
+  // Quando o accessToken mudar, atualize o mlToken
   useEffect(() => {
-    const fetchToken = async () => {
-      try {
-        const response = await fetch(getNgrokUrl('mercadoLivreApiKey.txt'));
-        const tokenText = await response.text();
-        setMlToken(tokenText.trim());
-      } catch (error) {
-        console.error("Erro ao buscar token:", error);
-      }
-    };
-    fetchToken();
-  }, []);
+    if (accessToken) {
+      setMlToken(accessToken);
+    } else {
+      setMlToken(null);
+    }
+  }, [accessToken]);
 
   return mlToken;
 }

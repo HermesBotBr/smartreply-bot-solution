@@ -24,7 +24,6 @@ const Hermes = () => {
   const [selectedPackId, setSelectedPackId] = useState<string | null>(null);
   const [messagesRefreshTrigger, setMessagesRefreshTrigger] = useState(0);
   
-  // Use our custom hooks to fetch data
   const { packs, isLoading: packsLoading, error: packsError } = usePackData(sellerId);
   const { messages, isLoading: messagesLoading, error: messagesError } = usePackMessages(
     selectedPackId, 
@@ -32,14 +31,12 @@ const Hermes = () => {
     messagesRefreshTrigger
   );
   
-  // Check if user is already authenticated
   useEffect(() => {
     const auth = localStorage.getItem('hermesAuth');
     if (auth) {
       try {
         const authData = JSON.parse(auth);
         if (authData.sellerId && authData.timestamp) {
-          // Check if auth is still valid (24 hours)
           const now = new Date().getTime();
           if (now - authData.timestamp < 24 * 60 * 60 * 1000) {
             setIsAuthenticated(true);
@@ -53,14 +50,12 @@ const Hermes = () => {
         console.error("Error parsing auth data:", error);
       }
     }
-    // If we get here, either no auth or expired auth
     setIsAuthenticated(false);
     setSellerId(null);
     setLoginOpen(true);
     localStorage.removeItem('hermesAuth');
   }, []);
 
-  // Log when a pack is selected
   useEffect(() => {
     if (selectedPackId) {
       console.log("Selected pack ID:", selectedPackId, "for seller:", sellerId);
@@ -72,7 +67,6 @@ const Hermes = () => {
     setSellerId(sellerId);
     setLoginOpen(false);
     
-    // Save auth data in localStorage with timestamp
     const authData = {
       sellerId,
       timestamp: new Date().getTime()
@@ -84,18 +78,15 @@ const Hermes = () => {
 
   const handleSelectPack = (packId: string) => {
     setSelectedPackId(packId);
-    // Reset any previous conversation selection
     setSelectedConv(null);
     
     toast.info(`Carregando mensagens do pacote ${packId}`);
   };
 
   const handleMessageSent = () => {
-    // Trigger a refresh of the messages list
     setMessagesRefreshTrigger(prev => prev + 1);
   };
-  
-  // Placeholder data and functions
+
   const conversations: any[] = [];
   const refreshing = false;
   const readConversations: string[] = [];
@@ -112,7 +103,6 @@ const Hermes = () => {
 
   return (
     <div className="flex h-screen overflow-hidden">
-      {/* Login Dialog */}
       <Dialog open={loginOpen} onOpenChange={setLoginOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogTitle className="sr-only">Login</DialogTitle>
@@ -123,19 +113,15 @@ const Hermes = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Only show content if authenticated */}
       {isAuthenticated && (
         <>
-          {/* NavSidebar - only show on sides for desktop */}
           {!isMobile && (
             <NavSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
           )}
 
-          {/* Main content area - adjust height for mobile to account for bottom navbar */}
           <div className={`flex-1 flex w-${isMobile ? 'full' : '[calc(100%-3.5rem)]'} ${isMobile ? 'h-[calc(100vh-56px)]' : 'h-screen'}`}>
             {activeTab === 'conversas' ? (
               <>
-                {/* Left panel - Packs List */}
                 <div className="w-1/3 h-full overflow-auto border-r">
                   <div className="p-4 border-b bg-white">
                     <h2 className="text-lg font-medium">Clientes</h2>
@@ -151,7 +137,6 @@ const Hermes = () => {
                   />
                 </div>
                 
-                {/* Right panel - Messages or placeholder */}
                 <div className="w-2/3 h-full overflow-hidden">
                   {selectedPackId ? (
                     <div className="flex flex-col h-full">
@@ -198,13 +183,11 @@ const Hermes = () => {
               <div className="w-full h-full overflow-auto">
                 <MetricsDisplay onOrderClick={(orderId) => {
                   console.log('Order clicked:', orderId);
-                  // Without actual data, we can just log the action
                 }} />
               </div>
             )}
           </div>
 
-          {/* Bottom mobile navigation */}
           {isMobile && (
             <NavSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
           )}
