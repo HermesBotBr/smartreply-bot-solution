@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { parseMessages } from '@/utils/messageParser';
 import { getNgrokUrl } from '@/config/api';
@@ -10,7 +9,6 @@ export function useConversations() {
   const [initialAutoScrollDone, setInitialAutoScrollDone] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<string | null>(null);
   const backgroundRefreshingRef = useRef(false);
-  // Add a ref to track conversation IDs
   const existingConvIdsRef = useRef<Set<string>>(new Set());
 
   const loadData = async (isBackgroundRefresh = false) => {
@@ -29,30 +27,22 @@ export function useConversations() {
       const newConvs = parseMessages(textData);
       
       if (isBackgroundRefresh) {
-        // For background refreshes, update state more carefully
-        // Compare and only add conversations that don't already exist
         setConversations(prevConvs => {
-          // If this is the first time, initialize our tracking set
           if (existingConvIdsRef.current.size === 0) {
             prevConvs.forEach(conv => existingConvIdsRef.current.add(conv.orderId));
           }
           
-          // Filter out conversations we already have
           const convsToAdd = newConvs.filter(newConv => 
             !existingConvIdsRef.current.has(newConv.orderId)
           );
           
-          // If we found new conversations, update our state and tracking set
           if (convsToAdd.length > 0) {
             console.log(`Adding ${convsToAdd.length} new conversations from background refresh`);
-            // Add new conversation IDs to our tracking set
             convsToAdd.forEach(conv => existingConvIdsRef.current.add(conv.orderId));
             
-            // Return updated conversations
             return [...prevConvs, ...convsToAdd];
           }
           
-          // Check if there are updates to existing conversations
           let hasUpdates = false;
           const updatedConvs = prevConvs.map(prevConv => {
             const updatedConv = newConvs.find(newConv => newConv.orderId === prevConv.orderId);
@@ -66,7 +56,6 @@ export function useConversations() {
           return hasUpdates ? updatedConvs : prevConvs;
         });
         
-        // Update the selectedConv if one is currently selected
         if (selectedConv) {
           const updatedConv = newConvs.find(c => c.orderId === selectedConv.orderId);
           if (updatedConv && JSON.stringify(updatedConv) !== JSON.stringify(selectedConv)) {
@@ -74,13 +63,10 @@ export function useConversations() {
           }
         }
       } else {
-        // For initial or manual refreshes, just replace everything
         setConversations(newConvs);
         
-        // Reset and rebuild our tracking set
         existingConvIdsRef.current = new Set(newConvs.map(conv => conv.orderId));
         
-        // Update the selectedConv if one is currently selected
         if (selectedConv) {
           const updatedConv = newConvs.find(c => c.orderId === selectedConv.orderId);
           if (updatedConv) {
@@ -110,23 +96,18 @@ export function useConversations() {
     }
   };
 
-  // Initial load and regular interval update
   useEffect(() => {
-    // Initial load (with loading indicator)
     loadData();
     
-    // Set up interval for background refreshes
     const intervalId = setInterval(() => {
-      // Only perform background refresh if we're not already refreshing
       if (!backgroundRefreshingRef.current) {
         loadData(true);
       }
-    }, 30000);
+    }, 4000);
     
     return () => clearInterval(intervalId);
   }, []);
 
-  // Check for forced updates
   useEffect(() => {
     const checkForForcedUpdates = async () => {
       try {
@@ -141,7 +122,6 @@ export function useConversations() {
         if (response.ok) {
           const data = await response.json();
           
-          // If there's a new update timestamp that we haven't processed yet
           if (data.timestamp && (!lastUpdate || data.timestamp > lastUpdate)) {
             console.log("Detected forced update, refreshing data...");
             await loadData();
@@ -153,7 +133,6 @@ export function useConversations() {
       }
     };
 
-    // Check for forced updates every 5 seconds
     const forcedUpdateInterval = setInterval(checkForForcedUpdates, 5000);
     return () => clearInterval(forcedUpdateInterval);
   }, [lastUpdate]);
