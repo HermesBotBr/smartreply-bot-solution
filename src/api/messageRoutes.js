@@ -1,4 +1,3 @@
-
 const express = require('express');
 const router = express.Router();
 const axios = require('axios');
@@ -52,6 +51,14 @@ router.get('/refresh-messages', async (req, res) => {
       error: error.message || 'Failed to refresh messages' 
     });
   }
+});
+
+// New endpoint to force the front-end to refresh messages via socket.io
+router.post('/force-refresh', (req, res) => {
+  const io = req.app.get('socketio');
+  io.emit('forceRefresh');
+  console.log('Force refresh event emitted to clients.');
+  return res.status(200).json({ success: true, message: 'Force refresh event sent to clients.' });
 });
 
 module.exports = router;
