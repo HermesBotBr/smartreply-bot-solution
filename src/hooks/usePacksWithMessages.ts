@@ -27,69 +27,33 @@ export function usePacksWithMessages(packs: Pack[], sellerId: string | null) {
       const messagesMap: Record<string, string> = {};
       
       try {
-        console.log("Fetching latest messages for", packs.length, "packs");
+        console.log("Fetching messages for", packs.length, "packs");
         
-        // Create a batch request to get latest message for each pack
-        const packIds = packs.map(pack => pack.pack_id);
-        const response = await axios.get(`${NGROK_BASE_URL}/latest-messages`, {
-          params: {
-            seller_id: sellerId,
-            pack_ids: packIds.join(',')
+        // Process each pack individually instead of using a batch endpoint
+        const fetchPromises = packs.map(pack => fetchSinglePackMessage(pack.pack_id, sellerId));
+        const results = await Promise.allSettled(fetchPromises);
+        
+        // Process results
+        results.forEach((result, index) => {
+          const packId = packs[index].pack_id;
+          
+          if (result.status === 'fulfilled' && result.value) {
+            messagesMap[packId] = result.value;
+          } else {
+            console.error(`Error fetching message for pack ${packId}:`, 
+              result.status === 'rejected' ? result.reason : 'No message found');
+            messagesMap[packId] = "Erro ao carregar mensagem";
           }
         });
-
-        if (response.data && Array.isArray(response.data.messages)) {
-          const messagesInfo: LatestMessageInfo[] = response.data.messages;
-          console.log("Received", messagesInfo.length, "latest messages");
-          
-          // Add the messages to our map
-          messagesInfo.forEach(info => {
-            const messageText = info.text || "Sem mensagem";
-            // Truncate if needed
-            messagesMap[info.packId] = messageText.length > 50 
-              ? `${messageText.substring(0, 50)}...` 
-              : messageText;
-          });
-          
-          // For packs without messages in the response, set default message
-          packs.forEach(pack => {
-            if (!messagesMap[pack.pack_id]) {
-              messagesMap[pack.pack_id] = "Carregando mensagens...";
-              
-              // Try to fetch individual message if not in batch response
-              fetchSinglePackMessage(pack.pack_id, sellerId).then(message => {
-                if (message) {
-                  setLatestMessages(prev => ({
-                    ...prev,
-                    [pack.pack_id]: message
-                  }));
-                }
-              });
-            }
-          });
-        } else {
-          console.error("Invalid response format for latest messages:", response.data);
-          throw new Error("Invalid response format");
-        }
-
+        
         setLatestMessages(messagesMap);
       } catch (error) {
-        console.error("Error fetching latest messages for packs:", error);
+        console.error("Error fetching messages for packs:", error);
         setError("Erro ao carregar mensagens");
         
         // Set fallback messages for all packs
         packs.forEach(pack => {
-          messagesMap[pack.pack_id] = "Carregando mensagens...";
-          
-          // Try individual fetch as fallback
-          fetchSinglePackMessage(pack.pack_id, sellerId).then(message => {
-            if (message) {
-              setLatestMessages(prev => ({
-                ...prev,
-                [pack.pack_id]: message
-              }));
-            }
-          });
+          messagesMap[pack.pack_id] = "Erro ao carregar mensagens";
         });
         
         setLatestMessages(messagesMap);
@@ -105,7 +69,7 @@ export function usePacksWithMessages(packs: Pack[], sellerId: string | null) {
           params: {
             seller_id: sellerId,
             pack_id: packId,
-            limit: 1,  // We only need the most recent message
+            limit: 10,  // Get the 10 most recent messages
             offset: 0
           }
         });
@@ -114,11 +78,14 @@ export function usePacksWithMessages(packs: Pack[], sellerId: string | null) {
             Array.isArray(response.data.messages) && 
             response.data.messages.length > 0) {
           // Get the newest message - sort by date in descending order
-          const sortedMessages = [...response.data.messages].sort((a, b) => 
-            new Date(b.message_date.created).getTime() - new Date(a.message_date.created).getTime()
-          );
+          const sortedMessages = [...response.data.messages].sort((a, b) => {
+            // Compare created dates - we want the newest message (highest date value)
+            const dateA = new Date(a.message_date.created).getTime();
+            const dateB = new Date(b.message_date.created).getTime();
+            return dateB - dateA; // Descending order (newest first)
+          });
           
-          // Get the newest message
+          // Get the newest message (first in sorted array)
           const latestMessage = sortedMessages[0];
           const messageText = latestMessage.text || "Sem mensagem";
           

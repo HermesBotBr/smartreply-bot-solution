@@ -20,14 +20,15 @@ const ConversationItem: React.FC<ConversationItemProps> = ({
   let formattedMessage = "";
   if (item.messages && item.messages.length > 0) {
     // Find the most recent message by date (newest first)
-    // The system has inverted date handling, so we need to find the "newest" by comparing for greater dates
-    const mostRecentMessage = item.messages.reduce(
-      (latest: any, current: any) => {
-        return new Date(current.date) > new Date(latest.date) ? current : latest;
-      },
-      item.messages[0]
-    );
+    const sortedMessages = [...item.messages].sort((a, b) => {
+      // Compare dates - we want the newest message (highest date value)
+      const dateA = new Date(a.date).getTime();
+      const dateB = new Date(b.date).getTime();
+      return dateB - dateA; // Descending order (newest first)
+    });
     
+    // Get the first message in the sorted array (most recent)
+    const mostRecentMessage = sortedMessages[0];
     formattedMessage = mostRecentMessage.message.replace(/\\n/g, "\n");
   } else {
     formattedMessage = "Sem mensagem";
