@@ -16,8 +16,10 @@ const ConversationItem: React.FC<ConversationItemProps> = ({
   hasBuyerMessage,
   onClick
 }) => {
+  // Extract the latest message
   let formattedMessage = "";
   if (item.messages && item.messages.length > 0) {
+    // Find the most recent message
     const mostRecentMessage = item.messages.reduce(
       (prev: any, curr: any) => (new Date(curr.date) > new Date(prev.date) ? curr : prev),
       item.messages[0]
@@ -32,7 +34,7 @@ const ConversationItem: React.FC<ConversationItemProps> = ({
     ? `${item.buyer.substring(0, 25)}...` 
     : item.buyer;
 
-  // Truncate message if longer than 50 characters (increased from 30)
+  // Truncate message if longer than 50 characters
   const truncatedMessage = formattedMessage.length > 50 
     ? `${formattedMessage.substring(0, 50)}...` 
     : formattedMessage;
@@ -55,11 +57,9 @@ const ConversationItem: React.FC<ConversationItemProps> = ({
             </h3>
             <div className="text-sm text-gray-500">
               {item.title && <p className="truncate font-medium">{item.title}</p>}
-              {item.messages.length > 0 && (
-                <p className={`truncate text-xs ${hasBuyerMessage ? 'text-blue-600' : 'text-gray-400'}`}>
-                  {truncatedMessage}
-                </p>
-              )}
+              <p className={`truncate text-xs ${hasBuyerMessage ? 'text-blue-600' : 'text-gray-400'}`}>
+                {truncatedMessage}
+              </p>
             </div>
           </div>
         </div>

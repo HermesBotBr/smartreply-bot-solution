@@ -1,11 +1,12 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Pack } from '@/hooks/usePackData';
 import { User } from "lucide-react";
 import { usePackClientData } from '@/hooks/usePackClientData';
 import { Skeleton } from '@/components/ui/skeleton';
 import ProductThumbnail from './ProductThumbnail';
 import { usePacksWithMessages } from '@/hooks/usePacksWithMessages';
+import { toast } from 'sonner';
 
 interface PacksListProps {
   packs: Pack[];
@@ -26,8 +27,15 @@ const PacksList: React.FC<PacksListProps> = ({
 }) => {
   // Use our hooks to fetch client data and latest messages for each pack
   const { clientDataMap, isLoading: clientDataLoading } = usePackClientData(sellerId, packs);
-  const { latestMessages, isLoading: messagesLoading } = usePacksWithMessages(packs, sellerId);
-
+  const { latestMessages, isLoading: messagesLoading, error: messagesError } = usePacksWithMessages(packs, sellerId);
+  
+  // Show toast if there's an error loading messages
+  useEffect(() => {
+    if (messagesError) {
+      toast.error("Erro ao carregar mensagens: " + messagesError);
+    }
+  }, [messagesError]);
+  
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-full">
@@ -65,7 +73,7 @@ const PacksList: React.FC<PacksListProps> = ({
         const clientName = clientData ? clientData["Nome completo do cliente"] : null;
         const productTitle = clientData ? clientData["Título do anúncio"] : null;
         const itemId = clientData ? clientData["Item ID"] : null;
-        const latestMessage = latestMessages[pack.pack_id] || "Sem mensagens";
+        const latestMessage = latestMessages[pack.pack_id];
         
         return (
           <div
@@ -97,7 +105,13 @@ const PacksList: React.FC<PacksListProps> = ({
                     <div className="text-sm text-gray-500">
                       {productTitle && <p className="truncate font-medium">{productTitle}</p>}
                       <p className="truncate text-xs text-gray-400">
-                        {messagesLoading ? <Skeleton className="h-2 w-24" /> : latestMessage}
+                        {messagesLoading ? (
+                          <Skeleton className="h-2 w-24" />
+                        ) : latestMessage ? (
+                          latestMessage
+                        ) : (
+                          "Carregando mensagens..."
+                        )}
                       </p>
                     </div>
                   </>
