@@ -14,11 +14,15 @@ router.all('/endpoint-test', (req, res) => {
     
     // Emitir evento para o socket.io
     const io = req.app.get('socketio');
-    io.emit('endpointTest', { 
-      message,
-      timestamp: new Date().toISOString(),
-      method: req.method
-    });
+    if (io) {
+      io.emit('endpointTest', { 
+        message,
+        timestamp: new Date().toISOString(),
+        method: req.method
+      });
+    } else {
+      console.error('Socket.io não está disponível!');
+    }
     
     // Responder com sucesso
     return res.status(200).json({

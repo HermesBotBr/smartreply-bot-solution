@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { AlertCircle, CheckCircle } from "lucide-react";
 import { io } from "socket.io-client";
 import { NGROK_BASE_URL } from '@/config/api';
-import { toast } from '@/components/ui/sonner';
+import { toast } from "sonner";
 
 const EndpointTest: React.FC = () => {
   const [lastCall, setLastCall] = useState<Date | null>(null);
