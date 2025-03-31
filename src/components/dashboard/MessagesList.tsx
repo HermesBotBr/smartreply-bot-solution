@@ -83,7 +83,7 @@ const MessagesList: React.FC<MessagesListProps> = ({
 
     setSending(true);
     try {
-      const response = await axios.post(`${getNgrokUrl()}/enviamsg`, {
+      const response = await axios.post(`${getNgrokUrl('/enviamsg')}`, {
         seller_id: sellerId,
         pack_id: packId,
         text: messageText
