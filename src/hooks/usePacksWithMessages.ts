@@ -29,8 +29,8 @@ export function usePacksWithMessages(packs: Pack[], sellerId: string | null) {
       try {
         console.log("Fetching messages for", packs.length, "packs");
         
-        // Process each pack individually instead of using a batch endpoint
-        const fetchPromises = packs.map(pack => fetchLatestMessageWithPagination(pack.pack_id, sellerId));
+        // Process each pack individually
+        const fetchPromises = packs.map(pack => fetchAllPackMessages(pack.pack_id, sellerId));
         const results = await Promise.allSettled(fetchPromises);
         
         // Process results
@@ -62,71 +62,45 @@ export function usePacksWithMessages(packs: Pack[], sellerId: string | null) {
       }
     };
     
-    // Enhanced function to fetch message with pagination to ensure getting the truly latest message
-    const fetchLatestMessageWithPagination = async (packId: string, sellerId: string): Promise<string | null> => {
-      let offset = 0;
-      const limit = 10;
-      let allMessages: any[] = [];
-      let hasMoreMessages = true;
-      
+    // Fetch all messages at once for a pack, similar to how usePackMessages works
+    const fetchAllPackMessages = async (packId: string, sellerId: string): Promise<string | null> => {
       try {
-        // Fetch messages with pagination until we find no more messages or reach a reasonable limit
-        while (hasMoreMessages && offset < 100) { // Set a reasonable upper limit to prevent infinite loops
-          console.log(`Fetching messages for pack ${packId}, offset: ${offset}, limit: ${limit}`);
-          
-          const response = await axios.get(`${NGROK_BASE_URL}/conversas`, {
-            params: {
-              seller_id: sellerId,
-              pack_id: packId,
-              limit: limit,
-              offset: offset
-            }
-          });
-          
-          if (response.data && Array.isArray(response.data.messages)) {
-            const fetchedMessages = response.data.messages;
-            
-            // If we got less messages than the limit, there are no more messages to fetch
-            if (fetchedMessages.length < limit) {
-              hasMoreMessages = false;
-            }
-            
-            // Add fetched messages to our collection
-            allMessages = [...allMessages, ...fetchedMessages];
-            
-            // If this is the first batch and it's empty, no need to continue
-            if (offset === 0 && fetchedMessages.length === 0) {
-              break;
-            }
-            
-            // Increase offset for next page
-            offset += limit;
-          } else {
-            // If the response doesn't contain messages array, stop pagination
-            hasMoreMessages = false;
-          }
-        }
+        console.log(`Fetching all messages for pack ${packId}`);
         
-        // If we found any messages
-        if (allMessages.length > 0) {
-          // Sort all collected messages by date in descending order (newest first)
-          const sortedMessages = [...allMessages].sort((a, b) => {
-            const dateA = new Date(a.message_date.created).getTime();
-            const dateB = new Date(b.message_date.created).getTime();
-            return dateB - dateA; // Descending order (newest first)
-          });
+        // Get all messages at once with a higher limit
+        const response = await axios.get(`${NGROK_BASE_URL}/conversas`, {
+          params: {
+            seller_id: sellerId,
+            pack_id: packId,
+            limit: 100,  // Get more messages in a single request
+            offset: 0
+          }
+        });
+        
+        if (response.data && Array.isArray(response.data.messages)) {
+          const allMessages = response.data.messages;
           
-          // Get the newest message (first in sorted array)
-          const latestMessage = sortedMessages[0];
-          const messageText = latestMessage.text || "Sem mensagem";
-          
-          console.log(`Latest message for pack ${packId} (from ${allMessages.length} messages):`, 
-            messageText.substring(0, 30) + (messageText.length > 30 ? '...' : ''));
-          
-          // Truncate if needed
-          return messageText.length > 50 
-            ? `${messageText.substring(0, 50)}...` 
-            : messageText;
+          // If we found any messages
+          if (allMessages.length > 0) {
+            // Sort all messages by date in descending order (newest first)
+            const sortedMessages = [...allMessages].sort((a, b) => {
+              const dateA = new Date(a.message_date.created).getTime();
+              const dateB = new Date(b.message_date.created).getTime();
+              return dateB - dateA; // Descending order (newest first)
+            });
+            
+            // Get the newest message (first in sorted array)
+            const latestMessage = sortedMessages[0];
+            const messageText = latestMessage.text || "Sem mensagem";
+            
+            console.log(`Latest message for pack ${packId} (from ${allMessages.length} messages):`, 
+              messageText.substring(0, 30) + (messageText.length > 30 ? '...' : ''));
+            
+            // Truncate if needed
+            return messageText.length > 50 
+              ? `${messageText.substring(0, 50)}...` 
+              : messageText;
+          }
         }
         
         return "Sem mensagem";
