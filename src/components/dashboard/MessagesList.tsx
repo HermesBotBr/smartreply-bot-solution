@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Send } from "lucide-react";
 import { toast } from "sonner";
 import axios from 'axios';
-import { NGROK_BASE_URL } from '@/config/api';
+import { getNgrokUrl } from '@/config/api';
 
 interface Message {
   id: string;
@@ -45,19 +45,32 @@ const MessagesList: React.FC<MessagesListProps> = ({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [messageText, setMessageText] = useState('');
   const [sending, setSending] = useState(false);
+  const prevMessagesLengthRef = useRef<number>(0);
   
   // Fetch GPT message IDs from the allgpt table
   const { gptMessageIds } = useAllGptData(sellerId);
   
-  // Auto-scroll to bottom when messages change
+  // Auto-scroll to bottom when new messages are added
   useEffect(() => {
-    if (messages.length > 0 && !isLoading) {
-      // Use setTimeout to ensure the DOM has updated
-      setTimeout(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-      }, 100);
+    // Check if messages length changed
+    if (messages.length > 0) {
+      // Only scroll if:
+      // 1. This is the initial load (showing all messages)
+      // 2. New messages were added (length increased from previous render)
+      // 3. User just sent a message (which is at the bottom)
+      const wasMessageAdded = messages.length > prevMessagesLengthRef.current;
+      
+      if (wasMessageAdded) {
+        // Use setTimeout to ensure the DOM has updated
+        setTimeout(() => {
+          messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        }, 100);
+      }
+      
+      // Update the previous messages length reference
+      prevMessagesLengthRef.current = messages.length;
     }
-  }, [messages, isLoading]);
+  }, [messages]);
 
   // Convert sellerId to number for comparison
   const sellerIdNum = sellerId ? parseInt(sellerId, 10) : null;
@@ -70,7 +83,7 @@ const MessagesList: React.FC<MessagesListProps> = ({
 
     setSending(true);
     try {
-      const response = await axios.post(`${NGROK_BASE_URL}/enviamsg`, {
+      const response = await axios.post(`${getNgrokUrl()}/enviamsg`, {
         seller_id: sellerId,
         pack_id: packId,
         text: messageText
@@ -91,7 +104,8 @@ const MessagesList: React.FC<MessagesListProps> = ({
     }
   };
   
-  if (isLoading) {
+  if (isLoading && messages.length === 0) {
+    // Only show loading when there are no messages yet
     return (
       <div className="flex justify-center items-center h-full">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -99,7 +113,7 @@ const MessagesList: React.FC<MessagesListProps> = ({
     );
   }
 
-  if (error) {
+  if (error && messages.length === 0) {
     return (
       <div className="text-center p-4 text-red-500">
         <p>{error}</p>

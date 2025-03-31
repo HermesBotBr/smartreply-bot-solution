@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { parseMessages } from '@/utils/messageParser';
 import { getNgrokUrl } from '@/config/api';
 
@@ -9,36 +9,86 @@ export function useConversations() {
   const [refreshing, setRefreshing] = useState(false);
   const [initialAutoScrollDone, setInitialAutoScrollDone] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<string | null>(null);
+  const backgroundRefreshingRef = useRef(false);
 
-  const loadData = async () => {
+  const loadData = async (isBackgroundRefresh = false) => {
     try {
-      setRefreshing(true);
-      console.log("Loading conversation data...");
+      if (!isBackgroundRefresh) {
+        setRefreshing(true);
+      }
+      
+      if (isBackgroundRefresh) {
+        backgroundRefreshingRef.current = true;
+      }
+      
+      console.log(isBackgroundRefresh ? "Background refreshing conversations..." : "Loading conversation data...");
       const response = await fetch(getNgrokUrl('all_msg.txt'));
       const textData = await response.text();
       const convs = parseMessages(textData);
-      setConversations(convs);
       
-      // Update the selectedConv if one is currently selected
-      if (selectedConv) {
-        const updatedConv = convs.find(c => c.orderId === selectedConv.orderId);
-        if (updatedConv) {
-          setSelectedConv(updatedConv);
+      if (isBackgroundRefresh) {
+        // For background refreshes, update state more carefully
+        // Compare and only update what's needed
+        setConversations(prevConvs => {
+          // Check if there are any actual changes
+          const hasChanges = JSON.stringify(prevConvs) !== JSON.stringify(convs);
+          return hasChanges ? convs : prevConvs;
+        });
+        
+        // Update the selectedConv if one is currently selected
+        if (selectedConv) {
+          const updatedConv = convs.find(c => c.orderId === selectedConv.orderId);
+          if (updatedConv && JSON.stringify(updatedConv) !== JSON.stringify(selectedConv)) {
+            setSelectedConv(updatedConv);
+          }
+        }
+      } else {
+        // For initial or manual refreshes, just replace everything
+        setConversations(convs);
+        
+        // Update the selectedConv if one is currently selected
+        if (selectedConv) {
+          const updatedConv = convs.find(c => c.orderId === selectedConv.orderId);
+          if (updatedConv) {
+            setSelectedConv(updatedConv);
+          }
         }
       }
       
-      setRefreshing(false);
+      if (!isBackgroundRefresh) {
+        setRefreshing(false);
+      }
+      
+      if (isBackgroundRefresh) {
+        backgroundRefreshingRef.current = false;
+      }
+      
       setLastUpdate(new Date().toISOString());
     } catch (error) {
       console.error("Erro ao carregar mensagens:", error);
-      setRefreshing(false);
+      if (!isBackgroundRefresh) {
+        setRefreshing(false);
+      }
+      
+      if (isBackgroundRefresh) {
+        backgroundRefreshingRef.current = false;
+      }
     }
   };
 
-  // Regular interval update
+  // Initial load and regular interval update
   useEffect(() => {
+    // Initial load (with loading indicator)
     loadData();
-    const intervalId = setInterval(loadData, 30000);
+    
+    // Set up interval for background refreshes
+    const intervalId = setInterval(() => {
+      // Only perform background refresh if we're not already refreshing
+      if (!backgroundRefreshingRef.current) {
+        loadData(true);
+      }
+    }, 30000);
+    
     return () => clearInterval(intervalId);
   }, []);
 
