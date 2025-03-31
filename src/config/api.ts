@@ -17,3 +17,9 @@ export const getNgrokUrl = (path: string): string => {
   }
   return `${NGROK_BASE_URL}${path.startsWith('/') ? path : `/${path}`}`;
 };
+
+// Helper function to construct local API URLs
+export const getLocalApiUrl = (path: string): string => {
+  const baseUrl = window.location.origin;
+  return `${baseUrl}/api${path.startsWith('/') ? path : `/${path}`}`;
+};

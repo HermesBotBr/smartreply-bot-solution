@@ -16,11 +16,15 @@ app.use(express.json());
 const dbRoutes = require('./src/api/dbRoutes');
 // Import the file upload routes
 const uploadRoutes = require('./src/api/uploadRoutes');
+// Import the message routes
+const messageRoutes = require('./src/api/messageRoutes');
 
 // Use the database routes - make sure this comes BEFORE the static files middleware
 app.use('/api/db', dbRoutes);
 // Use the upload routes
 app.use('/api/uploads', uploadRoutes);
+// Use the message routes
+app.use('/api/messages', messageRoutes);
 
 // Create uploads directory if it doesn't exist
 const uploadDir = path.join(__dirname, 'public/uploads');
