@@ -5,7 +5,6 @@ import { AlertCircle, CheckCircle, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import axios from 'axios';
 import { Button } from "@/components/ui/button";
-import { getLocalApiUrl } from '@/config/api';
 
 interface EndpointCall {
   message: string;
@@ -41,9 +40,9 @@ const EndpointTest: React.FC = () => {
       } else {
         setError("Resposta inválida do servidor");
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Erro ao buscar status do endpoint:", err);
-      setError(err instanceof Error ? err.message : "Erro desconhecido");
+      setError(err.message || "Erro desconhecido");
     } finally {
       setLoading(false);
     }
@@ -69,6 +68,23 @@ const EndpointTest: React.FC = () => {
   // Função para obter a URL correta do endpoint para exibição
   const getEndpointUrl = () => {
     return `${window.location.origin}/api/endpoint-test`;
+  };
+
+  // Função para testar o endpoint diretamente da página
+  const testEndpoint = async () => {
+    try {
+      const message = `Teste manual em ${new Date().toLocaleTimeString()}`;
+      
+      const response = await axios.post('/api/endpoint-test', { message });
+      
+      if (response.data && response.data.success) {
+        toast.success("Endpoint testado com sucesso!");
+        fetchEndpointStatus();
+      }
+    } catch (err) {
+      console.error("Erro ao testar endpoint:", err);
+      toast.error("Erro ao testar o endpoint");
+    }
   };
 
   return (
@@ -97,6 +113,9 @@ const EndpointTest: React.FC = () => {
   "message": "Sua mensagem personalizada aqui"
 }`}
               </pre>
+              <div className="mt-4">
+                <Button onClick={testEndpoint}>Testar Endpoint Agora</Button>
+              </div>
             </div>
 
             <div className="border rounded-lg p-6">

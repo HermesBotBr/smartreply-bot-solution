@@ -54,6 +54,7 @@ router.all('/endpoint-test', (req, res) => {
 // Rota para obter as informações das chamadas anteriores
 router.get('/endpoint-test/status', (req, res) => {
   try {
+    console.log('Status endpoint accessed');
     return res.status(200).json({
       success: true,
       data: endpointCalls
