@@ -10,22 +10,36 @@ interface LatestMessageInfo {
   date: string;
 }
 
+interface Message {
+  id: string;
+  from: { user_id: number };
+  to: { user_id: number };
+  text: string;
+  message_date: {
+    received: string;
+    available: string;
+    created: string;
+    read: string;
+  };
+}
+
 export function usePacksWithMessages(packs: Pack[], sellerId: string | null) {
   const [latestMessages, setLatestMessages] = useState<Record<string, string>>({});
+  const [allMessages, setAllMessages] = useState<Record<string, Message[]>>({});
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Função para buscar mensagens para um pacote específico
-  const fetchMessagesForPack = useCallback(async (packId: string, sellerId: string): Promise<string> => {
+  // Função para buscar TODAS as mensagens para um pacote específico
+  const fetchMessagesForPack = useCallback(async (packId: string, sellerId: string): Promise<{ latestText: string, messages: Message[] }> => {
     try {
-      console.log(`Fetching all messages for pack ${packId}`);
+      console.log(`Buscando todas as mensagens para o pacote ${packId}`);
       
-      // Get all messages at once with a higher limit
+      // Buscamos todas as mensagens de uma vez com um limite maior
       const response = await axios.get(`${NGROK_BASE_URL}/conversas`, {
         params: {
           seller_id: sellerId,
           pack_id: packId,
-          limit: 100,  // Get more messages in a single request
+          limit: 3000,  // Limite maior para pegar todas as mensagens
           offset: 0
         }
       });
@@ -33,33 +47,44 @@ export function usePacksWithMessages(packs: Pack[], sellerId: string | null) {
       if (response.data && Array.isArray(response.data.messages)) {
         const allMessages = response.data.messages;
         
-        // If we found any messages
+        // Se encontramos mensagens
         if (allMessages.length > 0) {
-          // Sort all messages by date in descending order (newest first)
+          // Ordena as mensagens por data em ordem decrescente (mais recente primeiro)
           const sortedMessages = [...allMessages].sort((a, b) => {
             const dateA = new Date(a.message_date.created).getTime();
             const dateB = new Date(b.message_date.created).getTime();
-            return dateB - dateA; // Descending order (newest first)
+            return dateB - dateA; // Ordem decrescente (mais recente primeiro)
           });
           
-          // Get the newest message (first in sorted array)
+          // Pega a mensagem mais recente (primeira no array ordenado)
           const latestMessage = sortedMessages[0];
           const messageText = latestMessage.text || "Sem mensagem";
           
-          console.log(`Latest message for pack ${packId} (from ${allMessages.length} messages):`, 
+          console.log(`Última mensagem para o pacote ${packId} (de ${allMessages.length} mensagens):`, 
             messageText.substring(0, 30) + (messageText.length > 30 ? '...' : ''));
           
-          // Truncate if needed
-          return messageText.length > 50 
+          // Trunca se necessário para exibição na lista
+          const truncatedText = messageText.length > 50 
             ? `${messageText.substring(0, 50)}...` 
             : messageText;
+            
+          return {
+            latestText: truncatedText,
+            messages: allMessages
+          };
         }
       }
       
-      return "Sem mensagem";
+      return {
+        latestText: "Sem mensagem",
+        messages: []
+      };
     } catch (error) {
-      console.error(`Error fetching messages for pack ${packId}:`, error);
-      return "Erro ao carregar mensagem";
+      console.error(`Erro ao buscar mensagens para o pacote ${packId}:`, error);
+      return {
+        latestText: "Erro ao carregar mensagem",
+        messages: []
+      };
     }
   }, []);
 
@@ -73,38 +98,44 @@ export function usePacksWithMessages(packs: Pack[], sellerId: string | null) {
     setIsLoading(true);
     setError(null);
     const messagesMap: Record<string, string> = {};
+    const allMessagesMap: Record<string, Message[]> = {};
     
     try {
-      console.log("Fetching messages for", packs.length, "packs");
+      console.log("Buscando mensagens para", packs.length, "pacotes");
       
-      // Process each pack individually
+      // Processa cada pacote individualmente
       const fetchPromises = packs.map(pack => fetchMessagesForPack(pack.pack_id, sellerId));
       const results = await Promise.allSettled(fetchPromises);
       
-      // Process results
+      // Processa os resultados
       results.forEach((result, index) => {
         const packId = packs[index].pack_id;
         
         if (result.status === 'fulfilled') {
-          messagesMap[packId] = result.value;
+          messagesMap[packId] = result.value.latestText;
+          allMessagesMap[packId] = result.value.messages;
         } else {
-          console.error(`Error fetching message for pack ${packId}:`, 
-            result.status === 'rejected' ? result.reason : 'No message found');
+          console.error(`Erro ao buscar mensagem para o pacote ${packId}:`, 
+            result.status === 'rejected' ? result.reason : 'Nenhuma mensagem encontrada');
           messagesMap[packId] = "Erro ao carregar mensagem";
+          allMessagesMap[packId] = [];
         }
       });
       
       setLatestMessages(messagesMap);
+      setAllMessages(allMessagesMap);
     } catch (error) {
-      console.error("Error fetching messages for packs:", error);
+      console.error("Erro ao buscar mensagens para os pacotes:", error);
       setError("Erro ao carregar mensagens");
       
-      // Set fallback messages for all packs
+      // Define mensagens de fallback para todos os pacotes
       packs.forEach(pack => {
         messagesMap[pack.pack_id] = "Erro ao carregar mensagens";
+        allMessagesMap[pack.pack_id] = [];
       });
       
       setLatestMessages(messagesMap);
+      setAllMessages(allMessagesMap);
     } finally {
       setIsLoading(false);
     }
@@ -115,5 +146,5 @@ export function usePacksWithMessages(packs: Pack[], sellerId: string | null) {
     fetchAllPackMessages();
   }, [fetchAllPackMessages]);
 
-  return { latestMessages, isLoading, error };
+  return { latestMessages, allMessages, isLoading, error };
 }

@@ -34,7 +34,8 @@ interface MessagesResponse {
 export function usePackMessages(
   packId: string | null, 
   sellerId: string | null,
-  refreshTrigger: number = 0
+  refreshTrigger: number = 0,
+  preloadedMessages?: Message[]
 ) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -62,7 +63,7 @@ export function usePackMessages(
         params: {
           seller_id: sellerId,
           pack_id: targetPackId,
-          limit: 100,
+          limit: 3000,
           offset: 0
         }
       });

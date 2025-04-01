@@ -27,7 +27,7 @@ const PacksList: React.FC<PacksListProps> = ({
 }) => {
   // Use our hooks to fetch client data and latest messages for each pack
   const { clientDataMap, isLoading: clientDataLoading } = usePackClientData(sellerId, packs);
-  const { latestMessages, isLoading: messagesLoading, error: messagesError } = usePacksWithMessages(packs, sellerId);
+  const { latestMessages, allMessages, isLoading: messagesLoading, error: messagesError } = usePacksWithMessages(packs, sellerId);
   
   // Show toast if there's an error loading messages
   useEffect(() => {
@@ -74,6 +74,7 @@ const PacksList: React.FC<PacksListProps> = ({
         const productTitle = clientData ? clientData["Título do anúncio"] : null;
         const itemId = clientData ? clientData["Item ID"] : null;
         const latestMessage = latestMessages[pack.pack_id];
+        const packMessages = allMessages[pack.pack_id] || [];
         
         return (
           <div
@@ -112,6 +113,9 @@ const PacksList: React.FC<PacksListProps> = ({
                         ) : (
                           "Carregando mensagens..."
                         )}
+                      </p>
+                      <p className="text-xs text-gray-400">
+                        {packMessages.length > 0 ? `${packMessages.length} mensagens` : ""}
                       </p>
                     </div>
                   </>

@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { usePackData } from "@/hooks/usePackData";
 import { usePackMessages } from "@/hooks/usePackMessages";
 import { useMessageNotifications } from "@/hooks/useMessageNotifications";
+import { usePacksWithMessages } from "@/hooks/usePacksWithMessages";
 import PacksList from "@/components/dashboard/PacksList";
 import MessagesList from "@/components/dashboard/MessagesList";
 
@@ -27,6 +28,7 @@ const Hermes = () => {
   const [messagesRefreshTrigger, setMessagesRefreshTrigger] = useState(0);
   
   const { packs, isLoading: packsLoading, error: packsError, refreshPacks } = usePackData(sellerId);
+  const { latestMessages, allMessages, isLoading: allMessagesLoading, error: allMessagesError } = usePacksWithMessages(packs, sellerId);
   const { messages, isLoading: messagesLoading, error: messagesError, updatePackMessages } = usePackMessages(
     selectedPackId, 
     sellerId,
