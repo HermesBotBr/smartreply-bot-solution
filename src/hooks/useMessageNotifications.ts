@@ -33,7 +33,11 @@ export function useMessageNotifications(
       try {
         setIsCheckingNotifications(true);
         
-        const response = await axios.get('/api/db/rows/notifica_mensagens');
+        // Obtendo as colunas da tabela para verificar a estrutura
+        await axios.get('https://projetohermes-dda7e0c8d836.herokuapp.com/api/db/columns/notifica_mensagens');
+        
+        // Obtendo as linhas da tabela de notificações com o endpoint completo
+        const response = await axios.get('https://projetohermes-dda7e0c8d836.herokuapp.com/api/db/rows/notifica_mensagens');
         const notifications: MessageNotification[] = response.data.rows || [];
         
         console.log(`Notifications found: ${notifications.length}`); // Log total de notificações
