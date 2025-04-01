@@ -2,90 +2,66 @@
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 
-interface MessageNotification {
-  message_id: string;
-  order_id: string;
-  mensagem: string;
-  seller_id: string;
-  sender: string;
+interface PackUpdateResponse {
+  success: boolean;
+  message: string;
+  data?: {
+    pack_id: string;
+    seller_id: string;
+    messages_count: number;
+    timestamp: string;
+  };
+  error?: string;
 }
 
 export function useMessageNotifications(
   sellerId: string | null,
   onPackUpdate: (packId: string) => void
 ) {
-  const [isCheckingNotifications, setIsCheckingNotifications] = useState(false);
-  const notificationCheckIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const activeNotificationsRef = useRef<Set<string>>(new Set());
+  const [isCheckingEndpoint, setIsCheckingEndpoint] = useState(false);
+  const endpointCheckIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const lastUpdateTimestampRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!sellerId) return;
 
-    if (notificationCheckIntervalRef.current) {
-      clearInterval(notificationCheckIntervalRef.current);
+    if (endpointCheckIntervalRef.current) {
+      clearInterval(endpointCheckIntervalRef.current);
     }
 
-    notificationCheckIntervalRef.current = setInterval(async () => {
-      if (isCheckingNotifications) {
-        return;
-      }
-
-      try {
-        setIsCheckingNotifications(true);
-        
-        // Obtendo as colunas da tabela para verificar a estrutura
-        await axios.get('https://projetohermes-dda7e0c8d836.herokuapp.com/api/db/columns/notifica_mensagens');
-        
-        // Obtendo as linhas da tabela de notificações com o endpoint completo
-        const response = await axios.get('https://projetohermes-dda7e0c8d836.herokuapp.com/api/db/rows/notifica_mensagens');
-        const notifications: MessageNotification[] = response.data.rows || [];
-        
-        console.log(`Notifications found: ${notifications.length}`); // Log total de notificações
-
-        const sellerNotifications = notifications.filter(
-          notification => notification.seller_id === sellerId
-        );
-        
-        console.log(`Seller notifications found: ${sellerNotifications.length}`); // Log de notificações para o seller específico
-
-        if (sellerNotifications.length === 0) {
-          console.log('No notifications found for this seller'); // Log quando não há notificações para o seller
-        }
-        
-        for (const notification of sellerNotifications) {
-          if (activeNotificationsRef.current.has(notification.message_id)) {
-            continue;
-          }
-          
-          activeNotificationsRef.current.add(notification.message_id);
-          
-          console.log(`Processing notification for pack ${notification.order_id}`);
-          onPackUpdate(notification.order_id);
-          
-          try {
-            await axios.delete('https://projetohermes-dda7e0c8d836.herokuapp.com/erase_notifica_msg', {
-              data: { message_id: notification.message_id }
-            });
-            console.log(`Deleted notification ${notification.message_id}`);
-          } catch (deleteError) {
-            console.error('Error deleting notification:', deleteError);
-          } finally {
-            activeNotificationsRef.current.delete(notification.message_id);
-          }
-        }
-      } catch (error) {
-        console.error('Error checking for message notifications:', error);
-      } finally {
-        setIsCheckingNotifications(false);
-      }
-    }, 2000); // Verificar a cada 2 segundos
+    // Não estamos mais verificando a tabela "notifica_mensagens"
+    // Em vez disso, implementamos um sistema onde o endpoint /api/force-refresh-pack
+    // é chamado externamente (por exemplo, via Postman) para acionar atualizações
+    
+    console.log("Sistema de notificações iniciado. Aguardando chamadas ao endpoint /api/force-refresh-pack");
 
     return () => {
-      if (notificationCheckIntervalRef.current) {
-        clearInterval(notificationCheckIntervalRef.current);
+      if (endpointCheckIntervalRef.current) {
+        clearInterval(endpointCheckIntervalRef.current);
       }
     };
-  }, [sellerId, onPackUpdate, isCheckingNotifications]);
+  }, [sellerId, onPackUpdate]);
 
-  return { isCheckingNotifications };
+  // Este método pode ser usado para testar o endpoint internamente, se necessário
+  const testForceRefresh = async (packId: string) => {
+    if (!sellerId) return false;
+    
+    try {
+      const response = await axios.post('/api/force-refresh-pack', {
+        seller_id: sellerId,
+        pack_id: packId
+      });
+      
+      if (response.data.success) {
+        onPackUpdate(packId);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Erro ao testar endpoint de atualização forçada:', error);
+      return false;
+    }
+  };
+
+  return { isCheckingEndpoint, testForceRefresh };
 }

@@ -33,8 +33,9 @@ const Hermes = () => {
     messagesRefreshTrigger
   );
   
-  useMessageNotifications(sellerId, (packId) => {
-    console.log(`Notification received for pack ${packId}, updating messages`);
+  // useMessageNotifications agora espera por chamadas externas ao endpoint
+  const { testForceRefresh } = useMessageNotifications(sellerId, (packId) => {
+    console.log(`Notificação recebida para o pacote ${packId}, atualizando mensagens`);
     updatePackMessages(packId);
     
     if (packId !== selectedPackId) {
