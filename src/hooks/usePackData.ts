@@ -1,13 +1,12 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import { getNgrokUrl } from "@/config/api";
+import { NGROK_BASE_URL } from '@/config/api';
 
 export interface Pack {
   pack_id: string;
-  gpt: string;
-  seller_id: string;
-  // Add any other fields that might be in the table
+  data_criacao: string;
+  status: string;
 }
 
 export function usePackData(sellerId: string | null) {
@@ -15,42 +14,42 @@ export function usePackData(sellerId: string | null) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchPackData = async () => {
-      if (!sellerId) {
-        setPacks([]);
-        setIsLoading(false);
-        return;
-      }
+  const fetchPacks = useCallback(async () => {
+    if (!sellerId) {
+      setIsLoading(false);
+      return;
+    }
 
+    try {
       setIsLoading(true);
       setError(null);
       
-      try {
-        // Use the correct endpoint to fetch all packs
-        const response = await axios.get(getNgrokUrl('/api/db/rows/all_packs'));
-
-        if (response.data && response.data.rows) {
-          // Filter packs by sellerId on the client side
-          const sellerPacks = response.data.rows.filter(
-            (pack: Pack) => pack.seller_id === sellerId
-          );
-          setPacks(sellerPacks);
-          console.log("Pack data loaded successfully:", sellerPacks.length, "packs");
-        } else {
-          console.error("Invalid response format for pack data:", response.data);
-          setError("Formato de resposta inválido ao carregar dados de pacotes");
-        }
-      } catch (error) {
-        console.error("Error fetching pack data:", error);
-        setError("Erro ao carregar dados de pacotes. Verifique a conexão com o servidor.");
-      } finally {
-        setIsLoading(false);
+      const response = await axios.get(`${NGROK_BASE_URL}/packs`, {
+        params: { seller_id: sellerId }
+      });
+      
+      if (response.data && Array.isArray(response.data)) {
+        setPacks(response.data);
+      } else {
+        setError('Formato de resposta inválido ao carregar pacotes');
       }
-    };
-    
-    fetchPackData();
+    } catch (error) {
+      console.error('Erro ao carregar pacotes:', error);
+      setError('Falha ao carregar pacotes do vendedor');
+    } finally {
+      setIsLoading(false);
+    }
   }, [sellerId]);
 
-  return { packs, isLoading, error };
+  // Função para atualizar a lista de pacotes (utilizada após uma notificação)
+  const refreshPacks = useCallback(() => {
+    console.log("🔄 Atualizando lista de pacotes");
+    fetchPacks();
+  }, [fetchPacks]);
+
+  useEffect(() => {
+    fetchPacks();
+  }, [fetchPacks]);
+
+  return { packs, isLoading, error, refreshPacks };
 }

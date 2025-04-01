@@ -1,3 +1,4 @@
+
 import axios from 'axios';
 
 export default async function handler(req, res) {
@@ -24,7 +25,7 @@ export default async function handler(req, res) {
 
   try {
     const apiUrl = process.env.HERMES_API_URL || 'https://projetohermes-dda7e0c8d836.herokuapp.com';
-    const fullUrl = `${apiUrl}/conversas?seller_id=${seller_id}&pack_id=${pack_id}&limit=100&offset=0`;
+    const fullUrl = `${apiUrl}/conversas?seller_id=${seller_id}&pack_id=${pack_id}&limit=3000&offset=0`;
     console.log("🔗 Buscando mensagens de:", fullUrl);
 
     const response = await axios.get(fullUrl);
