@@ -1,3 +1,4 @@
+
 export const hasBuyerLastMessage = (conv: any, readConversations: string[]) => {
   if (!conv || !conv.messages || conv.messages.length === 0) return false;
   
@@ -24,21 +25,23 @@ export const hasBuyerLastMessage = (conv: any, readConversations: string[]) => {
 
 export const sortConversations = (conversations: any[], readConversations: string[]) => {
   return conversations.slice().sort((a, b) => {
+    // First priority: Sort by unread buyer messages
     const hasNewBuyerMsgA = hasBuyerLastMessage(a, readConversations);
     const hasNewBuyerMsgB = hasBuyerLastMessage(b, readConversations);
 
     if (hasNewBuyerMsgA && !hasNewBuyerMsgB) return -1;
     if (!hasNewBuyerMsgA && hasNewBuyerMsgB) return 1;
 
-    const getMostRecentDate = (conv: any) => {
+    // Second priority: Sort by most recent message date
+    const getLastMessageDate = (conv: any) => {
       if (!conv.messages || conv.messages.length === 0) return new Date(0);
       return new Date(conv.messages.reduce((prev: any, curr: any) => {
-        const prevDate = new Date(prev.date).getTime();
-        const currDate = new Date(curr.date).getTime();
-        return currDate > prevDate ? curr : prev;
+        return new Date(curr.date) > new Date(prev.date) ? curr : prev;
       }, conv.messages[0]).date);
     };
-    return getMostRecentDate(b).getTime() - getMostRecentDate(a).getTime();
+
+    // Sort by descending order (most recent first)
+    return getLastMessageDate(b).getTime() - getLastMessageDate(a).getTime();
   });
 };
 
