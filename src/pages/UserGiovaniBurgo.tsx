@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import QuestionsList from "@/components/dashboard/QuestionsList";
 import MetricsDisplay from "@/components/dashboard/MetricsDisplay";
@@ -40,7 +39,11 @@ const UserGiovaniBurgo = () => {
   } = useSaleDetails();
   const isMobile = useMediaQuery('(max-width: 768px)');
 
-  // Service Worker registration
+  const handleLogout = () => {
+    localStorage.removeItem('mlUserToken');
+    window.location.href = '/';
+  };
+
   useEffect(() => {
     if ("serviceWorker" in navigator && "PushManager" in window) {
       navigator.serviceWorker.register("/service-worker.js")
@@ -75,7 +78,6 @@ const UserGiovaniBurgo = () => {
     }
   }, []);
 
-  // Function to convert base64 to Uint8Array
   function urlBase64ToUint8Array(base64String: string) {
     const padding = "=".repeat((4 - base64String.length % 4) % 4);
     const base64 = (base64String + padding)
@@ -91,12 +93,10 @@ const UserGiovaniBurgo = () => {
 
   return (
     <div className="flex h-screen overflow-hidden">
-      {/* NavSidebar - only show on sides for desktop */}
       {!isMobile && (
-        <NavSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+        <NavSidebar activeTab={activeTab} setActiveTab={setActiveTab} onLogout={handleLogout} />
       )}
 
-      {/* Main content area - adjust height for mobile to account for bottom navbar */}
       <div className={`flex-1 flex w-${isMobile ? 'full' : '[calc(100%-3.5rem)]'} ${isMobile ? 'h-[calc(100vh-56px)]' : 'h-screen'}`}>
         {activeTab === 'conversas' ? (
           <ConversationsTab 
@@ -144,9 +144,8 @@ const UserGiovaniBurgo = () => {
         )}
       </div>
 
-      {/* Bottom mobile navigation */}
       {isMobile && (
-        <NavSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+        <NavSidebar activeTab={activeTab} setActiveTab={setActiveTab} onLogout={handleLogout} />
       )}
 
       <FullScreenImage imageUrl={fullScreenImage} onClose={() => setFullScreenImage(null)} />

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import QuestionsList from "@/components/dashboard/QuestionsList";
 import MetricsDisplay from "@/components/dashboard/MetricsDisplay";
@@ -99,6 +100,14 @@ const Hermes = () => {
     setMessagesRefreshTrigger(prev => prev + 1);
   };
 
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    setSellerId(null);
+    setLoginOpen(true);
+    localStorage.removeItem('hermesAuth');
+    toast.success("Sessão encerrada com sucesso");
+  };
+
   const conversations: any[] = [];
   const refreshing = false;
   const readConversations: string[] = [];
@@ -128,7 +137,7 @@ const Hermes = () => {
       {isAuthenticated && (
         <>
           {!isMobile && (
-            <NavSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+            <NavSidebar activeTab={activeTab} setActiveTab={setActiveTab} onLogout={handleLogout} />
           )}
 
           <div className={`flex-1 flex w-${isMobile ? 'full' : '[calc(100%-3.5rem)]'} ${isMobile ? 'h-[calc(100vh-56px)]' : 'h-screen'}`}>
@@ -201,7 +210,7 @@ const Hermes = () => {
           </div>
 
           {isMobile && (
-            <NavSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+            <NavSidebar activeTab={activeTab} setActiveTab={setActiveTab} onLogout={handleLogout} />
           )}
         </>
       )}
