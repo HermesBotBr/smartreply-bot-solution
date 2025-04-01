@@ -71,13 +71,18 @@ export function usePackMessages(
         const newMessages = response.data.messages;
         
         if (targetPackId === currentPackIdRef.current) {
-          if (!isInitialLoadRef.current || isBackgroundRefresh) {
+          // Resetamos os dados para garantir carregamento correto
+          if (isInitialLoadRef.current) {
+            setMessages(newMessages);
+            existingMessageIdsRef.current = new Set(newMessages.map(msg => msg.id));
+            console.log(`Carregadas ${newMessages.length} mensagens para o pack ID: ${targetPackId}`);
+          } else if (isBackgroundRefresh) {
             const messagesToAdd = newMessages.filter(newMsg => 
               !existingMessageIdsRef.current.has(newMsg.id)
             );
             
             if (messagesToAdd.length > 0) {
-              console.log(`Adding ${messagesToAdd.length} new messages from refresh for pack ${targetPackId}`);
+              console.log(`Adicionando ${messagesToAdd.length} novas mensagens do refresh para o pack ${targetPackId}`);
               
               setMessages(prev => {
                 const updatedMessages = [...prev, ...messagesToAdd].sort((a, b) => 
@@ -89,30 +94,24 @@ export function usePackMessages(
                 return updatedMessages;
               });
             } else {
-              console.log('No new messages found during refresh');
+              console.log('Não foram encontradas novas mensagens');
             }
-          } else {
-            setMessages(newMessages);
-            
-            existingMessageIdsRef.current = new Set(newMessages.map(msg => msg.id));
-            
-            console.log(`Loaded ${newMessages.length} messages for pack ID: ${targetPackId}`);
           }
         } else {
-          console.log(`Fetched ${newMessages.length} messages for non-active pack ${targetPackId}`);
+          console.log(`Buscados ${newMessages.length} mensagens para o pacote não-ativo ${targetPackId}`);
         }
       } else {
         if (!isBackgroundRefresh && targetPackId === currentPackIdRef.current) {
-          console.error("Invalid response format from messages API:", response.data);
+          console.error("Formato de resposta inválido da API de mensagens:", response.data);
           setError("Formato de resposta inválido ao carregar mensagens");
         }
       }
     } catch (error: any) {
       if (!isBackgroundRefresh && targetPackId === currentPackIdRef.current) {
-        console.error("Error fetching messages:", error);
+        console.error("Erro ao buscar mensagens:", error);
         setError("Erro ao carregar mensagens");
       } else {
-        console.error("Background refresh error:", error);
+        console.error("Erro no refresh em background:", error);
       }
     } finally {
       if (!isBackgroundRefresh && targetPackId === currentPackIdRef.current) {
@@ -130,6 +129,7 @@ export function usePackMessages(
   };
 
   useEffect(() => {
+    // Reseta o estado quando muda o packId
     if (packId !== currentPackIdRef.current) {
       setMessages([]);
       existingMessageIdsRef.current.clear();
@@ -141,13 +141,13 @@ export function usePackMessages(
       fetchMessages(packId);
     }
     
-    // Substituindo o checkForceRefreshInterval por uma atualização direta a cada 30 segundos
+    // Configura atualização periódica a cada 30 segundos
     const periodicRefreshIntervalId = setInterval(() => {
       if (packId && sellerId && !backgroundRefreshingRef.current && currentPackIdRef.current) {
-        console.log('Periodic refresh triggered, fetching latest messages');
+        console.log('Atualização periódica, buscando mensagens recentes');
         fetchMessages(currentPackIdRef.current, true);
       }
-    }, 30000); // Atualização a cada 30 segundos
+    }, 30000);
     
     return () => {
       clearInterval(periodicRefreshIntervalId);
