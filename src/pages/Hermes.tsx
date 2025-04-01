@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import QuestionsList from "@/components/dashboard/QuestionsList";
 import MetricsDisplay from "@/components/dashboard/MetricsDisplay";
@@ -33,12 +32,10 @@ const Hermes = () => {
     messagesRefreshTrigger
   );
   
-  // Use the notification hook to automatically update messages
   useMessageNotifications(sellerId, (packId) => {
     console.log(`Notification received for pack ${packId}, updating messages`);
     updatePackMessages(packId);
     
-    // Show toast notification for non-selected packs
     if (packId !== selectedPackId) {
       toast.info(`Nova mensagem recebida para o pacote ${packId}`, {
         duration: 3000,

@@ -74,7 +74,7 @@ export function useMessageNotifications(
       } finally {
         setIsCheckingNotifications(false);
       }
-    }, 2000);
+    }, 2000); // Verificar a cada 2 segundos
 
     return () => {
       if (notificationCheckIntervalRef.current) {
@@ -85,4 +85,3 @@ export function useMessageNotifications(
 
   return { isCheckingNotifications };
 }
-
