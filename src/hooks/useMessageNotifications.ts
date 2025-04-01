@@ -41,9 +41,35 @@ export function useMessageNotifications(
     const setupPackUpdateMonitoring = () => {
       console.log("📡 Sistema de monitoramento de atualizações iniciado para seller:", sellerId);
       
-      // Para chamadas externas via Postman (ou outro client), 
-      // basta chamar o endpoint /api/force-refresh-pack com seller_id e pack_id
-      // O frontend responderá automaticamente
+      // Configuramos um intervalo para verificar periodicamente se há atualizações vindas do endpoint
+      pollingIntervalRef.current = setInterval(async () => {
+        try {
+          setIsPollingApi(true);
+          const response = await axios.get('/api/check-update-queue', {
+            params: { seller_id: sellerId }
+          });
+          
+          if (response.data.updates && response.data.updates.length > 0) {
+            console.log("📦 Atualizações detectadas:", response.data.updates);
+            
+            // Para cada pacote na fila de atualização, chamamos o callback
+            response.data.updates.forEach((update: any) => {
+              const packId = update.pack_id;
+              console.log(`📬 Processando atualização para o pacote ${packId}`);
+              
+              // Armazenamos o timestamp da última atualização
+              lastResponseTimestampRef.current = update.timestamp;
+              
+              // Chamamos o callback para atualizar o frontend
+              onPackUpdate(packId);
+            });
+          }
+        } catch (error) {
+          console.error('⚠️ Erro ao verificar fila de atualizações:', error);
+        } finally {
+          setIsPollingApi(false);
+        }
+      }, 3000); // Verifica a cada 3 segundos
     };
 
     setupPackUpdateMonitoring();
@@ -71,7 +97,7 @@ export function useMessageNotifications(
       if (response.data.success) {
         console.log(`✅ Atualização forçada para o pacote ${packId} concluída:`, response.data);
         
-        // Chamamos onPackUpdate com o packId para atualizar o frontend
+        // Chamamos onPackUpdate com o packId para atualizar o frontend imediatamente
         onPackUpdate(packId);
         
         // Armazenamos o timestamp da última atualização

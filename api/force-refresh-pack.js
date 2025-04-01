@@ -1,5 +1,6 @@
 
 import axios from 'axios';
+import { addToUpdateQueue } from './check-update-queue';
 
 export default async function handler(req, res) {
   console.log("🚀 Endpoint force-refresh-pack foi acionado.");
@@ -33,6 +34,10 @@ export default async function handler(req, res) {
 
     const messages = response.data?.messages || [];
     console.log(`📨 ${messages.length} mensagens recuperadas.`);
+
+    // Adicionamos o pacote à fila de atualizações
+    addToUpdateQueue(seller_id, pack_id);
+    console.log(`🔔 Pacote ${pack_id} adicionado à fila de atualizações para o seller ${seller_id}`);
 
     return res.status(200).json({
       success: true,

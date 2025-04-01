@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { NGROK_BASE_URL } from '@/config/api';
@@ -95,6 +96,12 @@ export function usePackMessages(
             } else {
               console.log('Não foram encontradas novas mensagens');
             }
+          } else {
+            // Quando não é um refresh em background, significa que estamos forçando uma atualização
+            // então devemos recarregar todas as mensagens
+            console.log(`Recarregando todas as ${newMessages.length} mensagens para o pack ${targetPackId} devido a uma atualização forçada`);
+            setMessages(newMessages);
+            existingMessageIdsRef.current = new Set(newMessages.map(msg => msg.id));
           }
         } else {
           console.log(`Buscados ${newMessages.length} mensagens para o pacote não-ativo ${targetPackId}`);
