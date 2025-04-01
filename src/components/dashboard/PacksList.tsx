@@ -1,20 +1,23 @@
 
 import React, { useEffect } from 'react';
-import { Pack } from '@/hooks/usePackData';
 import { User } from "lucide-react";
 import { usePackClientData } from '@/hooks/usePackClientData';
 import { Skeleton } from '@/components/ui/skeleton';
 import ProductThumbnail from './ProductThumbnail';
-import { usePacksWithMessages } from '@/hooks/usePacksWithMessages';
 import { toast } from 'sonner';
+import { AllPacksRow } from '@/hooks/useAllPacksData';
 
 interface PacksListProps {
-  packs: Pack[];
+  packs: AllPacksRow[];
   isLoading: boolean;
   error: string | null;
   onSelectPack: (packId: string) => void;
   selectedPackId: string | null;
   sellerId: string | null;
+  latestMessages: Record<string, string>;
+  allMessages: Record<string, any[]>;
+  messagesLoading: boolean;
+  messagesError: string | null;
 }
 
 const PacksList: React.FC<PacksListProps> = ({ 
@@ -23,11 +26,14 @@ const PacksList: React.FC<PacksListProps> = ({
   error, 
   onSelectPack,
   selectedPackId,
-  sellerId
+  sellerId,
+  latestMessages,
+  allMessages,
+  messagesLoading,
+  messagesError
 }) => {
-  // Use our hooks to fetch client data and latest messages for each pack
+  // Use our hook to fetch client data for each pack
   const { clientDataMap, isLoading: clientDataLoading } = usePackClientData(sellerId, packs);
-  const { latestMessages, allMessages, isLoading: messagesLoading, error: messagesError } = usePacksWithMessages(packs, sellerId);
   
   // Show toast if there's an error loading messages
   useEffect(() => {
@@ -75,13 +81,14 @@ const PacksList: React.FC<PacksListProps> = ({
         const itemId = clientData ? clientData["Item ID"] : null;
         const latestMessage = latestMessages[pack.pack_id];
         const packMessages = allMessages[pack.pack_id] || [];
+        const isGptPack = pack.gpt === "sim";
         
         return (
           <div
             key={pack.pack_id}
             className={`p-4 hover:bg-gray-50 cursor-pointer ${
               selectedPackId === pack.pack_id ? 'bg-gray-100' : ''
-            }`}
+            } ${isGptPack ? 'border-l-4 border-blue-500' : ''}`}
             onClick={() => onSelectPack(pack.pack_id)}
           >
             <div className="flex items-center space-x-3">
@@ -102,6 +109,7 @@ const PacksList: React.FC<PacksListProps> = ({
                   <>
                     <h3 className="font-medium truncate">
                       {clientName || `Cliente (Pack ID: ${pack.pack_id})`}
+                      {isGptPack && <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded">GPT</span>}
                     </h3>
                     <div className="text-sm text-gray-500">
                       {productTitle && <p className="truncate font-medium">{productTitle}</p>}

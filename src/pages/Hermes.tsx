@@ -8,7 +8,7 @@ import { useMediaQuery } from "@/hooks/useMediaQuery";
 import HermesLogin from "@/components/dashboard/HermesLogin";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { usePackData } from "@/hooks/usePackData";
+import { useAllPacksData } from "@/hooks/useAllPacksData";
 import { usePackMessages } from "@/hooks/usePackMessages";
 import { useMessageNotifications } from "@/hooks/useMessageNotifications";
 import { usePacksWithMessages } from "@/hooks/usePacksWithMessages";
@@ -27,7 +27,8 @@ const Hermes = () => {
   const [selectedPackId, setSelectedPackId] = useState<string | null>(null);
   const [messagesRefreshTrigger, setMessagesRefreshTrigger] = useState(0);
   
-  const { packs, isLoading: packsLoading, error: packsError, refreshPacks } = usePackData(sellerId);
+  // Use o novo hook para buscar pacotes da tabela all_packs
+  const { packs, isLoading: packsLoading, error: packsError, refreshPacks } = useAllPacksData(sellerId);
   const { latestMessages, allMessages, isLoading: allMessagesLoading, error: allMessagesError } = usePacksWithMessages(packs, sellerId);
   const { messages, isLoading: messagesLoading, error: messagesError, updatePackMessages } = usePackMessages(
     selectedPackId, 
@@ -120,20 +121,6 @@ const Hermes = () => {
     toast.success("Sessão encerrada com sucesso");
   };
 
-  const conversations: any[] = [];
-  const refreshing = false;
-  const readConversations: string[] = [];
-  const markAsRead = async (_orderId: string | string[]) => {};
-  const gptIds: string[] = [];
-  const mlToken = null;
-  const orderDetails = null;
-  const shippingDetails = null;
-  const expandedInfo = false;
-  const setExpandedInfo = (_expanded: boolean) => {};
-  const detailedInfo = null;
-  const fetchDetailedInfo = async (_selectedConv: any, _token: string) => {};
-  const fetchSaleDetails = async (_selectedConv: any, _token: string) => {};
-
   return (
     <div className="flex h-screen overflow-hidden">
       <Dialog open={loginOpen} onOpenChange={setLoginOpen}>
@@ -167,6 +154,10 @@ const Hermes = () => {
                     onSelectPack={handleSelectPack}
                     selectedPackId={selectedPackId}
                     sellerId={sellerId}
+                    latestMessages={latestMessages}
+                    allMessages={allMessages}
+                    messagesLoading={allMessagesLoading}
+                    messagesError={allMessagesError}
                   />
                 </div>
                 

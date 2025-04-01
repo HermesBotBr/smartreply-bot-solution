@@ -1,8 +1,8 @@
 
 import { useState, useEffect, useCallback } from 'react';
-import { Pack } from '@/hooks/usePackData';
 import axios from 'axios';
 import { NGROK_BASE_URL } from '@/config/api';
+import { AllPacksRow } from './useAllPacksData';
 
 interface LatestMessageInfo {
   packId: string;
@@ -21,9 +21,10 @@ interface Message {
     created: string;
     read: string;
   };
+  message_attachments: any[] | null;
 }
 
-export function usePacksWithMessages(packs: Pack[], sellerId: string | null) {
+export function usePacksWithMessages(packs: AllPacksRow[], sellerId: string | null) {
   const [latestMessages, setLatestMessages] = useState<Record<string, string>>({});
   const [allMessages, setAllMessages] = useState<Record<string, Message[]>>({});
   const [isLoading, setIsLoading] = useState<boolean>(true);
