@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { NGROK_BASE_URL } from '@/config/api';
@@ -72,7 +71,6 @@ export function usePackMessages(
         const newMessages = response.data.messages;
         
         if (targetPackId === currentPackIdRef.current) {
-          // Resetamos os dados para garantir carregamento correto
           if (isInitialLoadRef.current) {
             setMessages(newMessages);
             existingMessageIdsRef.current = new Set(newMessages.map(msg => msg.id));
@@ -130,7 +128,6 @@ export function usePackMessages(
   };
 
   useEffect(() => {
-    // Reseta o estado quando muda o packId
     if (packId !== currentPackIdRef.current) {
       setMessages([]);
       existingMessageIdsRef.current.clear();
@@ -142,7 +139,6 @@ export function usePackMessages(
       fetchMessages(packId);
     }
     
-    // Configura atualização periódica a cada 30 segundos
     const periodicRefreshIntervalId = setInterval(() => {
       if (packId && sellerId && !backgroundRefreshingRef.current && currentPackIdRef.current) {
         console.log('Atualização periódica, buscando mensagens recentes');
@@ -157,6 +153,8 @@ export function usePackMessages(
 
   const updatePackMessages = async (targetPackId: string) => {
     if (!sellerId) return;
+    
+    console.log(`Atualização endpoint, buscando mensagens para pack_id ${targetPackId}`);
     
     if (targetPackId === currentPackIdRef.current) {
       fetchMessages(targetPackId, false);
