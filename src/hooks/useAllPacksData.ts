@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import { NGROK_BASE_URL } from '@/config/api';
+import { getNgrokUrl } from '@/config/api';
 
 export interface AllPacksRow {
   pack_id: string;
@@ -24,8 +24,8 @@ export function useAllPacksData(sellerId: string | null) {
       setIsLoading(true);
       setError(null);
       
-      // Busca todas as linhas da tabela all_packs
-      const response = await axios.get(`${NGROK_BASE_URL}/api/db/rows/all_packs`);
+      // Usa o endpoint exato para buscar todas as linhas da tabela all_packs
+      const response = await axios.get('https://projetohermes-dda7e0c8d836.herokuapp.com/api/db/rows/all_packs');
       
       if (response.data && Array.isArray(response.data.rows)) {
         // Filtra apenas os pacotes do vendedor atual
