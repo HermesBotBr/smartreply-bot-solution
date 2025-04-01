@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { NGROK_BASE_URL } from '@/config/api';
@@ -42,7 +43,6 @@ export function usePackMessages(
   const backgroundRefreshingRef = useRef(false);
   const existingMessageIdsRef = useRef<Set<string>>(new Set());
   const currentPackIdRef = useRef<string | null>(null);
-  const lastForceRefreshTimestampRef = useRef<string | null>(null);
 
   const fetchMessages = async (targetPackId: string, isBackgroundRefresh = false) => {
     if (!sellerId) {
@@ -141,33 +141,16 @@ export function usePackMessages(
       fetchMessages(packId);
     }
     
-    const checkForceRefreshIntervalId = setInterval(async () => {
-      if (packId && sellerId) {
-        try {
-          const response = await axios.get('/api/messages/force-refresh', {
-            headers: { 'Cache-Control': 'no-cache' }
-          });
-          
-          if (response.data && response.data.timestamp) {
-            const newTimestamp = response.data.timestamp;
-            
-            if (lastForceRefreshTimestampRef.current !== newTimestamp) {
-              console.log('Force refresh detected, refreshing messages');
-              lastForceRefreshTimestampRef.current = newTimestamp;
-              
-              if (!backgroundRefreshingRef.current && currentPackIdRef.current) {
-                fetchMessages(currentPackIdRef.current, true);
-              }
-            }
-          }
-        } catch (error) {
-          console.error('Error checking for force refresh:', error);
-        }
+    // Substituindo o checkForceRefreshInterval por uma atualização direta a cada 30 segundos
+    const periodicRefreshIntervalId = setInterval(() => {
+      if (packId && sellerId && !backgroundRefreshingRef.current && currentPackIdRef.current) {
+        console.log('Periodic refresh triggered, fetching latest messages');
+        fetchMessages(currentPackIdRef.current, true);
       }
-    }, 5000);
+    }, 30000); // Atualização a cada 30 segundos
     
     return () => {
-      clearInterval(checkForceRefreshIntervalId);
+      clearInterval(periodicRefreshIntervalId);
     };
   }, [packId, sellerId, refreshTrigger]);
 

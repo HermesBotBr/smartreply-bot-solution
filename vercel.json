@@ -7,10 +7,6 @@
       "destination": "/api/messages/refresh-messages"
     },
     {
-      "source": "/api/messages/force-refresh",
-      "destination": "/api/messages/force-refresh"
-    },
-    {
       "source": "/api/:path*",
       "destination": "/api/:path*"
     },
