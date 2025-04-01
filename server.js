@@ -41,11 +41,19 @@ app.use(express.static(path.join(__dirname, 'public')));
 // Serve uploaded files at the /uploads path
 app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
 
+// Adiciona o endpoint de notificação (estilo handler)
+const notificationHandler = require('./app/notification-endpoint.js').default;
+
+app.post('/notification-endpoint', async (req, res) => {
+  return notificationHandler(req, res);
+});
+
 // Handle 404 for API routes
 app.use('/api/*', (req, res) => {
   console.log(`API route not found: ${req.originalUrl}`);
   res.status(404).json({ error: 'API endpoint not found' });
 });
+
 
 // Serve the index.html file for all other requests EXCEPT /api routes and /uploads routes
 app.get(/^(?!\/api\/|\/uploads\/).*/, (req, res) => {
