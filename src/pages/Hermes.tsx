@@ -210,17 +210,26 @@ useEffect(() => {
                     <p className="text-sm text-gray-500">Seller ID: {sellerId}</p>
                   </div>
                   <PacksList 
-                    packs={packs} 
-                    isLoading={packsLoading} 
-                    error={packsError}
-                    onSelectPack={handleSelectPack}
-                    selectedPackId={selectedPackId}
-                    sellerId={sellerId}
-                    latestMessages={latestMessages}
-                    allMessages={allMessages}
-                    messagesLoading={allMessagesLoading}
-                    messagesError={allMessagesError}
-                  />
+  packs={[...packs].sort((a, b) => {
+    const lastMsgA = latestMessages[a.pack_id];
+    const lastMsgB = latestMessages[b.pack_id];
+
+    const dateA = lastMsgA ? new Date(lastMsgA.timestamp || lastMsgA.created_at || 0).getTime() : 0;
+    const dateB = lastMsgB ? new Date(lastMsgB.timestamp || lastMsgB.created_at || 0).getTime() : 0;
+
+    return dateB - dateA; // do mais recente para o mais antigo
+  })} 
+  isLoading={packsLoading} 
+  error={packsError}
+  onSelectPack={handleSelectPack}
+  selectedPackId={selectedPackId}
+  sellerId={sellerId}
+  latestMessages={latestMessages}
+  allMessages={allMessages}
+  messagesLoading={allMessagesLoading}
+  messagesError={allMessagesError}
+/>
+
                 </div>
                 
                 <div className="w-2/3 h-full overflow-hidden">
