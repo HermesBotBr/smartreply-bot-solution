@@ -1,6 +1,6 @@
 // api/check-update-queue.js
 
-import { getQueue, clearQueueForSeller } from '../lib/update-queue';
+import { getQueue, clearQueueForSeller } from '../lib/update-queue.js';
 
 export default async function handler(req, res) {
   console.log("🔍 check-update-queue chamado com:", req.query);
