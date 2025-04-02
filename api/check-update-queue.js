@@ -1,28 +1,6 @@
 // api/check-update-queue.js
 
-const updateQueue = new Map();
-
-function addToUpdateQueue(sellerId, packId) {
-  const updates = updateQueue.get(sellerId) || [];
-  const existing = updates.find(u => u.pack_id === packId);
-
-  if (existing) {
-    existing.timestamp = new Date().toISOString();
-  } else {
-    updates.push({ pack_id: packId, timestamp: new Date().toISOString() });
-  }
-
-  updateQueue.set(sellerId, updates);
-  console.log(`📝 Atualização adicionada: ${packId} para seller ${sellerId}`);
-}
-
-function getQueue(sellerId) {
-  return updateQueue.get(sellerId) || [];
-}
-
-function clearQueueForSeller(sellerId) {
-  updateQueue.set(sellerId, []);
-}
+import { getQueue, clearQueueForSeller } from '../lib/update-queue';
 
 export default async function handler(req, res) {
   console.log("🔍 check-update-queue chamado com:", req.query);
