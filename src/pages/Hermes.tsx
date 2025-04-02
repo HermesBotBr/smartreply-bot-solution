@@ -13,6 +13,7 @@ import { useMessageNotifications } from "@/hooks/useMessageNotifications";
 import { usePacksWithMessages } from "@/hooks/usePacksWithMessages";
 import PacksList from "@/components/dashboard/PacksList";
 import MessagesList from "@/components/dashboard/MessagesList";
+import NotificationPermission from "@/components/NotificationPermission";
 
 const Hermes = () => {
   const [activeTab, setActiveTab] = useState('conversas');
@@ -33,6 +34,7 @@ const Hermes = () => {
     sellerId,
     messagesRefreshTrigger
   );
+  useMessageNotifications(sellerId);
 
   useEffect(() => {
     const auth = localStorage.getItem('hermesAuth');
@@ -154,9 +156,12 @@ const Hermes = () => {
             {activeTab === 'conversas' ? (
               <>
                 <div className="w-1/3 h-full overflow-auto border-r">
-                  <div className="p-4 border-b bg-white">
-                    <h2 className="text-lg font-medium">Clientes</h2>
-                    <p className="text-sm text-gray-500">Seller ID: {sellerId}</p>
+                  <div className="p-4 border-b bg-white flex justify-between items-center">
+                    <div>
+                      <h2 className="text-lg font-medium">Clientes</h2>
+                      <p className="text-sm text-gray-500">Seller ID: {sellerId}</p>
+                    </div>
+                    <NotificationPermission />
                   </div>
                   <PacksList
                     packs={[...packs].sort((a, b) => {
@@ -176,9 +181,9 @@ const Hermes = () => {
                     onSelectPack={handleSelectPack}
                     selectedPackId={selectedPackId}
                     sellerId={sellerId}
-latestMessages={Object.fromEntries(
-  Object.entries(latestMessagesMeta).map(([k, v]) => [k, v.text])
-)}
+                    latestMessages={Object.fromEntries(
+                      Object.entries(latestMessagesMeta).map(([k, v]) => [k, v.text])
+                    )}
                     allMessages={allMessages}
                     messagesLoading={allMessagesLoading}
                     messagesError={allMessagesError}
