@@ -98,13 +98,40 @@ useEffect(() => {
     .catch(err => console.error('Erro ao remover notificação:', err));
 }
  else {
-            console.log('ℹ️ Update é de outro pack. Atualizando lista de pacotes...');
-            refreshPacks();
+  console.log(`📦 Atualizando pack isolado ${update.pack_id} na lista de contatos`);
 
-            toast.info(`Nova mensagem recebida em outro pacote`, {
-              duration: 3000,
-            });
-          }
+  fetch(`https://projetohermes-dda7e0c8d836.herokuapp.com/api/db/rows/all_packs`)
+    .then(res => res.json())
+    .then(data => {
+      if (Array.isArray(data.rows)) {
+        const newPack = data.rows.find((p: any) => p.pack_id === update.pack_id);
+
+        if (newPack) {
+          setPacks(prev => {
+            const alreadyExists = prev.some(p => p.pack_id === newPack.pack_id);
+            if (alreadyExists) {
+              return prev.map(p => p.pack_id === newPack.pack_id ? newPack : p);
+            } else {
+              return [newPack, ...prev];
+            }
+          });
+        }
+      }
+    })
+    .catch(err => console.error('Erro ao buscar pack isolado:', err));
+
+  // Remover a notificação
+  fetch('https://projetohermes-dda7e0c8d836.herokuapp.com/notifications', {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      seller_id: sellerId,
+      pack_id: update.pack_id
+    })
+  })
+    .then(() => console.log(`🧹 Notificação removida para pack ${update.pack_id}`))
+    .catch(err => console.error('Erro ao remover notificação:', err));
+}
         } else {
           console.log("📭 Nenhuma atualização na fila.");
         }
