@@ -1,13 +1,27 @@
+
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { usePushNotification } from './use-push-notification';
 
-// Função para serializar subscription com JSON completo
-const serializeSubscription = (subscription: PushSubscription) => {
+// Extrai apenas os dados essenciais da subscription para reduzir o tamanho
+const extractEssentialSubscriptionData = (subscription: PushSubscription) => {
   if (!subscription) return null;
   
-  // Usar toJSON e depois stringify para garantir serialização completa
-  return JSON.stringify(subscription.toJSON(), null, 0);
+  try {
+    const subJSON = subscription.toJSON();
+    
+    // Garantir que apenas o mínimo necessário seja enviado
+    return {
+      endpoint: subscription.endpoint,
+      keys: {
+        p256dh: subJSON.keys?.p256dh || '',
+        auth: subJSON.keys?.auth || ''
+      }
+    };
+  } catch (error) {
+    console.error("Erro ao extrair dados da subscription:", error);
+    return null;
+  }
 };
 
 export const useMessageNotifications = (sellerId: string | null) => {
@@ -20,8 +34,14 @@ export const useMessageNotifications = (sellerId: string | null) => {
 
     const registerSubscription = async () => {
       try {
-        // Usar serialização completa da subscription
-        const serializedSubscription = serializeSubscription(subscription);
+        // Extrair apenas os dados essenciais no formato mais compacto possível
+        const essentialData = extractEssentialSubscriptionData(subscription);
+        
+        if (!essentialData) {
+          console.error('Falha ao extrair dados da subscription');
+          toast.error('Erro ao ativar notificações');
+          return;
+        }
         
         const response = await fetch('https://projetohermes-dda7e0c8d836.herokuapp.com/subscriptions', {
           method: 'POST',
@@ -29,7 +49,7 @@ export const useMessageNotifications = (sellerId: string | null) => {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            subscription_id: serializedSubscription,
+            subscription_id: JSON.stringify(essentialData),
             seller_id: sellerId
           }),
         });
