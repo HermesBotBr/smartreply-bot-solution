@@ -211,14 +211,19 @@ useEffect(() => {
                   </div>
                   <PacksList 
   packs={[...packs].sort((a, b) => {
-    const lastMsgA = latestMessages[a.pack_id];
-    const lastMsgB = latestMessages[b.pack_id];
+  const lastMsgA = latestMessages[a.pack_id];
+  const lastMsgB = latestMessages[b.pack_id];
 
-    const dateA = lastMsgA ? new Date(lastMsgA.timestamp || lastMsgA.created_at || 0).getTime() : 0;
-    const dateB = lastMsgB ? new Date(lastMsgB.timestamp || lastMsgB.created_at || 0).getTime() : 0;
+  const dateA = lastMsgA?.message_date?.created
+    ? new Date(lastMsgA.message_date.created).getTime()
+    : 0;
+  const dateB = lastMsgB?.message_date?.created
+    ? new Date(lastMsgB.message_date.created).getTime()
+    : 0;
 
-    return dateB - dateA; // do mais recente para o mais antigo
-  })} 
+  return dateB - dateA;
+})}
+
   isLoading={packsLoading} 
   error={packsError}
   onSelectPack={handleSelectPack}
