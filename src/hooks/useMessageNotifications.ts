@@ -10,12 +10,16 @@ const extractFullSubscriptionData = (subscription: PushSubscription) => {
     // Capturar todos os dados da subscription, não apenas os essenciais
     const fullSubscriptionData = subscription.toJSON();
     
+    // Log para verificar se o objeto está completo
+    console.log("Dados completos da subscription:", fullSubscriptionData);
+    
     return JSON.stringify(fullSubscriptionData);
   } catch (error) {
     console.error("Erro ao extrair dados completos da subscription:", error);
     return null;
   }
 };
+
 
 export const useMessageNotifications = (sellerId: string | null) => {
   const [isRegistered, setIsRegistered] = useState(false);
