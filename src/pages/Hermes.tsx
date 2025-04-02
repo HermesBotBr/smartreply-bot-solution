@@ -37,25 +37,7 @@ const Hermes = () => {
   );
   
   // Hook que gerencia as notificações vindas do endpoint /api/force-refresh-pack
-  const { isPollingApi } = useMessageNotifications(sellerId, (packId) => {
-    console.log(`📬 Notificação recebida para o pacote ${packId}, atualizando mensagens`);
-    
-    // Verifica se é o mesmo pacote que está selecionado
-    if (packId === selectedPackId) {
-      // Se for o pacote selecionado, atualiza as mensagens visíveis 
-      console.log("🔄 Atualizando mensagens do pacote atualmente aberto:", packId);
-      updatePackMessages(packId);
-    } else {
-      // Se não for o pacote selecionado, apenas atualiza a lista de pacotes para mostrar a nova mensagem
-      console.log("📝 Atualizando lista de pacotes para mostrar nova mensagem no pacote:", packId);
-      refreshPacks();
-      
-      // Notifica o usuário sobre a nova mensagem
-      toast.info(`Nova mensagem recebida para o pacote ${packId}`, {
-        duration: 3000,
-      });
-    }
-  });
+  //apagado
   
   useEffect(() => {
     const auth = localStorage.getItem('hermesAuth');
