@@ -1,25 +1,17 @@
-
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { usePushNotification } from './use-push-notification';
 
-// Extrai apenas os dados essenciais da subscription para reduzir o tamanho
-const extractEssentialSubscriptionData = (subscription: PushSubscription) => {
+const extractFullSubscriptionData = (subscription: PushSubscription) => {
   if (!subscription) return null;
   
   try {
-    const subJSON = subscription.toJSON();
+    // Capturar todos os dados da subscription, não apenas os essenciais
+    const fullSubscriptionData = subscription.toJSON();
     
-    // Garantir que apenas o mínimo necessário seja enviado
-    return {
-      endpoint: subscription.endpoint,
-      keys: {
-        p256dh: subJSON.keys?.p256dh || '',
-        auth: subJSON.keys?.auth || ''
-      }
-    };
+    return JSON.stringify(fullSubscriptionData);
   } catch (error) {
-    console.error("Erro ao extrair dados da subscription:", error);
+    console.error("Erro ao extrair dados completos da subscription:", error);
     return null;
   }
 };
@@ -28,16 +20,15 @@ export const useMessageNotifications = (sellerId: string | null) => {
   const [isRegistered, setIsRegistered] = useState(false);
   const { subscribe, subscription, permission, supported } = usePushNotification();
 
-  // Registrar inscrição de notificações quando o usuário logar
   useEffect(() => {
     if (!sellerId || !supported || permission !== 'granted' || isRegistered || !subscription) return;
 
     const registerSubscription = async () => {
       try {
-        // Extrair apenas os dados essenciais no formato mais compacto possível
-        const essentialData = extractEssentialSubscriptionData(subscription);
+        // Extrair dados completos da subscription
+        const fullSubscriptionData = extractFullSubscriptionData(subscription);
         
-        if (!essentialData) {
+        if (!fullSubscriptionData) {
           console.error('Falha ao extrair dados da subscription');
           toast.error('Erro ao ativar notificações');
           return;
@@ -49,13 +40,13 @@ export const useMessageNotifications = (sellerId: string | null) => {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            subscription_id: JSON.stringify(essentialData),
+            subscription_id: fullSubscriptionData,
             seller_id: sellerId
           }),
         });
 
         if (response.ok) {
-          console.log('Subscription cadastrada com sucesso para seller_id:', sellerId);
+          console.log('Subscription completa cadastrada com sucesso para seller_id:', sellerId);
           setIsRegistered(true);
           toast.success('Notificações ativadas com sucesso');
         } else {
@@ -71,7 +62,6 @@ export const useMessageNotifications = (sellerId: string | null) => {
     registerSubscription();
   }, [sellerId, subscription, permission, supported, isRegistered]);
 
-  // Solicitar permissão de notificação quando o usuário logar
   useEffect(() => {
     if (!sellerId || !supported || isRegistered) return;
     
