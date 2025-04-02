@@ -56,5 +56,5 @@ export function useAllPacksData(sellerId: string | null) {
     fetchAllPacks();
   }, [fetchAllPacks]);
 
-  return { packs, isLoading, error, refreshPacks };
+  return { packs, setPacks, isLoading, error, refreshPacks };
 }
