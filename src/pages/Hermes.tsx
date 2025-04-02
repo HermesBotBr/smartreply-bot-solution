@@ -82,38 +82,45 @@ const Hermes = () => {
     localStorage.removeItem('hermesAuth');
   }, []);
 
-  useEffect(() => {
+useEffect(() => {
   if (!sellerId || !selectedPackId) return;
 
   const interval = setInterval(() => {
+    console.log("🔄 Verificando fila de updates para:", sellerId);
+
     fetch(`/api/check-update-queue?seller_id=${sellerId}`)
       .then(res => res.json())
       .then(data => {
+        console.log("📥 Resposta do check-update-queue:", data);
+
         if (data.success && data.updates.length > 0) {
-          console.log('🚨 Atualização forçada detectada na fila:', data.updates);
+          console.log('🚨 Updates detectados na fila:', data.updates);
 
           const updateForCurrentPack = data.updates.find(update => update.pack_id === selectedPackId);
 
           if (updateForCurrentPack) {
-            console.log('🔄 Atualizando mensagens do pack atualmente aberto (via fila):', selectedPackId);
+            console.log('✅ Atualizando mensagens do pack aberto:', selectedPackId);
             updatePackMessages(selectedPackId);
           } else {
-            console.log('📝 Atualizando lista de pacotes (update veio para outro pack)');
+            console.log('ℹ️ Update é de outro pack. Atualizando lista de pacotes...');
             refreshPacks();
 
             toast.info(`Nova mensagem recebida em outro pacote`, {
               duration: 3000,
             });
           }
+        } else {
+          console.log("📭 Nenhuma atualização na fila.");
         }
       })
       .catch(err => {
-        console.error('Erro ao verificar fila de atualizações:', err);
+        console.error('⚠️ Erro ao verificar fila de atualizações:', err);
       });
   }, 5000); // a cada 5 segundos
 
   return () => clearInterval(interval);
 }, [sellerId, selectedPackId]);
+
 
 
   useEffect(() => {
