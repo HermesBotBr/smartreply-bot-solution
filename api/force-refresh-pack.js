@@ -1,6 +1,6 @@
 
 import axios from 'axios';
-import { addToUpdateQueue } from '../lib/update-queue';
+import { addToUpdateQueue } from '../lib/update-queue.js';
 
 
 export default async function handler(req, res) {
