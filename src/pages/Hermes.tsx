@@ -214,9 +214,24 @@ useEffect(() => {
   const lastMsgA = latestMessages[a.pack_id];
   const lastMsgB = latestMessages[b.pack_id];
 
-  const dateA = lastMsgA?.message_date?.created
-    ? new Date(lastMsgA.message_date.created).getTime()
-    : 0;
+  const dateA = lastMsgA
+  ? new Date(
+      lastMsgA.message_date?.created ||
+      lastMsgA.timestamp ||
+      lastMsgA.created_at ||
+      0
+    ).getTime()
+  : 0;
+
+const dateB = lastMsgB
+  ? new Date(
+      lastMsgB.message_date?.created ||
+      lastMsgB.timestamp ||
+      lastMsgB.created_at ||
+      0
+    ).getTime()
+  : 0;
+
   const dateB = lastMsgB?.message_date?.created
     ? new Date(lastMsgB.message_date.created).getTime()
     : 0;
