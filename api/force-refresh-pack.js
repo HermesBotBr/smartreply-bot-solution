@@ -1,6 +1,8 @@
 
 import axios from 'axios';
 import { addToUpdateQueue } from './check-update-queue';
+import { addToUpdateQueue } from '../lib/update-queue';
+
 
 export default async function handler(req, res) {
   console.log("🚀 Endpoint force-refresh-pack foi acionado.");
