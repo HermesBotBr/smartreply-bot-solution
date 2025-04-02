@@ -25,11 +25,17 @@ export default async function handler(req, res) {
     const updates = getQueue(seller_id);
 
     if (updates.length > 0) {
-      console.log(`🔄 Enviando ${updates.length} atualizações para seller_id ${seller_id}`);
-      clearQueueForSeller(seller_id);
-    } else {
-      console.log("ℹ️ Nenhuma atualização na fila.");
-    }
+  console.log(`🔄 Enviando ${updates.length} atualizações para seller_id ${seller_id}`);
+
+  // Aguarda 2 segundos antes de limpar a fila (tempo suficiente para o frontend pegar os dados)
+  setTimeout(() => {
+    clearQueueForSeller(seller_id);
+    console.log(`🧹 Fila limpa para seller_id ${seller_id}`);
+  }, 2000);
+} else {
+  console.log("ℹ️ Nenhuma atualização na fila.");
+}
+
 
     return res.status(200).json({
       success: true,
