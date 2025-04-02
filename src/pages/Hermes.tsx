@@ -83,7 +83,8 @@ const Hermes = () => {
   }, []);
 
 useEffect(() => {
-  if (!sellerId || !selectedPackId) return;
+  if (!sellerId) return;
+
 
   const interval = setInterval(() => {
     console.log("🔄 Verificando fila de updates para:", sellerId);
