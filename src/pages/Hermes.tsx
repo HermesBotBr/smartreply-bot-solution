@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/compone
 import { toast } from "sonner";
 import { useAllPacksData } from "@/hooks/useAllPacksData";
 import { usePackMessages } from "@/hooks/usePackMessages";
+import { useMessageNotifications } from "@/hooks/useMessageNotifications";
 import { usePacksWithMessages } from "@/hooks/usePacksWithMessages";
 import PacksList from "@/components/dashboard/PacksList";
 import MessagesList from "@/components/dashboard/MessagesList";
@@ -73,7 +74,7 @@ const Hermes = () => {
                   method: 'DELETE',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({ seller_id: sellerId, pack_id: selectedPackId })
-                });
+                }).catch(err => console.error(err));
               } else {
                 fetch(`https://projetohermes-dda7e0c8d836.herokuapp.com/api/db/rows/all_packs`)
                   .then(res => res.json())
@@ -89,17 +90,17 @@ const Hermes = () => {
                         });
                       }
                     }
-                  });
+                  }).catch(err => console.error(err));
+
                 fetch('https://projetohermes-dda7e0c8d836.herokuapp.com/notifications', {
                   method: 'DELETE',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({ seller_id: sellerId, pack_id: update.pack_id })
-                });
+                }).catch(err => console.error(err));
               }
             });
           }
-        })
-        .catch(err => console.error('Erro ao verificar fila de atualizações:', err));
+        }).catch(err => console.error(err));
     }, 5000);
 
     return () => clearInterval(interval);
@@ -136,7 +137,9 @@ const Hermes = () => {
       <Dialog open={loginOpen} onOpenChange={setLoginOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogTitle className="sr-only">Login</DialogTitle>
-          <DialogDescription className="sr-only">Faça login para acessar o sistema Hermes</DialogDescription>
+          <DialogDescription className="sr-only">
+            Faça login para acessar o sistema Hermes
+          </DialogDescription>
           <HermesLogin onLoginSuccess={handleLoginSuccess} />
         </DialogContent>
       </Dialog>
@@ -159,12 +162,25 @@ const Hermes = () => {
                     packs={[...packs].sort((a, b) => {
                       const lastMsgA = latestMessages[a.pack_id];
                       const lastMsgB = latestMessages[b.pack_id];
+
                       const dateA = lastMsgA
-                        ? new Date(lastMsgA.message_date?.created || lastMsgA.timestamp || lastMsgA.created_at || 0).getTime()
+                        ? new Date(
+                            lastMsgA.message_date?.created ||
+                            lastMsgA.timestamp ||
+                            lastMsgA.created_at ||
+                            0
+                          ).getTime()
                         : 0;
+
                       const dateB = lastMsgB
-                        ? new Date(lastMsgB.message_date?.created || lastMsgB.timestamp || lastMsgB.created_at || 0).getTime()
+                        ? new Date(
+                            lastMsgB.message_date?.created ||
+                            lastMsgB.timestamp ||
+                            lastMsgB.created_at ||
+                            0
+                          ).getTime()
                         : 0;
+
                       return dateB - dateA;
                     })}
                     isLoading={packsLoading}
@@ -185,11 +201,9 @@ const Hermes = () => {
                       <div className="p-4 border-b bg-white">
                         <h3 className="text-lg font-medium">Pack ID: {selectedPackId}</h3>
                         <p className="text-sm text-gray-500">
-                          {messagesLoading
-                            ? 'Carregando mensagens...'
-                            : messagesError
-                              ? 'Erro ao carregar mensagens'
-                              : `${messages.length} mensagens`}
+                          {messagesLoading ? 'Carregando mensagens...' :
+                            messagesError ? 'Erro ao carregar mensagens' :
+                            `${messages.length} mensagens`}
                         </p>
                       </div>
                       <div className="flex-1 overflow-hidden bg-gray-50">
@@ -207,19 +221,27 @@ const Hermes = () => {
                     <div className="flex items-center justify-center h-full">
                       <div className="text-center p-6">
                         <h3 className="text-xl font-bold mb-2">Nenhum cliente selecionado</h3>
-                        <p className="text-gray-500">Selecione um cliente para ver as mensagens</p>
+                        <p className="text-gray-500">
+                          Selecione um cliente para ver as mensagens
+                        </p>
                       </div>
                     </div>
                   )}
                 </div>
               </>
             ) : activeTab === 'perguntas' ? (
-              <div className="w-full h-full overflow-auto"><QuestionsList /></div>
+              <div className="w-full h-full overflow-auto">
+                <QuestionsList />
+              </div>
             ) : activeTab === 'etiquetas' ? (
-              <div className="w-full h-full overflow-auto"><EtiquetasList /></div>
+              <div className="w-full h-full overflow-auto">
+                <EtiquetasList />
+              </div>
             ) : (
               <div className="w-full h-full overflow-auto">
-                <MetricsDisplay onOrderClick={(orderId) => console.log('Order clicked:', orderId)} />
+                <MetricsDisplay onOrderClick={(orderId) => {
+                  console.log('Order clicked:', orderId);
+                }} />
               </div>
             )}
           </div>
