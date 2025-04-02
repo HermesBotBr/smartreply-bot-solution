@@ -1,16 +1,30 @@
+
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Code } from "lucide-react";
 import { useLocation } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 
 const NotificationEndpoint: React.FC = () => {
   const location = useLocation();
   const [message, setMessage] = useState<string>('');
+  const [sellerId, setSellerId] = useState<string>('');
   const [hasProcessedRequest, setHasProcessedRequest] = useState(false);
   
   // Função para enviar a notificação
-  const sendNotification = (notificationMessage: string) => {
+  const sendNotification = (notificationMessage: string, sellerIdToUse: string) => {
+    if (!sellerIdToUse) {
+      toast({
+        title: "Erro",
+        description: "O ID do vendedor é obrigatório",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     const defaultMessage = 'Um cliente aguarda atendimento humano';
     const finalMessage = notificationMessage || defaultMessage;
     
@@ -20,12 +34,12 @@ const NotificationEndpoint: React.FC = () => {
           body: finalMessage,
           icon: '/favicon.ico',
           requireInteraction: true,
-          data: { timestamp: new Date().getTime() }
+          data: { timestamp: new Date().getTime(), sellerId: sellerIdToUse }
         });
         
         toast({
           title: "Notificação enviada",
-          description: `Mensagem: "${finalMessage}"`,
+          description: `Mensagem: "${finalMessage}" para vendedor: ${sellerIdToUse}`,
         });
       });
     }
@@ -33,8 +47,12 @@ const NotificationEndpoint: React.FC = () => {
   
   // Função para lidar com solicitações GET (para compatibilidade)
   const handleGetRequest = () => {
-    if (location.pathname === '/notification-endpoint' && !hasProcessedRequest) {
-      sendNotification(message);
+    const searchParams = new URLSearchParams(location.search);
+    const sellerIdParam = searchParams.get('seller_id');
+    
+    if (location.pathname === '/notification-endpoint' && !hasProcessedRequest && sellerIdParam) {
+      setSellerId(sellerIdParam);
+      sendNotification(message, sellerIdParam);
       setHasProcessedRequest(true);
     }
   };
@@ -48,8 +66,16 @@ const NotificationEndpoint: React.FC = () => {
       
       // Processar a mensagem
       if (event.data && event.data.type === 'notification') {
+        const receivedSellerId = event.data.seller_id;
+        
+        if (!receivedSellerId) {
+          console.error("Notificação recebida sem seller_id");
+          return;
+        }
+        
         setMessage(event.data.message || '');
-        sendNotification(event.data.message || '');
+        setSellerId(receivedSellerId);
+        sendNotification(event.data.message || '', receivedSellerId);
       }
     };
 
@@ -67,12 +93,47 @@ const NotificationEndpoint: React.FC = () => {
 
   // Função para testar o envio de notificação diretamente da página
   const testNotification = () => {
+    if (!sellerId) {
+      toast({
+        title: "Erro",
+        description: "O ID do vendedor é obrigatório",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     // Simula uma requisição POST usando a API fetch
-    fetch('/notification-endpoint', {
+    fetch('/api/notification-endpoint', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: 'Teste de notificação via POST' })
-    }).catch(error => console.error('Erro ao enviar notificação de teste:', error));
+      body: JSON.stringify({ 
+        message: message || 'Teste de notificação via POST',
+        seller_id: sellerId
+      })
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        toast({
+          title: "Sucesso",
+          description: data.message || "Notificação enviada com sucesso",
+        });
+      } else {
+        toast({
+          title: "Erro",
+          description: data.error || "Falha ao enviar notificação",
+          variant: "destructive"
+        });
+      }
+    })
+    .catch(error => {
+      console.error('Erro ao enviar notificação de teste:', error);
+      toast({
+        title: "Erro",
+        description: "Falha ao enviar a requisição",
+        variant: "destructive"
+      });
+    });
   };
 
   return (
@@ -88,19 +149,47 @@ const NotificationEndpoint: React.FC = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="seller-id">ID do Vendedor (obrigatório)</Label>
+                <Input 
+                  id="seller-id"
+                  placeholder="Ex: 123456789" 
+                  value={sellerId}
+                  onChange={(e) => setSellerId(e.target.value)}
+                  className="w-full"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="message">Mensagem (opcional)</Label>
+                <Input 
+                  id="message"
+                  placeholder="Mensagem personalizada" 
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  className="w-full"
+                />
+              </div>
+            </div>
+            
+            <Button onClick={testNotification} className="w-full">
+              Testar Notificação
+            </Button>
+            
             <div className="bg-muted p-4 rounded-md">
               <h3 className="font-semibold mb-2">Como usar:</h3>
               <p className="mb-2">Faça uma requisição POST via Postman:</p>
               <pre className="bg-black text-white p-3 rounded-md overflow-x-auto">
-                {`POST ${window.location.origin}/notification-endpoint
+                {`POST ${window.location.origin}/api/notification-endpoint
 
 Body (JSON):
 {
-  "message": "Sua mensagem aqui"
+  "message": "Sua mensagem aqui",
+  "seller_id": "123456789"
 }`}
               </pre>
-              <p className="mt-2">O campo <code>message</code> é opcional. Se não for fornecido, será usado o texto padrão.</p>
+              <p className="mt-2">O campo <code>message</code> é opcional, mas <code>seller_id</code> é obrigatório.</p>
             </div>
             
             <div className="mt-6">
@@ -108,33 +197,16 @@ Body (JSON):
               <ol className="list-decimal list-inside space-y-2">
                 <li>Abra o Postman</li>
                 <li>Crie uma nova requisição POST</li>
-                <li>Insira o URL: <code>{window.location.origin}/notification-endpoint</code></li>
+                <li>Insira o URL: <code>{window.location.origin}/api/notification-endpoint</code></li>
                 <li>Na aba "Body", selecione "raw" e "JSON"</li>
-                <li>Insira o JSON com a mensagem desejada</li>
+                <li>Insira o JSON com o seller_id e a mensagem</li>
                 <li>Clique em "Send" para enviar a requisição</li>
               </ol>
             </div>
             
-            <div className="mt-6">
-              <h3 className="font-semibold mb-2">Testar diretamente:</h3>
-              <p className="mb-2">Clique no botão abaixo para simular uma requisição POST:</p>
-              <button 
-                onClick={testNotification}
-                className="bg-primary text-white px-4 py-2 rounded hover:bg-primary/90 transition-colors"
-              >
-                Testar Notificação
-              </button>
-            </div>
-            
-            <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
+            <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-md">
               <p className="text-yellow-700">
                 <strong>Nota:</strong> Para que as notificações funcionem, você precisa primeiro permitir notificações clicando no botão "Ativar notificações" na página inicial.
-              </p>
-              <p className="text-yellow-700 mt-2">
-                <strong>Importante:</strong> Como este é um frontend sem backend real, removemos a simulação de interceptação do POST. Em um ambiente de produção, você precisará de um backend real para processar as solicitações POST.
-              </p>
-              <p className="text-yellow-700 mt-2">
-                <strong>Compatibilidade:</strong> Por razões de backward compatibility, o endpoint ainda funciona com GET, mas recomendamos usar POST conforme as práticas REST.
               </p>
             </div>
           </div>
