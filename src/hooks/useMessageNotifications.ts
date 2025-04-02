@@ -1,7 +1,3 @@
-import { useState, useEffect } from 'react';
-import { toast } from 'sonner';
-import { usePushNotification } from './use-push-notification';
-
 export const useMessageNotifications = (sellerId: string | null) => {
   const [isRegistered, setIsRegistered] = useState(false);
   const { subscribe, subscription, permission, supported } = usePushNotification();
@@ -11,13 +7,15 @@ export const useMessageNotifications = (sellerId: string | null) => {
 
     const registerSubscription = async () => {
       try {
+        const subscriptionId = subscription.endpoint; // Usando o endpoint como `subscription_id`
+        
         const response = await fetch('https://projetohermes-dda7e0c8d836.herokuapp.com/subscriptions', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            subscription: subscription.toJSON(), // envia o objeto completo corretamente
+            subscription_id: subscriptionId, // Enviando apenas o ID/endpoint da subscription
             seller_id: sellerId
           }),
         });
