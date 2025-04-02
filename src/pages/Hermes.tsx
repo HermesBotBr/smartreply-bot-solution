@@ -28,7 +28,7 @@ const Hermes = () => {
   const [messagesRefreshTrigger, setMessagesRefreshTrigger] = useState(0);
   
   // Use o novo hook para buscar pacotes da tabela all_packs
-  const { packs, isLoading: packsLoading, error: packsError, refreshPacks } = useAllPacksData(sellerId);
+  const { packs, setPacks, isLoading: packsLoading, error: packsError, refreshPacks } = useAllPacksData(sellerId);
   const { latestMessages, allMessages, isLoading: allMessagesLoading, error: allMessagesError } = usePacksWithMessages(packs, sellerId);
   const { messages, isLoading: messagesLoading, error: messagesError, updatePackMessages } = usePackMessages(
     selectedPackId, 
