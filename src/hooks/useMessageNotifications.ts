@@ -1,20 +1,13 @@
-
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { usePushNotification } from './use-push-notification';
 
-// Função para compactar o objeto de subscription antes de enviar
-const compactSubscription = (subscription: PushSubscription) => {
+// Função para serializar subscription com JSON completo
+const serializeSubscription = (subscription: PushSubscription) => {
   if (!subscription) return null;
   
-  // Extrair apenas os dados essenciais da subscription
-  return {
-    endpoint: subscription.endpoint,
-    keys: {
-      p256dh: subscription.toJSON().keys?.p256dh,
-      auth: subscription.toJSON().keys?.auth
-    }
-  };
+  // Usar toJSON e depois stringify para garantir serialização completa
+  return JSON.stringify(subscription.toJSON(), null, 0);
 };
 
 export const useMessageNotifications = (sellerId: string | null) => {
@@ -27,8 +20,8 @@ export const useMessageNotifications = (sellerId: string | null) => {
 
     const registerSubscription = async () => {
       try {
-        // Usar o formato compacto da subscription
-        const compactedSubscription = compactSubscription(subscription);
+        // Usar serialização completa da subscription
+        const serializedSubscription = serializeSubscription(subscription);
         
         const response = await fetch('https://projetohermes-dda7e0c8d836.herokuapp.com/subscriptions', {
           method: 'POST',
@@ -36,7 +29,7 @@ export const useMessageNotifications = (sellerId: string | null) => {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            subscription_id: JSON.stringify(compactedSubscription),
+            subscription_id: serializedSubscription,
             seller_id: sellerId
           }),
         });
