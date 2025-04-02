@@ -27,7 +27,7 @@ const Hermes = () => {
   const [messagesRefreshTrigger, setMessagesRefreshTrigger] = useState(0);
 
   const { packs, setPacks, isLoading: packsLoading, error: packsError, refreshPacks } = useAllPacksData(sellerId);
-  const { latestMessages, allMessages, isLoading: allMessagesLoading, error: allMessagesError } = usePacksWithMessages(packs, sellerId);
+  const { latestMessagesMeta, allMessages, isLoading: allMessagesLoading, error: allMessagesError } = usePacksWithMessages(packs, sellerId);
   const { messages, isLoading: messagesLoading, error: messagesError, updatePackMessages } = usePackMessages(
     selectedPackId,
     sellerId,
@@ -160,35 +160,25 @@ const Hermes = () => {
                   </div>
                   <PacksList
                     packs={[...packs].sort((a, b) => {
-                      const lastMsgA = latestMessages[a.pack_id];
-                      const lastMsgB = latestMessages[b.pack_id];
+  const dateA = latestMessagesMeta[a.pack_id]?.createdAt
+    ? new Date(latestMessagesMeta[a.pack_id].createdAt).getTime()
+    : 0;
 
-                      const dateA = lastMsgA
-                        ? new Date(
-                            lastMsgA.message_date?.created ||
-                            lastMsgA.timestamp ||
-                            lastMsgA.created_at ||
-                            0
-                          ).getTime()
-                        : 0;
+  const dateB = latestMessagesMeta[b.pack_id]?.createdAt
+    ? new Date(latestMessagesMeta[b.pack_id].createdAt).getTime()
+    : 0;
 
-                      const dateB = lastMsgB
-                        ? new Date(
-                            lastMsgB.message_date?.created ||
-                            lastMsgB.timestamp ||
-                            lastMsgB.created_at ||
-                            0
-                          ).getTime()
-                        : 0;
+  return dateB - dateA;
+})}
 
-                      return dateB - dateA;
-                    })}
                     isLoading={packsLoading}
                     error={packsError}
                     onSelectPack={handleSelectPack}
                     selectedPackId={selectedPackId}
                     sellerId={sellerId}
-                    latestMessages={latestMessages}
+latestMessages={Object.fromEntries(
+  Object.entries(latestMessagesMeta).map(([k, v]) => [k, v.text])
+)}
                     allMessages={allMessages}
                     messagesLoading={allMessagesLoading}
                     messagesError={allMessagesError}
