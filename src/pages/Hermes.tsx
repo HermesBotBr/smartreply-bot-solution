@@ -222,7 +222,6 @@ useEffect(() => {
       0
     ).getTime()
   : 0;
-
 packs={[...packs].sort((a, b) => {
   const lastMsgA = latestMessages[a.pack_id];
   const lastMsgB = latestMessages[b.pack_id];
@@ -248,9 +247,6 @@ packs={[...packs].sort((a, b) => {
   return dateB - dateA;
 })}
 
-
-  return dateB - dateA;
-})}
 
   isLoading={packsLoading} 
   error={packsError}
