@@ -79,59 +79,57 @@ useEffect(() => {
         if (data.success && data.updates.length > 0) {
           console.log('🚨 Updates detectados na fila:', data.updates);
 
-          const updateForCurrentPack = data.updates.find(update => update.pack_id === selectedPackId);
+          data.updates.forEach((update) => {
+  if (update.pack_id === selectedPackId) {
+    console.log('✅ Atualizando mensagens do pack aberto:', selectedPackId);
+    updatePackMessages(selectedPackId);
 
-          if (updateForCurrentPack) {
-  console.log('✅ Atualizando mensagens do pack aberto:', selectedPackId);
-  updatePackMessages(selectedPackId);
-
-  // 🔥 Após processar, remover notificação do servidor
-  fetch('https://projetohermes-dda7e0c8d836.herokuapp.com/notifications', {
-    method: 'DELETE',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      seller_id: sellerId,
-      pack_id: selectedPackId
+    fetch('https://projetohermes-dda7e0c8d836.herokuapp.com/notifications', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        seller_id: sellerId,
+        pack_id: selectedPackId
+      })
     })
-  })
-    .then(() => console.log(`🧹 Notificação removida para pack ${selectedPackId}`))
-    .catch(err => console.error('Erro ao remover notificação:', err));
-}
- else {
-  console.log(`📦 Atualizando pack isolado ${update.pack_id} na lista de contatos`);
+      .then(() => console.log(`🧹 Notificação removida para pack ${selectedPackId}`))
+      .catch(err => console.error('Erro ao remover notificação:', err));
+  } else {
+    console.log(`📦 Atualizando pack isolado ${update.pack_id} na lista de contatos`);
 
-  fetch(`https://projetohermes-dda7e0c8d836.herokuapp.com/api/db/rows/all_packs`)
-    .then(res => res.json())
-    .then(data => {
-      if (Array.isArray(data.rows)) {
-        const newPack = data.rows.find((p: any) => p.pack_id === update.pack_id);
+    fetch(`https://projetohermes-dda7e0c8d836.herokuapp.com/api/db/rows/all_packs`)
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data.rows)) {
+          const newPack = data.rows.find((p: any) => p.pack_id === update.pack_id);
 
-        if (newPack) {
-          setPacks(prev => {
-            const alreadyExists = prev.some(p => p.pack_id === newPack.pack_id);
-            if (alreadyExists) {
-              return prev.map(p => p.pack_id === newPack.pack_id ? newPack : p);
-            } else {
-              return [newPack, ...prev];
-            }
-          });
+          if (newPack) {
+            setPacks(prev => {
+              const alreadyExists = prev.some(p => p.pack_id === newPack.pack_id);
+              if (alreadyExists) {
+                return prev.map(p => p.pack_id === newPack.pack_id ? newPack : p);
+              } else {
+                return [newPack, ...prev];
+              }
+            });
+          }
         }
-      }
-    })
-    .catch(err => console.error('Erro ao buscar pack isolado:', err));
+      })
+      .catch(err => console.error('Erro ao buscar pack isolado:', err));
 
-  // Remover a notificação
-  fetch('https://projetohermes-dda7e0c8d836.herokuapp.com/notifications', {
-    method: 'DELETE',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      seller_id: sellerId,
-      pack_id: update.pack_id
+    fetch('https://projetohermes-dda7e0c8d836.herokuapp.com/notifications', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        seller_id: sellerId,
+        pack_id: update.pack_id
+      })
     })
-  })
-    .then(() => console.log(`🧹 Notificação removida para pack ${update.pack_id}`))
-    .catch(err => console.error('Erro ao remover notificação:', err));
-}
+      .then(() => console.log(`🧹 Notificação removida para pack ${update.pack_id}`))
+      .catch(err => console.error('Erro ao remover notificação:', err));
+  }
+});
+
         } else {
           console.log("📭 Nenhuma atualização na fila.");
         }
