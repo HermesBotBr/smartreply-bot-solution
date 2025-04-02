@@ -100,9 +100,22 @@ useEffect(() => {
           const updateForCurrentPack = data.updates.find(update => update.pack_id === selectedPackId);
 
           if (updateForCurrentPack) {
-            console.log('✅ Atualizando mensagens do pack aberto:', selectedPackId);
-            updatePackMessages(selectedPackId);
-          } else {
+  console.log('✅ Atualizando mensagens do pack aberto:', selectedPackId);
+  updatePackMessages(selectedPackId);
+
+  // 🔥 Após processar, remover notificação do servidor
+  fetch('https://projetohermes-dda7e0c8d836.herokuapp.com/notifications', {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      seller_id,
+      pack_id: selectedPackId
+    })
+  })
+    .then(() => console.log(`🧹 Notificação removida para pack ${selectedPackId}`))
+    .catch(err => console.error('Erro ao remover notificação:', err));
+}
+ else {
             console.log('ℹ️ Update é de outro pack. Atualizando lista de pacotes...');
             refreshPacks();
 
