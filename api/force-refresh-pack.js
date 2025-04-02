@@ -1,6 +1,5 @@
 
 import axios from 'axios';
-import { addToUpdateQueue } from './check-update-queue';
 import { addToUpdateQueue } from '../lib/update-queue';
 
 
