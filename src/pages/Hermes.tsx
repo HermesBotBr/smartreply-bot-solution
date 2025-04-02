@@ -108,7 +108,7 @@ useEffect(() => {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      seller_id,
+      seller_id: sellerId,
       pack_id: selectedPackId
     })
   })
