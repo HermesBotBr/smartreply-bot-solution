@@ -223,18 +223,31 @@ useEffect(() => {
     ).getTime()
   : 0;
 
-const dateB = lastMsgB
-  ? new Date(
-      lastMsgB.message_date?.created ||
-      lastMsgB.timestamp ||
-      lastMsgB.created_at ||
-      0
-    ).getTime()
-  : 0;
+packs={[...packs].sort((a, b) => {
+  const lastMsgA = latestMessages[a.pack_id];
+  const lastMsgB = latestMessages[b.pack_id];
 
-  const dateB = lastMsgB?.message_date?.created
-    ? new Date(lastMsgB.message_date.created).getTime()
+  const dateA = lastMsgA
+    ? new Date(
+        lastMsgA.message_date?.created ||
+        lastMsgA.timestamp ||
+        lastMsgA.created_at ||
+        0
+      ).getTime()
     : 0;
+
+  const dateB = lastMsgB
+    ? new Date(
+        lastMsgB.message_date?.created ||
+        lastMsgB.timestamp ||
+        lastMsgB.created_at ||
+        0
+      ).getTime()
+    : 0;
+
+  return dateB - dateA;
+})}
+
 
   return dateB - dateA;
 })}
