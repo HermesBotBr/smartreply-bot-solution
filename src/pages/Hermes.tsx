@@ -110,7 +110,7 @@ const Hermes = () => {
       .catch(err => {
         console.error('Erro ao verificar fila de atualizações:', err);
       });
-  }, 5000); // a cada 10 segundos
+  }, 5000); // a cada 5 segundos
 
   return () => clearInterval(interval);
 }, [sellerId, selectedPackId]);
