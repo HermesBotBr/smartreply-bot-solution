@@ -83,6 +83,40 @@ const Hermes = () => {
   }, []);
 
   useEffect(() => {
+  if (!sellerId || !selectedPackId) return;
+
+  const interval = setInterval(() => {
+    fetch(`/api/check-update-queue?seller_id=${sellerId}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.updates.length > 0) {
+          console.log('🚨 Atualização forçada detectada na fila:', data.updates);
+
+          const updateForCurrentPack = data.updates.find(update => update.pack_id === selectedPackId);
+
+          if (updateForCurrentPack) {
+            console.log('🔄 Atualizando mensagens do pack atualmente aberto (via fila):', selectedPackId);
+            updatePackMessages(selectedPackId);
+          } else {
+            console.log('📝 Atualizando lista de pacotes (update veio para outro pack)');
+            refreshPacks();
+
+            toast.info(`Nova mensagem recebida em outro pacote`, {
+              duration: 3000,
+            });
+          }
+        }
+      })
+      .catch(err => {
+        console.error('Erro ao verificar fila de atualizações:', err);
+      });
+  }, 10000); // a cada 10 segundos
+
+  return () => clearInterval(interval);
+}, [sellerId, selectedPackId]);
+
+
+  useEffect(() => {
     if (selectedPackId) {
       console.log("Selected pack ID:", selectedPackId, "for seller:", sellerId);
     }
