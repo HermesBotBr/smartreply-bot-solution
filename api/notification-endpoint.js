@@ -2,15 +2,22 @@
 import webpush from "web-push";
 import axios from "axios";
 
-// Configure suas chaves VAPID (substitua com seus dados reais)
+// Gerar novas chaves VAPID - isso é feito apenas uma vez e as chaves devem ser armazenadas com segurança
+// Em um ambiente de produção, essas chaves devem ser variáveis de ambiente
+// As chaves abaixo foram geradas especificamente para este exemplo
+const vapidKeys = {
+  publicKey: 'BM7-6PGPMixCbZGdH-armIVvF7tQvYcXGwHXNmOQpgLoenzzHwXn9VnSKB9-qj85I6iNuXYJEIKFnP6fBlu-7qw',
+  privateKey: 'M3TugEAj1lKU0pOeMhh6uHtZ602tJ-Aj29ICXJLiUwo'
+};
+
+// Configurar as chaves VAPID
 webpush.setVapidDetails(
-  "mailto:seuemail@dominio.com",
-  "BAbN67uXIrHatd6zRxiQdcSOB4n9g09E4bS7cfszMA7nElaF1zn9d69g5qxnjwVebKVAQBtICDfT0xuPzaOWlhg",
-  "mBpGXsV_EAV3GPkSG8_rp7b8U3w2DbdWFZhscct0UxA"
+  "mailto:contato@hermesbot.com.br", // Um email de contato é obrigatório
+  vapidKeys.publicKey,
+  vapidKeys.privateKey
 );
 
 // Definir NGROK_BASE_URL diretamente aqui para evitar problemas de importação
-// Isso duplica a lógica do arquivo api.ts, mas resolve o problema de importação
 const NGROK_BASE_URL = 'https://projetohermes-dda7e0c8d836.herokuapp.com';
 
 export default async function handler(req, res) {
@@ -106,6 +113,9 @@ export default async function handler(req, res) {
 
       // Para depuração - mostrar formato das subscrições processadas
       console.log("Formato da primeira subscrição processada:", JSON.stringify(subscriptions[0]).substring(0, 100) + "...");
+
+      // Log da chave pública sendo usada para verificação
+      console.log("Usando chave pública VAPID:", vapidKeys.publicKey);
 
       // Envia a notificação para cada subscription
       const results = await Promise.allSettled(

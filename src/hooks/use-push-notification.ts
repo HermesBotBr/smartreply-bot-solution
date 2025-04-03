@@ -3,8 +3,8 @@ import { useState, useEffect } from 'react';
 import { toast } from '@/hooks/use-toast';
 
 // Chave pública VAPID para identificar o servidor que envia as notificações
-// Em um ambiente real, isso viria de um servidor seguro
-const PUBLIC_VAPID_KEY = 'BNbKwE3NUkGtPWeTLYgTHXfhni1YB_PmK6m0Ddm9c75HRzRNV_R7_lFoIGbJVFcmBUQttECrMBHJQgRQzFYeVmQ';
+// Essa chave deve corresponder à chave pública definida no servidor
+const PUBLIC_VAPID_KEY = 'BM7-6PGPMixCbZGdH-armIVvF7tQvYcXGwHXNmOQpgLoenzzHwXn9VnSKB9-qj85I6iNuXYJEIKFnP6fBlu-7qw';
 
 interface PushSubscriptionOptions {
   applicationServerKey: string;
