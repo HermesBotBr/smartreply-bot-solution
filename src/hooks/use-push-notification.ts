@@ -4,7 +4,7 @@ import { toast } from '@/hooks/use-toast';
 
 // Chave pública VAPID para identificar o servidor que envia as notificações
 // Essa chave deve corresponder à chave pública definida no servidor
-const PUBLIC_VAPID_KEY = 'BM7-6PGPMixCbZGdH-armIVvF7tQvYcXGwHXNmOQpgLoenzzHwXn9VnSKB9-qj85I6iNuXYJEIKFnP6fBlu-7qw';
+const PUBLIC_VAPID_KEY = 'BKn2JKQCh-yQod3HLXVIAKvjmrgPLGexdNGSv9SNXM4HbWbu6J7pg1Z0pvdvQn2YZQeWx-AYDnAkGL2rFE8fnpM';
 
 interface PushSubscriptionOptions {
   applicationServerKey: string;

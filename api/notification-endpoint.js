@@ -4,10 +4,10 @@ import axios from "axios";
 
 // Gerar novas chaves VAPID - isso é feito apenas uma vez e as chaves devem ser armazenadas com segurança
 // Em um ambiente de produção, essas chaves devem ser variáveis de ambiente
-// As chaves abaixo foram geradas especificamente para este exemplo
+// Usamos chaves com formato correto (curva P-256)
 const vapidKeys = {
-  publicKey: 'BM7-6PGPMixCbZGdH-armIVvF7tQvYcXGwHXNmOQpgLoenzzHwXn9VnSKB9-qj85I6iNuXYJEIKFnP6fBlu-7qw',
-  privateKey: 'M3TugEAj1lKU0pOeMhh6uHtZ602tJ-Aj29ICXJLiUwo'
+  publicKey: 'BKn2JKQCh-yQod3HLXVIAKvjmrgPLGexdNGSv9SNXM4HbWbu6J7pg1Z0pvdvQn2YZQeWx-AYDnAkGL2rFE8fnpM',
+  privateKey: 'AtfcOXIppO-1L2LnChhboqwUfcAdBF1_8q_Gd4cZSxo'
 };
 
 // Configurar as chaves VAPID
