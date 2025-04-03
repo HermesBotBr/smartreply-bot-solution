@@ -71,8 +71,15 @@ const MessagesList: React.FC<MessagesListProps> = ({
       
       if (wasMessageAdded) {
         setTimeout(() => {
-          messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-        }, 100);
+  if (messagesEndRef.current && messagesEndRef.current.scrollIntoView) {
+    try {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    } catch (err) {
+      console.warn("Erro ao executar scrollIntoView:", err);
+    }
+  }
+}, 100);
+
       }
       
       prevMessagesLengthRef.current = messages.length;
