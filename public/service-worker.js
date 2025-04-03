@@ -1,16 +1,29 @@
 
 self.addEventListener('push', function(event) {
   console.log("Evento push recebido:", event);
+  console.log("Push event dados raw:", event.data ? event.data.text() : 'Sem dados');
   
   let data = {};
   try {
     data = event.data ? event.data.json() : {};
+    console.log("Dados da notificação parsedos com sucesso:", data);
   } catch (e) {
     console.error("Erro ao processar dados da notificação:", e);
-    data = {
-      title: 'Nova mensagem',
-      body: 'Você recebeu uma nova mensagem.'
-    };
+    // Tenta usar o texto puro se o JSON falhar
+    try {
+      const textData = event.data ? event.data.text() : 'Nova mensagem';
+      console.log("Usando dados de texto puro:", textData);
+      data = {
+        title: 'Nova mensagem',
+        body: textData
+      };
+    } catch (e2) {
+      console.error("Também falhou ao obter texto:", e2);
+      data = {
+        title: 'Nova mensagem',
+        body: 'Você recebeu uma nova mensagem.'
+      };
+    }
   }
   
   const options = {
@@ -18,15 +31,20 @@ self.addEventListener('push', function(event) {
     icon: '/favicon.ico',
     badge: '/favicon.ico',
     data: data.data || {},
-    actions: data.actions || []
+    actions: data.actions || [],
+    requireInteraction: true
   };
 
+  console.log("Mostrando notificação com título:", data.title || 'Notificação');
+  
   event.waitUntil(
     self.registration.showNotification(data.title || 'Notificação', options)
   );
 });
 
 self.addEventListener('notificationclick', function(event) {
+  console.log("Notificação clicada:", event);
+  
   event.notification.close();
   
   // URL que será aberto quando o usuário clicar na notificação
@@ -34,6 +52,8 @@ self.addEventListener('notificationclick', function(event) {
   const urlToOpen = packId 
     ? `https://www.hermesbot.com.br/user_giovaniburgo?pack=${packId}`
     : 'https://www.hermesbot.com.br/user_giovaniburgo';
+
+  console.log("Abrindo URL:", urlToOpen);
 
   event.waitUntil(
     clients.matchAll({
@@ -52,4 +72,30 @@ self.addEventListener('notificationclick', function(event) {
       }
     })
   );
+});
+
+// Evento para sinalizar quando o service worker é instalado
+self.addEventListener('install', function(event) {
+  console.log('Service Worker instalado com sucesso');
+  self.skipWaiting(); // Força a ativação imediata
+});
+
+// Evento para quando o service worker é ativado
+self.addEventListener('activate', function(event) {
+  console.log('Service Worker ativado com sucesso');
+  // Garante que o service worker ativado tome controle da página imediatamente
+  event.waitUntil(clients.claim());
+});
+
+// Event listener para mensagens enviadas para o service worker
+self.addEventListener('message', function(event) {
+  console.log('Mensagem recebida no service worker:', event.data);
+  
+  if (event.data && event.data.type === 'PING') {
+    console.log('Ping recebido, enviando pong');
+    event.source.postMessage({
+      type: 'PONG',
+      time: new Date().toISOString()
+    });
+  }
 });

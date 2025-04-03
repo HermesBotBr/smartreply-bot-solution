@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import QuestionsList from "@/components/dashboard/QuestionsList";
 import MetricsDisplay from "@/components/dashboard/MetricsDisplay";
@@ -11,6 +12,10 @@ import { useConversations } from "@/hooks/useConversations";
 import { useGptIds } from "@/hooks/useGptIds";
 import { useSaleDetails } from "@/hooks/useSaleDetails";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
+import { usePushNotification } from "@/hooks/use-push-notification";
+
+// Importar a mesma chave VAPID que é usada no rest do aplicativo
+import { toast } from '@/hooks/use-toast';
 
 const UserGiovaniBurgo = () => {
   const [activeTab, setActiveTab] = useState('conversas');
@@ -39,57 +44,41 @@ const UserGiovaniBurgo = () => {
   } = useSaleDetails();
   const isMobile = useMediaQuery('(max-width: 768px)');
 
+  // Usar o hook usePushNotification em vez de registrar manualmente
+  const { subscribe, subscription } = usePushNotification();
+
   const handleLogout = () => {
     localStorage.removeItem('mlUserToken');
     window.location.href = '/';
   };
 
   useEffect(() => {
-    if ("serviceWorker" in navigator && "PushManager" in window) {
-      navigator.serviceWorker.register("/service-worker.js")
-        .then((registration) => {
-          console.log("Service Worker registrado:", registration);
-          return Notification.requestPermission().then((permission) => {
-            if (permission !== "granted") {
-              throw new Error("Permissão para notificações não concedida");
-            }
-            return registration.pushManager.subscribe({
-              userVisibleOnly: true,
-              applicationServerKey: urlBase64ToUint8Array("BAbN67uXIrHatd6zRxiQdcSOB4n6g09E4bS7cfszMA7nElaF1zn9d69g5qxnjwVebKVAQBtICDfT0xuPzaOWlhg")
-            });
-          });
-        })
-        .then((subscription) => {
-          console.log("Usuário inscrito:", subscription);
+    // Substituir a inicialização manual do service worker e subscrição
+    // pelo uso do hook usePushNotification
+    const initPushNotification = async () => {
+      try {
+        const result = await subscribe();
+        if (result) {
+          console.log("Usuário inscrito para notificações push:", result.endpoint);
+          // Salvar a subscription no servidor se necessário
           fetch("/api/save-subscription", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(subscription)
+            body: JSON.stringify(result)
           })
             .then(response => response.json())
             .then(data => console.log("Subscription salva:", data))
             .catch(error => console.error("Erro ao salvar subscription:", error));
-        })
-        .catch((error) => {
-          console.error("Erro durante o registro ou inscrição do push:", error);
-        });
-    } else {
-      console.warn("Service Worker ou Push API não são suportados neste navegador.");
-    }
-  }, []);
+        }
+      } catch (error) {
+        console.error("Erro durante o registro ou inscrição do push:", error);
+      }
+    };
+    
+    initPushNotification();
+  }, [subscribe]);
 
-  function urlBase64ToUint8Array(base64String: string) {
-    const padding = "=".repeat((4 - base64String.length % 4) % 4);
-    const base64 = (base64String + padding)
-      .replace(/-/g, "+")
-      .replace(/_/g, "/");
-    const rawData = window.atob(base64);
-    const outputArray = new Uint8Array(rawData.length);
-    for (let i = 0; i < rawData.length; ++i) {
-      outputArray[i] = rawData.charCodeAt(i);
-    }
-    return outputArray;
-  }
+  // Remover a função urlBase64ToUint8Array pois já existe no hook
 
   return (
     <div className="flex h-screen overflow-hidden">

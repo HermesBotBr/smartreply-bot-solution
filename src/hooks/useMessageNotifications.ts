@@ -12,6 +12,8 @@ const extractFullSubscriptionData = (subscription: PushSubscription) => {
     
     // Log para verificar se o objeto está completo
     console.log("Dados completos da subscription:", fullSubscriptionData);
+    console.log("VAPID Public Key usado na subscrição:", 
+                "BPdifDqItbFmUtgI1PjwhcwjQUKXUZDFYFX95rBC9K6_NlAjMkhoVbKd2Ivm8f5rHUYFfMC4tvxaMtbovaTJr6A");
     
     return JSON.stringify(fullSubscriptionData);
   } catch (error) {
@@ -38,6 +40,8 @@ export const useMessageNotifications = (sellerId: string | null) => {
           toast.error('Erro ao ativar notificações');
           return;
         }
+        
+        console.log("Enviando subscription para o backend. Seller ID:", sellerId);
         
         const response = await fetch('https://projetohermes-dda7e0c8d836.herokuapp.com/subscriptions', {
           method: 'POST',
@@ -72,6 +76,7 @@ export const useMessageNotifications = (sellerId: string | null) => {
     
     const requestNotificationPermission = async () => {
       try {
+        console.log("Solicitando permissão para notificações para seller_id:", sellerId);
         await subscribe();
       } catch (error) {
         console.error('Erro ao solicitar permissão para notificações:', error);

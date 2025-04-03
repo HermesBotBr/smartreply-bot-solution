@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Code } from "lucide-react";
@@ -7,12 +6,14 @@ import { toast } from '@/hooks/use-toast';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { usePushNotification } from '@/hooks/use-push-notification';
 
 const NotificationEndpoint: React.FC = () => {
   const location = useLocation();
   const [message, setMessage] = useState<string>('');
   const [sellerId, setSellerId] = useState<string>('');
   const [hasProcessedRequest, setHasProcessedRequest] = useState(false);
+  const { subscription } = usePushNotification();
   
   // Função para enviar a notificação
   const sendNotification = (notificationMessage: string, sellerIdToUse: string) => {
@@ -27,6 +28,10 @@ const NotificationEndpoint: React.FC = () => {
     
     const defaultMessage = 'Um cliente aguarda atendimento humano';
     const finalMessage = notificationMessage || defaultMessage;
+    
+    // Log da chave VAPID usada
+    console.log("VAPID Public Key usado no teste:", 
+                "BPdifDqItbFmUtgI1PjwhcwjQUKXUZDFYFX95rBC9K6_NlAjMkhoVbKd2Ivm8f5rHUYFfMC4tvxaMtbovaTJr6A");
     
     if (Notification.permission === 'granted' && navigator.serviceWorker.controller) {
       navigator.serviceWorker.ready.then(registration => {
@@ -91,6 +96,34 @@ const NotificationEndpoint: React.FC = () => {
     handleGetRequest();
   }, [location]);
 
+  // Efeito para verificar o service worker
+  useEffect(() => {
+    const checkServiceWorker = async () => {
+      if ('serviceWorker' in navigator) {
+        try {
+          const registration = await navigator.serviceWorker.ready;
+          console.log('Service worker ativo:', registration.active ? 'Sim' : 'Não');
+          
+          // Teste de ping para o service worker
+          if (registration.active) {
+            navigator.serviceWorker.addEventListener('message', (event) => {
+              console.log('Mensagem recebida do service worker:', event.data);
+            });
+            
+            registration.active.postMessage({
+              type: 'PING',
+              time: new Date().toISOString()
+            });
+          }
+        } catch (error) {
+          console.error('Erro ao verificar service worker:', error);
+        }
+      }
+    };
+    
+    checkServiceWorker();
+  }, []);
+
   // Função para testar o envio de notificação diretamente da página
   const testNotification = () => {
     if (!sellerId) {
@@ -100,6 +133,13 @@ const NotificationEndpoint: React.FC = () => {
         variant: "destructive"
       });
       return;
+    }
+    
+    console.log("Testando notificação para seller_id:", sellerId);
+    if (subscription) {
+      console.log("Usando subscription:", subscription.endpoint);
+    } else {
+      console.log("Nenhuma subscription disponível");
     }
     
     // Simula uma requisição POST usando a API fetch
@@ -113,6 +153,7 @@ const NotificationEndpoint: React.FC = () => {
     })
     .then(response => response.json())
     .then(data => {
+      console.log("Resposta do endpoint de notificação:", data);
       if (data.success) {
         toast({
           title: "Sucesso",
@@ -209,6 +250,14 @@ Body (JSON):
                 <strong>Nota:</strong> Para que as notificações funcionem, você precisa primeiro permitir notificações clicando no botão "Ativar notificações" na página inicial.
               </p>
             </div>
+            
+            {subscription && (
+              <div className="p-4 bg-green-50 border border-green-200 rounded-md">
+                <p className="text-green-700">
+                  <strong>Status:</strong> Notificações ativas. Endpoint: {subscription.endpoint.substring(0, 30)}...
+                </p>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
