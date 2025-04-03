@@ -6,8 +6,8 @@ import axios from "axios";
 // Em um ambiente de produção, essas chaves devem ser variáveis de ambiente
 // Usamos chaves com formato correto (curva P-256)
 const vapidKeys = {
-  publicKey: 'BKn2JKQCh-yQod3HLXVIAKvjmrgPLGexdNGSv9SNXM4HbWbu6J7pg1Z0pvdvQn2YZQeWx-AYDnAkGL2rFE8fnpM',
-  privateKey: 'AtfcOXIppO-1L2LnChhboqwUfcAdBF1_8q_Gd4cZSxo'
+  publicKey: 'BPdifDqItbFmUtgI1PjwhcwjQUKXUZDFYFX95rBC9K6_NlAjMkhoVbKd2Ivm8f5rHUYFfMC4tvxaMtbovaTJr6A',
+  privateKey: 'C_Af9nEg6Gjlwp14KHEI8ftl8FcjpWA4HZF5GMFMr5w'
 };
 
 // Configurar as chaves VAPID
