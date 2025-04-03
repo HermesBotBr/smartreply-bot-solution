@@ -6,6 +6,14 @@ import { toast } from '@/hooks/use-toast';
 // Essa chave deve corresponder à chave pública definida no servidor
 const PUBLIC_VAPID_KEY = 'BPdifDqItbFmUtgI1PjwhcwjQUKXUZDFYFX95rBC9K6_NlAjMkhoVbKd2Ivm8f5rHUYFfMC4tvxaMtbovaTJr6A';
 
+// Extendendo a interface PushSubscription para incluir a propriedade keys
+interface PushSubscriptionWithKeys extends PushSubscription {
+  keys?: {
+    p256dh: string;
+    auth: string;
+  };
+}
+
 export function usePushNotification() {
   const [subscription, setSubscription] = useState<PushSubscription | null>(null);
   const [permission, setPermission] = useState<NotificationPermission | 'default'>('default');
@@ -81,8 +89,10 @@ export function usePushNotification() {
 
       console.log('Nova subscription criada:', newSubscription.endpoint?.substring(0, 50) + '...');
       
-      if (newSubscription.keys) {
-        console.log('Keys disponíveis:', Object.keys(newSubscription.keys).join(', '));
+      // Acessando as keys de forma segura com TypeScript
+      const subscriptionWithKeys = newSubscription as unknown as PushSubscriptionWithKeys;
+      if (subscriptionWithKeys.keys) {
+        console.log('Keys disponíveis:', Object.keys(subscriptionWithKeys.keys).join(', '));
       }
 
       setSubscription(newSubscription);
