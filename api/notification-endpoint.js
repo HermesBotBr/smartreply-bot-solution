@@ -1,7 +1,15 @@
 
 import webpush from "web-push";
 import axios from "axios";
-import { NGROK_BASE_URL } from "../src/config/api";
+import { fileURLToPath } from 'url';
+import path from 'path';
+
+// Polyfill para __dirname em módulos ES
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Importação dinâmica para resolver problemas de caminho
+const { NGROK_BASE_URL } = await import(path.resolve(__dirname, '../src/config/api.js'));
 
 // Configure suas chaves VAPID (substitua com seus dados reais)
 webpush.setVapidDetails(
