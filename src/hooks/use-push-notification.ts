@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { toast } from '@/hooks/use-toast';
 
@@ -5,16 +6,16 @@ import { toast } from '@/hooks/use-toast';
 // Essa chave deve corresponder à chave pública definida no servidor
 const PUBLIC_VAPID_KEY = 'BPdifDqItbFmUtgI1PjwhcwjQUKXUZDFYFX95rBC9K6_NlAjMkhoVbKd2Ivm8f5rHUYFfMC4tvxaMtbovaTJr6A';
 
-interface PushSubscriptionOptions {
-  applicationServerKey: string;
-  userVisibleOnly: boolean;
-}
-
 export function usePushNotification() {
   const [subscription, setSubscription] = useState<PushSubscription | null>(null);
   const [permission, setPermission] = useState<NotificationPermission | 'default'>('default');
   const [loading, setLoading] = useState<boolean>(false);
   const [supported, setSupported] = useState<boolean>(true);
+
+  // Logs para depuração
+  useEffect(() => {
+    console.log('VAPID Public Key being used for subscription:', PUBLIC_VAPID_KEY);
+  }, []);
 
   // Verifica se o navegador suporta notificações push
   useEffect(() => {
@@ -63,6 +64,7 @@ export function usePushNotification() {
       // Verificar se já existe uma subscrição
       const existingSubscription = await registration.pushManager.getSubscription();
       if (existingSubscription) {
+        console.log('Usando subscription existente:', existingSubscription.endpoint?.substring(0, 50) + '...');
         setSubscription(existingSubscription);
         setLoading(false);
         return existingSubscription;
@@ -70,17 +72,21 @@ export function usePushNotification() {
 
       // Criar nova subscrição
       const vapidKey = urlBase64ToUint8Array(PUBLIC_VAPID_KEY);
+      console.log('Criando nova subscription com a chave VAPID:', PUBLIC_VAPID_KEY);
+      
       const newSubscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: vapidKey,
       });
 
+      console.log('Nova subscription criada:', newSubscription.endpoint?.substring(0, 50) + '...');
+      
+      if (newSubscription.keys) {
+        console.log('Keys disponíveis:', Object.keys(newSubscription.keys).join(', '));
+      }
+
       setSubscription(newSubscription);
       setLoading(false);
-
-      // Enviar a subscrição para o servidor
-      // Em um ambiente real, você enviaria isso para seu servidor
-      console.log('Subscription object:', JSON.stringify(newSubscription));
       
       return newSubscription;
     } catch (error) {

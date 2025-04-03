@@ -1,3 +1,4 @@
+
 import webpush from "web-push";
 import axios from "axios";
 
@@ -15,6 +16,8 @@ webpush.setVapidDetails(
   vapidKeys.publicKey,
   vapidKeys.privateKey
 );
+
+console.log("API configurada com VAPID Public Key:", vapidKeys.publicKey);
 
 // Definir NGROK_BASE_URL diretamente aqui para evitar problemas de importação
 const NGROK_BASE_URL = 'https://projetohermes-dda7e0c8d836.herokuapp.com';
