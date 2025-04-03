@@ -1,4 +1,3 @@
-
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
@@ -41,11 +40,14 @@ app.use(express.static(path.join(__dirname, 'public')));
 // Serve uploaded files at the /uploads path
 app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
 
-// Adiciona o endpoint de notificação (usando o caminho correto do arquivo)
-const notificationHandler = require('./api/notification-endpoint.js').default;
-
-app.post('/notification-endpoint', async (req, res) => {
-  return notificationHandler(req, res);
+// Import the notification endpoint handler directly using dynamic import to handle ESM module
+import('./api/notification-endpoint.js').then(module => {
+  // Set up the notification endpoint
+  app.post('/api/notification-endpoint', async (req, res) => {
+    return module.default(req, res);
+  });
+}).catch(err => {
+  console.error('Failed to load notification endpoint:', err);
 });
 
 // Handle 404 for API routes
@@ -53,7 +55,6 @@ app.use('/api/*', (req, res) => {
   console.log(`API route not found: ${req.originalUrl}`);
   res.status(404).json({ error: 'API endpoint not found' });
 });
-
 
 // Serve the index.html file for all other requests EXCEPT /api routes and /uploads routes
 app.get(/^(?!\/api\/|\/uploads\/).*/, (req, res) => {

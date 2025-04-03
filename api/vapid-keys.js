@@ -10,3 +10,4 @@ const VAPID_KEYS = {
 // Export as ES modules only since package.json has "type": "module"
 export { VAPID_KEYS };
 export const PUBLIC_VAPID_KEY = VAPID_KEYS.publicKey;
+export default VAPID_KEYS;

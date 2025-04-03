@@ -9,3 +9,4 @@ export const VAPID_KEYS = {
 
 // Exportar a chave pública para uso no frontend
 export const PUBLIC_VAPID_KEY = VAPID_KEYS.publicKey;
+export default VAPID_KEYS;
