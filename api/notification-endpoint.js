@@ -1,7 +1,7 @@
 
 import webpush from "web-push";
 import axios from "axios";
-import { NGROK_BASE_URL } from "@/config/api";
+import { NGROK_BASE_URL } from "../src/config/api";
 
 // Configure suas chaves VAPID (substitua com seus dados reais)
 webpush.setVapidDetails(
