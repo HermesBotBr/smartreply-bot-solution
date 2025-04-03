@@ -46,19 +46,26 @@ export default async function handler(req, res) {
       console.log("Buscando subscriptions da URL:", dbApiUrl);
       
       const response = await axios.get(dbApiUrl);
+      console.log("Resposta completa da API:", JSON.stringify(response.data).substring(0, 300) + "...");
       
       if (!response.data || !response.data.rows) {
+        console.error("Formato de resposta inválido da API de subscrições:", response.data);
         throw new Error("Formato de resposta inválido da API de subscrições");
       }
       
-      // Filtrar as subscrições pelo seller_id solicitado
-      const subscriptionRows = response.data.rows.filter(row => row.seller_id === seller_id);
+      // Log para debugging - mostrar todos os seller_ids disponíveis
+      const availableSellerIds = response.data.rows.map(row => row.seller_id);
+      console.log("Seller IDs disponíveis na base:", availableSellerIds);
+      
+      // Filtrar as subscrições pelo seller_id solicitado - converter para string para garantir comparação correta
+      const targetSellerId = String(seller_id);
+      const subscriptionRows = response.data.rows.filter(row => String(row.seller_id) === targetSellerId);
       console.log(`Encontradas ${subscriptionRows.length} subscrições para o seller_id ${seller_id}`);
 
       if (subscriptionRows.length === 0) {
         return res.status(404).json({ 
           success: false, 
-          message: `Nenhuma subscrição encontrada para o seller_id: ${seller_id}` 
+          message: `Nenhuma subscrição encontrada para o seller_id: ${seller_id}. Seller IDs disponíveis: ${availableSellerIds.join(", ")}` 
         });
       }
 
@@ -67,33 +74,10 @@ export default async function handler(req, res) {
         try {
           // Tenta analisar o subscription_id como JSON
           if (typeof row.subscription_id === 'string') {
-            console.log("Processando subscription raw:", row.subscription_id.substring(0, 50) + "...");
+            console.log("Processando subscription raw:", row.subscription_id.substring(0, 100) + "...");
             
-            if (row.subscription_id.startsWith('{')) {
-              // É uma string JSON - faz o parse
-              return JSON.parse(row.subscription_id);
-            } else {
-              // É uma string não-JSON - tenta extrair os dados necessários
-              console.log("Formato antigo detectado, tentando extrair dados");
-              
-              // Extrai endpoint e chaves usando expressões regulares
-              const endpointMatch = row.subscription_id.match(/endpoint: '([^']*)/);
-              const p256dhMatch = row.subscription_id.match(/p256dh: '([^']*)/);
-              const authMatch = row.subscription_id.match(/auth: '([^']*)/);
-              
-              if (endpointMatch && p256dhMatch && authMatch) {
-                return {
-                  endpoint: endpointMatch[1],
-                  keys: {
-                    p256dh: p256dhMatch[1],
-                    auth: authMatch[1]
-                  }
-                };
-              } else {
-                console.error("Não foi possível extrair dados do formato antigo:", row.subscription_id);
-                return null;
-              }
-            }
+            // É uma string JSON - faz o parse
+            return JSON.parse(row.subscription_id);
           }
           return null; // Se não for string, retorna null
         } catch (error) {
@@ -112,7 +96,7 @@ export default async function handler(req, res) {
       }
 
       // Para depuração - mostrar formato das subscrições processadas
-      console.log("Formato da primeira subscrição processada:", JSON.stringify(subscriptions[0]).substring(0, 100) + "...");
+      console.log("Formato da primeira subscrição processada:", JSON.stringify(subscriptions[0]).substring(0, 150) + "...");
 
       // Log da chave pública sendo usada para verificação
       console.log("Usando chave pública VAPID:", vapidKeys.publicKey);
