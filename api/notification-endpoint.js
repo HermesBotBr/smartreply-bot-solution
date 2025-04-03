@@ -1,7 +1,7 @@
 
 import webpush from "web-push";
 import axios from "axios";
-import { VAPID_KEYS } from "../api/vapid-keys.js";
+import { VAPID_KEYS } from "./vapid-keys.js";
 
 // Log das chaves VAPID para verificação
 console.log("API configurada com VAPID Public Key:", VAPID_KEYS.publicKey);
