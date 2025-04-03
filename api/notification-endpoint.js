@@ -1,4 +1,3 @@
-
 import webpush from "web-push";
 import axios from "axios";
 
@@ -116,6 +115,20 @@ export default async function handler(req, res) {
             console.log("Subscription parseada com sucesso:", 
                        subscriptionObj.endpoint ? subscriptionObj.endpoint.substring(0, 50) + "..." : "Endpoint não encontrado");
             
+            // Additional logging for each subscription's details
+            if (subscriptionObj) {
+              console.log("Subscription Keys:", Object.keys(subscriptionObj));
+              console.log("Subscription Endpoint:", subscriptionObj.endpoint);
+              
+              // Optional: Log first 50 characters of each key's details
+              if (subscriptionObj.keys) {
+                console.log("p256dh key (first 50 chars):", 
+                  subscriptionObj.keys.p256dh ? subscriptionObj.keys.p256dh.substring(0, 50) : 'Not found');
+                console.log("auth key (first 50 chars):", 
+                  subscriptionObj.keys.auth ? subscriptionObj.keys.auth.substring(0, 50) : 'Not found');
+              }
+            }
+            
             return subscriptionObj;
           } else if (typeof row.subscription_id === 'object') {
             // É um objeto JSON - usa diretamente
@@ -142,7 +155,7 @@ export default async function handler(req, res) {
       console.log("Formato da primeira subscrição processada:", JSON.stringify(subscriptions[0]).substring(0, 150) + "...");
 
       // Log da chave pública sendo usada para verificação
-      console.log("Usando chave pública VAPID:", vapidKeys.publicKey);
+      console.log("VAPID Public Key being used:", vapidKeys.publicKey);
 
       // Envia a notificação para cada subscription
       const results = await Promise.allSettled(
