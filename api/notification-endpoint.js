@@ -60,22 +60,23 @@ export default async function handler(req, res) {
         try {
           // Tenta analisar o subscription_id como JSON
           if (typeof row.subscription_id === 'string') {
+            console.log("Processando subscription raw:", row.subscription_id.substring(0, 50) + "...");
+            
             if (row.subscription_id.startsWith('{')) {
               // É uma string JSON - faz o parse
               return JSON.parse(row.subscription_id);
             } else {
               // É uma string não-JSON - tenta extrair os dados necessários
-              // Este é um fallback para o formato antigo de armazenamento
-              console.log("Formato antigo detectado, tentando extrair dados:", row.subscription_id);
+              console.log("Formato antigo detectado, tentando extrair dados");
               
               // Extrai endpoint e chaves usando expressões regulares
-              const endpointMatch = row.subscription_id.match(/https:\/\/[^\s]*/);
+              const endpointMatch = row.subscription_id.match(/endpoint: '([^']*)/);
               const p256dhMatch = row.subscription_id.match(/p256dh: '([^']*)/);
               const authMatch = row.subscription_id.match(/auth: '([^']*)/);
               
               if (endpointMatch && p256dhMatch && authMatch) {
                 return {
-                  endpoint: endpointMatch[0],
+                  endpoint: endpointMatch[1],
                   keys: {
                     p256dh: p256dhMatch[1],
                     auth: authMatch[1]
@@ -103,29 +104,55 @@ export default async function handler(req, res) {
         });
       }
 
+      // Para depuração - mostrar formato das subscrições processadas
+      console.log("Formato da primeira subscrição processada:", JSON.stringify(subscriptions[0]).substring(0, 100) + "...");
+
       // Envia a notificação para cada subscription
       const results = await Promise.allSettled(
-        subscriptions.map(sub =>
-          webpush.sendNotification(sub, payload)
-        )
+        subscriptions.map(async (sub) => {
+          try {
+            console.log(`Enviando para endpoint: ${sub.endpoint.substring(0, 50)}...`);
+            const result = await webpush.sendNotification(sub, payload);
+            console.log("Resultado do envio:", result.statusCode);
+            return result;
+          } catch (err) {
+            console.error("Erro no envio individual:", err.message, err.statusCode);
+            throw err;
+          }
+        })
       );
       
-      // Analisa resultados
+      // Analisa resultados e logs detalhados para cada falha
       const successful = results.filter(r => r.status === 'fulfilled').length;
-      const failed = results.filter(r => r.status === 'rejected').length;
+      const failed = results.filter(r => r.status === 'rejected');
       
-      console.log(`Notificações enviadas: ${successful} sucesso, ${failed} falhas`);
+      // Log mais detalhado dos erros
+      failed.forEach((failure, index) => {
+        console.error(`Falha #${index + 1}:`, failure.reason.message, 
+                     "Status:", failure.reason.statusCode,
+                     "Corpo:", failure.reason.body);
+      });
+      
+      console.log(`Notificações enviadas: ${successful} sucesso, ${failed.length} falhas`);
       
       // Mesmo com algumas falhas, retornamos sucesso se pelo menos uma notificação foi enviada
       if (successful > 0) {
         res.status(200).json({ 
           success: true, 
-          message: `${successful} notificações enviadas com sucesso (${failed} falhas)` 
+          message: `${successful} notificações enviadas com sucesso (${failed.length} falhas)` 
         });
       } else {
+        // Incluir detalhes dos erros na resposta
+        const errorDetails = failed.map(f => ({
+          message: f.reason.message,
+          statusCode: f.reason.statusCode,
+          body: f.reason.body
+        }));
+        
         res.status(500).json({ 
           success: false, 
-          message: "Falha ao enviar todas as notificações" 
+          message: "Falha ao enviar todas as notificações",
+          errors: errorDetails
         });
       }
     } catch (err) {
