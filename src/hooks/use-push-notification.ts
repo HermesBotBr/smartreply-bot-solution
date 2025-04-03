@@ -1,10 +1,9 @@
-
 import { useState, useEffect } from 'react';
 import { toast } from '@/hooks/use-toast';
+import { PUBLIC_VAPID_KEY } from '@/config/vapid-keys';
 
-// Chave pública VAPID para identificar o servidor que envia as notificações
-// Essa chave deve corresponder à chave pública definida no servidor
-const PUBLIC_VAPID_KEY = 'BPdifDqItbFmUtgI1PjwhcwjQUKXUZDFYFX95rBC9K6_NlAjMkhoVbKd2Ivm8f5rHUYFfMC4tvxaMtbovaTJr6A';
+// Log da chave pública VAPID que está sendo usada
+console.log('Frontend VAPID Public Key:', PUBLIC_VAPID_KEY);
 
 // Extendendo a interface PushSubscription para incluir a propriedade keys
 interface PushSubscriptionWithKeys extends PushSubscription {
@@ -78,9 +77,9 @@ export function usePushNotification() {
         return existingSubscription;
       }
 
-      // Criar nova subscrição
+      // Criar nova subscrição usando a chave VAPID centralizada
       const vapidKey = urlBase64ToUint8Array(PUBLIC_VAPID_KEY);
-      console.log('Criando nova subscription com a chave VAPID:', PUBLIC_VAPID_KEY);
+      console.log('Criando nova subscription com a chave VAPID centralizada:', PUBLIC_VAPID_KEY);
       
       const newSubscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,

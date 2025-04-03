@@ -1,7 +1,7 @@
-
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { usePushNotification } from './use-push-notification';
+import { PUBLIC_VAPID_KEY } from '@/config/vapid-keys';
 
 const extractFullSubscriptionData = (subscription: PushSubscription) => {
   if (!subscription) return null;
@@ -12,8 +12,7 @@ const extractFullSubscriptionData = (subscription: PushSubscription) => {
     
     // Log para verificar se o objeto está completo
     console.log("Dados completos da subscription:", fullSubscriptionData);
-    console.log("VAPID Public Key usado na subscrição:", 
-                "BPdifDqItbFmUtgI1PjwhcwjQUKXUZDFYFX95rBC9K6_NlAjMkhoVbKd2Ivm8f5rHUYFfMC4tvxaMtbovaTJr6A");
+    console.log("VAPID Public Key usado na subscrição:", PUBLIC_VAPID_KEY);
     
     return JSON.stringify(fullSubscriptionData);
   } catch (error) {
@@ -21,7 +20,6 @@ const extractFullSubscriptionData = (subscription: PushSubscription) => {
     return null;
   }
 };
-
 
 export const useMessageNotifications = (sellerId: string | null) => {
   const [isRegistered, setIsRegistered] = useState(false);
