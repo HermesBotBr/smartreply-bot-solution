@@ -41,8 +41,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 // Serve uploaded files at the /uploads path
 app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
 
-// Adiciona o endpoint de notificação (estilo handler)
-const notificationHandler = require('./app/notification-endpoint.js').default;
+// Adiciona o endpoint de notificação (usando o caminho correto do arquivo)
+const notificationHandler = require('./api/notification-endpoint.js').default;
 
 app.post('/notification-endpoint', async (req, res) => {
   return notificationHandler(req, res);
