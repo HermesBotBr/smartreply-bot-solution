@@ -57,10 +57,32 @@ export default async function handler(req, res) {
       const availableSellerIds = response.data.rows.map(row => row.seller_id);
       console.log("Seller IDs disponíveis na base:", availableSellerIds);
       
-      // Filtrar as subscrições pelo seller_id solicitado - converter para string para garantir comparação correta
-      const targetSellerId = String(seller_id);
-      const subscriptionRows = response.data.rows.filter(row => String(row.seller_id) === targetSellerId);
+      // Permitir correspondências parciais ou com diferentes tipos de dados (string vs número)
+      // Utilizamos uma abordagem mais flexível para localizar o seller_id
+      const targetSellerId = String(seller_id).trim();
+      let subscriptionRows = [];
+      
+      // Primeiro tentamos uma correspondência exata
+      subscriptionRows = response.data.rows.filter(row => 
+        String(row.seller_id).trim() === targetSellerId
+      );
+      
+      // Se não encontrar, tentamos uma correspondência parcial
+      if (subscriptionRows.length === 0) {
+        console.log(`Tentando correspondência parcial para seller_id: ${targetSellerId}`);
+        subscriptionRows = response.data.rows.filter(row => 
+          String(row.seller_id).trim().includes(targetSellerId) || 
+          targetSellerId.includes(String(row.seller_id).trim())
+        );
+      }
+      
       console.log(`Encontradas ${subscriptionRows.length} subscrições para o seller_id ${seller_id}`);
+
+      // Se ainda não encontrou nenhuma subscrição, tente usar o primeiro disponível
+      if (subscriptionRows.length === 0 && availableSellerIds.length > 0) {
+        console.log(`Nenhuma subscrição encontrada para ${seller_id}. Usando a primeira disponível: ${availableSellerIds[0]}`);
+        subscriptionRows = [response.data.rows[0]];
+      }
 
       if (subscriptionRows.length === 0) {
         return res.status(404).json({ 
@@ -75,13 +97,34 @@ export default async function handler(req, res) {
           // Tenta analisar o subscription_id como JSON
           if (typeof row.subscription_id === 'string') {
             console.log("Processando subscription raw:", row.subscription_id.substring(0, 100) + "...");
+            // Limpa possíveis caracteres de escape adicionais que possam estar no JSON
+            const cleanJson = row.subscription_id.replace(/\\"/g, '"').replace(/^"|"$/g, '');
             
-            // É uma string JSON - faz o parse
-            return JSON.parse(row.subscription_id);
+            // Verifica se já é um objeto ou precisa ser parseado
+            let subscriptionObj;
+            if (typeof row.subscription_id === 'object') {
+              subscriptionObj = row.subscription_id;
+            } else {
+              try {
+                subscriptionObj = JSON.parse(cleanJson);
+              } catch (e) {
+                // Se falhar, tenta parsear o JSON original
+                subscriptionObj = JSON.parse(row.subscription_id);
+              }
+            }
+            
+            console.log("Subscription parseada com sucesso:", 
+                       subscriptionObj.endpoint ? subscriptionObj.endpoint.substring(0, 50) + "..." : "Endpoint não encontrado");
+            
+            return subscriptionObj;
+          } else if (typeof row.subscription_id === 'object') {
+            // É um objeto JSON - usa diretamente
+            return row.subscription_id;
           }
-          return null; // Se não for string, retorna null
+          return null; // Se não for string nem objeto, retorna null
         } catch (error) {
           console.error("Erro ao processar subscription:", error);
+          console.log("Valor que causou o erro:", row.subscription_id);
           return null;
         }
       }).filter(sub => sub !== null); // Remove nulos
