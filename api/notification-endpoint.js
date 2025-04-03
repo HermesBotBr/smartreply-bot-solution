@@ -1,22 +1,17 @@
 
 import webpush from "web-push";
 import axios from "axios";
-import { fileURLToPath } from 'url';
-import path from 'path';
-
-// Polyfill para __dirname em módulos ES
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Importação dinâmica para resolver problemas de caminho
-const { NGROK_BASE_URL } = await import(path.resolve(__dirname, '../src/config/api.js'));
 
 // Configure suas chaves VAPID (substitua com seus dados reais)
 webpush.setVapidDetails(
   "mailto:seuemail@dominio.com",
-  "BAbN67uXIrHatd6zRxiQdcSOB4n6g09E4bS7cfszMA7nElaF1zn9d69g5qxnjwVebKVAQBtICDfT0xuPzaOWlhg",
+  "BAbN67uXIrHatd6zRxiQdcSOB4n9g09E4bS7cfszMA7nElaF1zn9d69g5qxnjwVebKVAQBtICDfT0xuPzaOWlhg",
   "mBpGXsV_EAV3GPkSG8_rp7b8U3w2DbdWFZhscct0UxA"
 );
+
+// Definir NGROK_BASE_URL diretamente aqui para evitar problemas de importação
+// Isso duplica a lógica do arquivo api.ts, mas resolve o problema de importação
+const NGROK_BASE_URL = 'https://projetohermes-dda7e0c8d836.herokuapp.com';
 
 export default async function handler(req, res) {
   if (req.method === "POST") {
