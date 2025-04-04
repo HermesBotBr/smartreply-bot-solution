@@ -3,8 +3,8 @@
 // These must match the keys in src/config/vapid-keys.ts
 
 const VAPID_KEYS = {
-  publicKey: 'BKn2JKQCh-yQod3HLXVIAKvjmrgPLGexdNGSv9SNXM4HbWbu6J7pg1Z0pvdvQn2YZQeWx-AYDnAkGL2rFE8fnpM',
-  privateKey: 'C_Af9nEg6Gjlwp14KHEI8ftl8FcjpWA4HZF5GMFMr5w'
+  publicKey: 'BG8J-PHbRd2rvyen2PBFpSRu4X-NgGWxTu-l1B2ihuL1FFezmKZsaXizsWC69liXaRTnYXtkjHXFDlC4A8h0FwI',
+  privateKey: 'Rcy3ZpFjpm5CpVaNfgjf7zE_HfrXFChj8M6Pxkk7aRs'
 };
 
 // Export as ES modules only since package.json has "type": "module"

@@ -3,7 +3,7 @@ console.log('Service Worker inicializado');
 
 // Para fins de debug, exibir a chave VAPID sendo usada
 // Note: não podemos importar diretamente do módulo TypeScript no service worker
-const VAPID_PUBLIC_KEY = 'BKn2JKQCh-yQod3HLXVIAKvjmrgPLGexdNGSv9SNXM4HbWbu6J7pg1Z0pvdvQn2YZQeWx-AYDnAkGL2rFE8fnpM';
+const VAPID_PUBLIC_KEY = 'BG8J-PHbRd2rvyen2PBFpSRu4X-NgGWxTu-l1B2ihuL1FFezmKZsaXizsWC69liXaRTnYXtkjHXFDlC4A8h0FwI';
 console.log('Service Worker usando VAPID Public Key:', VAPID_PUBLIC_KEY);
 
 self.addEventListener('push', function(event) {
