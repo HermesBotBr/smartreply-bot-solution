@@ -51,15 +51,10 @@ self.addEventListener('push', function(event) {
 
 self.addEventListener('notificationclick', function(event) {
   console.log("Notificação clicada:", event);
-  
-  event.notification.close();
- 
-  // URL que será aberto quando o usuário clicar na notificação
-  const packId = event.notification.data?.packId;
-  const urlToOpen = packId 
-    ? `https://www.hermesbot.com.br/hermes`
-    : 'https://www.hermesbot.com.br/hermes';
 
+  event.notification.close();
+
+  const urlToOpen = 'https://www.hermesbot.com.br/hermes';
 
   console.log("Abrindo URL:", urlToOpen);
 
@@ -74,13 +69,14 @@ self.addEventListener('notificationclick', function(event) {
           return client.focus();
         }
       }
-      
+
       if (clients.openWindow) {
         return clients.openWindow(urlToOpen);
       }
     })
   );
 });
+
 
 // Evento para sinalizar quando o service worker é instalado
 self.addEventListener('install', function(event) {
