@@ -1,6 +1,5 @@
-
 import React, { useState } from 'react';
-import { MessageSquare, HelpCircle, BarChart, Tag, User, LogOut } from "lucide-react";
+import { MessageSquare, HelpCircle, BarChart, Tag, User, LogOut, Settings } from "lucide-react";
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
@@ -10,9 +9,10 @@ interface NavSidebarProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
   onLogout?: () => void;
+  onSettings?: () => void;
 }
 
-const NavSidebar: React.FC<NavSidebarProps> = ({ activeTab, setActiveTab, onLogout }) => {
+const NavSidebar: React.FC<NavSidebarProps> = ({ activeTab, setActiveTab, onLogout, onSettings }) => {
   const isMobile = useMediaQuery('(max-width: 768px)');
   const [userMenuOpen, setUserMenuOpen] = useState(false);
 
@@ -24,6 +24,13 @@ const NavSidebar: React.FC<NavSidebarProps> = ({ activeTab, setActiveTab, onLogo
       localStorage.removeItem('hermesAuth');
       window.location.reload();
       toast.success("Sessão encerrada com sucesso");
+    }
+    setUserMenuOpen(false);
+  };
+
+  const handleSettings = () => {
+    if (onSettings) {
+      onSettings();
     }
     setUserMenuOpen(false);
   };
@@ -63,6 +70,14 @@ const NavSidebar: React.FC<NavSidebarProps> = ({ activeTab, setActiveTab, onLogo
         >
           {userMenuOpen && (
             <div className="absolute bottom-16 left-0 right-0 mx-auto w-48 bg-white rounded-md shadow-lg border p-1">
+              <Button 
+                variant="ghost" 
+                className="w-full justify-start gap-2"
+                onClick={handleSettings}
+              >
+                <Settings size={16} />
+                <span>Configurações</span>
+              </Button>
               <Button 
                 variant="ghost" 
                 className="w-full justify-start text-red-500 hover:text-red-700 hover:bg-red-50 gap-2"
@@ -112,6 +127,14 @@ const NavSidebar: React.FC<NavSidebarProps> = ({ activeTab, setActiveTab, onLogo
           </div>
         </PopoverTrigger>
         <PopoverContent className="w-48 p-1" side="right">
+          <Button 
+            variant="ghost" 
+            className="w-full justify-start gap-2"
+            onClick={handleSettings}
+          >
+            <Settings size={16} />
+            <span>Configurações</span>
+          </Button>
           <Button 
             variant="ghost" 
             className="w-full justify-start text-red-500 hover:text-red-700 hover:bg-red-50 gap-2"

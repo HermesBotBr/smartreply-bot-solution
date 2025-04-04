@@ -14,6 +14,7 @@ import { usePacksWithMessages } from "@/hooks/usePacksWithMessages";
 import PacksList from "@/components/dashboard/PacksList";
 import MessagesList from "@/components/dashboard/MessagesList";
 import NotificationPermission from "@/components/NotificationPermission";
+import ConfigurationsPanel from "@/components/dashboard/ConfigurationsPanel";
 
 const Hermes = () => {
   const [activeTab, setActiveTab] = useState('conversas');
@@ -26,6 +27,7 @@ const Hermes = () => {
   const [sellerId, setSellerId] = useState<string | null>(null);
   const [selectedPackId, setSelectedPackId] = useState<string | null>(null);
   const [messagesRefreshTrigger, setMessagesRefreshTrigger] = useState(0);
+  const [showConfigPanel, setShowConfigPanel] = useState(false);
 
   const { packs, setPacks, isLoading: packsLoading, error: packsError, refreshPacks } = useAllPacksData(sellerId);
   const { latestMessagesMeta, allMessages, isLoading: allMessagesLoading, error: allMessagesError } = usePacksWithMessages(packs, sellerId);
@@ -134,6 +136,17 @@ const Hermes = () => {
     toast.success("Sessão encerrada com sucesso");
   };
 
+  const handleSettings = () => {
+    setShowConfigPanel(true);
+    if (isMobile) {
+      setSelectedPackId(null);
+    }
+  };
+
+  const handleCloseConfig = () => {
+    setShowConfigPanel(false);
+  };
+
   return (
     <div className="flex h-screen overflow-hidden">
       <Dialog open={loginOpen} onOpenChange={setLoginOpen}>
@@ -149,11 +162,20 @@ const Hermes = () => {
       {isAuthenticated && (
         <>
           {!isMobile && (
-            <NavSidebar activeTab={activeTab} setActiveTab={setActiveTab} onLogout={handleLogout} />
+            <NavSidebar 
+              activeTab={activeTab} 
+              setActiveTab={setActiveTab} 
+              onLogout={handleLogout} 
+              onSettings={handleSettings}
+            />
           )}
 
           <div className={`flex-1 flex w-${isMobile ? 'full' : '[calc(100%-3.5rem)]'} ${isMobile ? 'h-[calc(100vh-56px)]' : 'h-screen'}`}>
-            {activeTab === 'conversas' ? (
+            {showConfigPanel ? (
+              <div className="w-full h-full">
+                <ConfigurationsPanel sellerId={sellerId} onClose={handleCloseConfig} />
+              </div>
+            ) : activeTab === 'conversas' ? (
               <>
                 <div className="w-1/3 h-full overflow-auto border-r">
                   <div className="p-4 border-b bg-white flex justify-between items-center">
@@ -165,17 +187,16 @@ const Hermes = () => {
                   </div>
                   <PacksList
                     packs={[...packs].sort((a, b) => {
-  const dateA = latestMessagesMeta[a.pack_id]?.createdAt
-    ? new Date(latestMessagesMeta[a.pack_id].createdAt).getTime()
-    : 0;
+                      const dateA = latestMessagesMeta[a.pack_id]?.createdAt
+                        ? new Date(latestMessagesMeta[a.pack_id].createdAt).getTime()
+                        : 0;
 
-  const dateB = latestMessagesMeta[b.pack_id]?.createdAt
-    ? new Date(latestMessagesMeta[b.pack_id].createdAt).getTime()
-    : 0;
+                      const dateB = latestMessagesMeta[b.pack_id]?.createdAt
+                        ? new Date(latestMessagesMeta[b.pack_id].createdAt).getTime()
+                        : 0;
 
-  return dateB - dateA;
-})}
-
+                      return dateB - dateA;
+                    })}
                     isLoading={packsLoading}
                     error={packsError}
                     onSelectPack={handleSelectPack}
@@ -242,7 +263,12 @@ const Hermes = () => {
           </div>
 
           {isMobile && (
-            <NavSidebar activeTab={activeTab} setActiveTab={setActiveTab} onLogout={handleLogout} />
+            <NavSidebar 
+              activeTab={activeTab} 
+              setActiveTab={setActiveTab} 
+              onLogout={handleLogout} 
+              onSettings={handleSettings}
+            />
           )}
         </>
       )}
