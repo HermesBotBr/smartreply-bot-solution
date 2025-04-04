@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { PUBLIC_VAPID_KEY } from '@/config/vapid-keys';
@@ -44,6 +45,22 @@ export function usePushNotification() {
       console.error('Erro ao registrar service worker:', error);
       throw new Error('Falha ao registrar service worker');
     }
+  };
+
+  // Função auxiliar para converter a chave VAPID para o formato correto
+  const urlBase64ToUint8Array = (base64String: string): Uint8Array => {
+    const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+    const base64 = (base64String + padding)
+      .replace(/-/g, '+')
+      .replace(/_/g, '/');
+
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+
+    for (let i = 0; i < rawData.length; ++i) {
+      outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
   };
 
   // Solicita permissão e assina as notificações push
@@ -129,20 +146,4 @@ export function usePushNotification() {
     loading,
     supported,
   };
-}
-
-// Função auxiliar para converter a chave VAPID para o formato correto
-function urlBase64ToUint8Array(base64String: string): Uint8Array {
-  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
-  const base64 = (base64String + padding)
-    .replace(/-/g, '+')
-    .replace(/_/g, '/');
-
-  const rawData = window.atob(base64);
-  const outputArray = new Uint8Array(rawData.length);
-
-  for (let i = 0; i < rawData.length; ++i) {
-    outputArray[i] = rawData.charCodeAt(i);
-  }
-  return outputArray;
 }
