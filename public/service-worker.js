@@ -53,12 +53,13 @@ self.addEventListener('notificationclick', function(event) {
   console.log("Notificação clicada:", event);
   
   event.notification.close();
-  
+ 
   // URL que será aberto quando o usuário clicar na notificação
-  const packId = event.notification.data;
+  const packId = event.notification.data?.packId;
   const urlToOpen = packId 
     ? `https://www.hermesbot.com.br/hermes`
     : 'https://www.hermesbot.com.br/hermes';
+
 
   console.log("Abrindo URL:", urlToOpen);
 
