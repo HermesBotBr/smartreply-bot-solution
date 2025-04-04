@@ -30,8 +30,8 @@ export default async function handler(req, res) {
     }
 
     const payload = JSON.stringify({
-      title: "O cliente aguarda auxílio humano",
-      body: message || "O cliente aguarda atendimento humano"
+      title: "O cliente enviou uma mensagem",
+      body: message || "O cliente enviou uma mensagem"
     });
 
     console.log("Payload a ser enviado:", payload);
