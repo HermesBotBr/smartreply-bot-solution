@@ -147,6 +147,18 @@ const Hermes = () => {
     setShowConfigPanel(false);
   };
 
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    
+    if (tab !== 'configuracoes') {
+      setShowConfigPanel(false);
+    }
+    
+    if (tab === 'configuracoes') {
+      setShowConfigPanel(true);
+    }
+  };
+
   return (
     <div className="flex h-screen overflow-hidden">
       <Dialog open={loginOpen} onOpenChange={setLoginOpen}>
@@ -164,7 +176,7 @@ const Hermes = () => {
           {!isMobile && (
             <NavSidebar 
               activeTab={activeTab} 
-              setActiveTab={setActiveTab} 
+              setActiveTab={handleTabChange} 
               onLogout={handleLogout} 
               onSettings={handleSettings}
             />
@@ -265,7 +277,7 @@ const Hermes = () => {
           {isMobile && (
             <NavSidebar 
               activeTab={activeTab} 
-              setActiveTab={setActiveTab} 
+              setActiveTab={handleTabChange} 
               onLogout={handleLogout} 
               onSettings={handleSettings}
             />
