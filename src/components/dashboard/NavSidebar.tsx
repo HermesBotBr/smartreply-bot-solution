@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MessageSquare, HelpCircle, BarChart, Tag, User, LogOut, Settings } from "lucide-react";
+import { MessageSquare, HelpCircle, BarChart, Tag, User, LogOut, Settings, Cog } from "lucide-react";
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
@@ -20,7 +20,6 @@ const NavSidebar: React.FC<NavSidebarProps> = ({ activeTab, setActiveTab, onLogo
     if (onLogout) {
       onLogout();
     } else {
-      // Default logout behavior if no handler is provided
       localStorage.removeItem('hermesAuth');
       window.location.reload();
       toast.success("Sessão encerrada com sucesso");
@@ -89,6 +88,15 @@ const NavSidebar: React.FC<NavSidebarProps> = ({ activeTab, setActiveTab, onLogo
             </div>
           )}
         </MobileNavItem>
+        <MobileNavItem 
+          icon={<Cog size={24} />} 
+          isActive={activeTab === 'configuracoes'} 
+          onClick={() => {
+            onSettings?.();
+            setActiveTab('configuracoes');
+          }}
+          label="Configurações"
+        />
       </div>
     );
   }
@@ -117,6 +125,18 @@ const NavSidebar: React.FC<NavSidebarProps> = ({ activeTab, setActiveTab, onLogo
       />
       
       <div className="flex-1"></div>
+      
+      <div 
+        className={`w-10 h-10 flex items-center justify-center rounded-full mb-4 cursor-pointer ${
+          activeTab === 'configuracoes' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+        }`}
+        onClick={() => {
+          onSettings?.();
+          setActiveTab('configuracoes');
+        }}
+      >
+        <Cog size={20} />
+      </div>
       
       <Popover open={userMenuOpen} onOpenChange={setUserMenuOpen}>
         <PopoverTrigger asChild>
