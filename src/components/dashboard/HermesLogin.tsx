@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -72,6 +71,24 @@ const HermesLogin: React.FC<HermesLoginProps> = ({ onLoginSuccess }) => {
     fetchEnvData();
   }, []);
 
+  // Function to notify backend about the login
+  const notifyBackendConfig = async (sellerId: string) => {
+    try {
+      console.log("Notifying backend config for seller:", sellerId);
+      
+      await axios.post('https://projetohermes-dda7e0c8d836.herokuapp.com/config', {
+        seller_id: sellerId,
+        command: "add"
+      });
+      
+      console.log("Backend config notification successful");
+    } catch (error) {
+      console.error("Error notifying backend config:", error);
+      // We don't show an error toast here to not disturb the user experience
+      // The login process continues normally even if this call fails
+    }
+  };
+
   const onSubmit = async (data: LoginFormValues) => {
     setIsLoading(true);
     
@@ -83,7 +100,10 @@ const HermesLogin: React.FC<HermesLoginProps> = ({ onLoginSuccess }) => {
       if (isPreview) {
         // In preview mode, simulate successful login for any credentials
         console.log("Preview mode: Simulating successful login");
-        setTimeout(() => {
+        setTimeout(async () => {
+          // Notify backend about login
+          await notifyBackendConfig(data.sellerId);
+          
           onLoginSuccess(data.sellerId);
           toast.success("Login simulado com sucesso (ambiente de preview)");
         }, 1000);
@@ -95,6 +115,10 @@ const HermesLogin: React.FC<HermesLoginProps> = ({ onLoginSuccess }) => {
         
         if (matchingUser) {
           console.log("Login validated successfully for seller ID:", data.sellerId);
+          
+          // Notify backend about login
+          await notifyBackendConfig(data.sellerId);
+          
           onLoginSuccess(data.sellerId);
           toast.success("Login realizado com sucesso!");
         } else {
