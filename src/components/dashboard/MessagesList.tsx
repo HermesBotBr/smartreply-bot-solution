@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, useState } from 'react';
 import { formatDate } from '@/utils/dateFormatters';
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -33,8 +32,6 @@ interface MessagesListProps {
   sellerId: string | null;
   packId: string | null;
   onMessageSent?: () => void;
-  readConversations?: string[];
-  markAsRead?: (orderId: string | string[]) => Promise<void>;
 }
 
 const MessagesList: React.FC<MessagesListProps> = ({ 
@@ -43,9 +40,7 @@ const MessagesList: React.FC<MessagesListProps> = ({
   error, 
   sellerId,
   packId,
-  onMessageSent,
-  readConversations = [],
-  markAsRead
+  onMessageSent
 }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [messageText, setMessageText] = useState('');
@@ -76,24 +71,20 @@ const MessagesList: React.FC<MessagesListProps> = ({
       
       if (wasMessageAdded) {
         setTimeout(() => {
-          if (messagesEndRef.current && messagesEndRef.current.scrollIntoView) {
-            try {
-              messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
-            } catch (err) {
-              console.warn("Erro ao executar scrollIntoView:", err);
-            }
-          }
-        }, 100);
-        
-        // Mark conversation as read when new messages are loaded
-        if (packId && markAsRead) {
-          markAsRead(packId);
-        }
+  if (messagesEndRef.current && messagesEndRef.current.scrollIntoView) {
+    try {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    } catch (err) {
+      console.warn("Erro ao executar scrollIntoView:", err);
+    }
+  }
+}, 100);
+
       }
       
       prevMessagesLengthRef.current = messages.length;
     }
-  }, [messages, packId, markAsRead]);
+  }, [messages]);
 
   const sellerIdNum = sellerId ? parseInt(sellerId, 10) : null;
 
