@@ -4,7 +4,7 @@ import { Search, RefreshCw } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { usePackData } from '@/hooks/usePackData';
-import { usePackClientData, ClientData } from '@/hooks/usePackClientData';
+import { useClientData } from '@/hooks/usePackClientData';
 import { toast } from "sonner";
 import { formatDate } from '@/utils/dateFormatters';
 
