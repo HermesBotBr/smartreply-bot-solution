@@ -54,11 +54,11 @@ self.addEventListener('notificationclick', function(event) {
   
   event.notification.close();
   
-  // URL que será aberto quando o usuário clicar na notificação
+  // Updated URL to open when the user clicks the notification
   const packId = event.notification.data?.packId;
   const urlToOpen = packId 
-    ? `https://www.hermesbot.com.br/user_giovaniburgo?pack=${packId}`
-    : 'https://www.hermesbot.com.br/user_giovaniburgo';
+    ? `https://www.hermesbot.com.br/hermes?pack=${packId}`
+    : 'https://www.hermesbot.com.br/hermes';
 
   console.log("Abrindo URL:", urlToOpen);
 
@@ -69,7 +69,7 @@ self.addEventListener('notificationclick', function(event) {
     }).then(function(clientList) {
       for (let i = 0; i < clientList.length; i++) {
         const client = clientList[i];
-        if ((client.url === urlToOpen || client.url.includes('user_giovaniburgo')) && 'focus' in client) {
+        if ((client.url === urlToOpen || client.url.includes('hermes')) && 'focus' in client) {
           return client.focus();
         }
       }
