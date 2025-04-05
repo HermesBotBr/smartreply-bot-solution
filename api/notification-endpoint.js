@@ -54,32 +54,14 @@ export default async function handler(req, res) {
       const availableSellerIds = response.data.rows.map(row => row.seller_id);
       console.log("Seller IDs disponíveis na base:", availableSellerIds);
       
-      // Permitir correspondências parciais ou com diferentes tipos de dados (string vs número)
-      // Utilizamos uma abordagem mais flexível para localizar o seller_id
+      // Nova função: filtra estritamente pelo seller_id exato fornecido
+      // Convertemos para string para garantir comparação consistente
       const targetSellerId = String(seller_id).trim();
-      let subscriptionRows = [];
-      
-      // Primeiro tentamos uma correspondência exata
-      subscriptionRows = response.data.rows.filter(row => 
+      const subscriptionRows = response.data.rows.filter(row => 
         String(row.seller_id).trim() === targetSellerId
       );
       
-      // Se não encontrar, tentamos uma correspondência parcial
-      if (subscriptionRows.length === 0) {
-        console.log(`Tentando correspondência parcial para seller_id: ${targetSellerId}`);
-        subscriptionRows = response.data.rows.filter(row => 
-          String(row.seller_id).trim().includes(targetSellerId) || 
-          targetSellerId.includes(String(row.seller_id).trim())
-        );
-      }
-      
-      console.log(`Encontradas ${subscriptionRows.length} subscrições para o seller_id ${seller_id}`);
-
-      // Se ainda não encontrou nenhuma subscrição, tente usar o primeiro disponível
-      if (subscriptionRows.length === 0 && availableSellerIds.length > 0) {
-        console.log(`Nenhuma subscrição encontrada para ${seller_id}. Usando a primeira disponível: ${availableSellerIds[0]}`);
-        subscriptionRows = [response.data.rows[0]];
-      }
+      console.log(`Encontradas ${subscriptionRows.length} subscrições exatas para o seller_id ${seller_id}`);
 
       if (subscriptionRows.length === 0) {
         return res.status(404).json({ 
