@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import QuestionsList from "@/components/dashboard/QuestionsList";
 import MetricsDisplay from "@/components/dashboard/MetricsDisplay";
@@ -188,7 +189,7 @@ const Hermes = () => {
             />
           )}
 
-          <div className={`flex-1 flex w-${isMobile ? 'full' : '[calc(100%-3.5rem)]'} ${isMobile ? 'h-[calc(100vh-56px)]' : 'h-screen'}`}>
+          <div className={`flex-1 flex ${isMobile ? 'w-full' : 'w-[calc(100%-3.5rem)]'} h-full`}>
             {showConfigPanel ? (
               <div className="w-full h-full">
                 <ConfigurationsPanel sellerId={sellerId} onClose={handleCloseConfig} />
@@ -236,7 +237,7 @@ const Hermes = () => {
                   />
                 </div>
 
-                <div className="w-2/3 h-full overflow-hidden">
+                <div className="w-2/3 h-full">
                   {selectedPackId ? (
                     <div className="flex flex-col h-full">
                       <div className="p-4 border-b bg-white">
@@ -304,3 +305,4 @@ const Hermes = () => {
 };
 
 export default Hermes;
+
