@@ -15,6 +15,7 @@ import PacksList from "@/components/dashboard/PacksList";
 import MessagesList from "@/components/dashboard/MessagesList";
 import NotificationPermission from "@/components/NotificationPermission";
 import ConfigurationsPanel from "@/components/dashboard/ConfigurationsPanel";
+import { useReadConversations } from "@/hooks/useReadConversations";
 
 const Hermes = () => {
   const [activeTab, setActiveTab] = useState('conversas');
@@ -28,6 +29,7 @@ const Hermes = () => {
   const [selectedPackId, setSelectedPackId] = useState<string | null>(null);
   const [messagesRefreshTrigger, setMessagesRefreshTrigger] = useState(0);
   const [showConfigPanel, setShowConfigPanel] = useState(false);
+  const { readConversations, markAsRead } = useReadConversations();
 
   const { packs, setPacks, isLoading: packsLoading, error: packsError, refreshPacks } = useAllPacksData(sellerId);
   const { latestMessagesMeta, allMessages, isLoading: allMessagesLoading, error: allMessagesError } = usePacksWithMessages(packs, sellerId);
@@ -122,6 +124,10 @@ const Hermes = () => {
     setSelectedPackId(packId);
     setSelectedConv(null);
     toast.info(`Carregando mensagens do pacote ${packId}`);
+    
+    if (packId) {
+      markAsRead(packId);
+    }
   };
 
   const handleMessageSent = () => {
@@ -199,6 +205,12 @@ const Hermes = () => {
                   </div>
                   <PacksList
                     packs={[...packs].sort((a, b) => {
+                      const aUnread = !readConversations.includes(a.pack_id);
+                      const bUnread = !readConversations.includes(b.pack_id);
+                      
+                      if (aUnread && !bUnread) return -1;
+                      if (!aUnread && bUnread) return 1;
+                      
                       const dateA = latestMessagesMeta[a.pack_id]?.createdAt
                         ? new Date(latestMessagesMeta[a.pack_id].createdAt).getTime()
                         : 0;
@@ -220,6 +232,7 @@ const Hermes = () => {
                     allMessages={allMessages}
                     messagesLoading={allMessagesLoading}
                     messagesError={allMessagesError}
+                    readConversations={readConversations}
                   />
                 </div>
 
@@ -242,6 +255,8 @@ const Hermes = () => {
                           sellerId={sellerId}
                           packId={selectedPackId}
                           onMessageSent={handleMessageSent}
+                          readConversations={readConversations}
+                          markAsRead={markAsRead}
                         />
                       </div>
                     </div>

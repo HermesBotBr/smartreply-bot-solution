@@ -1,14 +1,15 @@
 
-import React, { useEffect } from 'react';
-import { User } from "lucide-react";
-import { usePackClientData } from '@/hooks/usePackClientData';
-import { Skeleton } from '@/components/ui/skeleton';
-import ProductThumbnail from './ProductThumbnail';
-import { toast } from 'sonner';
-import { AllPacksRow } from '@/hooks/useAllPacksData';
+import React, { useState } from 'react';
+import { Search, RefreshCw } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { usePackData } from '@/hooks/usePackData';
+import { useClientData } from '@/hooks/usePackClientData';
+import { toast } from "sonner";
+import { formatDate } from '@/utils/dateFormatters';
 
 interface PacksListProps {
-  packs: AllPacksRow[];
+  packs: any[];
   isLoading: boolean;
   error: string | null;
   onSelectPack: (packId: string) => void;
@@ -18,121 +19,171 @@ interface PacksListProps {
   allMessages: Record<string, any[]>;
   messagesLoading: boolean;
   messagesError: string | null;
+  readConversations?: string[];
 }
 
-const PacksList: React.FC<PacksListProps> = ({ 
-  packs, 
-  isLoading, 
-  error, 
+const PacksList: React.FC<PacksListProps> = ({
+  packs,
+  isLoading,
+  error,
   onSelectPack,
   selectedPackId,
   sellerId,
   latestMessages,
   allMessages,
   messagesLoading,
-  messagesError
+  messagesError,
+  readConversations = []
 }) => {
-  // Use our hook to fetch client data for each pack
-  const { clientDataMap, isLoading: clientDataLoading } = usePackClientData(sellerId, packs);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [refreshingPack, setRefreshingPack] = useState<string | null>(null);
   
-  // Show toast if there's an error loading messages
-  useEffect(() => {
-    if (messagesError) {
-      toast.error("Erro ao carregar mensagens: " + messagesError);
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+  };
+  
+  const filteredPacks = packs.filter(pack => {
+    const packIdMatch = pack.pack_id.toLowerCase().includes(searchTerm.toLowerCase());
+    const nicknameMatch = pack.nickname?.toLowerCase().includes(searchTerm.toLowerCase()) || false;
+    const emailMatch = pack.email?.toLowerCase().includes(searchTerm.toLowerCase()) || false;
+    
+    return packIdMatch || nicknameMatch || emailMatch;
+  });
+  
+  const refreshPack = async (packId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setRefreshingPack(packId);
+    
+    try {
+      const response = await fetch('/api/force-refresh-pack', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          seller_id: sellerId,
+          pack_id: packId 
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        toast.success("Mensagens atualizadas com sucesso");
+      } else {
+        toast.error(`Erro ao atualizar: ${data.error || 'Falha desconhecida'}`);
+      }
+    } catch (error) {
+      console.error("Error refreshing pack:", error);
+      toast.error("Erro ao atualizar mensagens");
+    } finally {
+      setRefreshingPack(null);
     }
-  }, [messagesError]);
+  };
+  
+  const hasUnreadMessages = (packId: string): boolean => {
+    return !readConversations.includes(packId);
+  };
+  
+  const truncateText = (text: string, maxLength: number = 40) => {
+    if (!text) return '';
+    return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
+  };
   
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-full">
+      <div className="flex justify-center items-center h-full p-4">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
     );
   }
-
+  
   if (error) {
     return (
-      <div className="text-center p-4 text-red-500">
-        <p>{error}</p>
-        <button 
-          onClick={() => window.location.reload()} 
-          className="mt-2 text-blue-500 hover:underline"
-        >
-          Tentar novamente
-        </button>
+      <div className="p-4 text-red-500">
+        <p>Erro ao carregar os pacotes: {error}</p>
       </div>
     );
   }
-
-  if (packs.length === 0) {
-    return (
-      <div className="text-center p-4 text-gray-500">
-        <p>Nenhum pacote encontrado para este vendedor</p>
-      </div>
-    );
-  }
-
+  
   return (
-    <div className="divide-y">
-      {packs.map((pack) => {
-        const clientData = clientDataMap[pack.pack_id];
-        const clientName = clientData ? clientData["Nome completo do cliente"] : null;
-        const productTitle = clientData ? clientData["Título do anúncio"] : null;
-        const itemId = clientData ? clientData["Item ID"] : null;
-        const latestMessage = latestMessages[pack.pack_id];
-        const packMessages = allMessages[pack.pack_id] || [];
-        const isGptPack = pack.gpt === "sim";
-        
-        return (
-          <div
-            key={pack.pack_id}
-            className={`p-4 hover:bg-gray-50 cursor-pointer ${
-              selectedPackId === pack.pack_id ? 'bg-gray-100' : ''
-            } ${isGptPack ? 'border-l-4 border-blue-500' : ''}`}
-            onClick={() => onSelectPack(pack.pack_id)}
-          >
-            <div className="flex items-center space-x-3">
-              {itemId ? (
-                <ProductThumbnail itemId={itemId} sellerId={sellerId} />
-              ) : (
-                <div className="bg-blue-100 p-2 rounded-full">
-                  <User size={20} className="text-blue-600" />
-                </div>
-              )}
-              <div className="flex-1 min-w-0">
-                {clientDataLoading && !clientData ? (
-                  <div className="space-y-2">
-                    <Skeleton className="h-4 w-3/4" />
-                    <Skeleton className="h-3 w-1/2" />
-                  </div>
-                ) : (
-                  <>
-                    <h3 className="font-medium truncate">
-                      {clientName || `Cliente (Pack ID: ${pack.pack_id})`}
-                      {isGptPack && <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded">GPT</span>}
-                    </h3>
-                    <div className="text-sm text-gray-500">
-                      {productTitle && <p className="truncate font-medium">{productTitle}</p>}
-                      <p className="truncate text-xs text-gray-400">
-                        {messagesLoading ? (
-                          <Skeleton className="h-2 w-24" />
-                        ) : latestMessage ? (
-                          latestMessage
-                        ) : (
-                          "Carregando mensagens..."
-                        )}
-                      </p>
-                      <p className="text-xs text-gray-400">
-                        {packMessages.length > 0 ? `${packMessages.length} mensagens` : ""}
-                      </p>
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
+    <div className="h-full flex flex-col">
+      <div className="p-3 border-b">
+        <div className="relative">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+          <Input
+            type="search"
+            placeholder="Buscar pacotes..."
+            className="pl-8"
+            value={searchTerm}
+            onChange={handleSearch}
+          />
+        </div>
+      </div>
+      
+      <div className="flex-1 overflow-y-auto">
+        {filteredPacks.length === 0 ? (
+          <div className="p-4 text-center text-gray-500">
+            Nenhum pacote encontrado
           </div>
-        );
-      })}
+        ) : (
+          <div className="divide-y">
+            {filteredPacks.map((pack) => {
+              const isSelected = selectedPackId === pack.pack_id;
+              const hasUnread = hasUnreadMessages(pack.pack_id);
+              const latestMessage = latestMessages[pack.pack_id] || '';
+              const messageCount = allMessages[pack.pack_id]?.length || 0;
+              
+              return (
+                <div
+                  key={pack.pack_id}
+                  className={`p-3 cursor-pointer hover:bg-gray-50 ${
+                    isSelected ? 'bg-blue-50' : 
+                    hasUnread ? 'bg-blue-50/50' : ''
+                  }`}
+                  onClick={() => onSelectPack(pack.pack_id)}
+                >
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center">
+                        <h3 className={`font-medium ${hasUnread ? 'text-blue-700' : 'text-gray-900'}`}>
+                          {pack.nickname || pack.pack_id}
+                          {hasUnread && <span className="inline-block ml-1 h-2 w-2 rounded-full bg-blue-500"></span>}
+                        </h3>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1 truncate">
+                        ID: {pack.pack_id}
+                      </p>
+                      {messageCount > 0 ? (
+                        <p className={`mt-1 text-sm truncate ${hasUnread ? 'font-medium text-gray-900' : 'text-gray-500'}`}>
+                          {truncateText(latestMessage)}
+                        </p>
+                      ) : (
+                        <p className="mt-1 text-sm text-gray-400 italic">
+                          Nenhuma mensagem
+                        </p>
+                      )}
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="ml-2 p-0 h-8 w-8"
+                      onClick={(e) => refreshPack(pack.pack_id, e)}
+                      disabled={refreshingPack === pack.pack_id}
+                    >
+                      <RefreshCw 
+                        size={16} 
+                        className={`${refreshingPack === pack.pack_id ? 'animate-spin' : ''}`} 
+                      />
+                      <span className="sr-only">Atualizar</span>
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 };
