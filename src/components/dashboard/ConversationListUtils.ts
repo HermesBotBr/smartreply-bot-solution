@@ -25,7 +25,7 @@ export const hasBuyerLastMessage = (conv: any, readConversations: string[]) => {
 
 export const sortConversations = (conversations: any[], readConversations: string[]) => {
   return conversations.slice().sort((a, b) => {
-    // First priority: Sort by unread buyer messages
+    // First priority: Sort by unread buyer messages (unread at the top)
     const hasNewBuyerMsgA = hasBuyerLastMessage(a, readConversations);
     const hasNewBuyerMsgB = hasBuyerLastMessage(b, readConversations);
 

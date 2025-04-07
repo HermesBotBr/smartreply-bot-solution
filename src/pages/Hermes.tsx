@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import QuestionsList from "@/components/dashboard/QuestionsList";
 import MetricsDisplay from "@/components/dashboard/MetricsDisplay";
@@ -29,7 +28,6 @@ const Hermes = () => {
   const [selectedPackId, setSelectedPackId] = useState<string | null>(null);
   const [messagesRefreshTrigger, setMessagesRefreshTrigger] = useState(0);
   const [showConfigPanel, setShowConfigPanel] = useState(false);
-  // Add state for tracking read conversations
   const [readConversations, setReadConversations] = useState<string[]>([]);
 
   const { packs, setPacks, isLoading: packsLoading, error: packsError, refreshPacks } = useAllPacksData(sellerId);
@@ -66,7 +64,6 @@ const Hermes = () => {
     localStorage.removeItem('hermesAuth');
   }, []);
 
-  // Add effect to load read conversations from localStorage
   useEffect(() => {
     if (sellerId) {
       const savedReadConversations = localStorage.getItem(`readConversations_${sellerId}`);
@@ -141,12 +138,10 @@ const Hermes = () => {
     setSelectedConv(null);
     toast.info(`Carregando mensagens do pacote ${packId}`);
     
-    // Mark this conversation as read
     if (!readConversations.includes(packId)) {
       const updatedReadConversations = [...readConversations, packId];
       setReadConversations(updatedReadConversations);
       
-      // Save to localStorage
       if (sellerId) {
         localStorage.setItem(`readConversations_${sellerId}`, JSON.stringify(updatedReadConversations));
       }
@@ -227,17 +222,7 @@ const Hermes = () => {
                     <NotificationPermission />
                   </div>
                   <PacksList
-                    packs={[...packs].sort((a, b) => {
-                      const dateA = latestMessagesMeta[a.pack_id]?.createdAt
-                        ? new Date(latestMessagesMeta[a.pack_id].createdAt).getTime()
-                        : 0;
-
-                      const dateB = latestMessagesMeta[b.pack_id]?.createdAt
-                        ? new Date(latestMessagesMeta[b.pack_id].createdAt).getTime()
-                        : 0;
-
-                      return dateB - dateA;
-                    })}
+                    packs={packs}
                     isLoading={packsLoading}
                     error={packsError}
                     onSelectPack={handleSelectPack}

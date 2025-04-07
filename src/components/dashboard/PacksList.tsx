@@ -127,9 +127,30 @@ const PacksList: React.FC<PacksListProps> = ({
     return senderPrefix === "Buyer: ";
   };
 
+  // Sort the packs: unread buyer messages first, then by latest message date
+  const sortedPacks = [...packs].sort((a, b) => {
+    // First priority: unread buyer messages at the top
+    const aHasUnread = hasUnreadBuyerMessage(a.pack_id);
+    const bHasUnread = hasUnreadBuyerMessage(b.pack_id);
+    
+    if (aHasUnread && !bHasUnread) return -1;
+    if (!aHasUnread && bHasUnread) return 1;
+    
+    // Second priority: sort by latest message date
+    const aDate = latestMessages[a.pack_id]?.createdAt
+      ? new Date(latestMessages[a.pack_id].createdAt).getTime()
+      : 0;
+    
+    const bDate = latestMessages[b.pack_id]?.createdAt
+      ? new Date(latestMessages[b.pack_id].createdAt).getTime()
+      : 0;
+    
+    return bDate - aDate; // Most recent first
+  });
+
   return (
     <div className="divide-y">
-      {packs.map((pack) => {
+      {sortedPacks.map((pack) => {
         const clientData = clientDataMap[pack.pack_id];
         const clientName = clientData ? clientData["Nome completo do cliente"] : null;
         const productTitle = clientData ? clientData["Título do anúncio"] : null;
