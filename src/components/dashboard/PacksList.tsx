@@ -72,6 +72,47 @@ const PacksList: React.FC<PacksListProps> = ({
     );
   }
 
+  const getSenderLabel = (packId: string) => {
+    // Get the messages for this pack
+    const packMessages = allMessages[packId] || [];
+    
+    if (packMessages.length === 0) {
+      return "";
+    }
+    
+    // Sort messages by date to find the latest one
+    const sortedMessages = [...packMessages].sort((a, b) => 
+      new Date(b.message_date.created).getTime() - new Date(a.message_date.created).getTime()
+    );
+    
+    // Get the latest message
+    const latestMessage = sortedMessages[0];
+    
+    if (!latestMessage) return "";
+    
+    // Determine if the message is from buyer, seller, or GPT
+    const fromUserId = latestMessage.from?.user_id;
+    const toUserId = latestMessage.to?.user_id;
+    
+    if (!fromUserId) return "";
+    
+    // Find the pack data to check if it's a GPT pack
+    const currentPack = packs.find(p => p.pack_id === packId);
+    const isGptPack = currentPack?.gpt === "sim";
+    
+    // If latest message was sent by seller (to customer)
+    if (fromUserId.toString() === sellerId) {
+      // Check if it's from GPT
+      if (isGptPack && latestMessage.text.startsWith('[GPT]')) {
+        return "GPT: ";
+      }
+      return "Seller: ";
+    } else {
+      // If message was sent by buyer (to seller)
+      return "Buyer: ";
+    }
+  };
+
   return (
     <div className="divide-y">
       {packs.map((pack) => {
@@ -82,6 +123,7 @@ const PacksList: React.FC<PacksListProps> = ({
         const latestMessage = latestMessages[pack.pack_id];
         const packMessages = allMessages[pack.pack_id] || [];
         const isGptPack = pack.gpt === "sim";
+        const senderLabel = getSenderLabel(pack.pack_id);
         
         return (
           <div
@@ -117,7 +159,12 @@ const PacksList: React.FC<PacksListProps> = ({
                         {messagesLoading ? (
                           <Skeleton className="h-2 w-24" />
                         ) : latestMessage ? (
-                          latestMessage
+                          <>
+                            <span className={`font-medium ${senderLabel.startsWith('Buyer') ? 'text-blue-600' : senderLabel.startsWith('GPT') ? 'text-green-600' : 'text-gray-600'}`}>
+                              {senderLabel}
+                            </span>
+                            {latestMessage}
+                          </>
                         ) : (
                           "Carregando mensagens..."
                         )}
