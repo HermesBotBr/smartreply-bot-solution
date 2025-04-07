@@ -16,7 +16,6 @@ export function useAllPacksData(sellerId: string | null) {
   const [error, setError] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(true);
   const [page, setPage] = useState(1);
-  const [allPacksData, setAllPacksData] = useState<AllPacksRow[]>([]);
   const LIMIT = 20;
 
   const fetchAllPacks = useCallback(async (currentPage: number) => {
@@ -29,62 +28,41 @@ export function useAllPacksData(sellerId: string | null) {
       setIsLoading(true);
       setError(null);
       
-      // Se é a primeira vez que carregamos ou se ainda não temos dados
-      if (currentPage === 1 || allPacksData.length === 0) {
-        // Busca todos os dados da tabela all_packs
-        const response = await axios.get('https://projetohermes-dda7e0c8d836.herokuapp.com/api/db/rows/all_packs');
+      // Usa o endpoint exato para buscar todas as linhas da tabela all_packs
+      const response = await axios.get('https://projetohermes-dda7e0c8d836.herokuapp.com/api/db/rows/all_packs');
+      
+      if (response.data && Array.isArray(response.data.rows)) {
+        // Filtra apenas os pacotes do vendedor atual
+        const sellerPacks = response.data.rows.filter(
+          (pack: AllPacksRow) => pack.seller_id === sellerId
+        );
         
-        if (response.data && Array.isArray(response.data.rows)) {
-          // Filtra apenas os pacotes do vendedor atual
-          const sellerPacks = response.data.rows.filter(
-            (pack: AllPacksRow) => pack.seller_id === sellerId
-          );
+        console.log(`Encontrados ${sellerPacks.length} pacotes para o seller_id ${sellerId}`);
+        
+        // Ordena os pacotes por data da mensagem (mais recente primeiro)
+        const sortedPacks = sellerPacks.sort((a: AllPacksRow, b: AllPacksRow) => {
+          // Pacotes com date_msg nulo vão para o final
+          if (!a.date_msg && !b.date_msg) return 0;
+          if (!a.date_msg) return 1;
+          if (!b.date_msg) return -1;
           
-          console.log(`Encontrados ${sellerPacks.length} pacotes para o seller_id ${sellerId}`);
-          
-          // Ordena os pacotes por data da mensagem (mais recente primeiro)
-          const sortedPacks = sellerPacks.sort((a: AllPacksRow, b: AllPacksRow) => {
-            // Pacotes com date_msg nulo vão para o final
-            if (!a.date_msg && !b.date_msg) return 0;
-            if (!a.date_msg) return 1;
-            if (!b.date_msg) return -1;
-            
-            return new Date(b.date_msg).getTime() - new Date(a.date_msg).getTime();
-          });
-          
-          // Guarda todos os dados ordenados para paginação local
-          setAllPacksData(sortedPacks);
-          
-          // Calcula o início e fim da página
-          const startIndex = 0;
-          const endIndex = currentPage * LIMIT;
-          
-          // Pega apenas os pacotes da página atual
-          const pagedPacks = sortedPacks.slice(startIndex, endIndex);
-          
-          // Define se ainda há mais pacotes para carregar
-          setHasMore(endIndex < sortedPacks.length);
-          
-          // Atualiza a lista de pacotes
-          setPacks(pagedPacks);
-        } else {
-          setError('Formato de resposta inválido ao carregar pacotes da tabela all_packs');
-        }
-      } else {
-        // Para paginação, usamos os dados já carregados anteriormente
-        const startIndex = (currentPage - 1) * LIMIT;
+          return new Date(b.date_msg).getTime() - new Date(a.date_msg).getTime();
+        });
+        
+        // Calcula o início e fim da página
+        const startIndex = 0;
         const endIndex = currentPage * LIMIT;
         
-        // Pega apenas os novos pacotes da página atual
-        const newPagePacks = allPacksData.slice(startIndex, endIndex);
+        // Pega apenas os pacotes da página atual
+        const pagedPacks = sortedPacks.slice(startIndex, endIndex);
         
         // Define se ainda há mais pacotes para carregar
-        setHasMore(endIndex < allPacksData.length);
+        setHasMore(endIndex < sortedPacks.length);
         
-        // Adiciona os novos pacotes à lista existente
-        setPacks(prevPacks => [...prevPacks, ...newPagePacks]);
-        
-        console.log(`Carregados mais ${newPagePacks.length} pacotes da página ${currentPage}`);
+        // Atualiza a lista de pacotes
+        setPacks(pagedPacks);
+      } else {
+        setError('Formato de resposta inválido ao carregar pacotes da tabela all_packs');
       }
     } catch (error) {
       console.error('Erro ao carregar pacotes da tabela all_packs:', error);
@@ -92,7 +70,7 @@ export function useAllPacksData(sellerId: string | null) {
     } finally {
       setIsLoading(false);
     }
-  }, [sellerId, allPacksData]);
+  }, [sellerId]);
 
   // Função para carregar mais pacotes
   const loadMorePacks = useCallback(() => {
@@ -105,7 +83,6 @@ export function useAllPacksData(sellerId: string | null) {
   const refreshPacks = useCallback(() => {
     console.log("🔄 Atualizando lista de pacotes da tabela all_packs");
     setPage(1); // Reset para a primeira página
-    setAllPacksData([]); // Limpa os dados armazenados para forçar nova busca
     fetchAllPacks(1);
   }, [fetchAllPacks]);
 
