@@ -13,8 +13,6 @@ import { useGptIds } from "@/hooks/useGptIds";
 import { useSaleDetails } from "@/hooks/useSaleDetails";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { usePushNotification } from "@/hooks/use-push-notification";
-
-// Importar a mesma chave VAPID que é usada no rest do aplicativo
 import { toast } from '@/hooks/use-toast';
 
 const UserGiovaniBurgo = () => {
@@ -40,11 +38,14 @@ const UserGiovaniBurgo = () => {
     fetchDetailedInfo,
     showSaleDetails,
     setShowSaleDetails,
-    fetchSaleDetails
+    fetchSaleDetails,
+    saleDetails,
+    isLoading,
+    error
   } = useSaleDetails();
   const isMobile = useMediaQuery('(max-width: 768px)');
 
-  // Usar o hook usePushNotification em vez de registrar manualmente
+  // Use the hook usePushNotification instead of manually registering
   const { subscribe, subscription } = usePushNotification();
 
   const handleLogout = () => {
@@ -53,32 +54,30 @@ const UserGiovaniBurgo = () => {
   };
 
   useEffect(() => {
-    // Substituir a inicialização manual do service worker e subscrição
-    // pelo uso do hook usePushNotification
+    // Replace manual service worker initialization and subscription
+    // with the usePushNotification hook
     const initPushNotification = async () => {
       try {
         const result = await subscribe();
         if (result) {
-          console.log("Usuário inscrito para notificações push:", result.endpoint);
-          // Salvar a subscription no servidor se necessário
+          console.log("User subscribed to push notifications:", result.endpoint);
+          // Save subscription to server if needed
           fetch("/api/save-subscription", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(result)
           })
             .then(response => response.json())
-            .then(data => console.log("Subscription salva:", data))
-            .catch(error => console.error("Erro ao salvar subscription:", error));
+            .then(data => console.log("Subscription saved:", data))
+            .catch(error => console.error("Error saving subscription:", error));
         }
       } catch (error) {
-        console.error("Erro durante o registro ou inscrição do push:", error);
+        console.error("Error during push registration or subscription:", error);
       }
     };
     
     initPushNotification();
   }, [subscribe]);
-
-  // Remover a função urlBase64ToUint8Array pois já existe no hook
 
   return (
     <div className="flex h-screen overflow-hidden">
@@ -109,6 +108,9 @@ const UserGiovaniBurgo = () => {
             detailedInfo={detailedInfo}
             fetchDetailedInfo={fetchDetailedInfo}
             fetchSaleDetails={fetchSaleDetails}
+            saleDetails={saleDetails}
+            isLoading={isLoading}
+            error={error}
           />
         ) : activeTab === 'perguntas' ? (
           <div className="w-full h-full overflow-auto">
@@ -126,7 +128,7 @@ const UserGiovaniBurgo = () => {
                 setSelectedConv(conversation);
                 setActiveTab('conversas');
               } else {
-                console.error('Conversa não encontrada para orderId:', orderId);
+                console.error('Conversation not found for orderId:', orderId);
               }
             }} />
           </div>
