@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import QuestionsList from "@/components/dashboard/QuestionsList";
 import MetricsDisplay from "@/components/dashboard/MetricsDisplay";
@@ -31,7 +30,7 @@ const Hermes = () => {
   const [showConfigPanel, setShowConfigPanel] = useState(false);
   const [readConversations, setReadConversations] = useState<string[]>([]);
 
-  const { packs, setPacks, isLoading: packsLoading, error: packsError, refreshPacks } = useAllPacksData(sellerId);
+  const { packs, setPacks, isLoading: packsLoading, error: packsError, refreshPacks, loadMorePacks, hasMore } = useAllPacksData(sellerId);
   const { latestMessagesMeta, allMessages, isLoading: allMessagesLoading, error: allMessagesError } = usePacksWithMessages(packs, sellerId);
   const { messages, isLoading: messagesLoading, error: messagesError, updatePackMessages } = usePackMessages(
     selectedPackId,
@@ -259,6 +258,8 @@ const Hermes = () => {
                     messagesLoading={allMessagesLoading}
                     messagesError={allMessagesError}
                     readConversations={readConversations}
+                    loadMorePacks={loadMorePacks}
+                    hasMore={hasMore}
                   />
                 </div>
 

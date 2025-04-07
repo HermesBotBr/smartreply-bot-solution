@@ -7,14 +7,18 @@ export interface AllPacksRow {
   pack_id: string;
   gpt: string | null;
   seller_id: string | null;
+  date_msg: string | null;
 }
 
 export function useAllPacksData(sellerId: string | null) {
   const [packs, setPacks] = useState<AllPacksRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [hasMore, setHasMore] = useState(true);
+  const [page, setPage] = useState(1);
+  const LIMIT = 20;
 
-  const fetchAllPacks = useCallback(async () => {
+  const fetchAllPacks = useCallback(async (currentPage: number) => {
     if (!sellerId) {
       setIsLoading(false);
       return;
@@ -34,7 +38,29 @@ export function useAllPacksData(sellerId: string | null) {
         );
         
         console.log(`Encontrados ${sellerPacks.length} pacotes para o seller_id ${sellerId}`);
-        setPacks(sellerPacks);
+        
+        // Ordena os pacotes por data da mensagem (mais recente primeiro)
+        const sortedPacks = sellerPacks.sort((a: AllPacksRow, b: AllPacksRow) => {
+          // Pacotes com date_msg nulo vão para o final
+          if (!a.date_msg && !b.date_msg) return 0;
+          if (!a.date_msg) return 1;
+          if (!b.date_msg) return -1;
+          
+          return new Date(b.date_msg).getTime() - new Date(a.date_msg).getTime();
+        });
+        
+        // Calcula o início e fim da página
+        const startIndex = 0;
+        const endIndex = currentPage * LIMIT;
+        
+        // Pega apenas os pacotes da página atual
+        const pagedPacks = sortedPacks.slice(startIndex, endIndex);
+        
+        // Define se ainda há mais pacotes para carregar
+        setHasMore(endIndex < sortedPacks.length);
+        
+        // Atualiza a lista de pacotes
+        setPacks(pagedPacks);
       } else {
         setError('Formato de resposta inválido ao carregar pacotes da tabela all_packs');
       }
@@ -46,15 +72,23 @@ export function useAllPacksData(sellerId: string | null) {
     }
   }, [sellerId]);
 
+  // Função para carregar mais pacotes
+  const loadMorePacks = useCallback(() => {
+    if (!isLoading && hasMore) {
+      setPage(prevPage => prevPage + 1);
+    }
+  }, [isLoading, hasMore]);
+
   // Função para atualizar a lista de pacotes
   const refreshPacks = useCallback(() => {
     console.log("🔄 Atualizando lista de pacotes da tabela all_packs");
-    fetchAllPacks();
+    setPage(1); // Reset para a primeira página
+    fetchAllPacks(1);
   }, [fetchAllPacks]);
 
   useEffect(() => {
-    fetchAllPacks();
-  }, [fetchAllPacks]);
+    fetchAllPacks(page);
+  }, [fetchAllPacks, page]);
 
-  return { packs, setPacks, isLoading, error, refreshPacks };
+  return { packs, setPacks, isLoading, error, refreshPacks, loadMorePacks, hasMore };
 }

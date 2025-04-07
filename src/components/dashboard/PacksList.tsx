@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef, useCallback } from 'react';
 import { User } from "lucide-react";
 import { usePackClientData } from '@/hooks/usePackClientData';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -19,6 +19,8 @@ interface PacksListProps {
   messagesLoading: boolean;
   messagesError: string | null;
   readConversations?: string[]; // Array of pack IDs that have been read
+  loadMorePacks?: () => void;
+  hasMore?: boolean;
 }
 
 const PacksList: React.FC<PacksListProps> = ({ 
@@ -32,10 +34,27 @@ const PacksList: React.FC<PacksListProps> = ({
   allMessages,
   messagesLoading,
   messagesError,
-  readConversations = [] // Default to empty array if not provided
+  readConversations = [], // Default to empty array if not provided
+  loadMorePacks,
+  hasMore = false
 }) => {
   // Use our hook to fetch client data for each pack
   const { clientDataMap, isLoading: clientDataLoading } = usePackClientData(sellerId, packs);
+  
+  // Create a ref for the last list item to observe for infinite scrolling
+  const observer = useRef<IntersectionObserver | null>(null);
+  const lastPackElementRef = useCallback((node: HTMLDivElement | null) => {
+    if (isLoading) return;
+    if (observer.current) observer.current.disconnect();
+    
+    observer.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && hasMore && loadMorePacks) {
+        loadMorePacks();
+      }
+    });
+    
+    if (node) observer.current.observe(node);
+  }, [isLoading, hasMore, loadMorePacks]);
   
   // Show toast if there's an error loading messages
   useEffect(() => {
@@ -44,7 +63,7 @@ const PacksList: React.FC<PacksListProps> = ({
     }
   }, [messagesError]);
   
-  if (isLoading) {
+  if (isLoading && packs.length === 0) {
     return (
       <div className="flex justify-center items-center h-full">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -176,7 +195,7 @@ const PacksList: React.FC<PacksListProps> = ({
 
   return (
     <div className="divide-y">
-      {sortedPacks.map((pack) => {
+      {sortedPacks.map((pack, index) => {
         const clientData = clientDataMap[pack.pack_id];
         const clientName = clientData ? clientData["Nome completo do cliente"] : null;
         const productTitle = clientData ? clientData["Título do anúncio"] : null;
@@ -187,9 +206,13 @@ const PacksList: React.FC<PacksListProps> = ({
         const senderLabel = getSenderLabel(pack.pack_id);
         const isUnread = hasUnreadBuyerMessage(pack.pack_id);
         
+        // Add ref to last item for infinite scrolling
+        const isLastItem = index === sortedPacks.length - 1;
+        
         return (
           <div
             key={pack.pack_id}
+            ref={isLastItem ? lastPackElementRef : null}
             className={`p-4 hover:bg-gray-50 cursor-pointer ${
               selectedPackId === pack.pack_id ? 'bg-gray-100' : 
               isUnread ? 'bg-blue-50 hover:bg-blue-100' : ''
@@ -244,6 +267,13 @@ const PacksList: React.FC<PacksListProps> = ({
           </div>
         );
       })}
+      
+      {isLoading && packs.length > 0 && (
+        <div className="p-4 text-center">
+          <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+          <p className="mt-2 text-sm text-gray-500">Carregando mais conversas...</p>
+        </div>
+      )}
     </div>
   );
 };
