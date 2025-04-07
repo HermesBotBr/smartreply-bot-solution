@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import QuestionsList from "@/components/dashboard/QuestionsList";
 import MetricsDisplay from "@/components/dashboard/MetricsDisplay";
@@ -28,6 +29,8 @@ const Hermes = () => {
   const [selectedPackId, setSelectedPackId] = useState<string | null>(null);
   const [messagesRefreshTrigger, setMessagesRefreshTrigger] = useState(0);
   const [showConfigPanel, setShowConfigPanel] = useState(false);
+  // Add state for tracking read conversations
+  const [readConversations, setReadConversations] = useState<string[]>([]);
 
   const { packs, setPacks, isLoading: packsLoading, error: packsError, refreshPacks } = useAllPacksData(sellerId);
   const { latestMessagesMeta, allMessages, isLoading: allMessagesLoading, error: allMessagesError } = usePacksWithMessages(packs, sellerId);
@@ -62,6 +65,21 @@ const Hermes = () => {
     setLoginOpen(true);
     localStorage.removeItem('hermesAuth');
   }, []);
+
+  // Add effect to load read conversations from localStorage
+  useEffect(() => {
+    if (sellerId) {
+      const savedReadConversations = localStorage.getItem(`readConversations_${sellerId}`);
+      if (savedReadConversations) {
+        try {
+          setReadConversations(JSON.parse(savedReadConversations));
+        } catch (error) {
+          console.error("Error parsing read conversations:", error);
+          setReadConversations([]);
+        }
+      }
+    }
+  }, [sellerId]);
 
   useEffect(() => {
     if (!sellerId) return;
@@ -122,6 +140,17 @@ const Hermes = () => {
     setSelectedPackId(packId);
     setSelectedConv(null);
     toast.info(`Carregando mensagens do pacote ${packId}`);
+    
+    // Mark this conversation as read
+    if (!readConversations.includes(packId)) {
+      const updatedReadConversations = [...readConversations, packId];
+      setReadConversations(updatedReadConversations);
+      
+      // Save to localStorage
+      if (sellerId) {
+        localStorage.setItem(`readConversations_${sellerId}`, JSON.stringify(updatedReadConversations));
+      }
+    }
   };
 
   const handleMessageSent = () => {
@@ -220,6 +249,7 @@ const Hermes = () => {
                     allMessages={allMessages}
                     messagesLoading={allMessagesLoading}
                     messagesError={allMessagesError}
+                    readConversations={readConversations}
                   />
                 </div>
 
