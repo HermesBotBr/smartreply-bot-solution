@@ -27,6 +27,9 @@ interface ConversationsTabProps {
   fetchDetailedInfo: (selectedConv: any, token: string) => Promise<void>;
   fetchSaleDetails: (selectedConv: any, token: string) => Promise<void>;
   resetDetails?: () => void;
+  saleDetails: any;
+  isLoading: boolean;
+  error: string | null;
 }
 
 const ConversationsTab: React.FC<ConversationsTabProps> = ({
@@ -50,7 +53,10 @@ const ConversationsTab: React.FC<ConversationsTabProps> = ({
   detailedInfo,
   fetchDetailedInfo,
   fetchSaleDetails,
-  resetDetails
+  resetDetails,
+  saleDetails,
+  isLoading,
+  error
 }) => {
   const isMobile = useMediaQuery('(max-width: 768px)');
 
@@ -87,15 +93,10 @@ const ConversationsTab: React.FC<ConversationsTabProps> = ({
       return (
         <div className="w-full h-full flex flex-col overflow-hidden">
           <SaleDetailsPanel 
-            selectedConv={selectedConv}
-            orderDetails={orderDetails}
-            shippingDetails={shippingDetails}
-            expandedInfo={expandedInfo}
-            setExpandedInfo={setExpandedInfo}
-            detailedInfo={detailedInfo}
-            fetchDetailedInfo={() => mlToken && fetchDetailedInfo(selectedConv, mlToken)}
+            saleDetails={saleDetails}
+            isLoading={isLoading}
+            error={error}
             onClose={handleCloseSaleDetails}
-            markAsRead={markAsRead}
             isMobile={true}
           />
         </div>
@@ -169,15 +170,10 @@ const ConversationsTab: React.FC<ConversationsTabProps> = ({
       {showSaleDetails && selectedConv && (
         <div className="w-1/3 h-screen overflow-hidden">
           <SaleDetailsPanel 
-            selectedConv={selectedConv}
-            orderDetails={orderDetails}
-            shippingDetails={shippingDetails}
-            expandedInfo={expandedInfo}
-            setExpandedInfo={setExpandedInfo}
-            detailedInfo={detailedInfo}
-            fetchDetailedInfo={() => mlToken && fetchDetailedInfo(selectedConv, mlToken)}
+            saleDetails={saleDetails}
+            isLoading={isLoading}
+            error={error}
             onClose={handleCloseSaleDetails}
-            markAsRead={markAsRead}
             isMobile={false}
           />
         </div>
