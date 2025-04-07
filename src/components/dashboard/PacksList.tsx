@@ -136,13 +136,21 @@ const PacksList: React.FC<PacksListProps> = ({
     if (aHasUnread && !bHasUnread) return -1;
     if (!aHasUnread && bHasUnread) return 1;
     
-    // Second priority: sort by latest message date
-    const aDate = latestMessages[a.pack_id]?.createdAt
-      ? new Date(latestMessages[a.pack_id].createdAt).getTime()
+    // Second priority: sort by latest message date using the message timestamps
+    // from the allMessages array rather than latestMessages which doesn't have createdAt
+    const aMessages = allMessages[a.pack_id] || [];
+    const bMessages = allMessages[b.pack_id] || [];
+    
+    const aDate = aMessages.length > 0 
+      ? new Date(aMessages.sort((x, y) => 
+          new Date(y.message_date.created).getTime() - new Date(x.message_date.created).getTime()
+        )[0].message_date.created).getTime() 
       : 0;
     
-    const bDate = latestMessages[b.pack_id]?.createdAt
-      ? new Date(latestMessages[b.pack_id].createdAt).getTime()
+    const bDate = bMessages.length > 0 
+      ? new Date(bMessages.sort((x, y) => 
+          new Date(y.message_date.created).getTime() - new Date(x.message_date.created).getTime()
+        )[0].message_date.created).getTime() 
       : 0;
     
     return bDate - aDate; // Most recent first
