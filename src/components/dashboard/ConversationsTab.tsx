@@ -4,6 +4,7 @@ import ConversationsList from './ConversationsList';
 import ChatPanel from './ChatPanel';
 import SaleDetailsPanel from './SaleDetailsPanel';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { ClientData } from '@/hooks/usePackClientData';
 
 interface ConversationsTabProps {
   conversations: any[];
@@ -19,15 +20,8 @@ interface ConversationsTabProps {
   gptIds: string[];
   mlToken: string | null;
   setFullScreenImage: (url: string | null) => void;
-  orderDetails: any;
-  shippingDetails: any;
-  expandedInfo: boolean;
-  setExpandedInfo: (expanded: boolean) => void;
-  detailedInfo: any;
-  fetchDetailedInfo: (selectedConv: any, token: string) => Promise<void>;
-  fetchSaleDetails: (selectedConv: any, token: string) => Promise<void>;
-  resetDetails?: () => void;
-  saleDetails: any;
+  fetchSaleDetails: (packId: string | null, sellerId: string | null) => Promise<void>;
+  saleDetails: ClientData | null;
   isLoading: boolean;
   error: string | null;
 }
@@ -46,14 +40,7 @@ const ConversationsTab: React.FC<ConversationsTabProps> = ({
   gptIds,
   mlToken,
   setFullScreenImage,
-  orderDetails,
-  shippingDetails,
-  expandedInfo,
-  setExpandedInfo,
-  detailedInfo,
-  fetchDetailedInfo,
   fetchSaleDetails,
-  resetDetails,
   saleDetails,
   isLoading,
   error
@@ -65,12 +52,12 @@ const ConversationsTab: React.FC<ConversationsTabProps> = ({
     let intervalId: NodeJS.Timeout | undefined;
     if (showSaleDetails && selectedConv && mlToken) {
       // Initial fetch
-      fetchSaleDetails(selectedConv, mlToken);
+      fetchSaleDetails(selectedConv.pack_id, selectedConv.seller_id);
       
       // Set up interval
       intervalId = setInterval(() => {
         if (mlToken) {
-          fetchSaleDetails(selectedConv, mlToken);
+          fetchSaleDetails(selectedConv.pack_id, selectedConv.seller_id);
         }
       }, 20000);
     }

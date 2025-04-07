@@ -30,18 +30,12 @@ const UserGiovaniBurgo = () => {
   } = useConversations();
   const gptIds = useGptIds();
   const {
-    orderDetails,
-    shippingDetails,
-    expandedInfo,
-    setExpandedInfo,
-    detailedInfo,
-    fetchDetailedInfo,
+    saleDetails,
     showSaleDetails,
     setShowSaleDetails,
-    fetchSaleDetails,
-    saleDetails,
     isLoading,
-    error
+    error,
+    fetchSaleDetails
   } = useSaleDetails();
   const isMobile = useMediaQuery('(max-width: 768px)');
 
@@ -101,12 +95,6 @@ const UserGiovaniBurgo = () => {
             gptIds={gptIds}
             mlToken={mlToken}
             setFullScreenImage={setFullScreenImage}
-            orderDetails={orderDetails}
-            shippingDetails={shippingDetails}
-            expandedInfo={expandedInfo}
-            setExpandedInfo={setExpandedInfo}
-            detailedInfo={detailedInfo}
-            fetchDetailedInfo={fetchDetailedInfo}
             fetchSaleDetails={fetchSaleDetails}
             saleDetails={saleDetails}
             isLoading={isLoading}
