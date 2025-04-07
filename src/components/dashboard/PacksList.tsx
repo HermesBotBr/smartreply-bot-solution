@@ -72,7 +72,7 @@ const PacksList: React.FC<PacksListProps> = ({
     );
   }
 
-  // Helper function to check if the last message is from a buyer and unread
+  // Helper function to check if the last message is from a buyer
   const hasBuyerLastMessage = (packId: string, messages: any[]) => {
     if (!messages || messages.length === 0) return false;
     
@@ -84,7 +84,7 @@ const PacksList: React.FC<PacksListProps> = ({
     const lastMessage = sortedMessages[0];
     
     // Check if the last message is from a buyer (user_id will be higher for buyers)
-    // This is an assumption based on the messages structure
+    // This logic checks if the sender is from the buyer side, not the seller
     return lastMessage && lastMessage.from && lastMessage.from.user_id > 0;
   };
 

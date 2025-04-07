@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import QuestionsList from "@/components/dashboard/QuestionsList";
 import MetricsDisplay from "@/components/dashboard/MetricsDisplay";
@@ -173,6 +174,7 @@ const Hermes = () => {
     
     const lastMessage = sortedMessages[0];
     
+    // Only return true if the last message is from a buyer (user_id > 0)
     if (!(lastMessage && lastMessage.from && lastMessage.from.user_id > 0)) return false;
     
     const specificMessageReadState = `${packId}:${lastMessage.id}`;
