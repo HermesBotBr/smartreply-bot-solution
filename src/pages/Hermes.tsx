@@ -15,6 +15,7 @@ import PacksList from "@/components/dashboard/PacksList";
 import MessagesList from "@/components/dashboard/MessagesList";
 import NotificationPermission from "@/components/NotificationPermission";
 import ConfigurationsPanel from "@/components/dashboard/ConfigurationsPanel";
+import { useReadConversations } from "@/hooks/useReadConversations";
 
 const Hermes = () => {
   const [activeTab, setActiveTab] = useState('conversas');
@@ -36,6 +37,7 @@ const Hermes = () => {
     sellerId,
     messagesRefreshTrigger
   );
+  const { readConversations, markAsRead } = useReadConversations();
   useMessageNotifications(sellerId);
 
   useEffect(() => {
@@ -122,6 +124,8 @@ const Hermes = () => {
     setSelectedPackId(packId);
     setSelectedConv(null);
     toast.info(`Carregando mensagens do pacote ${packId}`);
+    
+    markAsRead(packId);
   };
 
   const handleMessageSent = () => {
@@ -157,6 +161,26 @@ const Hermes = () => {
     if (tab === 'configuracoes') {
       setShowConfigPanel(true);
     }
+  };
+
+  const hasBuyerLastMessage = (packId: string) => {
+    const messages = allMessages[packId] || [];
+    if (!messages || messages.length === 0) return false;
+    
+    const sortedMessages = [...messages].sort((a, b) => 
+      new Date(b.message_date.created).getTime() - new Date(a.message_date.created).getTime()
+    );
+    
+    const lastMessage = sortedMessages[0];
+    
+    if (!(lastMessage && lastMessage.from && lastMessage.from.user_id > 0)) return false;
+    
+    const specificMessageReadState = `${packId}:${lastMessage.id}`;
+    if (readConversations.includes(specificMessageReadState)) {
+      return false;
+    }
+    
+    return true;
   };
 
   return (
@@ -199,6 +223,12 @@ const Hermes = () => {
                   </div>
                   <PacksList
                     packs={[...packs].sort((a, b) => {
+                      const hasUnreadA = hasBuyerLastMessage(a.pack_id);
+                      const hasUnreadB = hasBuyerLastMessage(b.pack_id);
+                      
+                      if (hasUnreadA && !hasUnreadB) return -1;
+                      if (!hasUnreadA && hasUnreadB) return 1;
+                      
                       const dateA = latestMessagesMeta[a.pack_id]?.createdAt
                         ? new Date(latestMessagesMeta[a.pack_id].createdAt).getTime()
                         : 0;

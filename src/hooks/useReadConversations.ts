@@ -1,5 +1,6 @@
+
 import { useState, useEffect } from 'react';
-import { useToast } from "./use-toast";
+import { useToast } from "@/components/ui/use-toast";
 import { getNgrokUrl } from '@/config/api';
 
 export function useReadConversations() {
@@ -58,57 +59,57 @@ export function useReadConversations() {
     }
   };
 
-  const markAsRead = async (orderId: string | string[]) => {
-    let orderIds: string[] = [];
+  const markAsRead = async (packId: string | string[]) => {
+    let packIds: string[] = [];
     let messageIds: string[] = [];
     
-    // Handle both array and single order id inputs
-    if (Array.isArray(orderId)) {
+    // Handle both array and single pack id inputs
+    if (Array.isArray(packId)) {
       // For arrays, filter out already read conversations
-      orderId.forEach(id => {
+      packId.forEach(id => {
         if (!id) return;
         
-        // Handle the special format orderId:messageId
+        // Handle the special format packId:messageId
         if (id.includes(':')) {
-          const [oid, mid] = id.split(':');
+          const [pid, mid] = id.split(':');
           
           // Check if this specific message is already marked as read
-          if (!readConversations.includes(`${oid}:${mid}`)) {
-            messageIds.push(`${oid}:${mid}`);
-            // We only add the order ID to be sent to the server if we're actually
+          if (!readConversations.includes(`${pid}:${mid}`)) {
+            messageIds.push(`${pid}:${mid}`);
+            // We only add the pack ID to be sent to the server if we're actually
             // marking something as new
-            if (!orderIds.includes(oid)) {
-              orderIds.push(oid);
+            if (!packIds.includes(pid)) {
+              packIds.push(pid);
             }
           }
         } else if (!readConversations.includes(id)) {
-          orderIds.push(id);
+          packIds.push(id);
         }
       });
-    } else if (orderId) {
-      // Handle the special format orderId:messageId
-      if (orderId.includes(':')) {
-        const [oid, mid] = orderId.split(':');
+    } else if (packId) {
+      // Handle the special format packId:messageId
+      if (packId.includes(':')) {
+        const [pid, mid] = packId.split(':');
         
         // Check if this specific message is already marked as read
-        if (!readConversations.includes(orderId)) {
-          messageIds.push(orderId);
-          orderIds = [oid]; // Add the order ID part to orderIds
+        if (!readConversations.includes(packId)) {
+          messageIds.push(packId);
+          packIds = [pid]; // Add the pack ID part to packIds
         }
-      } else if (!readConversations.includes(orderId)) {
-        orderIds = [orderId];
+      } else if (!readConversations.includes(packId)) {
+        packIds = [packId];
       }
     }
     
     // If nothing new to mark as read, return early
-    if (orderIds.length === 0 && messageIds.length === 0) return;
+    if (packIds.length === 0 && messageIds.length === 0) return;
     
-    console.log(`Marking conversation(s) as read: ${orderIds.join(', ')}`);
+    console.log(`Marking conversation(s) as read: ${packIds.join(', ')}`);
     if (messageIds.length > 0) {
       console.log(`Marking specific messages as read: ${messageIds.join(', ')}`);
     }
     
-    // Update the read conversations state with both order IDs and message IDs
+    // Update the read conversations state with both pack IDs and message IDs
     const updatedReadConvs = [...readConversations];
     
     // Add message IDs to the read state - do this first and prioritize message IDs
@@ -118,8 +119,8 @@ export function useReadConversations() {
       }
     });
     
-    // Add order IDs to the read state (but we'll prioritize message-specific IDs)
-    orderIds.forEach(id => {
+    // Add pack IDs to the read state (but we'll prioritize message-specific IDs)
+    packIds.forEach(id => {
       if (!updatedReadConvs.includes(id)) {
         updatedReadConvs.push(id);
       }
@@ -139,13 +140,13 @@ export function useReadConversations() {
     setLastSyncAttempt(now);
     
     try {
-      // Send only the order IDs to the server (not the message IDs)
+      // Send only the pack IDs to the server (not the message IDs)
       const response = await fetch(getNgrokUrl('mark_read.php'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ orderIds }),
+        body: JSON.stringify({ packIds }),
         signal: AbortSignal.timeout(5000), // 5 second timeout
       });
       
