@@ -1,6 +1,6 @@
 
 import React, { useEffect } from 'react';
-import { User, MessageCircle } from "lucide-react";
+import { User } from "lucide-react";
 import { usePackClientData } from '@/hooks/usePackClientData';
 import { Skeleton } from '@/components/ui/skeleton';
 import ProductThumbnail from './ProductThumbnail';
@@ -72,22 +72,6 @@ const PacksList: React.FC<PacksListProps> = ({
     );
   }
 
-  // Helper function to check if the last message is from a buyer
-  const hasBuyerLastMessage = (packId: string, messages: any[]) => {
-    if (!messages || messages.length === 0) return false;
-    
-    // Sort messages by date and get the last one
-    const sortedMessages = [...messages].sort((a, b) => 
-      new Date(b.message_date.created).getTime() - new Date(a.message_date.created).getTime()
-    );
-    
-    const lastMessage = sortedMessages[0];
-    
-    // Check if the last message is from a buyer (user_id will be higher for buyers)
-    // This logic checks if the sender is from the buyer side, not the seller
-    return lastMessage && lastMessage.from && lastMessage.from.user_id > 0;
-  };
-
   return (
     <div className="divide-y">
       {packs.map((pack) => {
@@ -98,14 +82,12 @@ const PacksList: React.FC<PacksListProps> = ({
         const latestMessage = latestMessages[pack.pack_id];
         const packMessages = allMessages[pack.pack_id] || [];
         const isGptPack = pack.gpt === "sim";
-        const hasUnreadMessage = hasBuyerLastMessage(pack.pack_id, packMessages);
         
         return (
           <div
             key={pack.pack_id}
             className={`p-4 hover:bg-gray-50 cursor-pointer ${
-              selectedPackId === pack.pack_id ? 'bg-gray-100' : 
-              hasUnreadMessage ? 'bg-blue-50 hover:bg-blue-100' : ''
+              selectedPackId === pack.pack_id ? 'bg-gray-100' : ''
             } ${isGptPack ? 'border-l-4 border-blue-500' : ''}`}
             onClick={() => onSelectPack(pack.pack_id)}
           >
@@ -125,16 +107,13 @@ const PacksList: React.FC<PacksListProps> = ({
                   </div>
                 ) : (
                   <>
-                    <h3 className="font-medium truncate flex items-center">
+                    <h3 className="font-medium truncate">
                       {clientName || `Cliente (Pack ID: ${pack.pack_id})`}
                       {isGptPack && <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded">GPT</span>}
-                      {hasUnreadMessage && (
-                        <MessageCircle size={16} className="ml-2 text-blue-600 fill-blue-200" />
-                      )}
                     </h3>
                     <div className="text-sm text-gray-500">
                       {productTitle && <p className="truncate font-medium">{productTitle}</p>}
-                      <p className={`truncate text-xs ${hasUnreadMessage ? 'text-blue-600 font-medium' : 'text-gray-400'}`}>
+                      <p className="truncate text-xs text-gray-400">
                         {messagesLoading ? (
                           <Skeleton className="h-2 w-24" />
                         ) : latestMessage ? (
