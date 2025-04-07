@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import QuestionsList from "@/components/dashboard/QuestionsList";
 import MetricsDisplay from "@/components/dashboard/MetricsDisplay";
@@ -11,6 +12,7 @@ import { useAllPacksData } from "@/hooks/useAllPacksData";
 import { usePackMessages } from "@/hooks/usePackMessages";
 import { useMessageNotifications } from "@/hooks/useMessageNotifications";
 import { usePacksWithMessages } from "@/hooks/usePacksWithMessages";
+import { usePackClientData } from "@/hooks/usePackClientData";
 import PacksList from "@/components/dashboard/PacksList";
 import MessagesList from "@/components/dashboard/MessagesList";
 import NotificationPermission from "@/components/NotificationPermission";
@@ -37,6 +39,13 @@ const Hermes = () => {
     sellerId,
     messagesRefreshTrigger
   );
+  
+  // Adicionar o hook para buscar dados do cliente
+  const { clientDataMap, isLoading: clientDataLoading } = usePackClientData(
+    sellerId,
+    selectedPackId ? [{ pack_id: selectedPackId }] : []
+  );
+  
   useMessageNotifications(sellerId);
 
   useEffect(() => {
@@ -266,24 +275,15 @@ const Hermes = () => {
                 <div className="w-2/3 h-full overflow-hidden">
                   {selectedPackId ? (
                     <div className="flex flex-col h-full">
-                      <div className="p-4 border-b bg-white">
-                        <h3 className="text-lg font-medium">Pack ID: {selectedPackId}</h3>
-                        <p className="text-sm text-gray-500">
-                          {messagesLoading ? 'Carregando mensagens...' :
-                            messagesError ? 'Erro ao carregar mensagens' :
-                            `${messages.length} mensagens`}
-                        </p>
-                      </div>
-                      <div className="flex-1 overflow-hidden bg-gray-50">
-                        <MessagesList
-                          messages={messages}
-                          isLoading={messagesLoading}
-                          error={messagesError}
-                          sellerId={sellerId}
-                          packId={selectedPackId}
-                          onMessageSent={handleMessageSent}
-                        />
-                      </div>
+                      <MessagesList
+                        messages={messages}
+                        isLoading={messagesLoading}
+                        error={messagesError}
+                        sellerId={sellerId}
+                        packId={selectedPackId}
+                        onMessageSent={handleMessageSent}
+                        clientData={selectedPackId ? clientDataMap[selectedPackId] : null}
+                      />
                     </div>
                   ) : (
                     <div className="flex items-center justify-center h-full">

@@ -1,3 +1,4 @@
+
 import React, { useRef, useEffect, useState } from 'react';
 import { formatDate } from '@/utils/dateFormatters';
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -10,6 +11,7 @@ import axios from 'axios';
 import { getNgrokUrl } from '@/config/api';
 import { useMlToken } from '@/hooks/useMlToken';
 import { uploadFile } from '@/utils/fileUpload';
+import { usePackClientData, ClientData } from '@/hooks/usePackClientData';
 
 interface Message {
   id: string;
@@ -32,6 +34,7 @@ interface MessagesListProps {
   sellerId: string | null;
   packId: string | null;
   onMessageSent?: () => void;
+  clientData?: ClientData | null;
 }
 
 const MessagesList: React.FC<MessagesListProps> = ({ 
@@ -40,7 +43,8 @@ const MessagesList: React.FC<MessagesListProps> = ({
   error, 
   sellerId,
   packId,
-  onMessageSent
+  onMessageSent,
+  clientData
 }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [messageText, setMessageText] = useState('');
@@ -245,6 +249,24 @@ const MessagesList: React.FC<MessagesListProps> = ({
     return <p className="whitespace-pre-wrap">{text}</p>;
   };
 
+  // Renderiza o cabeçalho com informações do cliente e do produto
+  const renderHeader = () => {
+    const clientName = clientData ? (clientData["Nome completo do cliente"] || clientData["Nickname do cliente"] || "Cliente") : "Cliente";
+    const productTitle = clientData ? (clientData["Título do anúncio"] || "Produto não identificado") : "Produto não identificado";
+    
+    return (
+      <div className="p-4 border-b bg-white">
+        <h3 className="text-lg font-medium">{clientName}</h3>
+        <p className="text-sm text-gray-700">{productTitle}</p>
+        <p className="text-xs text-gray-500">
+          {isLoading ? 'Carregando mensagens...' :
+            error ? 'Erro ao carregar mensagens' :
+            `${messages.length} mensagens`}
+        </p>
+      </div>
+    );
+  };
+
   if (isLoading && messages.length === 0) {
     return (
       <div className="flex justify-center items-center h-full">
@@ -286,6 +308,9 @@ const MessagesList: React.FC<MessagesListProps> = ({
 
   return (
     <div className="flex flex-col h-full">
+      {/* Cabeçalho com informações do cliente e produto */}
+      {renderHeader()}
+      
       <ScrollArea className="flex-1">
         <div className="p-4">
           {Object.entries(messagesByDate).map((dateEntry) => (
