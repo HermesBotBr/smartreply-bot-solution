@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { PUBLIC_VAPID_KEY } from '@/config/vapid-keys';
@@ -19,6 +18,7 @@ export function usePushNotification() {
   const [permission, setPermission] = useState<NotificationPermission | 'default'>('default');
   const [loading, setLoading] = useState<boolean>(false);
   const [supported, setSupported] = useState<boolean>(true);
+  const [hasShownPermissionDeniedToast, setHasShownPermissionDeniedToast] = useState(false);
 
   // Logs para depuração
   useEffect(() => {
@@ -73,11 +73,10 @@ export function usePushNotification() {
       setPermission(permissionResult);
 
       if (permissionResult !== 'granted') {
-        toast({
-          title: 'Permissão negada',
-          description: 'Você precisa aceitar as notificações para receber alertas',
-          variant: 'destructive',
-        });
+        // Reset the toast flag if permission is not granted
+        setHasShownPermissionDeniedToast(false);
+        
+        // No need to show toast here, as the useEffect will handle it
         setLoading(false);
         return null;
       }
@@ -137,6 +136,18 @@ export function usePushNotification() {
       return false;
     }
   };
+
+  useEffect(() => {
+    if (permission === 'denied' && !hasShownPermissionDeniedToast) {
+      toast({
+        title: 'Permissão negada',
+        description: 'Você precisa aceitar as notificações para receber alertas',
+        variant: 'destructive',
+        duration: 5000 // Show for 5 seconds
+      });
+      setHasShownPermissionDeniedToast(true);
+    }
+  }, [permission, hasShownPermissionDeniedToast]);
 
   return {
     subscribe,
