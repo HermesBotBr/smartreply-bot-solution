@@ -5,7 +5,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAllGptData } from '@/hooks/useAllGptData';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Send, Paperclip, X, Loader2 } from "lucide-react";
+import { Send, Paperclip, X, Loader2, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import axios from 'axios';
 import { getNgrokUrl } from '@/config/api';
@@ -35,6 +35,7 @@ interface MessagesListProps {
   packId: string | null;
   onMessageSent?: () => void;
   clientData?: ClientData | null;
+  onHeaderClick?: () => void; // New prop for header click event
 }
 
 const MessagesList: React.FC<MessagesListProps> = ({ 
@@ -44,7 +45,8 @@ const MessagesList: React.FC<MessagesListProps> = ({
   sellerId,
   packId,
   onMessageSent,
-  clientData
+  clientData,
+  onHeaderClick
 }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [messageText, setMessageText] = useState('');
@@ -255,14 +257,22 @@ const MessagesList: React.FC<MessagesListProps> = ({
     const productTitle = clientData ? (clientData["Título do anúncio"] || "Produto não identificado") : "Produto não identificado";
     
     return (
-      <div className="p-4 border-b bg-white">
-        <h3 className="text-lg font-medium">{clientName}</h3>
-        <p className="text-sm text-gray-700">{productTitle}</p>
-        <p className="text-xs text-gray-500">
-          {isLoading ? 'Carregando mensagens...' :
-            error ? 'Erro ao carregar mensagens' :
-            `${messages.length} mensagens`}
-        </p>
+      <div 
+        className={`p-4 border-b bg-white ${onHeaderClick ? 'cursor-pointer hover:bg-gray-50' : ''}`}
+        onClick={onHeaderClick}
+      >
+        <div className="flex justify-between items-center">
+          <div>
+            <h3 className="text-lg font-medium">{clientName}</h3>
+            <p className="text-sm text-gray-700">{productTitle}</p>
+            <p className="text-xs text-gray-500">
+              {isLoading ? 'Carregando mensagens...' :
+                error ? 'Erro ao carregar mensagens' :
+                `${messages.length} mensagens`}
+            </p>
+          </div>
+          {onHeaderClick && <ChevronRight size={18} className="text-gray-400" />}
+        </div>
       </div>
     );
   };

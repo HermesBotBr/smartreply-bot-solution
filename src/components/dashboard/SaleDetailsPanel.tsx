@@ -1,207 +1,43 @@
-import React, { useState, useEffect, useRef } from 'react';
+
+import React from 'react';
+import { X, ArrowLeft, ExternalLink } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { X, ArrowLeft, RotateCcw, Box } from "lucide-react";
-import ProductThumbnail from './ProductThumbnail';
-import Timeline from './Timeline';
-import { formatDateTime, formatCurrency } from '@/utils/formatters';
-import { useToast } from '@/hooks/use-toast';
-import { getNgrokUrl } from '@/config/api';
+import { Separator } from "@/components/ui/separator";
+import { ClientData } from '@/hooks/usePackClientData';
+import { formatCurrency } from '@/utils/formatters';
 
 interface SaleDetailsPanelProps {
-  selectedConv: any;
-  orderDetails: any;
-  shippingDetails: any;
-  expandedInfo: boolean;
-  setExpandedInfo: (expanded: boolean) => void;
-  detailedInfo: any;
-  fetchDetailedInfo: () => Promise<void>;
+  saleDetails: ClientData | null;
+  isLoading: boolean;
+  error: string | null;
   onClose: () => void;
-  markAsRead: (orderId: string) => Promise<void>;
   isMobile: boolean;
 }
 
 const SaleDetailsPanel: React.FC<SaleDetailsPanelProps> = ({
-  selectedConv,
-  orderDetails,
-  shippingDetails,
-  expandedInfo,
-  setExpandedInfo,
-  detailedInfo,
-  fetchDetailedInfo,
+  saleDetails,
+  isLoading,
+  error,
   onClose,
-  markAsRead,
   isMobile
 }) => {
-  const { toast } = useToast();
-  const [markingAsRead, setMarkingAsRead] = useState(false);
-  const [creatingReverseShipment, setCreatingReverseShipment] = useState(false);
-  const [creatingRegularShipment, setCreatingRegularShipment] = useState(false);
-  const isMounted = useRef(true);
-
-  useEffect(() => {
-    return () => {
-      isMounted.current = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    const markConversationAsRead = async () => {
-      if (selectedConv && selectedConv.orderId && !markingAsRead) {
-        setMarkingAsRead(true);
-        try {
-          await markAsRead(selectedConv.orderId);
-          console.log(`Conversation ${selectedConv.orderId} marked as read from SaleDetailsPanel`);
-        } catch (error) {
-          console.error("Error marking conversation as read from SaleDetailsPanel:", error);
-          // Not showing toast here since it will be handled in the markAsRead function
-        } finally {
-          setMarkingAsRead(false);
-        }
-      }
-    };
-    
-    markConversationAsRead();
-  }, [selectedConv, markAsRead]);
-
-  const handleCreateReverseShipment = async () => {
-    if (!selectedConv || !selectedConv.orderId) {
-      toast({
-        title: "Erro",
-        description: "Informações insuficientes para criar envio reverso",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setCreatingReverseShipment(true);
+  // Format date for display
+  const formatDate = (dateString: string | undefined) => {
+    if (!dateString) return "Data não disponível";
     
     try {
-      let buyerId = selectedConv.buyerId;
-      
-      if (!buyerId) {
-        const mlTokenResponse = await fetch(getNgrokUrl('mercadoLivreApiKey.txt'));
-        const mlToken = await mlTokenResponse.text();
-        
-        const orderResponse = await fetch(`https://api.mercadolibre.com/orders/${selectedConv.orderId}?access_token=${mlToken.trim()}`);
-        const orderData = await orderResponse.json();
-        
-        if (orderData.error) {
-          throw new Error(`Erro ao obter informações do pedido: ${orderData.error}`);
-        }
-        
-        if (!orderData.buyer || !orderData.buyer.id) {
-          throw new Error('Não foi possível encontrar o ID do comprador');
-        }
-        
-        buyerId = orderData.buyer.id;
-      }
-      
-      const response = await fetch(getNgrokUrl('/ep242024'), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          order_id: selectedConv.orderId,
-          buyerId: buyerId,
-          msgId: "12345"
-        })
-      });
-
-      if (response.ok) {
-        toast({
-          title: "Sucesso",
-          description: "Envio reverso criado com sucesso",
-        });
-      } else {
-        const errorData = await response.json().catch(() => null);
-        throw new Error(errorData?.message || 'Erro ao criar envio reverso');
-      }
-    } catch (error) {
-      console.error("Erro ao criar envio reverso:", error);
-      toast({
-        title: "Erro",
-        description: error instanceof Error ? error.message : "Erro ao criar envio reverso",
-        variant: "destructive",
-      });
-    } finally {
-      if (isMounted.current) {
-        setCreatingReverseShipment(false);
-      }
+      const date = new Date(dateString);
+      return new Intl.DateTimeFormat('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      }).format(date);
+    } catch (e) {
+      return dateString;
     }
   };
-
-  const handleCreateRegularShipment = async () => {
-    if (!selectedConv || !selectedConv.orderId) {
-      toast({
-        title: "Erro",
-        description: "Informações insuficientes para criar envio comum",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setCreatingRegularShipment(true);
-    
-    try {
-      let buyerId = selectedConv.buyerId;
-      
-      if (!buyerId) {
-        const mlTokenResponse = await fetch(getNgrokUrl('mercadoLivreApiKey.txt'));
-        const mlToken = await mlTokenResponse.text();
-        
-        const orderResponse = await fetch(`https://api.mercadolibre.com/orders/${selectedConv.orderId}?access_token=${mlToken.trim()}`);
-        const orderData = await orderResponse.json();
-        
-        if (orderData.error) {
-          throw new Error(`Erro ao obter informações do pedido: ${orderData.error}`);
-        }
-        
-        if (!orderData.buyer || !orderData.buyer.id) {
-          throw new Error('Não foi possível encontrar o ID do comprador');
-        }
-        
-        buyerId = orderData.buyer.id;
-      }
-      
-      const response = await fetch(getNgrokUrl('/protocol252025'), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          pack_id: selectedConv.orderId,
-          buyer_id: buyerId
-        })
-      });
-
-      if (response.ok) {
-        toast({
-          title: "Sucesso",
-          description: "Envio comum criado com sucesso",
-        });
-      } else {
-        const errorData = await response.json().catch(() => null);
-        throw new Error(errorData?.message || 'Erro ao criar envio comum');
-      }
-    } catch (error) {
-      console.error("Erro ao criar envio comum:", error);
-      toast({
-        title: "Erro",
-        description: error instanceof Error ? error.message : "Erro ao criar envio comum",
-        variant: "destructive",
-      });
-    } finally {
-      if (isMounted.current) {
-        setCreatingRegularShipment(false);
-      }
-    }
-  };
-
-  if (!selectedConv) {
-    return null;
-  }
 
   return (
     <div className="h-full flex flex-col border-l border-gray-300">
@@ -216,7 +52,7 @@ const SaleDetailsPanel: React.FC<SaleDetailsPanelProps> = ({
               <ArrowLeft size={20} />
             </button>
             <h2 className="text-lg font-bold">Detalhes da venda</h2>
-            <div className="w-5"></div>
+            <div className="w-5"></div> {/* Spacer for alignment */}
           </>
         ) : (
           <>
@@ -232,158 +68,137 @@ const SaleDetailsPanel: React.FC<SaleDetailsPanelProps> = ({
         )}
       </div>
       
-      <div className="flex-1 overflow-y-auto p-3 bg-gray-50">
-        {!orderDetails ? (
+      <div className="flex-1 overflow-y-auto p-4 bg-gray-50">
+        {isLoading ? (
           <div className="flex justify-center items-center h-full">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
           </div>
+        ) : error ? (
+          <div className="flex flex-col items-center justify-center h-full text-center p-4">
+            <p className="text-red-500 mb-2">{error}</p>
+            <button 
+              onClick={onClose}
+              className="text-blue-500 hover:underline"
+            >
+              Voltar
+            </button>
+          </div>
+        ) : !saleDetails ? (
+          <div className="flex justify-center items-center h-full text-gray-500">
+            Nenhum detalhe disponível
+          </div>
         ) : (
           <div className="space-y-4">
-            <a
-              href={`https://www.mercadolibre.com.br/vendas/${orderDetails.id}/detalhe`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="no-underline"
-            >
-              <Card className="relative cursor-pointer">
-                <img 
-                  src="https://http2.mlstatic.com/static/org-img/homesnw/mercado-libre.png?v=2"
-                  alt="Mercado libre"
-                  className="absolute top-4 right-4 w-20 h-auto"
-                />
-                
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base">Detalhes da venda</CardTitle>
-                </CardHeader>
-                
-                <CardContent>
-                  <p className="text-gray-800 text-sm mb-2">Venda: #{orderDetails.id}</p>
-                  <div className="flex items-center">
-                    <ProductThumbnail itemId={orderDetails.order_items && orderDetails.order_items[0]?.item?.id} />
-                    <p className="ml-3 font-medium text-sm">
-                      {orderDetails.order_items && orderDetails.order_items[0]?.item?.title}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            </a>
-            
+            {/* Basic Order Information */}
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-base">Rastreamento de envio</CardTitle>
+                <CardTitle className="text-base flex justify-between items-center">
+                  <span>Informações do pedido</span>
+                  {saleDetails.Order_id && (
+                    <a 
+                      href={`https://www.mercadolibre.com.br/vendas/${saleDetails.Order_id}/detalhe`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-500 hover:text-blue-700 flex items-center text-sm"
+                    >
+                      <span className="mr-1">Ver no ML</span>
+                      <ExternalLink size={14} />
+                    </a>
+                  )}
+                </CardTitle>
               </CardHeader>
-              <CardContent>
-                {shippingDetails ? (
-                  <Timeline status={shippingDetails.status} />
-                ) : (
-                  <p className="text-sm">Sem informações de envio.</p>
-                )}
+              <CardContent className="text-sm space-y-2">
+                <div>
+                  <p className="font-medium">Pedido:</p>
+                  <p>{saleDetails.Order_id || "N/A"}</p>
+                </div>
+                <div>
+                  <p className="font-medium">Data da venda:</p>
+                  <p>{formatDate(saleDetails["Data da venda"])}</p>
+                </div>
+                <div>
+                  <p className="font-medium">Valor:</p>
+                  <p>{saleDetails["Valor da venda"] ? formatCurrency(saleDetails["Valor da venda"]) : "N/A"}</p>
+                </div>
+                <div>
+                  <p className="font-medium">Status de entrega:</p>
+                  <p>{saleDetails["Status de entrega"] || "N/A"}</p>
+                </div>
+                <div>
+                  <p className="font-medium">Reclamação aberta?</p>
+                  <p className={saleDetails["Reclamação aberta?"] === "Sim" ? "text-red-500 font-medium" : ""}>
+                    {saleDetails["Reclamação aberta?"] || "N/A"}
+                  </p>
+                </div>
               </CardContent>
             </Card>
 
-            <Button
-              className="w-full text-sm"
-              variant="secondary"
-              size="sm"
-              onClick={handleCreateReverseShipment}
-              disabled={creatingReverseShipment}
-            >
-              {creatingReverseShipment ? (
-                <>
-                  <span className="animate-spin mr-2">
-                    <RotateCcw size={16} />
-                  </span>
-                  Criando envio reverso...
-                </>
-              ) : (
-                <>
-                  <RotateCcw size={16} />
-                  Criar envio reverso
-                </>
-              )}
-            </Button>
-            
-            <Button
-              className="w-full text-sm"
-              variant="secondary"
-              size="sm"
-              onClick={handleCreateRegularShipment}
-              disabled={creatingRegularShipment}
-            >
-              {creatingRegularShipment ? (
-                <>
-                  <span className="animate-spin mr-2">
-                    <Box size={16} />
-                  </span>
-                  Criando envio comum...
-                </>
-              ) : (
-                <>
-                  <Box size={16} />
-                  Criar envio comum
-                </>
-              )}
-            </Button>
-            
-            <Button
-              className="w-full text-sm"
-              size="sm"
-              onClick={() => {
-                if (!detailedInfo) {
-                  fetchDetailedInfo();
-                } else {
-                  setExpandedInfo(!expandedInfo);
-                }
-              }}
-            >
-              {!detailedInfo ? "Carregar informações detalhadas" : 
-                expandedInfo ? "Ocultar informações detalhadas" : "Mostrar informações detalhadas"}
-            </Button>
-            
-            {expandedInfo && detailedInfo && (
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base">Informações detalhadas</CardTitle>
-                </CardHeader>
-                <CardContent className="max-h-80 overflow-auto text-sm">
-                  <div className="space-y-3">
-                    <div>
-                      <p className="font-medium">Data da compra:</p>
-                      <p>{formatDateTime(detailedInfo.date_created)}</p>
-                    </div>
-                    <div>
-                      <p className="font-medium">Total:</p>
-                      <p>{formatCurrency(detailedInfo.total_amount)}</p>
-                    </div>
-                    <div>
-                      <p className="font-medium">Status de pagamento:</p>
-                      <p>{detailedInfo.payments?.[0]?.status || "(não informado)"}</p>
-                    </div>
-                    {detailedInfo.shipping && (
-                      <>
-                        <div>
-                          <p className="font-medium">Endereço de entrega:</p>
-                          <p>
-                            {[
-                              detailedInfo.shipping.receiver_address?.street_name,
-                              detailedInfo.shipping.receiver_address?.street_number,
-                              detailedInfo.shipping.receiver_address?.comment,
-                              detailedInfo.shipping.receiver_address?.city?.name,
-                              detailedInfo.shipping.receiver_address?.state?.name,
-                              detailedInfo.shipping.receiver_address?.zip_code
-                            ].filter(Boolean).join(", ")}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="font-medium">Nome do destinatário:</p>
-                          <p>{detailedInfo.shipping.receiver_address?.receiver_name || "(não informado)"}</p>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+            {/* Product Information */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Informações do produto</CardTitle>
+              </CardHeader>
+              <CardContent className="text-sm space-y-2">
+                <div>
+                  <p className="font-medium">Produto:</p>
+                  <p>{saleDetails["Título do anúncio"] || "N/A"}</p>
+                </div>
+                <div>
+                  <p className="font-medium">ID do anúncio:</p>
+                  <p>{saleDetails["MLB do anúncio"] || "N/A"}</p>
+                </div>
+                <div>
+                  <p className="font-medium">Cor:</p>
+                  <p>{saleDetails["Cor"] || "N/A"}</p>
+                </div>
+                <div>
+                  <p className="font-medium">Garantia:</p>
+                  <p>{saleDetails["Garantia"] || "N/A"}</p>
+                </div>
+                <div>
+                  <p className="font-medium">Quantidade:</p>
+                  <p>{saleDetails["Quantidade"] || "N/A"}</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Customer Information */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Informações do cliente</CardTitle>
+              </CardHeader>
+              <CardContent className="text-sm space-y-2">
+                <div>
+                  <p className="font-medium">Nome:</p>
+                  <p>{saleDetails["Nome completo do cliente"] || saleDetails["Nickname do cliente"] || "N/A"}</p>
+                </div>
+                <div>
+                  <p className="font-medium">Nickname:</p>
+                  <p>{saleDetails["Nickname do cliente"] || "N/A"}</p>
+                </div>
+                <div>
+                  <p className="font-medium">ID do comprador:</p>
+                  <p>{saleDetails["Buyer_id"] || "N/A"}</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Shipping/Payment Information */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Informações adicionais</CardTitle>
+              </CardHeader>
+              <CardContent className="text-sm space-y-2">
+                <div>
+                  <p className="font-medium">ID do pagamento:</p>
+                  <p>{saleDetails["ID do pagamento"] || "N/A"}</p>
+                </div>
+                <div>
+                  <p className="font-medium">ID do envio:</p>
+                  <p>{saleDetails["Shipping_id"] || "N/A"}</p>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         )}
       </div>

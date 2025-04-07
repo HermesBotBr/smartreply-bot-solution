@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import QuestionsList from "@/components/dashboard/QuestionsList";
 import MetricsDisplay from "@/components/dashboard/MetricsDisplay";
@@ -17,12 +16,13 @@ import PacksList from "@/components/dashboard/PacksList";
 import MessagesList from "@/components/dashboard/MessagesList";
 import NotificationPermission from "@/components/NotificationPermission";
 import ConfigurationsPanel from "@/components/dashboard/ConfigurationsPanel";
+import SaleDetailsPanel from "@/components/dashboard/SaleDetailsPanel";
+import { useSaleDetails } from "@/hooks/useSaleDetails";
 
 const Hermes = () => {
   const [activeTab, setActiveTab] = useState('conversas');
   const [selectedConv, setSelectedConv] = useState<any>(null);
   const [initialAutoScrollDone, setInitialAutoScrollDone] = useState(false);
-  const [showSaleDetails, setShowSaleDetails] = useState(false);
   const isMobile = useMediaQuery('(max-width: 768px)');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loginOpen, setLoginOpen] = useState(true);
@@ -32,6 +32,15 @@ const Hermes = () => {
   const [showConfigPanel, setShowConfigPanel] = useState(false);
   const [readConversations, setReadConversations] = useState<string[]>([]);
 
+  const { 
+    saleDetails, 
+    showSaleDetails, 
+    setShowSaleDetails, 
+    isLoading: saleDetailsLoading, 
+    error: saleDetailsError, 
+    fetchSaleDetails 
+  } = useSaleDetails();
+
   const { packs, setPacks, isLoading: packsLoading, error: packsError, refreshPacks, loadMorePacks, hasMore } = useAllPacksData(sellerId);
   const { latestMessagesMeta, allMessages, isLoading: allMessagesLoading, error: allMessagesError } = usePacksWithMessages(packs, sellerId);
   const { messages, isLoading: messagesLoading, error: messagesError, updatePackMessages } = usePackMessages(
@@ -40,7 +49,6 @@ const Hermes = () => {
     messagesRefreshTrigger
   );
   
-  // Adicionar o hook para buscar dados do cliente
   const { clientDataMap, isLoading: clientDataLoading } = usePackClientData(
     sellerId,
     selectedPackId ? [{ pack_id: selectedPackId }] : []
@@ -147,7 +155,8 @@ const Hermes = () => {
     setSelectedConv(null);
     toast.info(`Carregando mensagens do pacote ${packId}`);
     
-    // Get the latest message ID to mark as read
+    setShowSaleDetails(false);
+    
     const packMessages = allMessages[packId] || [];
     if (packMessages.length > 0) {
       const sortedMessages = [...packMessages].sort((a, b) => 
@@ -167,7 +176,6 @@ const Hermes = () => {
           }
         }
       } else {
-        // Fallback to old behavior if no message ID is available
         if (!readConversations.includes(packId)) {
           const updatedReadConversations = [...readConversations, packId];
           setReadConversations(updatedReadConversations);
@@ -215,6 +223,15 @@ const Hermes = () => {
     }
   };
 
+  const handleOpenSaleDetails = () => {
+    if (sellerId && selectedPackId) {
+      fetchSaleDetails(selectedPackId, sellerId);
+      setShowSaleDetails(true);
+    } else {
+      toast.error("Não foi possível carregar os detalhes da venda");
+    }
+  };
+
   return (
     <div className="flex h-screen overflow-hidden">
       <Dialog open={loginOpen} onOpenChange={setLoginOpen}>
@@ -245,7 +262,7 @@ const Hermes = () => {
               </div>
             ) : activeTab === 'conversas' ? (
               <>
-                <div className="w-1/3 h-full overflow-auto border-r">
+                <div className={`w-1/3 h-full overflow-auto border-r ${showSaleDetails && isMobile ? 'hidden' : ''}`}>
                   <div className="p-4 border-b bg-white flex justify-between items-center">
                     <div>
                       <h2 className="text-lg font-medium">Clientes</h2>
@@ -272,7 +289,7 @@ const Hermes = () => {
                   />
                 </div>
 
-                <div className="w-2/3 h-full overflow-hidden">
+                <div className={`${showSaleDetails ? 'w-1/3' : 'w-2/3'} h-full overflow-hidden ${showSaleDetails && isMobile ? 'hidden' : ''}`}>
                   {selectedPackId ? (
                     <div className="flex flex-col h-full">
                       <MessagesList
@@ -283,6 +300,7 @@ const Hermes = () => {
                         packId={selectedPackId}
                         onMessageSent={handleMessageSent}
                         clientData={selectedPackId ? clientDataMap[selectedPackId] : null}
+                        onHeaderClick={handleOpenSaleDetails}
                       />
                     </div>
                   ) : (
@@ -296,6 +314,18 @@ const Hermes = () => {
                     </div>
                   )}
                 </div>
+
+                {showSaleDetails && (
+                  <div className={`${isMobile ? 'w-full' : 'w-1/3'} h-full overflow-hidden`}>
+                    <SaleDetailsPanel
+                      saleDetails={saleDetails}
+                      isLoading={saleDetailsLoading}
+                      error={saleDetailsError}
+                      onClose={() => setShowSaleDetails(false)}
+                      isMobile={isMobile}
+                    />
+                  </div>
+                )}
               </>
             ) : activeTab === 'perguntas' ? (
               <div className="w-full h-full overflow-auto">
