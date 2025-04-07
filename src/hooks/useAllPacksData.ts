@@ -17,6 +17,7 @@ export function useAllPacksData(sellerId: string | null) {
   const [hasMore, setHasMore] = useState(true);
   const [page, setPage] = useState(1);
   const LIMIT = 20;
+  const [allSortedPacks, setAllSortedPacks] = useState<AllPacksRow[]>([]);
 
   const fetchAllPacks = useCallback(async (currentPage: number) => {
     if (!sellerId) {
@@ -49,6 +50,9 @@ export function useAllPacksData(sellerId: string | null) {
           return new Date(b.date_msg).getTime() - new Date(a.date_msg).getTime();
         });
         
+        // Salva todos os pacotes ordenados para usar na paginação
+        setAllSortedPacks(sortedPacks);
+        
         // Calcula o início e fim da página
         const startIndex = 0;
         const endIndex = currentPage * LIMIT;
@@ -75,9 +79,26 @@ export function useAllPacksData(sellerId: string | null) {
   // Função para carregar mais pacotes
   const loadMorePacks = useCallback(() => {
     if (!isLoading && hasMore) {
-      setPage(prevPage => prevPage + 1);
+      setPage(prevPage => {
+        const newPage = prevPage + 1;
+        
+        // Obter apenas os novos pacotes para esta página
+        const startIndex = prevPage * LIMIT;
+        const endIndex = newPage * LIMIT;
+        
+        // Adicionar apenas os novos pacotes à lista existente
+        const newPacks = allSortedPacks.slice(startIndex, endIndex);
+        setPacks(prevPacks => [...prevPacks, ...newPacks]);
+        
+        // Verificar se ainda há mais pacotes para carregar
+        setHasMore(endIndex < allSortedPacks.length);
+        
+        console.log(`Carregando mais pacotes. Página ${newPage}, adicionando pacotes de ${startIndex} a ${endIndex}`);
+        
+        return newPage;
+      });
     }
-  }, [isLoading, hasMore]);
+  }, [isLoading, hasMore, allSortedPacks, LIMIT]);
 
   // Função para atualizar a lista de pacotes
   const refreshPacks = useCallback(() => {
