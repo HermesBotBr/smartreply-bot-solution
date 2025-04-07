@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { getNgrokUrl } from "@/config/api";
 
@@ -31,24 +31,30 @@ export function usePackClientData(sellerId: string | null, packs: { pack_id: str
   const [clientDataMap, setClientDataMap] = useState<PackClientMap>({});
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
+  const loadedPackIds = useRef(new Set<string>());
+  
   useEffect(() => {
     const fetchClientData = async () => {
       if (!sellerId || !packs.length) {
         return;
       }
-
+      
+      // Filtrar apenas os novos packs que ainda não foram carregados
+      const newPacks = packs.filter(pack => !loadedPackIds.current.has(pack.pack_id));
+      
+      if (newPacks.length === 0) {
+        return; // Nada novo para carregar
+      }
+      
+      console.log(`Buscando dados de cliente para ${newPacks.length} novos pacotes`);
       setIsLoading(true);
       setError(null);
 
       try {
-        // Create a map to store client data for each pack
-        const newClientDataMap: PackClientMap = {};
-        
         // Process packs in batches to avoid too many concurrent requests
         const batchSize = 5;
-        for (let i = 0; i < packs.length; i += batchSize) {
-          const batch = packs.slice(i, i + batchSize);
+        for (let i = 0; i < newPacks.length; i += batchSize) {
+          const batch = newPacks.slice(i, i + batchSize);
           
           // Create an array of promises for the batch
           const batchPromises = batch.map(async (pack) => {
@@ -60,7 +66,10 @@ export function usePackClientData(sellerId: string | null, packs: { pack_id: str
                 }
               });
               
-              console.log(`Data for pack ${pack.pack_id}:`, response.data);
+              // Marcar este pack como já carregado
+              loadedPackIds.current.add(pack.pack_id);
+              
+              console.log(`Data for pack ${pack.pack_id} loaded successfully`);
               
               return { 
                 packId: pack.pack_id, 
@@ -68,6 +77,8 @@ export function usePackClientData(sellerId: string | null, packs: { pack_id: str
               };
             } catch (err) {
               console.error(`Error fetching data for pack ${pack.pack_id}:`, err);
+              // Ainda marcamos como carregado para não tentar novamente
+              loadedPackIds.current.add(pack.pack_id);
               return { 
                 packId: pack.pack_id, 
                 data: null 
@@ -78,13 +89,15 @@ export function usePackClientData(sellerId: string | null, packs: { pack_id: str
           // Wait for all promises in the batch to resolve
           const results = await Promise.all(batchPromises);
           
-          // Add results to the map
-          results.forEach(result => {
-            newClientDataMap[result.packId] = result.data;
+          // Add results to the map (updating the state immutably)
+          setClientDataMap(prevMap => {
+            const newMap = {...prevMap};
+            results.forEach(result => {
+              newMap[result.packId] = result.data;
+            });
+            return newMap;
           });
         }
-        
-        setClientDataMap(newClientDataMap);
       } catch (error) {
         console.error("Error fetching client data:", error);
         setError("Erro ao carregar dados dos clientes");
