@@ -117,14 +117,32 @@ const PacksList: React.FC<PacksListProps> = ({
 
   // Function to check if a pack has an unread buyer message
   const hasUnreadBuyerMessage = (packId: string): boolean => {
-    // If this pack is already in the readConversations array, it's read
-    if (readConversations.includes(packId)) {
+    // Get sender label to check if the latest message is from the buyer
+    const senderPrefix = getSenderLabel(packId);
+    if (senderPrefix !== "Buyer: ") {
       return false;
     }
     
-    // Get sender label to check if the latest message is from the buyer
-    const senderPrefix = getSenderLabel(packId);
-    return senderPrefix === "Buyer: ";
+    // Get the latest message ID to check if this specific message is read
+    const packMessages = allMessages[packId] || [];
+    if (packMessages.length === 0) {
+      return false;
+    }
+    
+    // Sort messages by date to find the latest one
+    const sortedMessages = [...packMessages].sort((a, b) => 
+      new Date(b.message_date.created).getTime() - new Date(a.message_date.created).getTime()
+    );
+    
+    // Get the latest message ID
+    const latestMessage = sortedMessages[0];
+    if (!latestMessage || !latestMessage.id) {
+      return false;
+    }
+    
+    // Check if this specific message ID has been read
+    const specificMessageReadState = `${packId}:${latestMessage.id}`;
+    return !readConversations.includes(specificMessageReadState);
   };
 
   // Sort the packs: unread buyer messages first, then by latest message date

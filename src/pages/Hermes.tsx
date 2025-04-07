@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import QuestionsList from "@/components/dashboard/QuestionsList";
 import MetricsDisplay from "@/components/dashboard/MetricsDisplay";
@@ -138,12 +139,35 @@ const Hermes = () => {
     setSelectedConv(null);
     toast.info(`Carregando mensagens do pacote ${packId}`);
     
-    if (!readConversations.includes(packId)) {
-      const updatedReadConversations = [...readConversations, packId];
-      setReadConversations(updatedReadConversations);
+    // Get the latest message ID to mark as read
+    const packMessages = allMessages[packId] || [];
+    if (packMessages.length > 0) {
+      const sortedMessages = [...packMessages].sort((a, b) => 
+        new Date(b.message_date.created).getTime() - new Date(a.message_date.created).getTime()
+      );
       
-      if (sellerId) {
-        localStorage.setItem(`readConversations_${sellerId}`, JSON.stringify(updatedReadConversations));
+      const latestMessage = sortedMessages[0];
+      if (latestMessage && latestMessage.id) {
+        const specificMessageId = `${packId}:${latestMessage.id}`;
+        
+        if (!readConversations.includes(specificMessageId)) {
+          const updatedReadConversations = [...readConversations, specificMessageId];
+          setReadConversations(updatedReadConversations);
+          
+          if (sellerId) {
+            localStorage.setItem(`readConversations_${sellerId}`, JSON.stringify(updatedReadConversations));
+          }
+        }
+      } else {
+        // Fallback to old behavior if no message ID is available
+        if (!readConversations.includes(packId)) {
+          const updatedReadConversations = [...readConversations, packId];
+          setReadConversations(updatedReadConversations);
+          
+          if (sellerId) {
+            localStorage.setItem(`readConversations_${sellerId}`, JSON.stringify(updatedReadConversations));
+          }
+        }
       }
     }
   };
