@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Code } from "lucide-react";
@@ -37,7 +38,7 @@ const NotificationEndpoint: React.FC = () => {
       navigator.serviceWorker.ready.then(registration => {
         registration.showNotification('Atendimento Necessário', {
           body: finalMessage,
-          icon: '/favicon.ico',
+          icon: '/lovable-uploads/7559adb2-c138-41c1-8170-df4eb4f002a6.png', // Atualizado para usar a nova imagem
           requireInteraction: true,
           data: { timestamp: new Date().getTime(), sellerId: sellerIdToUse }
         });

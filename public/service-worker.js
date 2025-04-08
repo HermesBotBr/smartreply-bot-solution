@@ -33,8 +33,8 @@ self.addEventListener('push', function(event) {
   
   const options = {
     body: data.body || 'Notificação recebida',
-    icon: './lovable-uploads/622d9905-2cd9-4e0f-960d-8e651abe5247.png', // Updated icon path with ./ prefix
-    badge: './lovable-uploads/622d9905-2cd9-4e0f-960d-8e651abe5247.png', // Updated badge path with ./ prefix
+    icon: './lovable-uploads/7559adb2-c138-41c1-8170-df4eb4f002a6.png', // Atualizado para usar a nova imagem
+    badge: './lovable-uploads/7559adb2-c138-41c1-8170-df4eb4f002a6.png', // Atualizado para usar a nova imagem
     data: data.data || {},
     actions: data.actions || [],
     requireInteraction: false,
