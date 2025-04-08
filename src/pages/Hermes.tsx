@@ -57,6 +57,8 @@ const Hermes = () => {
   const { 
     filter, 
     setFilter, 
+    searchQuery,
+    setSearchQuery,
     filterPacks, 
     isLoading: filterLoading,
     complaints
@@ -319,6 +321,8 @@ const Hermes = () => {
                   <PacksFilterBar 
                     currentFilter={filter}
                     onFilterChange={setFilter}
+                    searchQuery={searchQuery}
+                    onSearchChange={setSearchQuery}
                     className="border-b"
                   />
                   
@@ -340,6 +344,7 @@ const Hermes = () => {
                       loadMorePacks={loadMorePacks}
                       hasMore={hasMore}
                       complaints={complaints}
+                      searchQuery={searchQuery}
                     />
                   </div>
                 </div>

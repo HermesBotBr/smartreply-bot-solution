@@ -21,6 +21,7 @@ export interface Complaint {
 
 export function usePackFilters(sellerId: string | null) {
   const [filter, setFilter] = useState<FilterType>('all');
+  const [searchQuery, setSearchQuery] = useState<string>('');
   const [humanRequiredPacks, setHumanRequiredPacks] = useState<string[]>([]);
   const [complaints, setComplaints] = useState<Complaint[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -99,17 +100,20 @@ export function usePackFilters(sellerId: string | null) {
     }
   };
 
-  const filterPacks = (packs: any[]) => {
+  const filterPacks = useCallback((packs: any[]) => {
+    // First, apply the filter type (all, human, hermes, complaints)
+    let filteredPacks = [];
+    
     if (filter === 'all') {
-      return packs;
+      filteredPacks = packs;
     } else if (filter === 'human') {
-      return packs.filter(pack => humanRequiredPacks.includes(pack.pack_id));
+      filteredPacks = packs.filter(pack => humanRequiredPacks.includes(pack.pack_id));
     } else if (filter === 'hermes') {
       // Show only packs that are NOT in the humanRequiredPacks array
-      return packs.filter(pack => !humanRequiredPacks.includes(pack.pack_id));
+      filteredPacks = packs.filter(pack => !humanRequiredPacks.includes(pack.pack_id));
     } else if (filter === 'complaints') {
       // Para reclamações, criamos uma lista de "packs virtuais" baseados nos dados de reclamações
-      return complaints.map(complaint => {
+      filteredPacks = complaints.map(complaint => {
         // Se pack_id for null, usar order_id como pack_id
         const packId = complaint.pack_id || complaint.order_id.toString();
         return {
@@ -126,12 +130,24 @@ export function usePackFilters(sellerId: string | null) {
       });
     }
     
-    return packs;
-  };
+    // Then, if there's a search query, filter by client name
+    if (searchQuery && searchQuery.trim() !== '') {
+      return filteredPacks.filter(pack => {
+        // The client name filtering will be done at rendering time in PacksList
+        // because that's where we have access to the clientDataMap
+        // We'll return true here and let PacksList handle the filtering
+        return true;
+      });
+    }
+    
+    return filteredPacks;
+  }, [filter, humanRequiredPacks, complaints, sellerId, searchQuery]);
 
   return {
     filter,
     setFilter,
+    searchQuery,
+    setSearchQuery,
     humanRequiredPacks,
     complaints,
     isLoading,

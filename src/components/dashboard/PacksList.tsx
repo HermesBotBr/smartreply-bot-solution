@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useCallback } from 'react';
 import { User, AlertTriangle } from "lucide-react";
 import { usePackClientData } from '@/hooks/usePackClientData';
@@ -23,6 +22,7 @@ interface PacksListProps {
   loadMorePacks?: () => void;
   hasMore?: boolean;
   complaints?: Complaint[]; // Add complaints as a prop
+  searchQuery?: string; // Add search query as a prop
 }
 
 const PacksList: React.FC<PacksListProps> = ({ 
@@ -39,7 +39,8 @@ const PacksList: React.FC<PacksListProps> = ({
   readConversations = [], // Default to empty array if not provided
   loadMorePacks,
   hasMore = false,
-  complaints = [] // Default to empty array if not provided
+  complaints = [], // Default to empty array if not provided
+  searchQuery = '' // Default to empty string if not provided
 }) => {
   // Use our hook to fetch client data for each pack
   const { clientDataMap, isLoading: clientDataLoading } = usePackClientData(sellerId, packs);
@@ -209,9 +210,36 @@ const PacksList: React.FC<PacksListProps> = ({
     return bDate - aDate; // Most recent first
   });
 
+  // Apply search filter if searchQuery is provided
+  const filteredPacks = searchQuery.trim() !== '' 
+    ? sortedPacks.filter(pack => {
+        const clientData = clientDataMap[pack.pack_id];
+        const clientName = clientData ? clientData["Nome completo do cliente"] : null;
+        
+        // If client data is still loading, include the pack to avoid filtering out items
+        // that might match once data is loaded
+        if (clientDataLoading || !clientData) return true;
+        
+        // Check if client name contains the search query (case insensitive)
+        return clientName && clientName.toLowerCase().includes(searchQuery.toLowerCase());
+      })
+    : sortedPacks;
+
+  if (filteredPacks.length === 0) {
+    return (
+      <div className="text-center p-4 text-gray-500">
+        {packs.length === 0 ? (
+          <p>Nenhum pacote encontrado para este vendedor</p>
+        ) : (
+          <p>Nenhum cliente encontrado com o termo "{searchQuery}"</p>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="divide-y">
-      {sortedPacks.map((pack, index) => {
+      {filteredPacks.map((pack, index) => {
         // Check if this is a complaint item
         const isComplaint = 'complaint' in pack;
         const complaintReason = isComplaint ? (pack as any).reason : null;
@@ -229,7 +257,7 @@ const PacksList: React.FC<PacksListProps> = ({
         const isUnread = hasUnreadBuyerMessage(pack.pack_id);
         
         // Add ref to last item for infinite scrolling
-        const isLastItem = index === sortedPacks.length - 1;
+        const isLastItem = index === filteredPacks.length - 1;
         
         return (
           <div
