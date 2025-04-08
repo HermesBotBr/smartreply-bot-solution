@@ -67,14 +67,6 @@ export function usePackFilters(sellerId: string | null) {
     }
   }, [sellerId]);
 
-  // Also fetch complaints when filter is explicitly set to 'complaints'
-  // This ensures we refresh the data when the user selects the complaints filter
-  useEffect(() => {
-    if (filter === 'complaints' && sellerId) {
-      fetchComplaints(sellerId);
-    }
-  }, [filter, sellerId]);
-
   const fetchComplaints = async (sellerId: string) => {
     setIsLoading(true);
     setError(null);
@@ -101,16 +93,23 @@ export function usePackFilters(sellerId: string | null) {
   };
 
   const filterPacks = useCallback((packs: any[]) => {
-    // First, apply the filter type (all, human, hermes, complaints)
+    // First, filter out any "complaint" virtual packs if the filter is not 'complaints'
+    // This is the key fix to ensure complaints don't appear in other filters
+    let initialPacks = packs;
+    if (filter !== 'complaints') {
+      initialPacks = packs.filter(pack => !('complaint' in pack));
+    }
+    
+    // Then apply the filter type (all, human, hermes, complaints)
     let filteredPacks = [];
     
     if (filter === 'all') {
-      filteredPacks = packs;
+      filteredPacks = initialPacks;
     } else if (filter === 'human') {
-      filteredPacks = packs.filter(pack => humanRequiredPacks.includes(pack.pack_id));
+      filteredPacks = initialPacks.filter(pack => humanRequiredPacks.includes(pack.pack_id));
     } else if (filter === 'hermes') {
       // Show only packs that are NOT in the humanRequiredPacks array
-      filteredPacks = packs.filter(pack => !humanRequiredPacks.includes(pack.pack_id));
+      filteredPacks = initialPacks.filter(pack => !humanRequiredPacks.includes(pack.pack_id));
     } else if (filter === 'complaints') {
       // Para reclamações, criamos uma lista de "packs virtuais" baseados nos dados de reclamações
       filteredPacks = complaints.map(complaint => {
