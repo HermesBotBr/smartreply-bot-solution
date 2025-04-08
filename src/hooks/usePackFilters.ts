@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
+
+import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useComplaintsFilter } from './useComplaintsFilter';
 
 export type FilterType = 'all' | 'human' | 'hermes' | 'complaints';
 
@@ -9,32 +9,11 @@ interface OnOffRow {
   seller_id: string;
 }
 
-interface ComplaintFormattedPack {
-  pack_id: string;
-  seller_id: string | null;
-  date_msg: string;
-  gpt: string;
-  is_complaint: boolean;
-  claim_id: number;
-  complaint_reason: string;
-  order_id: number;
-  original_pack_id?: string | null;
-}
-
 export function usePackFilters(sellerId: string | null) {
   const [filter, setFilter] = useState<FilterType>('all');
   const [humanRequiredPacks, setHumanRequiredPacks] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [complaintsFilteredPacks, setComplaintsFilteredPacks] = useState<ComplaintFormattedPack[]>([]);
-  
-  const { 
-    complaints, 
-    complaintsMessages, 
-    isLoading: complaintsLoading, 
-    error: complaintsError,
-    transformComplaintsToPackFormat 
-  } = useComplaintsFilter(sellerId);
 
   useEffect(() => {
     if (!sellerId) return;
@@ -47,6 +26,7 @@ export function usePackFilters(sellerId: string | null) {
         const response = await axios.get('https://projetohermes-dda7e0c8d836.herokuapp.com/api/db/rows/all_onoff');
         
         if (response.data && Array.isArray(response.data.rows)) {
+          // Filter rows that match the current seller
           const matchingPacks = response.data.rows
             .filter((row: OnOffRow) => row.seller_id === sellerId)
             .map((row: OnOffRow) => row.pack_id);
@@ -67,69 +47,26 @@ export function usePackFilters(sellerId: string | null) {
     fetchHumanRequiredPacks();
   }, [sellerId]);
 
-  useEffect(() => {
-    if (filter === 'complaints' && sellerId) {
-      const loadComplaints = async () => {
-        try {
-          const formattedComplaints = await transformComplaintsToPackFormat();
-          
-          const validatedComplaints = formattedComplaints.map(item => {
-            const displayPackId = item.pack_id || `claim-${item.claim_id}`;
-            const originalPackId = item.pack_id;
-            
-            return {
-              ...item,
-              pack_id: displayPackId,
-              original_pack_id: originalPackId,
-              seller_id: sellerId,
-              date_msg: item.date_msg || new Date().toISOString(),
-              gpt: typeof item.gpt === 'string' ? item.gpt : "não",
-              is_complaint: true,
-              claim_id: typeof item.claim_id === 'number' ? item.claim_id : 0,
-              complaint_reason: item.complaint_reason || "Motivo não especificado",
-              order_id: typeof item.order_id === 'number' ? item.order_id : 0
-            };
-          });
-          
-          setComplaintsFilteredPacks(validatedComplaints);
-        } catch (err) {
-          console.error("Erro ao transformar reclamações:", err);
-          setError("Erro ao processar as reclamações");
-        }
-      };
-      
-      loadComplaints();
-    }
-  }, [filter, sellerId, transformComplaintsToPackFormat, complaints]);
-
-  const filterPacks = useCallback((packs: any[]) => {
-    if (!Array.isArray(packs)) {
-      console.error("filterPacks recebeu dados inválidos:", packs);
-      return [];
-    }
-    
-    const validPacks = packs.filter(pack => pack && typeof pack === 'object' && pack.pack_id);
-    
+  const filterPacks = (packs: any[]) => {
     if (filter === 'all') {
-      return validPacks;
+      return packs;
     } else if (filter === 'human') {
-      return validPacks.filter(pack => humanRequiredPacks.includes(pack.pack_id));
+      return packs.filter(pack => humanRequiredPacks.includes(pack.pack_id));
     } else if (filter === 'hermes') {
-      return validPacks.filter(pack => !humanRequiredPacks.includes(pack.pack_id));
-    } else if (filter === 'complaints') {
-      return complaintsFilteredPacks;
+      // Show only packs that are NOT in the humanRequiredPacks array
+      return packs.filter(pack => !humanRequiredPacks.includes(pack.pack_id));
     }
     
-    return validPacks;
-  }, [filter, humanRequiredPacks, complaintsFilteredPacks]);
+    // Other filters will be implemented later
+    return packs;
+  };
 
   return {
     filter,
     setFilter,
     humanRequiredPacks,
-    isLoading: isLoading || complaintsLoading,
-    error: error || complaintsError,
-    filterPacks,
-    complaintsMessages
+    isLoading,
+    error,
+    filterPacks
   };
 }

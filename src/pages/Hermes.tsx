@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import QuestionsList from "@/components/dashboard/QuestionsList";
 import MetricsDisplay from "@/components/dashboard/MetricsDisplay";
@@ -34,7 +33,6 @@ const Hermes = () => {
   const [messagesRefreshTrigger, setMessagesRefreshTrigger] = useState(0);
   const [showConfigPanel, setShowConfigPanel] = useState(false);
   const [readConversations, setReadConversations] = useState<string[]>([]);
-  const [selectedClaimId, setSelectedClaimId] = useState<number | null>(null);
 
   const { 
     saleDetails, 
@@ -59,16 +57,14 @@ const Hermes = () => {
     filter, 
     setFilter, 
     filterPacks, 
-    isLoading: filterLoading,
-    complaintsMessages
+    isLoading: filterLoading 
   } = usePackFilters(sellerId);
 
   const { latestMessagesMeta, allMessages, isLoading: allMessagesLoading, error: allMessagesError } = usePacksWithMessages(packs, sellerId);
   const { messages, isLoading: messagesLoading, error: messagesError, updatePackMessages } = usePackMessages(
     selectedPackId,
     sellerId,
-    messagesRefreshTrigger,
-    selectedClaimId
+    messagesRefreshTrigger
   );
   
   const { clientDataMap, isLoading: clientDataLoading } = usePackClientData(
@@ -172,16 +168,10 @@ const Hermes = () => {
     toast.success("Login realizado com sucesso!");
   };
 
-  const handleSelectPack = (packId: string, isComplaint?: boolean, claimId?: number) => {
+  const handleSelectPack = (packId: string) => {
     setSelectedPackId(packId);
-    setSelectedClaimId(isComplaint ? claimId || null : null);
     setSelectedConv(null);
-    
-    if (isComplaint) {
-      toast.info(`Carregando mensagens da reclamação #${claimId || packId}`);
-    } else {
-      toast.info(`Carregando mensagens do pacote ${packId}`);
-    }
+    toast.info(`Carregando mensagens do pacote ${packId}`);
     
     setShowSaleDetails(false);
     
@@ -322,8 +312,6 @@ const Hermes = () => {
                       readConversations={readConversations}
                       loadMorePacks={loadMorePacks}
                       hasMore={hasMore}
-                      currentFilter={filter}
-                      complaintsMessages={complaintsMessages}
                     />
                   </div>
                 </div>
