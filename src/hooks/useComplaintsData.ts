@@ -84,7 +84,7 @@ export function useComplaintsData() {
 
   const fetchRegularMessages = async (packId: string) => {
     try {
-      const response = await axios.get(`${getNgrokUrl()}/conversas`, {
+      const response = await axios.get(`${getNgrokUrl('')}/conversas`, {
         params: {
           seller_id: getSellerId(),
           pack_id: packId,
@@ -105,7 +105,7 @@ export function useComplaintsData() {
 
   const fetchClaimMessages = async (claimId: number) => {
     try {
-      const response = await axios.get(`${getNgrokUrl()}/conversas_rec`, {
+      const response = await axios.get(`${getNgrokUrl('')}/conversas_rec`, {
         params: {
           seller_id: getSellerId(),
           claim_id: claimId
