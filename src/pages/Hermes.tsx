@@ -43,7 +43,23 @@ const Hermes = () => {
     fetchSaleDetails 
   } = useSaleDetails();
 
-  const { packs, setPacks, isLoading: packsLoading, error: packsError, refreshPacks, loadMorePacks, hasMore } = useAllPacksData(sellerId);
+  const { 
+    packs, 
+    setPacks, 
+    isLoading: packsLoading, 
+    error: packsError, 
+    refreshPacks, 
+    loadMorePacks, 
+    hasMore 
+  } = useAllPacksData(sellerId);
+
+  const { 
+    filter, 
+    setFilter, 
+    filterPacks, 
+    isLoading: filterLoading 
+  } = usePackFilters(sellerId);
+
   const { latestMessagesMeta, allMessages, isLoading: allMessagesLoading, error: allMessagesError } = usePacksWithMessages(packs, sellerId);
   const { messages, isLoading: messagesLoading, error: messagesError, updatePackMessages } = usePackMessages(
     selectedPackId,
@@ -55,9 +71,7 @@ const Hermes = () => {
     sellerId,
     selectedPackId ? [{ pack_id: selectedPackId }] : []
   );
-  
-  const { filter, setFilter, filterPacks, isLoading: filterLoading } = usePackFilters(sellerId);
-  
+
   useMessageNotifications(sellerId);
 
   useEffect(() => {
@@ -283,7 +297,7 @@ const Hermes = () => {
                   
                   <div className="flex-1 overflow-auto">
                     <PacksList
-                      packs={filteredPacks}
+                      packs={filterPacks(packs)}
                       isLoading={packsLoading || filterLoading}
                       error={packsError}
                       onSelectPack={handleSelectPack}
