@@ -18,6 +18,8 @@ import NotificationPermission from "@/components/NotificationPermission";
 import ConfigurationsPanel from "@/components/dashboard/ConfigurationsPanel";
 import SaleDetailsPanel from "@/components/dashboard/SaleDetailsPanel";
 import { useSaleDetails } from "@/hooks/useSaleDetails";
+import PacksFilterBar from "@/components/dashboard/PacksFilterBar";
+import { usePackFilters } from "@/hooks/usePackFilters";
 
 const Hermes = () => {
   const [activeTab, setActiveTab] = useState('conversas');
@@ -53,6 +55,8 @@ const Hermes = () => {
     sellerId,
     selectedPackId ? [{ pack_id: selectedPackId }] : []
   );
+  
+  const { filter, setFilter, filterPacks, isLoading: filterLoading } = usePackFilters(sellerId);
   
   useMessageNotifications(sellerId);
 
@@ -262,7 +266,7 @@ const Hermes = () => {
               </div>
             ) : activeTab === 'conversas' ? (
               <>
-                <div className={`w-1/3 h-full overflow-auto border-r ${showSaleDetails && isMobile ? 'hidden' : ''}`}>
+                <div className={`w-1/3 h-full flex flex-col overflow-hidden border-r ${showSaleDetails && isMobile ? 'hidden' : ''}`}>
                   <div className="p-4 border-b bg-white flex justify-between items-center">
                     <div>
                       <h2 className="text-lg font-medium">Clientes</h2>
@@ -270,23 +274,32 @@ const Hermes = () => {
                     </div>
                     <NotificationPermission />
                   </div>
-                  <PacksList
-                    packs={packs}
-                    isLoading={packsLoading}
-                    error={packsError}
-                    onSelectPack={handleSelectPack}
-                    selectedPackId={selectedPackId}
-                    sellerId={sellerId}
-                    latestMessages={Object.fromEntries(
-                      Object.entries(latestMessagesMeta).map(([k, v]) => [k, v.text])
-                    )}
-                    allMessages={allMessages}
-                    messagesLoading={allMessagesLoading}
-                    messagesError={allMessagesError}
-                    readConversations={readConversations}
-                    loadMorePacks={loadMorePacks}
-                    hasMore={hasMore}
+                  
+                  <PacksFilterBar 
+                    currentFilter={filter}
+                    onFilterChange={setFilter}
+                    className="border-b"
                   />
+                  
+                  <div className="flex-1 overflow-auto">
+                    <PacksList
+                      packs={filteredPacks}
+                      isLoading={packsLoading || filterLoading}
+                      error={packsError}
+                      onSelectPack={handleSelectPack}
+                      selectedPackId={selectedPackId}
+                      sellerId={sellerId}
+                      latestMessages={Object.fromEntries(
+                        Object.entries(latestMessagesMeta).map(([k, v]) => [k, v.text])
+                      )}
+                      allMessages={allMessages}
+                      messagesLoading={allMessagesLoading}
+                      messagesError={allMessagesError}
+                      readConversations={readConversations}
+                      loadMorePacks={loadMorePacks}
+                      hasMore={hasMore}
+                    />
+                  </div>
                 </div>
 
                 <div className={`${showSaleDetails ? 'w-1/3' : 'w-2/3'} h-full overflow-hidden ${showSaleDetails && isMobile ? 'hidden' : ''}`}>
