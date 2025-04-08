@@ -1,22 +1,12 @@
-
 import { useState, useEffect } from 'react';
 import { getNgrokUrl } from '@/config/api';
+import { Complaint } from './usePackFilters';
 
 export interface ComplaintsData {
   complaintsAvoided: number;
   unpreventedComplaints: number;
   preventedComplaintsList: string[];
   unpreventedComplaintsList: string[];
-}
-
-export interface Complaint {
-  order_id: number;
-  pack_id: string | null;
-  claim_id: number;
-  reason_id: string;
-  motivo_reclamacao: string;
-  afetou_reputacao: string;
-  data_criada: string;
 }
 
 export function useComplaintsData() {

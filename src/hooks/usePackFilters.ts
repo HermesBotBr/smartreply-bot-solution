@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 
@@ -8,7 +9,7 @@ interface OnOffRow {
   seller_id: string;
 }
 
-interface Complaint {
+export interface Complaint {
   order_id: number;
   pack_id: string | null;
   claim_id: number;
@@ -100,6 +101,7 @@ export function usePackFilters(sellerId: string | null) {
     } else if (filter === 'complaints') {
       // Para reclamações, criamos uma lista de "packs virtuais" baseados nos dados de reclamações
       return complaints.map(complaint => {
+        // Se pack_id for null, usar order_id como pack_id
         const packId = complaint.pack_id || complaint.order_id.toString();
         return {
           pack_id: packId,

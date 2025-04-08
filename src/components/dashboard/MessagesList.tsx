@@ -1,3 +1,4 @@
+
 import React, { useRef, useEffect, useState } from 'react';
 import { formatDate } from '@/utils/dateFormatters';
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -11,7 +12,7 @@ import { getNgrokUrl } from '@/config/api';
 import { useMlToken } from '@/hooks/useMlToken';
 import { uploadFile } from '@/utils/fileUpload';
 import { usePackClientData, ClientData } from '@/hooks/usePackClientData';
-import { Complaint } from '@/hooks/useComplaintsData';
+import { Complaint } from '@/hooks/usePackFilters';
 
 interface Message {
   id: string;

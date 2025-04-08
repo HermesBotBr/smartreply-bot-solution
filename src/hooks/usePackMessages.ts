@@ -60,29 +60,7 @@ export function usePackMessages(
     }
     
     try {
-      // Se for uma reclamação, não buscamos mensagens do endpoint normal
-      if (isComplaint) {
-        // No caso de reclamações, usamos os dados que já temos
-        // ou poderíamos buscar detalhes adicionais se necessário
-        setMessages([
-          {
-            id: `complaint-${targetPackId}`,
-            from: { user_id: 0 },
-            to: { user_id: parseInt(sellerId) },
-            text: "Esta é uma reclamação. Verifique os detalhes acima.",
-            message_date: {
-              received: new Date().toISOString(),
-              available: new Date().toISOString(),
-              notified: new Date().toISOString(),
-              created: new Date().toISOString(),
-              read: new Date().toISOString()
-            },
-            message_attachments: null
-          }
-        ]);
-        return;
-      }
-      
+      // Note: For complaints we now also fetch messages, just like for regular packs
       const response = await axios.get(`${NGROK_BASE_URL}/conversas`, {
         params: {
           seller_id: sellerId,
@@ -171,7 +149,7 @@ export function usePackMessages(
     }
     
     const periodicRefreshIntervalId = setInterval(() => {
-      if (packId && sellerId && !isComplaint && !backgroundRefreshingRef.current && currentPackIdRef.current) {
+      if (packId && sellerId && !backgroundRefreshingRef.current && currentPackIdRef.current) {
         console.log('Atualização periódica, buscando mensagens recentes');
         fetchMessages(currentPackIdRef.current, true);
       }
@@ -183,7 +161,7 @@ export function usePackMessages(
   }, [packId, sellerId, refreshTrigger, isComplaint]);
 
   const updatePackMessages = async (targetPackId: string) => {
-    if (!sellerId || isComplaint) return;
+    if (!sellerId) return;
     
     console.log(`Atualização endpoint, buscando mensagens para pack_id ${targetPackId}`);
     
