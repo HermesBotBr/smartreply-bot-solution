@@ -11,6 +11,16 @@ interface OnOffRow {
   seller_id: string;
 }
 
+// Extended version of AllPacksRow that includes complaint-specific fields
+export interface ComplaintPackRow extends AllPacksRow {
+  original_pack_id?: string | null;
+  claim_id?: string;
+  reason_id?: string;
+  motivo_reclamacao?: string;
+  is_complaint?: boolean;
+  order_id?: string;
+}
+
 export function usePackFilters(sellerId: string | null) {
   const [filter, setFilter] = useState<FilterType>('all');
   const [humanRequiredPacks, setHumanRequiredPacks] = useState<string[]>([]);
@@ -74,7 +84,7 @@ export function usePackFilters(sellerId: string | null) {
   };
 
   // This function returns complaint data formatted as pack rows for display
-  const getComplaintPackRows = (): AllPacksRow[] => {
+  const getComplaintPackRows = (): ComplaintPackRow[] => {
     if (filter !== 'complaints' || !complaints.length) {
       return [];
     }
@@ -86,6 +96,7 @@ export function usePackFilters(sellerId: string | null) {
       original_pack_id: complaint.pack_id?.toString() || null,
       seller_id: sellerId || '',
       gpt: 'nao', // Complaints don't use GPT
+      date_msg: complaint.data_criada, // Use complaint creation date for sorting
       claim_id: complaint.claim_id.toString(),
       reason_id: complaint.reason_id,
       motivo_reclamacao: complaint.motivo_reclamacao,

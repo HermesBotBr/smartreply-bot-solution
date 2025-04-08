@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import QuestionsList from "@/components/dashboard/QuestionsList";
 import MetricsDisplay from "@/components/dashboard/MetricsDisplay";
@@ -19,7 +20,7 @@ import ConfigurationsPanel from "@/components/dashboard/ConfigurationsPanel";
 import SaleDetailsPanel from "@/components/dashboard/SaleDetailsPanel";
 import { useSaleDetails } from "@/hooks/useSaleDetails";
 import PacksFilterBar from "@/components/dashboard/PacksFilterBar";
-import { usePackFilters } from "@/hooks/usePackFilters";
+import { usePackFilters, ComplaintPackRow } from "@/hooks/usePackFilters";
 
 const Hermes = () => {
   const [activeTab, setActiveTab] = useState('conversas');
@@ -259,7 +260,8 @@ const Hermes = () => {
   const handleOpenSaleDetails = () => {
     if (sellerId && selectedPackId) {
       if (selectedPackId.startsWith('claim-') && displayPacks.length > 0) {
-        const complaintPack = displayPacks.find(p => p.pack_id === selectedPackId);
+        // Find the complaint pack with the matching pack_id
+        const complaintPack = displayPacks.find(p => p.pack_id === selectedPackId) as ComplaintPackRow;
         if (complaintPack && complaintPack.original_pack_id) {
           fetchSaleDetails(complaintPack.original_pack_id, sellerId);
           setShowSaleDetails(true);

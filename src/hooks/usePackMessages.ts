@@ -49,7 +49,7 @@ export function usePackMessages(
   const [isComplaintPack, setIsComplaintPack] = useState(false);
   
   // Get complaint data and message fetching function
-  const { fetchComplaintMessages } = useComplaintsData(sellerId);
+  const { fetchComplaintMessages, complaints } = useComplaintsData(sellerId);
 
   const fetchMessages = async (targetPackId: string, isBackgroundRefresh = false) => {
     if (!sellerId) {
@@ -82,18 +82,15 @@ export function usePackMessages(
         try {
           // Find the complaint object with this claim_id
           const claimIdNum = parseInt(claimId);
-          const complaintObj = {
-            claim_id: claimIdNum,
-            pack_id: null,
-            order_id: 0,
-            reason_id: '',
-            motivo_reclamacao: '',
-            afetou_reputacao: '',
-            data_criada: ''
-          };
+          const complaintObj = complaints.find(c => c.claim_id === claimIdNum);
           
-          newMessages = await fetchComplaintMessages(complaintObj);
-          console.log(`Carregadas ${newMessages.length} mensagens para a reclamação ${claimId}`);
+          if (complaintObj) {
+            newMessages = await fetchComplaintMessages(complaintObj);
+            console.log(`Carregadas ${newMessages.length} mensagens para a reclamação ${claimId}`);
+          } else {
+            console.error(`Não foi encontrada reclamação com claim_id ${claimId}`);
+            setError(`Reclamação não encontrada: ${claimId}`);
+          }
         } catch (err) {
           console.error(`Erro ao buscar mensagens para a reclamação ${claimId}:`, err);
           setError(`Erro ao carregar mensagens da reclamação: ${err}`);
@@ -195,7 +192,7 @@ export function usePackMessages(
     return () => {
       clearInterval(periodicRefreshIntervalId);
     };
-  }, [packId, sellerId, refreshTrigger]);
+  }, [packId, sellerId, refreshTrigger, complaints]); // Add complaints to dependencies
 
   const updatePackMessages = async (targetPackId: string) => {
     if (!sellerId) return;
