@@ -94,13 +94,15 @@ export function usePackFilters(sellerId: string | null) {
 
   // The key function: filterPacks
   const filterPacks = useCallback((packs: any[]) => {
-    let filteredPacks = [];
+    // IMPORTANTE: Para garantir que as reclamações NÃO apareçam em outros filtros,
+    // filtramos explicitamente qualquer objeto que tenha a propriedade 'complaint'
+    let basePacks = packs.filter(pack => !('complaint' in pack));
     
     // STEP 1: Determine if we're in "complaints" mode or "regular packs" mode
     if (filter === 'complaints') {
       // Complaints filter: we create a completely separate list of virtual packs
       // based solely on the complaints data
-      filteredPacks = complaints.map(complaint => {
+      return complaints.map(complaint => {
         // Se pack_id for null, usar order_id como pack_id
         const packId = complaint.pack_id || complaint.order_id.toString();
         return {
@@ -120,23 +122,24 @@ export function usePackFilters(sellerId: string | null) {
       // We NEVER mix complaints with regular packs
       
       // Apply the specific filter type
+      let filteredPacks = [];
       if (filter === 'all') {
-        filteredPacks = [...packs]; // Make a copy to ensure we don't modify the original
+        filteredPacks = [...basePacks]; // Make a copy to ensure we don't modify the original
       } else if (filter === 'human') {
-        filteredPacks = packs.filter(pack => humanRequiredPacks.includes(pack.pack_id));
+        filteredPacks = basePacks.filter(pack => humanRequiredPacks.includes(pack.pack_id));
       } else if (filter === 'hermes') {
-        filteredPacks = packs.filter(pack => !humanRequiredPacks.includes(pack.pack_id));
+        filteredPacks = basePacks.filter(pack => !humanRequiredPacks.includes(pack.pack_id));
       }
-    }
-    
-    // STEP 2: Apply search query filter if needed
-    if (searchQuery && searchQuery.trim() !== '') {
-      // We return all packs for now, and let PacksList handle the actual filtering
-      // based on client names from clientDataMap
+      
+      // STEP 2: Apply search query filter if needed
+      if (searchQuery && searchQuery.trim() !== '') {
+        // We return all packs for now, and let PacksList handle the actual filtering
+        // based on client names from clientDataMap
+        return filteredPacks;
+      }
+      
       return filteredPacks;
     }
-    
-    return filteredPacks;
   }, [filter, humanRequiredPacks, complaints, sellerId, searchQuery]);
 
   return {

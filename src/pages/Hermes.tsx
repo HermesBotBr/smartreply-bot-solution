@@ -176,6 +176,7 @@ const Hermes = () => {
   useEffect(() => {
     setSelectedPackId(null);
     setIsComplaintPack(false);
+    setSelectedConv(null);
   }, [filter]);
 
   const handleLoginSuccess = (sellerId: string) => {
