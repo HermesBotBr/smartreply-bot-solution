@@ -4,7 +4,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAllGptData } from '@/hooks/useAllGptData';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Send, Paperclip, X, Loader2, ChevronRight, AlertTriangle } from "lucide-react";
+import { Send, Paperclip, X, Loader2, ChevronRight, AlertTriangle, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
 import axios from 'axios';
 import { getNgrokUrl } from '@/config/api';
@@ -353,7 +353,8 @@ const MessagesList: React.FC<MessagesListProps> = ({
             filename: att.url,
             original_filename: att.name || 'attachment',
             status: 'available'
-          })) : null
+          })) : null,
+        isComplaintMessage: true
       };
     });
   };
@@ -440,6 +441,7 @@ const MessagesList: React.FC<MessagesListProps> = ({
               {dateEntry[1].map((message) => {
                 const isSeller = message.from.user_id === sellerIdNum;
                 const isGptMessage = isSeller && gptMessageIds.includes(message.id);
+                const isComplaintMessage = (message as any).isComplaintMessage === true;
                 
                 return (
                   <div 
@@ -451,10 +453,32 @@ const MessagesList: React.FC<MessagesListProps> = ({
                         isSeller 
                           ? isGptMessage 
                             ? 'bg-blue-100 text-gray-800'
-                            : 'bg-green-100 text-gray-800'
-                          : 'bg-white text-gray-800'
+                            : isComplaintMessage
+                              ? 'bg-orange-100 text-gray-800'
+                              : 'bg-green-100 text-gray-800'
+                          : isComplaintMessage
+                            ? 'bg-yellow-50 text-gray-800'
+                            : 'bg-white text-gray-800'
                       }`}
                     >
+                      {isComplaintMessage && (
+                        <div className="flex items-center gap-1 mb-1 pb-1 border-b border-gray-200">
+                          <AlertTriangle size={12} className="text-orange-500" />
+                          <span className="text-xs text-orange-600 font-medium">
+                            Mensagem de reclamação
+                          </span>
+                        </div>
+                      )}
+                      
+                      {!isComplaintMessage && isComplaint && (
+                        <div className="flex items-center gap-1 mb-1 pb-1 border-b border-gray-200">
+                          <MessageSquare size={12} className="text-gray-500" />
+                          <span className="text-xs text-gray-500 font-medium">
+                            Mensagem de venda
+                          </span>
+                        </div>
+                      )}
+                      
                       {message.message_attachments && message.message_attachments.length > 0 && (
                         <div className="mb-2">
                           {message.message_attachments.map((attachment, idx) => {
