@@ -1,6 +1,8 @@
+
 import { useState, useEffect } from 'react';
 import { getNgrokUrl } from '@/config/api';
 import { Complaint } from './usePackFilters';
+import axios from 'axios';
 
 export interface ComplaintsData {
   complaintsAvoided: number;
@@ -35,6 +37,10 @@ export function useComplaintsData() {
           unpreventedComplaintsList: [],
         });
         setLoading(false);
+        
+        // Fetch both complaint lists right away
+        fetchComplaintsAvoidedList();
+        fetchUnpreventedComplaintsList();
       } catch (error) {
         console.error("Error fetching complaints data:", error);
         setLoading(false);

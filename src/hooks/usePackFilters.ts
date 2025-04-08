@@ -26,6 +26,7 @@ export function usePackFilters(sellerId: string | null) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Fetch human required packs when sellerId changes
   useEffect(() => {
     if (!sellerId) return;
 
@@ -58,7 +59,15 @@ export function usePackFilters(sellerId: string | null) {
     fetchHumanRequiredPacks();
   }, [sellerId]);
 
-  // Função para buscar reclamações quando o filtro de reclamações é selecionado
+  // Fetch complaints immediately when sellerId is available, regardless of filter
+  useEffect(() => {
+    if (sellerId) {
+      fetchComplaints(sellerId);
+    }
+  }, [sellerId]);
+
+  // Also fetch complaints when filter is explicitly set to 'complaints'
+  // This ensures we refresh the data when the user selects the complaints filter
   useEffect(() => {
     if (filter === 'complaints' && sellerId) {
       fetchComplaints(sellerId);
