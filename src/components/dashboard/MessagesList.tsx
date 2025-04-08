@@ -1,17 +1,17 @@
+
 import React, { useRef, useEffect, useState } from 'react';
 import { formatDate } from '@/utils/dateFormatters';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAllGptData } from '@/hooks/useAllGptData';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Send, Paperclip, X, Loader2, ChevronRight, AlertTriangle } from "lucide-react";
+import { Send, Paperclip, X, Loader2, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import axios from 'axios';
 import { getNgrokUrl } from '@/config/api';
 import { useMlToken } from '@/hooks/useMlToken';
 import { uploadFile } from '@/utils/fileUpload';
 import { usePackClientData, ClientData } from '@/hooks/usePackClientData';
-import { useComplaintsFilter } from '@/hooks/useComplaintsFilter';
 
 interface Message {
   id: string;
@@ -35,7 +35,7 @@ interface MessagesListProps {
   packId: string | null;
   onMessageSent?: () => void;
   clientData?: ClientData | null;
-  onHeaderClick?: () => void;
+  onHeaderClick?: () => void; // New prop for header click event
 }
 
 const MessagesList: React.FC<MessagesListProps> = ({ 
@@ -77,14 +77,14 @@ const MessagesList: React.FC<MessagesListProps> = ({
       
       if (wasMessageAdded) {
         setTimeout(() => {
-          if (messagesEndRef.current && messagesEndRef.current.scrollIntoView) {
-            try {
-              messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
-            } catch (err) {
-              console.warn("Erro ao executar scrollIntoView:", err);
-            }
-          }
-        }, 100);
+  if (messagesEndRef.current && messagesEndRef.current.scrollIntoView) {
+    try {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    } catch (err) {
+      console.warn("Erro ao executar scrollIntoView:", err);
+    }
+  }
+}, 100);
 
       }
       
@@ -251,29 +251,20 @@ const MessagesList: React.FC<MessagesListProps> = ({
     return <p className="whitespace-pre-wrap">{text}</p>;
   };
 
-  const { getComplaintByPackId } = useComplaintsFilter(sellerId);
-  const complaint = packId ? getComplaintByPackId(packId) : null;
-  const isComplaint = !!complaint;
-
+  // Renderiza o cabeçalho com informações do cliente e do produto
   const renderHeader = () => {
     const clientName = clientData ? (clientData["Nome completo do cliente"] || clientData["Nickname do cliente"] || "Cliente") : "Cliente";
     const productTitle = clientData ? (clientData["Título do anúncio"] || "Produto não identificado") : "Produto não identificado";
     
     return (
       <div 
-        className={`p-4 border-b ${isComplaint ? 'bg-orange-50' : 'bg-white'} ${onHeaderClick ? 'cursor-pointer hover:bg-gray-50' : ''}`}
+        className={`p-4 border-b bg-white ${onHeaderClick ? 'cursor-pointer hover:bg-gray-50' : ''}`}
         onClick={onHeaderClick}
       >
         <div className="flex justify-between items-center">
           <div>
             <h3 className="text-lg font-medium">{clientName}</h3>
             <p className="text-sm text-gray-700">{productTitle}</p>
-            {isComplaint && (
-              <div className="flex items-center mt-1 text-sm text-orange-600">
-                <AlertTriangle size={14} className="mr-1" />
-                <span>Reclamação: {complaint?.motivo_reclamacao}</span>
-              </div>
-            )}
             <p className="text-xs text-gray-500">
               {isLoading ? 'Carregando mensagens...' :
                 error ? 'Erro ao carregar mensagens' :
@@ -327,6 +318,7 @@ const MessagesList: React.FC<MessagesListProps> = ({
 
   return (
     <div className="flex flex-col h-full">
+      {/* Cabeçalho com informações do cliente e produto */}
       {renderHeader()}
       
       <ScrollArea className="flex-1">
@@ -342,7 +334,6 @@ const MessagesList: React.FC<MessagesListProps> = ({
               {dateEntry[1].map((message) => {
                 const isSeller = message.from.user_id === sellerIdNum;
                 const isGptMessage = isSeller && gptMessageIds.includes(message.id);
-                const isComplaintMessage = message.id && (message.id.includes('complaint-') || message.id.includes('hash'));
                 
                 return (
                   <div 
@@ -351,22 +342,13 @@ const MessagesList: React.FC<MessagesListProps> = ({
                   >
                     <div 
                       className={`rounded-lg p-3 max-w-[70%] shadow-sm ${
-                        isComplaintMessage 
-                          ? (isSeller ? 'bg-orange-100 text-gray-800' : 'bg-orange-50 text-gray-800 border border-orange-200')
-                          : (isSeller 
-                              ? isGptMessage 
-                                ? 'bg-blue-100 text-gray-800'
-                                : 'bg-green-100 text-gray-800'
-                              : 'bg-white text-gray-800')
+                        isSeller 
+                          ? isGptMessage 
+                            ? 'bg-blue-100 text-gray-800'
+                            : 'bg-green-100 text-gray-800'
+                          : 'bg-white text-gray-800'
                       }`}
                     >
-                      {isComplaintMessage && (
-                        <div className="flex items-center mb-1 text-xs text-orange-600">
-                          <AlertTriangle size={12} className="mr-1" />
-                          <span>Mensagem de reclamação</span>
-                        </div>
-                      )}
-                      
                       {message.message_attachments && message.message_attachments.length > 0 && (
                         <div className="mb-2">
                           {message.message_attachments.map((attachment, idx) => {
@@ -454,9 +436,9 @@ const MessagesList: React.FC<MessagesListProps> = ({
             variant="outline"
             size="icon"
             onClick={() => fileInputRef.current?.click()}
-            disabled={sending || uploadingFile || isComplaint}
+            disabled={sending || uploadingFile}
             className="flex-shrink-0"
-            title={isComplaint ? "Não é possível enviar anexos em uma reclamação" : "Anexar arquivo"}
+            title="Anexar arquivo"
           >
             <Paperclip size={18} />
           </Button>
@@ -470,22 +452,22 @@ const MessagesList: React.FC<MessagesListProps> = ({
           />
           
           <Input 
-            placeholder={isComplaint ? "Não é possível enviar mensagens em uma reclamação" : "Digite sua mensagem..."} 
+            placeholder="Digite sua mensagem..." 
             value={messageText}
             onChange={(e) => setMessageText(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey && !isComplaint) {
+              if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
                 handleSendMessage();
               }
             }}
-            disabled={!packId || sending || uploadingFile || isComplaint}
+            disabled={!packId || sending || uploadingFile}
             className="flex-1"
           />
           
           <Button 
             onClick={handleSendMessage} 
-            disabled={(!messageText.trim() && !selectedFile) || !packId || sending || uploadingFile || isComplaint} 
+            disabled={(!messageText.trim() && !selectedFile) || !packId || sending || uploadingFile} 
             className="flex-shrink-0"
           >
             {sending || uploadingFile ? (
@@ -496,13 +478,6 @@ const MessagesList: React.FC<MessagesListProps> = ({
             {uploadingFile ? "Enviando..." : "Enviar"}
           </Button>
         </div>
-        
-        {isComplaint && (
-          <p className="text-xs text-orange-600 mt-2 flex items-center">
-            <AlertTriangle size={12} className="mr-1" />
-            Este chat está em modo somente leitura pois é uma reclamação aberta.
-          </p>
-        )}
       </div>
       
       {fullScreenImage && (

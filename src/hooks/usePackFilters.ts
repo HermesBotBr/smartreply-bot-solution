@@ -1,7 +1,6 @@
 
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useComplaintsFilter } from './useComplaintsFilter';
 
 export type FilterType = 'all' | 'human' | 'hermes' | 'complaints';
 
@@ -15,13 +14,6 @@ export function usePackFilters(sellerId: string | null) {
   const [humanRequiredPacks, setHumanRequiredPacks] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
-  // Usar o hook de reclamações
-  const { 
-    complaintPackIds, 
-    isLoading: complaintsLoading, 
-    error: complaintsError 
-  } = useComplaintsFilter(sellerId);
 
   useEffect(() => {
     if (!sellerId) return;
@@ -63,11 +55,9 @@ export function usePackFilters(sellerId: string | null) {
     } else if (filter === 'hermes') {
       // Show only packs that are NOT in the humanRequiredPacks array
       return packs.filter(pack => !humanRequiredPacks.includes(pack.pack_id));
-    } else if (filter === 'complaints') {
-      // Mostrar apenas os pacotes que estão no conjunto de reclamações
-      return packs.filter(pack => complaintPackIds.has(pack.pack_id));
     }
     
+    // Other filters will be implemented later
     return packs;
   };
 
@@ -75,9 +65,8 @@ export function usePackFilters(sellerId: string | null) {
     filter,
     setFilter,
     humanRequiredPacks,
-    complaintPackIds,
-    isLoading: isLoading || complaintsLoading,
-    error: error || complaintsError,
+    isLoading,
+    error,
     filterPacks
   };
 }
