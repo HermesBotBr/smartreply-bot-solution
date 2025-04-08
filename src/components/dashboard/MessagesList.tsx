@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, useState } from 'react';
 import { formatDate } from '@/utils/dateFormatters';
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -12,6 +11,7 @@ import { getNgrokUrl } from '@/config/api';
 import { useMlToken } from '@/hooks/useMlToken';
 import { uploadFile } from '@/utils/fileUpload';
 import { usePackClientData, ClientData } from '@/hooks/usePackClientData';
+import { Complaint } from '@/hooks/useComplaintsData';
 
 interface Message {
   id: string;
@@ -35,7 +35,9 @@ interface MessagesListProps {
   packId: string | null;
   onMessageSent?: () => void;
   clientData?: ClientData | null;
-  onHeaderClick?: () => void; // New prop for header click event
+  onHeaderClick?: () => void;
+  isComplaint?: boolean;
+  complaintData?: Complaint;
 }
 
 const MessagesList: React.FC<MessagesListProps> = ({ 
@@ -46,7 +48,9 @@ const MessagesList: React.FC<MessagesListProps> = ({
   packId,
   onMessageSent,
   clientData,
-  onHeaderClick
+  onHeaderClick,
+  isComplaint = false,
+  complaintData
 }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [messageText, setMessageText] = useState('');
@@ -77,15 +81,14 @@ const MessagesList: React.FC<MessagesListProps> = ({
       
       if (wasMessageAdded) {
         setTimeout(() => {
-  if (messagesEndRef.current && messagesEndRef.current.scrollIntoView) {
-    try {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
-    } catch (err) {
-      console.warn("Erro ao executar scrollIntoView:", err);
-    }
-  }
-}, 100);
-
+          if (messagesEndRef.current && messagesEndRef.current.scrollIntoView) {
+            try {
+              messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+            } catch (err) {
+              console.warn("Erro ao executar scrollIntoView:", err);
+            }
+          }
+        }, 100);
       }
       
       prevMessagesLengthRef.current = messages.length;
@@ -251,8 +254,27 @@ const MessagesList: React.FC<MessagesListProps> = ({
     return <p className="whitespace-pre-wrap">{text}</p>;
   };
 
-  // Renderiza o cabeçalho com informações do cliente e do produto
   const renderHeader = () => {
+    if (isComplaint && complaintData) {
+      return (
+        <div 
+          className={`p-4 border-b bg-white ${onHeaderClick ? 'cursor-pointer hover:bg-gray-50' : ''}`}
+          onClick={onHeaderClick}
+        >
+          <div className="flex justify-between items-center">
+            <div>
+              <h3 className="text-lg font-medium">Reclamação #{complaintData.claim_id}</h3>
+              <p className="text-sm text-gray-700">{complaintData.motivo_reclamacao}</p>
+              <p className="text-xs text-gray-500">
+                {formatDate(complaintData.data_criada)} - Afetou reputação: {complaintData.afetou_reputacao}
+              </p>
+            </div>
+            {onHeaderClick && <ChevronRight size={18} className="text-gray-400" />}
+          </div>
+        </div>
+      );
+    }
+
     const clientName = clientData ? (clientData["Nome completo do cliente"] || clientData["Nickname do cliente"] || "Cliente") : "Cliente";
     const productTitle = clientData ? (clientData["Título do anúncio"] || "Produto não identificado") : "Produto não identificado";
     
@@ -318,11 +340,21 @@ const MessagesList: React.FC<MessagesListProps> = ({
 
   return (
     <div className="flex flex-col h-full">
-      {/* Cabeçalho com informações do cliente e produto */}
       {renderHeader()}
       
       <ScrollArea className="flex-1">
         <div className="p-4">
+          {isComplaint && complaintData && (
+            <div className="my-4 p-4 bg-orange-50 border border-orange-200 rounded-lg">
+              <h4 className="font-medium text-orange-700">Detalhes da Reclamação</h4>
+              <p className="text-sm text-orange-700 mt-1">Motivo: {complaintData.motivo_reclamacao}</p>
+              <p className="text-sm text-orange-700">Pedido: {complaintData.order_id}</p>
+              <p className="text-sm text-orange-700">ID da Reclamação: {complaintData.claim_id}</p>
+              <p className="text-sm text-orange-700">Data: {new Date(complaintData.data_criada).toLocaleDateString()}</p>
+              <p className="text-sm text-orange-700">Afetou Reputação: {complaintData.afetou_reputacao}</p>
+            </div>
+          )}
+
           {Object.entries(messagesByDate).map((dateEntry) => (
             <div key={dateEntry[0]}>
               <div className="flex justify-center my-3">
@@ -402,83 +434,87 @@ const MessagesList: React.FC<MessagesListProps> = ({
         </div>
       </ScrollArea>
       
-      {selectedFile && (
-        <div className="px-3 py-2 bg-blue-50 border-t">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <Paperclip size={16} className="mr-2 text-blue-500" />
-              <span className="text-sm truncate max-w-[200px]">{selectedFile.name}</span>
-            </div>
-            <button 
-              onClick={handleRemoveFile}
-              className="text-gray-500 hover:text-red-500"
-              aria-label="Remover arquivo"
-            >
-              <X size={16} />
-            </button>
-          </div>
-          {filePreview && (
-            <div className="mt-2 mb-1">
-              <img 
-                src={filePreview} 
-                alt="Preview" 
-                className="h-20 max-w-full object-contain rounded" 
-              />
+      {!isComplaint && (
+        <>
+          {selectedFile && (
+            <div className="px-3 py-2 bg-blue-50 border-t">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <Paperclip size={16} className="mr-2 text-blue-500" />
+                  <span className="text-sm truncate max-w-[200px]">{selectedFile.name}</span>
+                </div>
+                <button 
+                  onClick={handleRemoveFile}
+                  className="text-gray-500 hover:text-red-500"
+                  aria-label="Remover arquivo"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+              {filePreview && (
+                <div className="mt-2 mb-1">
+                  <img 
+                    src={filePreview} 
+                    alt="Preview" 
+                    className="h-20 max-w-full object-contain rounded" 
+                  />
+                </div>
+              )}
             </div>
           )}
-        </div>
+          
+          <div className="p-3 bg-white border-t sticky bottom-0">
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={sending || uploadingFile}
+                className="flex-shrink-0"
+                title="Anexar arquivo"
+              >
+                <Paperclip size={18} />
+              </Button>
+              
+              <input
+                ref={fileInputRef}
+                type="file"
+                onChange={handleFileChange}
+                accept="image/*,.pdf,.doc,.docx,.txt"
+                className="hidden"
+              />
+              
+              <Input 
+                placeholder="Digite sua mensagem..." 
+                value={messageText}
+                onChange={(e) => setMessageText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSendMessage();
+                  }
+                }}
+                disabled={!packId || sending || uploadingFile}
+                className="flex-1"
+              />
+              
+              <Button 
+                onClick={handleSendMessage} 
+                disabled={(!messageText.trim() && !selectedFile) || !packId || sending || uploadingFile} 
+                className="flex-shrink-0"
+              >
+                {sending || uploadingFile ? (
+                  <Loader2 size={18} className="mr-1 animate-spin" />
+                ) : (
+                  <Send size={18} className="mr-1" />
+                )}
+                {uploadingFile ? "Enviando..." : "Enviar"}
+              </Button>
+            </div>
+          </div>
+        </>
       )}
-      
-      <div className="p-3 bg-white border-t sticky bottom-0">
-        <div className="flex gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={sending || uploadingFile}
-            className="flex-shrink-0"
-            title="Anexar arquivo"
-          >
-            <Paperclip size={18} />
-          </Button>
-          
-          <input
-            ref={fileInputRef}
-            type="file"
-            onChange={handleFileChange}
-            accept="image/*,.pdf,.doc,.docx,.txt"
-            className="hidden"
-          />
-          
-          <Input 
-            placeholder="Digite sua mensagem..." 
-            value={messageText}
-            onChange={(e) => setMessageText(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                handleSendMessage();
-              }
-            }}
-            disabled={!packId || sending || uploadingFile}
-            className="flex-1"
-          />
-          
-          <Button 
-            onClick={handleSendMessage} 
-            disabled={(!messageText.trim() && !selectedFile) || !packId || sending || uploadingFile} 
-            className="flex-shrink-0"
-          >
-            {sending || uploadingFile ? (
-              <Loader2 size={18} className="mr-1 animate-spin" />
-            ) : (
-              <Send size={18} className="mr-1" />
-            )}
-            {uploadingFile ? "Enviando..." : "Enviar"}
-          </Button>
-        </div>
-      </div>
       
       {fullScreenImage && (
         <div 
