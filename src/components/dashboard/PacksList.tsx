@@ -98,13 +98,15 @@ const PacksList: React.FC<PacksListProps> = ({
   }
 
   const getSenderLabel = (packId: string) => {
+    if (!packId) return "";
+    
     // Verificar se estamos no filtro de reclamações
     if (currentFilter === 'complaints') {
       // Extrair o claim_id se este for um pacote de reclamação
       let claimId: string | null = null;
       
       // Pacotes de reclamação sem pack_id usam formato claim-{claim_id}
-      if (packId && typeof packId === 'string' && packId.startsWith('claim-')) {
+      if (typeof packId === 'string' && packId.startsWith('claim-')) {
         claimId = packId.replace('claim-', '');
       } else {
         // Procurar pelo pack normal nas reclamações para obter o claim_id
@@ -144,7 +146,6 @@ const PacksList: React.FC<PacksListProps> = ({
     
     // Determine if the message is from buyer, seller, or GPT
     const fromUserId = latestMessage.from?.user_id;
-    const toUserId = latestMessage.to?.user_id;
     
     if (!fromUserId) return "";
     
@@ -153,9 +154,9 @@ const PacksList: React.FC<PacksListProps> = ({
     const isGptPack = currentPack?.gpt === "sim";
     
     // If latest message was sent by seller (to customer)
-    if (fromUserId.toString() === sellerId) {
+    if (sellerId && fromUserId.toString() === sellerId) {
       // Check if it's from GPT
-      if (isGptPack && latestMessage.text.startsWith('[GPT]')) {
+      if (isGptPack && typeof latestMessage.text === 'string' && latestMessage.text.startsWith('[GPT]')) {
         return "GPT: ";
       }
       return "Seller: ";
@@ -167,12 +168,14 @@ const PacksList: React.FC<PacksListProps> = ({
 
   // Function to get the latest message text for a pack
   const getLatestMessageText = (packId: string) => {
+    if (!packId) return "";
+    
     // Caso especial para reclamações
     if (currentFilter === 'complaints') {
       let claimId: string | null = null;
       
       // Extrair claim_id de pacotes de reclamação
-      if (packId && typeof packId === 'string' && packId.startsWith('claim-')) {
+      if (typeof packId === 'string' && packId.startsWith('claim-')) {
         claimId = packId.replace('claim-', '');
       } else {
         const complaint = packs.find(p => p.pack_id === packId && p.is_complaint);
@@ -185,18 +188,24 @@ const PacksList: React.FC<PacksListProps> = ({
       if (claimId && complaintsMessages[claimId] && complaintsMessages[claimId].length > 0) {
         // Pegar a mensagem mais recente
         const message = complaintsMessages[claimId][0]; // Assumindo que estão ordenadas
-        return message.message;
+        return message.message || "";
       }
       
       // Se não encontrarmos mensagens, mas temos o pacote de reclamação
-      const complaint = packs.find(p => 
-        (p.pack_id === packId || (
-          typeof packId === 'string' && 
-          packId.startsWith('claim-') && 
-          p.claim_id === parseInt(packId.replace('claim-', ''))
-        )) 
-        && p.is_complaint
-      );
+      const complaint = packs.find(p => {
+        if (!p || !p.is_complaint) return false;
+        
+        // Verificar se é o pacote correto comparando o pack_id
+        if (p.pack_id === packId) return true;
+        
+        // Verificar se é uma reclamação com formato claim-{id}
+        if (typeof packId === 'string' && packId.startsWith('claim-')) {
+          const claimIdFromPackId = parseInt(packId.replace('claim-', ''), 10);
+          return p.claim_id === claimIdFromPackId;
+        }
+        
+        return false;
+      });
       
       if (complaint) {
         return complaint.complaint_reason || "Reclamação sem motivo especificado";
@@ -211,6 +220,8 @@ const PacksList: React.FC<PacksListProps> = ({
 
   // Function to check if a pack has an unread buyer message
   const hasUnreadBuyerMessage = (packId: string): boolean => {
+    if (!packId) return false;
+    
     // Caso especial para reclamações
     if (currentFilter === 'complaints') {
       // Por padrão, marcar reclamações como não lidas para chamar a atenção
@@ -247,6 +258,9 @@ const PacksList: React.FC<PacksListProps> = ({
 
   // Sort the packs: unread buyer messages first, then by latest message date
   const sortedPacks = [...packs].sort((a, b) => {
+    // Verificar se temos packs válidos
+    if (!a || !b || !a.pack_id || !b.pack_id) return 0;
+    
     // First priority: unread buyer messages at the top
     const aHasUnread = hasUnreadBuyerMessage(a.pack_id);
     const bHasUnread = hasUnreadBuyerMessage(b.pack_id);
@@ -284,13 +298,15 @@ const PacksList: React.FC<PacksListProps> = ({
   return (
     <div className="divide-y">
       {sortedPacks.map((pack, index) => {
+        if (!pack || !pack.pack_id) return null;
+        
         const clientData = clientDataMap[pack.pack_id];
         const clientName = clientData ? clientData["Nome completo do cliente"] : null;
         const productTitle = clientData ? clientData["Título do anúncio"] : null;
         const itemId = clientData ? clientData["Item ID"] : null;
         const latestMessage = getLatestMessageText(pack.pack_id);
         const packMessages = allMessages[pack.pack_id] || [];
-        const isGptPack = pack.gpt === "sim";
+        const isGptPack = typeof pack.gpt === 'string' && pack.gpt === "sim";
         const senderLabel = getSenderLabel(pack.pack_id);
         const isUnread = hasUnreadBuyerMessage(pack.pack_id);
         const isComplaint = pack.is_complaint || false;

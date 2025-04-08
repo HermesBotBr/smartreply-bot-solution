@@ -87,13 +87,13 @@ export function usePackMessages(
         id: msg.hash || `complaint-${index}`,
         from: { user_id: fromUserId },
         to: { user_id: toUserId },
-        text: msg.message,
+        text: msg.message || "",  // Garantir que nunca seja null ou undefined
         message_date: {
-          received: msg.date_created,
-          available: msg.date_created,
-          notified: msg.date_created,
-          created: msg.message_date || msg.date_created,
-          read: msg.date_read || null
+          received: msg.date_created || "",
+          available: msg.date_created || "",
+          notified: msg.date_created || "",
+          created: msg.message_date || msg.date_created || "",
+          read: msg.date_read || ""
         },
         message_attachments: msg.attachments?.length ? 
           msg.attachments.map(att => ({
@@ -292,3 +292,4 @@ export function usePackMessages(
 
   return { messages, isLoading, error, updatePackMessages };
 }
+

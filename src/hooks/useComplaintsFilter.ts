@@ -149,11 +149,11 @@ export function useComplaintsFilter(sellerId: string | null) {
           pack_id: complaint.pack_id || `claim-${complaint.claim_id}`,
           seller_id: sellerId,
           date_msg: complaint.data_criada,
-          gpt: null,
+          gpt: "não", // Garantindo que seja string e não null
           // Adiciona informações adicionais específicas de reclamação
           is_complaint: true,
           claim_id: complaint.claim_id,
-          complaint_reason: complaint.motivo_reclamacao,
+          complaint_reason: complaint.motivo_reclamacao || "Motivo não especificado",
           order_id: complaint.order_id
         };
 

@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useComplaintsFilter } from './useComplaintsFilter';
@@ -9,12 +10,23 @@ interface OnOffRow {
   seller_id: string;
 }
 
+interface ComplaintFormattedPack {
+  pack_id: string;
+  seller_id: string | null;
+  date_msg: string;
+  gpt: string;
+  is_complaint: boolean;
+  claim_id: number;
+  complaint_reason: string;
+  order_id: number;
+}
+
 export function usePackFilters(sellerId: string | null) {
   const [filter, setFilter] = useState<FilterType>('all');
   const [humanRequiredPacks, setHumanRequiredPacks] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [complaintsFilteredPacks, setComplaintsFilteredPacks] = useState<any[]>([]);
+  const [complaintsFilteredPacks, setComplaintsFilteredPacks] = useState<ComplaintFormattedPack[]>([]);
   
   // Usamos o hook de reclamações
   const { 
@@ -64,7 +76,24 @@ export function usePackFilters(sellerId: string | null) {
       const loadComplaints = async () => {
         try {
           const formattedComplaints = await transformComplaintsToPackFormat();
-          setComplaintsFilteredPacks(formattedComplaints);
+          
+          // Verificar e validar cada objeto de reclamação
+          const validatedComplaints = formattedComplaints.map(item => {
+            return {
+              ...item,
+              // Garantir que todos os valores obrigatórios estejam presentes e sejam do tipo correto
+              pack_id: item.pack_id || `unknown-${Math.random().toString(36).substring(2, 9)}`,
+              seller_id: sellerId,
+              date_msg: item.date_msg || new Date().toISOString(),
+              gpt: typeof item.gpt === 'string' ? item.gpt : "não",
+              is_complaint: true,
+              claim_id: typeof item.claim_id === 'number' ? item.claim_id : 0,
+              complaint_reason: item.complaint_reason || "Motivo não especificado",
+              order_id: typeof item.order_id === 'number' ? item.order_id : 0
+            };
+          });
+          
+          setComplaintsFilteredPacks(validatedComplaints);
         } catch (err) {
           console.error("Erro ao transformar reclamações:", err);
           setError("Erro ao processar as reclamações");
@@ -77,19 +106,27 @@ export function usePackFilters(sellerId: string | null) {
 
   // Função que aplica os filtros aos pacotes
   const filterPacks = useCallback((packs: any[]) => {
+    if (!Array.isArray(packs)) {
+      console.error("filterPacks recebeu dados inválidos:", packs);
+      return [];
+    }
+    
+    // Filtrar entradas inválidas
+    const validPacks = packs.filter(pack => pack && typeof pack === 'object' && pack.pack_id);
+    
     if (filter === 'all') {
-      return packs;
+      return validPacks;
     } else if (filter === 'human') {
-      return packs.filter(pack => humanRequiredPacks.includes(pack.pack_id));
+      return validPacks.filter(pack => humanRequiredPacks.includes(pack.pack_id));
     } else if (filter === 'hermes') {
       // Show only packs that are NOT in the humanRequiredPacks array
-      return packs.filter(pack => !humanRequiredPacks.includes(pack.pack_id));
+      return validPacks.filter(pack => !humanRequiredPacks.includes(pack.pack_id));
     } else if (filter === 'complaints') {
       // Retorna os pacotes formatados de reclamações
       return complaintsFilteredPacks;
     }
     
-    return packs;
+    return validPacks;
   }, [filter, humanRequiredPacks, complaintsFilteredPacks]);
 
   return {
