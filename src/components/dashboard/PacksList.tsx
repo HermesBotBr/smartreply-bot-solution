@@ -104,7 +104,7 @@ const PacksList: React.FC<PacksListProps> = ({
       let claimId: string | null = null;
       
       // Pacotes de reclamação sem pack_id usam formato claim-{claim_id}
-      if (packId.startsWith('claim-')) {
+      if (packId && typeof packId === 'string' && packId.startsWith('claim-')) {
         claimId = packId.replace('claim-', '');
       } else {
         // Procurar pelo pack normal nas reclamações para obter o claim_id
@@ -172,7 +172,7 @@ const PacksList: React.FC<PacksListProps> = ({
       let claimId: string | null = null;
       
       // Extrair claim_id de pacotes de reclamação
-      if (packId.startsWith('claim-')) {
+      if (packId && typeof packId === 'string' && packId.startsWith('claim-')) {
         claimId = packId.replace('claim-', '');
       } else {
         const complaint = packs.find(p => p.pack_id === packId && p.is_complaint);
@@ -190,7 +190,11 @@ const PacksList: React.FC<PacksListProps> = ({
       
       // Se não encontrarmos mensagens, mas temos o pacote de reclamação
       const complaint = packs.find(p => 
-        (p.pack_id === packId || (packId.startsWith('claim-') && p.claim_id === parseInt(packId.replace('claim-', '')))) 
+        (p.pack_id === packId || (
+          typeof packId === 'string' && 
+          packId.startsWith('claim-') && 
+          p.claim_id === parseInt(packId.replace('claim-', ''))
+        )) 
         && p.is_complaint
       );
       
