@@ -1,7 +1,6 @@
 console.log('Service Worker inicializado');
 
 // Para fins de debug, exibir a chave VAPID sendo usada
-// Note: não podemos importar diretamente do módulo TypeScript no service worker
 const VAPID_PUBLIC_KEY = 'BG8J-PHbRd2rvyen2PBFpSRu4X-NgGWxTu-l1B2ihuL1FFezmKZsaXizsWC69liXaRTnYXtkjHXFDlC4A8h0FwI';
 console.log('Service Worker usando VAPID Public Key:', VAPID_PUBLIC_KEY);
 
@@ -15,7 +14,6 @@ self.addEventListener('push', function(event) {
     console.log("Dados da notificação parsedos com sucesso:", data);
   } catch (e) {
     console.error("Erro ao processar dados da notificação:", e);
-    // Tenta usar o texto puro se o JSON falhar
     try {
       const textData = event.data ? event.data.text() : 'Nova mensagem';
       console.log("Usando dados de texto puro:", textData);
@@ -34,8 +32,8 @@ self.addEventListener('push', function(event) {
   
   const options = {
     body: data.body || 'Notificação recebida',
-    icon: '/favicon.ico',
-    badge: '/favicon.ico',
+    icon: '/lovable-uploads/efd340d1-baab-473c-bfb4-9f4598bee395.png', // Updated icon
+    badge: '/lovable-uploads/efd340d1-baab-473c-bfb4-9f4598bee395.png', // Updated badge
     data: data.data || {},
     actions: data.actions || [],
     requireInteraction: false,
