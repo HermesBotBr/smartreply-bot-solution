@@ -32,8 +32,8 @@ self.addEventListener('push', function(event) {
   
   const options = {
     body: data.body || 'Notificação recebida',
-    icon: '/lovable-uploads/efd340d1-baab-473c-bfb4-9f4598bee395.png', // Updated icon
-    badge: '/lovable-uploads/efd340d1-baab-473c-bfb4-9f4598bee395.png', // Updated badge
+    icon: '/lovable-uploads/622d9905-2cd9-4e0f-960d-8e651abe5247.png', // Updated icon
+    badge: '/lovable-uploads/622d9905-2cd9-4e0f-960d-8e651abe5247.png', // Updated badge
     data: data.data || {},
     actions: data.actions || [],
     requireInteraction: false,
