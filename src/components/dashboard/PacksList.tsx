@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useCallback } from 'react';
 import { User, AlertTriangle } from "lucide-react";
 import { usePackClientData } from '@/hooks/usePackClientData';
@@ -213,6 +212,7 @@ const PacksList: React.FC<PacksListProps> = ({
         const isComplaint = 'complaint' in pack;
         const complaintReason = isComplaint ? (pack as any).reason : null;
         const claimId = isComplaint ? (pack as any).claim_id : null;
+        const complaintData = isComplaint ? complaints?.find(c => c.claim_id === claimId) : null;
         
         const clientData = clientDataMap[pack.pack_id];
         const clientName = clientData ? clientData["Nome completo do cliente"] : null;
@@ -259,12 +259,14 @@ const PacksList: React.FC<PacksListProps> = ({
                   <>
                     <h3 className={`font-medium truncate ${isUnread ? 'text-blue-700' : 'text-gray-900'}`}>
                       {isComplaint ? (
-                        <>Reclamação #{claimId}</>
+                        <>
+                          {clientName}
+                          <span className="ml-2 text-xs bg-red-100 text-red-800 px-2 py-0.5 rounded">Reclamação</span>
+                        </>
                       ) : (
                         clientName || `Cliente (Pack ID: ${pack.pack_id})`
                       )}
                       {isGptPack && <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded">GPT</span>}
-                      {isComplaint && <span className="ml-2 text-xs bg-red-100 text-red-800 px-2 py-0.5 rounded">Reclamação</span>}
                       {isUnread && <span className="inline-block ml-1 h-2 w-2 rounded-full bg-blue-500"></span>}
                     </h3>
                     <div className="text-sm text-gray-500">

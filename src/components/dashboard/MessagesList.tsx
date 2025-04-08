@@ -280,6 +280,8 @@ const MessagesList: React.FC<MessagesListProps> = ({
 
   const renderHeader = () => {
     if (isComplaint && complaintData) {
+      const clientName = complaintData.nome_cliente || 'Cliente';
+      
       return (
         <div 
           className={`p-4 border-b bg-white ${onHeaderClick ? 'cursor-pointer hover:bg-gray-50' : ''}`}
@@ -287,7 +289,7 @@ const MessagesList: React.FC<MessagesListProps> = ({
         >
           <div className="flex justify-between items-center">
             <div>
-              <h3 className="text-lg font-medium">Reclamação #{complaintData.claim_id}</h3>
+              <h3 className="text-lg font-medium">Reclamação: {clientName}</h3>
               <p className="text-sm text-gray-700">{complaintData.motivo_reclamacao}</p>
               <p className="text-xs text-gray-500">
                 {formatDate(complaintData.data_criada)} - Afetou reputação: {complaintData.afetou_reputacao}
