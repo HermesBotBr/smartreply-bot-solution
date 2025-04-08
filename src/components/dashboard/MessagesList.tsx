@@ -5,7 +5,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAllGptData } from '@/hooks/useAllGptData';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Send, Paperclip, X, Loader2, ChevronRight, AlertTriangle } from "lucide-react";
+import { Send, Paperclip, X, Loader2, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import axios from 'axios';
 import { getNgrokUrl } from '@/config/api';
@@ -21,12 +21,10 @@ interface Message {
   message_date: {
     received: string;
     available: string;
-    notified: string;
     created: string;
     read: string;
   };
   message_attachments: any[] | null;
-  is_complaint_message?: boolean;
 }
 
 interface MessagesListProps {
@@ -37,8 +35,7 @@ interface MessagesListProps {
   packId: string | null;
   onMessageSent?: () => void;
   clientData?: ClientData | null;
-  onHeaderClick?: () => void;
-  isComplaintPack?: boolean;
+  onHeaderClick?: () => void; // New prop for header click event
 }
 
 const MessagesList: React.FC<MessagesListProps> = ({ 
@@ -49,8 +46,7 @@ const MessagesList: React.FC<MessagesListProps> = ({
   packId,
   onMessageSent,
   clientData,
-  onHeaderClick,
-  isComplaintPack = false
+  onHeaderClick
 }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [messageText, setMessageText] = useState('');
@@ -81,14 +77,15 @@ const MessagesList: React.FC<MessagesListProps> = ({
       
       if (wasMessageAdded) {
         setTimeout(() => {
-          if (messagesEndRef.current && messagesEndRef.current.scrollIntoView) {
-            try {
-              messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
-            } catch (err) {
-              console.warn("Erro ao executar scrollIntoView:", err);
-            }
-          }
-        }, 100);
+  if (messagesEndRef.current && messagesEndRef.current.scrollIntoView) {
+    try {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    } catch (err) {
+      console.warn("Erro ao executar scrollIntoView:", err);
+    }
+  }
+}, 100);
+
       }
       
       prevMessagesLengthRef.current = messages.length;
@@ -256,37 +253,17 @@ const MessagesList: React.FC<MessagesListProps> = ({
 
   // Renderiza o cabeçalho com informações do cliente e do produto
   const renderHeader = () => {
-    let clientName = clientData ? (clientData["Nome completo do cliente"] || clientData["Nickname do cliente"] || "Cliente") : "Cliente";
-    let productTitle = clientData ? (clientData["Título do anúncio"] || "Produto não identificado") : "Produto não identificado";
-    
-    // Se for uma reclamação, adicione esta indicação
-    if (isComplaintPack && packId) {
-      const complaintId = packId.replace('claim-', '');
-      // Para reclamações, customize a exibição
-      clientName = clientData ? clientName : `Reclamação #${complaintId}`;
-      
-      // Se temos o tipo de reclamação, adicione ao título do produto
-      if (clientData && clientData["motivo_reclamacao"]) {
-        productTitle = `${productTitle} - Reclamação: ${clientData["motivo_reclamacao"]}`;
-      }
-    }
+    const clientName = clientData ? (clientData["Nome completo do cliente"] || clientData["Nickname do cliente"] || "Cliente") : "Cliente";
+    const productTitle = clientData ? (clientData["Título do anúncio"] || "Produto não identificado") : "Produto não identificado";
     
     return (
       <div 
-        className={`p-4 border-b ${isComplaintPack ? 'bg-red-50' : 'bg-white'} ${onHeaderClick ? 'cursor-pointer hover:bg-gray-50' : ''}`}
+        className={`p-4 border-b bg-white ${onHeaderClick ? 'cursor-pointer hover:bg-gray-50' : ''}`}
         onClick={onHeaderClick}
       >
         <div className="flex justify-between items-center">
           <div>
-            <div className="flex items-center">
-              <h3 className="text-lg font-medium">{clientName}</h3>
-              {isComplaintPack && (
-                <span className="ml-2 px-2 py-1 text-xs rounded bg-red-100 text-red-800 flex items-center">
-                  <AlertTriangle size={12} className="mr-1" />
-                  Reclamação
-                </span>
-              )}
-            </div>
+            <h3 className="text-lg font-medium">{clientName}</h3>
             <p className="text-sm text-gray-700">{productTitle}</p>
             <p className="text-xs text-gray-500">
               {isLoading ? 'Carregando mensagens...' :
@@ -357,25 +334,6 @@ const MessagesList: React.FC<MessagesListProps> = ({
               {dateEntry[1].map((message) => {
                 const isSeller = message.from.user_id === sellerIdNum;
                 const isGptMessage = isSeller && gptMessageIds.includes(message.id);
-                const isComplaintMessage = !!message.is_complaint_message;
-                
-                // Determine a classe para mensagens de reclamação
-                let messageClass = "";
-                if (isSeller) {
-                  if (isComplaintMessage) {
-                    messageClass = "bg-orange-100 text-gray-800 self-end";
-                  } else if (isGptMessage) {
-                    messageClass = "bg-blue-100 text-gray-800 self-end";
-                  } else {
-                    messageClass = "bg-green-100 text-gray-800 self-end";
-                  }
-                } else {
-                  if (isComplaintMessage) {
-                    messageClass = "bg-red-50 text-gray-800 self-start";
-                  } else {
-                    messageClass = "bg-white text-gray-800 self-start";
-                  }
-                }
                 
                 return (
                   <div 
@@ -383,7 +341,13 @@ const MessagesList: React.FC<MessagesListProps> = ({
                     className={`flex ${isSeller ? 'justify-end' : 'justify-start'} mb-4`}
                   >
                     <div 
-                      className={`rounded-lg p-3 max-w-[70%] shadow-sm ${messageClass}`}
+                      className={`rounded-lg p-3 max-w-[70%] shadow-sm ${
+                        isSeller 
+                          ? isGptMessage 
+                            ? 'bg-blue-100 text-gray-800'
+                            : 'bg-green-100 text-gray-800'
+                          : 'bg-white text-gray-800'
+                      }`}
                     >
                       {message.message_attachments && message.message_attachments.length > 0 && (
                         <div className="mb-2">
@@ -438,7 +402,7 @@ const MessagesList: React.FC<MessagesListProps> = ({
         </div>
       </ScrollArea>
       
-      {selectedFile && !isComplaintPack && (
+      {selectedFile && (
         <div className="px-3 py-2 bg-blue-50 border-t">
           <div className="flex items-center justify-between">
             <div className="flex items-center">
@@ -465,65 +429,56 @@ const MessagesList: React.FC<MessagesListProps> = ({
         </div>
       )}
       
-      {isComplaintPack ? (
-        <div className="p-3 bg-red-50 border-t sticky bottom-0">
-          <div className="text-center text-red-800 text-sm">
-            <AlertTriangle className="inline-block mr-2" size={16} />
-            Esta é uma reclamação. Não é possível enviar mensagens neste canal.
-          </div>
+      <div className="p-3 bg-white border-t sticky bottom-0">
+        <div className="flex gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={sending || uploadingFile}
+            className="flex-shrink-0"
+            title="Anexar arquivo"
+          >
+            <Paperclip size={18} />
+          </Button>
+          
+          <input
+            ref={fileInputRef}
+            type="file"
+            onChange={handleFileChange}
+            accept="image/*,.pdf,.doc,.docx,.txt"
+            className="hidden"
+          />
+          
+          <Input 
+            placeholder="Digite sua mensagem..." 
+            value={messageText}
+            onChange={(e) => setMessageText(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSendMessage();
+              }
+            }}
+            disabled={!packId || sending || uploadingFile}
+            className="flex-1"
+          />
+          
+          <Button 
+            onClick={handleSendMessage} 
+            disabled={(!messageText.trim() && !selectedFile) || !packId || sending || uploadingFile} 
+            className="flex-shrink-0"
+          >
+            {sending || uploadingFile ? (
+              <Loader2 size={18} className="mr-1 animate-spin" />
+            ) : (
+              <Send size={18} className="mr-1" />
+            )}
+            {uploadingFile ? "Enviando..." : "Enviar"}
+          </Button>
         </div>
-      ) : (
-        <div className="p-3 bg-white border-t sticky bottom-0">
-          <div className="flex gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={sending || uploadingFile}
-              className="flex-shrink-0"
-              title="Anexar arquivo"
-            >
-              <Paperclip size={18} />
-            </Button>
-            
-            <input
-              ref={fileInputRef}
-              type="file"
-              onChange={handleFileChange}
-              accept="image/*,.pdf,.doc,.docx,.txt"
-              className="hidden"
-            />
-            
-            <Input 
-              placeholder="Digite sua mensagem..." 
-              value={messageText}
-              onChange={(e) => setMessageText(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSendMessage();
-                }
-              }}
-              disabled={!packId || sending || uploadingFile}
-              className="flex-1"
-            />
-            
-            <Button 
-              onClick={handleSendMessage} 
-              disabled={(!messageText.trim() && !selectedFile) || !packId || sending || uploadingFile} 
-              className="flex-shrink-0"
-            >
-              {sending || uploadingFile ? (
-                <Loader2 size={18} className="mr-1 animate-spin" />
-              ) : (
-                <Send size={18} className="mr-1" />
-              )}
-              {uploadingFile ? "Enviando..." : "Enviar"}
-            </Button>
-          </div>
-        </div>
-      )}
+      </div>
       
       {fullScreenImage && (
         <div 

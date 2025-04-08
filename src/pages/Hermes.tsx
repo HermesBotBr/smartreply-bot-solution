@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import QuestionsList from "@/components/dashboard/QuestionsList";
 import MetricsDisplay from "@/components/dashboard/MetricsDisplay";
@@ -20,7 +19,7 @@ import ConfigurationsPanel from "@/components/dashboard/ConfigurationsPanel";
 import SaleDetailsPanel from "@/components/dashboard/SaleDetailsPanel";
 import { useSaleDetails } from "@/hooks/useSaleDetails";
 import PacksFilterBar from "@/components/dashboard/PacksFilterBar";
-import { usePackFilters, ComplaintPackRow } from "@/hooks/usePackFilters";
+import { usePackFilters } from "@/hooks/usePackFilters";
 
 const Hermes = () => {
   const [activeTab, setActiveTab] = useState('conversas');
@@ -58,18 +57,11 @@ const Hermes = () => {
     filter, 
     setFilter, 
     filterPacks, 
-    isLoading: filterLoading,
-    getComplaintPackRows
+    isLoading: filterLoading 
   } = usePackFilters(sellerId);
 
   const { latestMessagesMeta, allMessages, isLoading: allMessagesLoading, error: allMessagesError } = usePacksWithMessages(packs, sellerId);
-  const { 
-    messages, 
-    isLoading: messagesLoading, 
-    error: messagesError, 
-    updatePackMessages,
-    isComplaintPack
-  } = usePackMessages(
+  const { messages, isLoading: messagesLoading, error: messagesError, updatePackMessages } = usePackMessages(
     selectedPackId,
     sellerId,
     messagesRefreshTrigger
@@ -81,10 +73,6 @@ const Hermes = () => {
   );
 
   useMessageNotifications(sellerId);
-
-  const displayPacks = filter === 'complaints' 
-    ? getComplaintPackRows() 
-    : filterPacks(packs);
 
   useEffect(() => {
     const auth = localStorage.getItem('hermesAuth');
@@ -187,35 +175,31 @@ const Hermes = () => {
     
     setShowSaleDetails(false);
     
-    const isComplaint = packId.startsWith('claim-');
-    
-    if (!isComplaint) {
-      const packMessages = allMessages[packId] || [];
-      if (packMessages.length > 0) {
-        const sortedMessages = [...packMessages].sort((a, b) => 
-          new Date(b.message_date.created).getTime() - new Date(a.message_date.created).getTime()
-        );
+    const packMessages = allMessages[packId] || [];
+    if (packMessages.length > 0) {
+      const sortedMessages = [...packMessages].sort((a, b) => 
+        new Date(b.message_date.created).getTime() - new Date(a.message_date.created).getTime()
+      );
+      
+      const latestMessage = sortedMessages[0];
+      if (latestMessage && latestMessage.id) {
+        const specificMessageId = `${packId}:${latestMessage.id}`;
         
-        const latestMessage = sortedMessages[0];
-        if (latestMessage && latestMessage.id) {
-          const specificMessageId = `${packId}:${latestMessage.id}`;
+        if (!readConversations.includes(specificMessageId)) {
+          const updatedReadConversations = [...readConversations, specificMessageId];
+          setReadConversations(updatedReadConversations);
           
-          if (!readConversations.includes(specificMessageId)) {
-            const updatedReadConversations = [...readConversations, specificMessageId];
-            setReadConversations(updatedReadConversations);
-            
-            if (sellerId) {
-              localStorage.setItem(`readConversations_${sellerId}`, JSON.stringify(updatedReadConversations));
-            }
+          if (sellerId) {
+            localStorage.setItem(`readConversations_${sellerId}`, JSON.stringify(updatedReadConversations));
           }
-        } else {
-          if (!readConversations.includes(packId)) {
-            const updatedReadConversations = [...readConversations, packId];
-            setReadConversations(updatedReadConversations);
-            
-            if (sellerId) {
-              localStorage.setItem(`readConversations_${sellerId}`, JSON.stringify(updatedReadConversations));
-            }
+        }
+      } else {
+        if (!readConversations.includes(packId)) {
+          const updatedReadConversations = [...readConversations, packId];
+          setReadConversations(updatedReadConversations);
+          
+          if (sellerId) {
+            localStorage.setItem(`readConversations_${sellerId}`, JSON.stringify(updatedReadConversations));
           }
         }
       }
@@ -259,16 +243,6 @@ const Hermes = () => {
 
   const handleOpenSaleDetails = () => {
     if (sellerId && selectedPackId) {
-      if (selectedPackId.startsWith('claim-') && displayPacks.length > 0) {
-        // Find the complaint pack with the matching pack_id
-        const complaintPack = displayPacks.find(p => p.pack_id === selectedPackId) as ComplaintPackRow;
-        if (complaintPack && complaintPack.original_pack_id) {
-          fetchSaleDetails(complaintPack.original_pack_id, sellerId);
-          setShowSaleDetails(true);
-          return;
-        }
-      }
-      
       fetchSaleDetails(selectedPackId, sellerId);
       setShowSaleDetails(true);
     } else {
@@ -323,7 +297,7 @@ const Hermes = () => {
                   
                   <div className="flex-1 overflow-auto">
                     <PacksList
-                      packs={displayPacks}
+                      packs={filterPacks(packs)}
                       isLoading={packsLoading || filterLoading}
                       error={packsError}
                       onSelectPack={handleSelectPack}
@@ -354,7 +328,6 @@ const Hermes = () => {
                         onMessageSent={handleMessageSent}
                         clientData={selectedPackId ? clientDataMap[selectedPackId] : null}
                         onHeaderClick={handleOpenSaleDetails}
-                        isComplaintPack={isComplaintPack}
                       />
                     </div>
                   ) : (
