@@ -33,6 +33,7 @@ const Hermes = () => {
   const [messagesRefreshTrigger, setMessagesRefreshTrigger] = useState(0);
   const [showConfigPanel, setShowConfigPanel] = useState(false);
   const [readConversations, setReadConversations] = useState<string[]>([]);
+  const [isComplaintPack, setIsComplaintPack] = useState(false);
 
   const { 
     saleDetails, 
@@ -57,14 +58,17 @@ const Hermes = () => {
     filter, 
     setFilter, 
     filterPacks, 
-    isLoading: filterLoading 
+    isLoading: filterLoading,
+    complaints
   } = usePackFilters(sellerId);
 
   const { latestMessagesMeta, allMessages, isLoading: allMessagesLoading, error: allMessagesError } = usePacksWithMessages(packs, sellerId);
   const { messages, isLoading: messagesLoading, error: messagesError, updatePackMessages } = usePackMessages(
     selectedPackId,
     sellerId,
-    messagesRefreshTrigger
+    messagesRefreshTrigger,
+    undefined,
+    isComplaintPack
   );
   
   const { clientDataMap, isLoading: clientDataLoading } = usePackClientData(
@@ -160,6 +164,11 @@ const Hermes = () => {
     return () => clearInterval(interval);
   }, [sellerId, selectedPackId]);
 
+  useEffect(() => {
+    setSelectedPackId(null);
+    setIsComplaintPack(false);
+  }, [filter]);
+
   const handleLoginSuccess = (sellerId: string) => {
     setIsAuthenticated(true);
     setSellerId(sellerId);
@@ -171,7 +180,18 @@ const Hermes = () => {
   const handleSelectPack = (packId: string) => {
     setSelectedPackId(packId);
     setSelectedConv(null);
-    toast.info(`Carregando mensagens do pacote ${packId}`);
+    
+    const filteredPacks = filterPacks(packs);
+    const selectedPack = filteredPacks.find(p => p.pack_id === packId);
+    const isComplaint = selectedPack && 'complaint' in selectedPack;
+    
+    setIsComplaintPack(!!isComplaint);
+    
+    if (isComplaint) {
+      toast.info(`Carregando detalhes da reclamação ${(selectedPack as any).claim_id}`);
+    } else {
+      toast.info(`Carregando mensagens do pacote ${packId}`);
+    }
     
     setShowSaleDetails(false);
     
@@ -328,6 +348,8 @@ const Hermes = () => {
                         onMessageSent={handleMessageSent}
                         clientData={selectedPackId ? clientDataMap[selectedPackId] : null}
                         onHeaderClick={handleOpenSaleDetails}
+                        isComplaint={isComplaintPack}
+                        complaintData={isComplaintPack ? complaints.find(c => c.pack_id === selectedPackId || c.order_id.toString() === selectedPackId) : undefined}
                       />
                     </div>
                   ) : (

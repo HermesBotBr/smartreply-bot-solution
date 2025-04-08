@@ -9,6 +9,16 @@ export interface ComplaintsData {
   unpreventedComplaintsList: string[];
 }
 
+export interface Complaint {
+  order_id: number;
+  pack_id: string | null;
+  claim_id: number;
+  reason_id: string;
+  motivo_reclamacao: string;
+  afetou_reputacao: string;
+  data_criada: string;
+}
+
 export function useComplaintsData() {
   const [complaintsData, setComplaintsData] = useState<ComplaintsData>({
     complaintsAvoided: 0,
@@ -17,6 +27,10 @@ export function useComplaintsData() {
     unpreventedComplaintsList: [],
   });
   const [loading, setLoading] = useState(true);
+  const [complaints, setComplaints] = useState<Complaint[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [complaintMessages, setComplaintMessages] = useState<{[key: string]: any[]}>({});
 
   useEffect(() => {
     const fetchData = async () => {
@@ -95,7 +109,7 @@ export function useComplaintsData() {
 
   const fetchComplaintsAvoidedCount = async () => {
     try {
-      const response = await fetch(getNgrokUrl('all_tags.txt'));
+      const response = await fetch(getNgrokUrl(''));
       const text = await response.text();
       const sections = text.split('\n\n');
       let complaintsCount = 0;
@@ -114,7 +128,7 @@ export function useComplaintsData() {
 
   const fetchUnpreventedComplaintsCount = async () => {
     try {
-      const response = await fetch(getNgrokUrl('all_tags.txt'));
+      const response = await fetch(getNgrokUrl(''));
       const text = await response.text();
       const sections = text.split('\n\n');
       let complaintsCount = 0;
@@ -131,10 +145,24 @@ export function useComplaintsData() {
     }
   };
 
+  const fetchComplaintMessages = async (complaint: Complaint) => {
+    // Esta função simularia a busca de mensagens para uma reclamação específica
+    // Na realidade, você pode não ter mensagens para reclamações,
+    // mas se tiver, pode implementar a lógica aqui
+    
+    // Por enquanto, vamos apenas retornar um array vazio
+    return [];
+  };
+
   return {
     complaintsData,
     loading,
     fetchComplaintsAvoidedList,
-    fetchUnpreventedComplaintsList
+    fetchUnpreventedComplaintsList,
+    complaints,
+    isLoading,
+    error,
+    complaintMessages,
+    fetchComplaintMessages
   };
 }

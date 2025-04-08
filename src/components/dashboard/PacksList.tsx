@@ -1,6 +1,6 @@
 
 import React, { useEffect, useRef, useCallback } from 'react';
-import { User } from "lucide-react";
+import { User, AlertTriangle } from "lucide-react";
 import { usePackClientData } from '@/hooks/usePackClientData';
 import { Skeleton } from '@/components/ui/skeleton';
 import ProductThumbnail from './ProductThumbnail';
@@ -94,6 +94,12 @@ const PacksList: React.FC<PacksListProps> = ({
   }
 
   const getSenderLabel = (packId: string) => {
+    // Verifica se é uma reclamação
+    const isComplaint = packs.find(p => p.pack_id === packId && 'complaint' in p);
+    if (isComplaint) {
+      return "Reclamação: ";
+    }
+    
     // Get the messages for this pack
     const packMessages = allMessages[packId] || [];
     
@@ -136,6 +142,13 @@ const PacksList: React.FC<PacksListProps> = ({
 
   // Function to check if a pack has an unread buyer message
   const hasUnreadBuyerMessage = (packId: string): boolean => {
+    // Verifica se é uma reclamação
+    const isComplaint = packs.find(p => p.pack_id === packId && 'complaint' in p);
+    if (isComplaint) {
+      // Para reclamações, sempre consideramos como não lidas
+      return true;
+    }
+    
     // Get sender label to check if the latest message is from the buyer
     const senderPrefix = getSenderLabel(packId);
     if (senderPrefix !== "Buyer: ") {
@@ -196,6 +209,11 @@ const PacksList: React.FC<PacksListProps> = ({
   return (
     <div className="divide-y">
       {sortedPacks.map((pack, index) => {
+        // Check if this is a complaint item
+        const isComplaint = 'complaint' in pack;
+        const complaintReason = isComplaint ? (pack as any).reason : null;
+        const claimId = isComplaint ? (pack as any).claim_id : null;
+        
         const clientData = clientDataMap[pack.pack_id];
         const clientName = clientData ? clientData["Nome completo do cliente"] : null;
         const productTitle = clientData ? clientData["Título do anúncio"] : null;
@@ -216,11 +234,15 @@ const PacksList: React.FC<PacksListProps> = ({
             className={`p-4 hover:bg-gray-50 cursor-pointer ${
               selectedPackId === pack.pack_id ? 'bg-gray-100' : 
               isUnread ? 'bg-blue-50 hover:bg-blue-100' : ''
-            } ${isGptPack ? 'border-l-4 border-blue-500' : ''}`}
+            } ${isGptPack ? 'border-l-4 border-blue-500' : ''} ${isComplaint ? 'border-l-4 border-red-500' : ''}`}
             onClick={() => onSelectPack(pack.pack_id)}
           >
             <div className="flex items-center space-x-3">
-              {itemId ? (
+              {isComplaint ? (
+                <div className="bg-red-100 p-2 rounded-full">
+                  <AlertTriangle size={20} className="text-red-600" />
+                </div>
+              ) : itemId ? (
                 <ProductThumbnail itemId={itemId} sellerId={sellerId} />
               ) : (
                 <div className="bg-blue-100 p-2 rounded-full">
@@ -228,7 +250,7 @@ const PacksList: React.FC<PacksListProps> = ({
                 </div>
               )}
               <div className="flex-1 min-w-0">
-                {clientDataLoading && !clientData ? (
+                {clientDataLoading && !clientData && !isComplaint ? (
                   <div className="space-y-2">
                     <Skeleton className="h-4 w-3/4" />
                     <Skeleton className="h-3 w-1/2" />
@@ -236,28 +258,42 @@ const PacksList: React.FC<PacksListProps> = ({
                 ) : (
                   <>
                     <h3 className={`font-medium truncate ${isUnread ? 'text-blue-700' : 'text-gray-900'}`}>
-                      {clientName || `Cliente (Pack ID: ${pack.pack_id})`}
+                      {isComplaint ? (
+                        <>Reclamação #{claimId}</>
+                      ) : (
+                        clientName || `Cliente (Pack ID: ${pack.pack_id})`
+                      )}
                       {isGptPack && <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded">GPT</span>}
+                      {isComplaint && <span className="ml-2 text-xs bg-red-100 text-red-800 px-2 py-0.5 rounded">Reclamação</span>}
                       {isUnread && <span className="inline-block ml-1 h-2 w-2 rounded-full bg-blue-500"></span>}
                     </h3>
                     <div className="text-sm text-gray-500">
-                      {productTitle && <p className="truncate font-medium">{productTitle}</p>}
+                      {isComplaint ? (
+                        <>
+                          <p className="truncate font-medium">Pack ID: {pack.pack_id}</p>
+                          <p className="truncate text-xs text-red-600 font-medium">{complaintReason}</p>
+                        </>
+                      ) : (
+                        productTitle && <p className="truncate font-medium">{productTitle}</p>
+                      )}
                       <p className="truncate text-xs text-gray-400">
-                        {messagesLoading ? (
+                        {messagesLoading && !isComplaint ? (
                           <Skeleton className="h-2 w-24" />
                         ) : latestMessage ? (
                           <>
-                            <span className={`font-medium ${senderLabel.startsWith('Buyer') ? 'text-blue-600' : senderLabel.startsWith('GPT') ? 'text-green-600' : 'text-gray-600'}`}>
+                            <span className={`font-medium ${senderLabel.startsWith('Buyer') ? 'text-blue-600' : senderLabel.startsWith('GPT') ? 'text-green-600' : senderLabel.startsWith('Reclamação') ? 'text-red-600' : 'text-gray-600'}`}>
                               {senderLabel}
                             </span>
                             {latestMessage}
                           </>
+                        ) : isComplaint ? (
+                          `Claim ID: ${claimId}`
                         ) : (
                           "Carregando mensagens..."
                         )}
                       </p>
                       <p className="text-xs text-gray-400">
-                        {packMessages.length > 0 ? `${packMessages.length} mensagens` : ""}
+                        {!isComplaint && packMessages.length > 0 ? `${packMessages.length} mensagens` : ""}
                       </p>
                     </div>
                   </>

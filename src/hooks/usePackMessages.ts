@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
 import { NGROK_BASE_URL } from '@/config/api';
 
@@ -35,7 +35,8 @@ export function usePackMessages(
   packId: string | null, 
   sellerId: string | null,
   refreshTrigger: number = 0,
-  preloadedMessages?: Message[]
+  preloadedMessages?: Message[],
+  isComplaint: boolean = false
 ) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -59,6 +60,29 @@ export function usePackMessages(
     }
     
     try {
+      // Se for uma reclamação, não buscamos mensagens do endpoint normal
+      if (isComplaint) {
+        // No caso de reclamações, usamos os dados que já temos
+        // ou poderíamos buscar detalhes adicionais se necessário
+        setMessages([
+          {
+            id: `complaint-${targetPackId}`,
+            from: { user_id: 0 },
+            to: { user_id: parseInt(sellerId) },
+            text: "Esta é uma reclamação. Verifique os detalhes acima.",
+            message_date: {
+              received: new Date().toISOString(),
+              available: new Date().toISOString(),
+              notified: new Date().toISOString(),
+              created: new Date().toISOString(),
+              read: new Date().toISOString()
+            },
+            message_attachments: null
+          }
+        ]);
+        return;
+      }
+      
       const response = await axios.get(`${NGROK_BASE_URL}/conversas`, {
         params: {
           seller_id: sellerId,
@@ -147,7 +171,7 @@ export function usePackMessages(
     }
     
     const periodicRefreshIntervalId = setInterval(() => {
-      if (packId && sellerId && !backgroundRefreshingRef.current && currentPackIdRef.current) {
+      if (packId && sellerId && !isComplaint && !backgroundRefreshingRef.current && currentPackIdRef.current) {
         console.log('Atualização periódica, buscando mensagens recentes');
         fetchMessages(currentPackIdRef.current, true);
       }
@@ -156,10 +180,10 @@ export function usePackMessages(
     return () => {
       clearInterval(periodicRefreshIntervalId);
     };
-  }, [packId, sellerId, refreshTrigger]);
+  }, [packId, sellerId, refreshTrigger, isComplaint]);
 
   const updatePackMessages = async (targetPackId: string) => {
-    if (!sellerId) return;
+    if (!sellerId || isComplaint) return;
     
     console.log(`Atualização endpoint, buscando mensagens para pack_id ${targetPackId}`);
     
