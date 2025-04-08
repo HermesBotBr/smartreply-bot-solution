@@ -1,4 +1,3 @@
-
 console.log('Service Worker inicializado');
 
 // Para fins de debug, exibir a chave VAPID sendo usada
@@ -39,7 +38,8 @@ self.addEventListener('push', function(event) {
     badge: '/favicon.ico',
     data: data.data || {},
     actions: data.actions || [],
-    requireInteraction: true
+    requireInteraction: false,
+    timestamp: Date.now()
   };
 
   console.log("Mostrando notificação com título:", data.title || 'Notificação');
@@ -47,6 +47,13 @@ self.addEventListener('push', function(event) {
   event.waitUntil(
     self.registration.showNotification(data.title || 'Notificação', options)
   );
+
+  // Adicionar um evento para fechar a notificação automaticamente após 3 segundos
+  setTimeout(() => {
+    self.registration.getNotifications().then(notifications => {
+      notifications.forEach(notification => notification.close());
+    });
+  }, 3000);
 });
 
 self.addEventListener('notificationclick', function(event) {
@@ -80,8 +87,6 @@ self.addEventListener('notificationclick', function(event) {
     })
   );
 });
-
-
 
 // Evento para sinalizar quando o service worker é instalado
 self.addEventListener('install', function(event) {
