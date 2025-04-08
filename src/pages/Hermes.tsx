@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import QuestionsList from "@/components/dashboard/QuestionsList";
 import MetricsDisplay from "@/components/dashboard/MetricsDisplay";
@@ -63,7 +62,6 @@ const Hermes = () => {
     complaints
   } = usePackFilters(sellerId);
 
-  // Determine the claim ID for when a complaint is selected
   const selectedComplaint = isComplaintPack && complaints ? 
     complaints.find(c => c.pack_id === selectedPackId || c.order_id.toString() === selectedPackId) : 
     undefined;
@@ -341,6 +339,7 @@ const Hermes = () => {
                       readConversations={readConversations}
                       loadMorePacks={loadMorePacks}
                       hasMore={hasMore}
+                      complaints={complaints}
                     />
                   </div>
                 </div>

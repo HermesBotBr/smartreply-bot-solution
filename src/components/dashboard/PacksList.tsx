@@ -5,6 +5,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import ProductThumbnail from './ProductThumbnail';
 import { toast } from 'sonner';
 import { AllPacksRow } from '@/hooks/useAllPacksData';
+import { Complaint } from '@/hooks/usePackFilters';
 
 interface PacksListProps {
   packs: AllPacksRow[];
@@ -20,6 +21,7 @@ interface PacksListProps {
   readConversations?: string[]; // Array of pack IDs that have been read
   loadMorePacks?: () => void;
   hasMore?: boolean;
+  complaints?: Complaint[]; // Add complaints as a prop
 }
 
 const PacksList: React.FC<PacksListProps> = ({ 
@@ -35,7 +37,8 @@ const PacksList: React.FC<PacksListProps> = ({
   messagesError,
   readConversations = [], // Default to empty array if not provided
   loadMorePacks,
-  hasMore = false
+  hasMore = false,
+  complaints = [] // Default to empty array if not provided
 }) => {
   // Use our hook to fetch client data for each pack
   const { clientDataMap, isLoading: clientDataLoading } = usePackClientData(sellerId, packs);
@@ -212,7 +215,7 @@ const PacksList: React.FC<PacksListProps> = ({
         const isComplaint = 'complaint' in pack;
         const complaintReason = isComplaint ? (pack as any).reason : null;
         const claimId = isComplaint ? (pack as any).claim_id : null;
-        const complaintData = isComplaint ? complaints?.find(c => c.claim_id === claimId) : null;
+        const complaintData = isComplaint ? complaints.find(c => c.claim_id === claimId) : null;
         
         const clientData = clientDataMap[pack.pack_id];
         const clientName = clientData ? clientData["Nome completo do cliente"] : null;
@@ -260,7 +263,7 @@ const PacksList: React.FC<PacksListProps> = ({
                     <h3 className={`font-medium truncate ${isUnread ? 'text-blue-700' : 'text-gray-900'}`}>
                       {isComplaint ? (
                         <>
-                          {clientName}
+                          {complaintData?.motivo_reclamacao ? complaintData.motivo_reclamacao : clientName || `Reclamação #${claimId}`}
                           <span className="ml-2 text-xs bg-red-100 text-red-800 px-2 py-0.5 rounded">Reclamação</span>
                         </>
                       ) : (

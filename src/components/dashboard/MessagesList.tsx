@@ -280,7 +280,9 @@ const MessagesList: React.FC<MessagesListProps> = ({
 
   const renderHeader = () => {
     if (isComplaint && complaintData) {
-      const clientName = complaintData.nome_cliente || 'Cliente';
+      const clientName = clientData ? 
+        (clientData["Nome completo do cliente"] || clientData["Nickname do cliente"] || "Cliente") : 
+        "Cliente";
       
       return (
         <div 
