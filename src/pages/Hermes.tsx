@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import QuestionsList from "@/components/dashboard/QuestionsList";
 import MetricsDisplay from "@/components/dashboard/MetricsDisplay";
@@ -62,13 +63,21 @@ const Hermes = () => {
     complaints
   } = usePackFilters(sellerId);
 
+  // Determine the claim ID for when a complaint is selected
+  const selectedComplaint = isComplaintPack && complaints ? 
+    complaints.find(c => c.pack_id === selectedPackId || c.order_id.toString() === selectedPackId) : 
+    undefined;
+  
+  const selectedClaimId = selectedComplaint ? selectedComplaint.claim_id : undefined;
+
   const { latestMessagesMeta, allMessages, isLoading: allMessagesLoading, error: allMessagesError } = usePacksWithMessages(packs, sellerId);
-  const { messages, isLoading: messagesLoading, error: messagesError, updatePackMessages } = usePackMessages(
+  const { messages, complaintMessages, isLoading: messagesLoading, error: messagesError, updatePackMessages } = usePackMessages(
     selectedPackId,
     sellerId,
     messagesRefreshTrigger,
     undefined,
-    isComplaintPack
+    isComplaintPack,
+    selectedClaimId
   );
   
   const { clientDataMap, isLoading: clientDataLoading } = usePackClientData(
@@ -341,6 +350,7 @@ const Hermes = () => {
                     <div className="flex flex-col h-full">
                       <MessagesList
                         messages={messages}
+                        complaintMessages={complaintMessages}
                         isLoading={messagesLoading}
                         error={messagesError}
                         sellerId={sellerId}
@@ -349,7 +359,7 @@ const Hermes = () => {
                         clientData={selectedPackId ? clientDataMap[selectedPackId] : null}
                         onHeaderClick={handleOpenSaleDetails}
                         isComplaint={isComplaintPack}
-                        complaintData={isComplaintPack ? complaints.find(c => c.pack_id === selectedPackId || c.order_id.toString() === selectedPackId) : undefined}
+                        complaintData={selectedComplaint}
                       />
                     </div>
                   ) : (

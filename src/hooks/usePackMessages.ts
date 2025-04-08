@@ -24,11 +24,27 @@ interface Message {
   message_attachments: MessageAttachment[] | null;
 }
 
-interface MessagesResponse {
-  total: number;
-  limit: number;
-  offset: number;
-  messages: Message[];
+// Interface for complaint-specific messages
+interface ComplaintMessage {
+  sender_role: string;
+  receiver_role: string;
+  message: string;
+  translated_message: string | null;
+  date_created: string;
+  last_updated: string;
+  message_date: string;
+  date_read: string;
+  attachments: any[];
+  status: string;
+  stage: string;
+  message_moderation: {
+    status: string;
+    reason: string;
+    source: string;
+    date_moderated: string;
+  };
+  repeated: boolean;
+  hash: string;
 }
 
 export function usePackMessages(
@@ -36,9 +52,11 @@ export function usePackMessages(
   sellerId: string | null,
   refreshTrigger: number = 0,
   preloadedMessages?: Message[],
-  isComplaint: boolean = false
+  isComplaint: boolean = false,
+  claimId?: number
 ) {
   const [messages, setMessages] = useState<Message[]>([]);
+  const [complaintMessages, setComplaintMessages] = useState<ComplaintMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const isInitialLoadRef = useRef(true);
@@ -60,7 +78,7 @@ export function usePackMessages(
     }
     
     try {
-      // Note: For complaints we now also fetch messages, just like for regular packs
+      // Fetch standard messages for all cases (regular packs and complaints)
       const response = await axios.get(`${NGROK_BASE_URL}/conversas`, {
         params: {
           seller_id: sellerId,
@@ -114,6 +132,33 @@ export function usePackMessages(
           setError("Formato de resposta inválido ao carregar mensagens");
         }
       }
+      
+      // If this is a complaint and we have a claim_id, fetch complaint-specific messages
+      if (isComplaint && claimId && targetPackId === currentPackIdRef.current) {
+        try {
+          const complaintResponse = await axios.get(`${NGROK_BASE_URL}/conversas_rec`, {
+            params: {
+              seller_id: sellerId,
+              claim_id: claimId
+            }
+          });
+          
+          if (Array.isArray(complaintResponse.data)) {
+            setComplaintMessages(complaintResponse.data);
+            console.log(`Carregadas ${complaintResponse.data.length} mensagens de reclamação para claim ID: ${claimId}`);
+          } else {
+            console.error("Formato de resposta inválido da API de mensagens de reclamação:", complaintResponse.data);
+            if (!isBackgroundRefresh) {
+              setError("Formato de resposta inválido ao carregar mensagens de reclamação");
+            }
+          }
+        } catch (complaintError) {
+          console.error("Erro ao buscar mensagens de reclamação:", complaintError);
+          if (!isBackgroundRefresh) {
+            setError("Erro ao carregar mensagens de reclamação");
+          }
+        }
+      }
     } catch (error: any) {
       if (!isBackgroundRefresh && targetPackId === currentPackIdRef.current) {
         console.error("Erro ao buscar mensagens:", error);
@@ -139,6 +184,7 @@ export function usePackMessages(
   useEffect(() => {
     if (packId !== currentPackIdRef.current) {
       setMessages([]);
+      setComplaintMessages([]);
       existingMessageIdsRef.current.clear();
       isInitialLoadRef.current = true;
       currentPackIdRef.current = packId;
@@ -158,7 +204,7 @@ export function usePackMessages(
     return () => {
       clearInterval(periodicRefreshIntervalId);
     };
-  }, [packId, sellerId, refreshTrigger, isComplaint]);
+  }, [packId, sellerId, refreshTrigger, isComplaint, claimId]);
 
   const updatePackMessages = async (targetPackId: string) => {
     if (!sellerId) return;
@@ -172,5 +218,5 @@ export function usePackMessages(
     }
   };
 
-  return { messages, isLoading, error, updatePackMessages };
+  return { messages, complaintMessages, isLoading, error, updatePackMessages };
 }

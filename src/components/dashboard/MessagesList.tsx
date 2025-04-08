@@ -1,11 +1,10 @@
-
 import React, { useRef, useEffect, useState } from 'react';
 import { formatDate } from '@/utils/dateFormatters';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAllGptData } from '@/hooks/useAllGptData';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Send, Paperclip, X, Loader2, ChevronRight } from "lucide-react";
+import { Send, Paperclip, X, Loader2, ChevronRight, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import axios from 'axios';
 import { getNgrokUrl } from '@/config/api';
@@ -28,8 +27,31 @@ interface Message {
   message_attachments: any[] | null;
 }
 
+interface ComplaintMessage {
+  sender_role: string;
+  receiver_role: string;
+  message: string;
+  translated_message: string | null;
+  date_created: string;
+  last_updated: string;
+  message_date: string;
+  date_read: string;
+  attachments: any[];
+  status: string;
+  stage: string;
+  message_moderation: {
+    status: string;
+    reason: string;
+    source: string;
+    date_moderated: string;
+  };
+  repeated: boolean;
+  hash: string;
+}
+
 interface MessagesListProps {
   messages: Message[];
+  complaintMessages?: ComplaintMessage[];
   isLoading: boolean;
   error: string | null;
   sellerId: string | null;
@@ -43,6 +65,7 @@ interface MessagesListProps {
 
 const MessagesList: React.FC<MessagesListProps> = ({ 
   messages, 
+  complaintMessages = [],
   isLoading, 
   error, 
   sellerId,
@@ -300,7 +323,38 @@ const MessagesList: React.FC<MessagesListProps> = ({
     );
   };
 
-  if (isLoading && messages.length === 0) {
+  const processComplaintMessages = (): Message[] => {
+    if (!complaintMessages || complaintMessages.length === 0) return [];
+    
+    return complaintMessages.map((cmsg, index) => {
+      const isSeller = cmsg.sender_role === 'respondent';
+      
+      return {
+        id: `complaint-${cmsg.hash || index}`,
+        from: { 
+          user_id: isSeller ? (sellerIdNum || 0) : -1
+        },
+        to: { 
+          user_id: isSeller ? -1 : (sellerIdNum || 0)
+        },
+        text: cmsg.message,
+        message_date: {
+          received: cmsg.date_created,
+          available: cmsg.date_created,
+          created: cmsg.message_date,
+          read: cmsg.date_read || cmsg.date_created
+        },
+        message_attachments: cmsg.attachments.length > 0 ? 
+          cmsg.attachments.map(att => ({
+            filename: att.url,
+            original_filename: att.name || 'attachment',
+            status: 'available'
+          })) : null
+      };
+    });
+  };
+
+  if (isLoading && messages.length === 0 && complaintMessages.length === 0) {
     return (
       <div className="flex justify-center items-center h-full">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -308,7 +362,7 @@ const MessagesList: React.FC<MessagesListProps> = ({
     );
   }
 
-  if (error && messages.length === 0) {
+  if (error && messages.length === 0 && complaintMessages.length === 0) {
     return (
       <div className="text-center p-4 text-red-500">
         <p>{error}</p>
@@ -322,7 +376,7 @@ const MessagesList: React.FC<MessagesListProps> = ({
     );
   }
 
-  if (messages.length === 0) {
+  if (messages.length === 0 && complaintMessages.length === 0) {
     return (
       <div className="text-center p-4 text-gray-500">
         <p>Nenhuma mensagem encontrada para esta conversa</p>
@@ -330,8 +384,14 @@ const MessagesList: React.FC<MessagesListProps> = ({
     );
   }
 
+  const allMessages = [...messages, ...processComplaintMessages()];
+  
+  allMessages.sort((a, b) => 
+    new Date(a.message_date.created).getTime() - new Date(b.message_date.created).getTime()
+  );
+
   const messagesByDate: Record<string, Message[]> = {};
-  messages.forEach((message) => {
+  allMessages.forEach((message) => {
     const date = formatDate(message.message_date.created);
     if (!messagesByDate[date]) {
       messagesByDate[date] = [];
@@ -353,6 +413,15 @@ const MessagesList: React.FC<MessagesListProps> = ({
               <p className="text-sm text-orange-700">ID da Reclamação: {complaintData.claim_id}</p>
               <p className="text-sm text-orange-700">Data: {new Date(complaintData.data_criada).toLocaleDateString()}</p>
               <p className="text-sm text-orange-700">Afetou Reputação: {complaintData.afetou_reputacao}</p>
+            </div>
+          )}
+
+          {complaintMessages.length > 0 && (
+            <div className="my-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg flex items-center gap-2">
+              <AlertTriangle size={16} className="text-yellow-500" />
+              <p className="text-sm text-yellow-700">
+                Exibindo {complaintMessages.length} mensagens da reclamação e {messages.length} mensagens da venda
+              </p>
             </div>
           )}
 
