@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useComplaintsFilter } from './useComplaintsFilter';
@@ -19,6 +18,7 @@ interface ComplaintFormattedPack {
   claim_id: number;
   complaint_reason: string;
   order_id: number;
+  original_pack_id?: string | null;
 }
 
 export function usePackFilters(sellerId: string | null) {
@@ -28,7 +28,6 @@ export function usePackFilters(sellerId: string | null) {
   const [error, setError] = useState<string | null>(null);
   const [complaintsFilteredPacks, setComplaintsFilteredPacks] = useState<ComplaintFormattedPack[]>([]);
   
-  // Usamos o hook de reclamações
   const { 
     complaints, 
     complaintsMessages, 
@@ -37,7 +36,6 @@ export function usePackFilters(sellerId: string | null) {
     transformComplaintsToPackFormat 
   } = useComplaintsFilter(sellerId);
 
-  // Buscando packs que requerem atendimento humano
   useEffect(() => {
     if (!sellerId) return;
 
@@ -49,7 +47,6 @@ export function usePackFilters(sellerId: string | null) {
         const response = await axios.get('https://projetohermes-dda7e0c8d836.herokuapp.com/api/db/rows/all_onoff');
         
         if (response.data && Array.isArray(response.data.rows)) {
-          // Filter rows that match the current seller
           const matchingPacks = response.data.rows
             .filter((row: OnOffRow) => row.seller_id === sellerId)
             .map((row: OnOffRow) => row.pack_id);
@@ -70,19 +67,20 @@ export function usePackFilters(sellerId: string | null) {
     fetchHumanRequiredPacks();
   }, [sellerId]);
 
-  // Efeito para buscar e processar reclamações quando o filtro mudar para 'complaints'
   useEffect(() => {
     if (filter === 'complaints' && sellerId) {
       const loadComplaints = async () => {
         try {
           const formattedComplaints = await transformComplaintsToPackFormat();
           
-          // Verificar e validar cada objeto de reclamação
           const validatedComplaints = formattedComplaints.map(item => {
+            const displayPackId = item.pack_id || `claim-${item.claim_id}`;
+            const originalPackId = item.pack_id;
+            
             return {
               ...item,
-              // Garantir que todos os valores obrigatórios estejam presentes e sejam do tipo correto
-              pack_id: item.pack_id || `unknown-${Math.random().toString(36).substring(2, 9)}`,
+              pack_id: displayPackId,
+              original_pack_id: originalPackId,
               seller_id: sellerId,
               date_msg: item.date_msg || new Date().toISOString(),
               gpt: typeof item.gpt === 'string' ? item.gpt : "não",
@@ -104,14 +102,12 @@ export function usePackFilters(sellerId: string | null) {
     }
   }, [filter, sellerId, transformComplaintsToPackFormat, complaints]);
 
-  // Função que aplica os filtros aos pacotes
   const filterPacks = useCallback((packs: any[]) => {
     if (!Array.isArray(packs)) {
       console.error("filterPacks recebeu dados inválidos:", packs);
       return [];
     }
     
-    // Filtrar entradas inválidas
     const validPacks = packs.filter(pack => pack && typeof pack === 'object' && pack.pack_id);
     
     if (filter === 'all') {
@@ -119,10 +115,8 @@ export function usePackFilters(sellerId: string | null) {
     } else if (filter === 'human') {
       return validPacks.filter(pack => humanRequiredPacks.includes(pack.pack_id));
     } else if (filter === 'hermes') {
-      // Show only packs that are NOT in the humanRequiredPacks array
       return validPacks.filter(pack => !humanRequiredPacks.includes(pack.pack_id));
     } else if (filter === 'complaints') {
-      // Retorna os pacotes formatados de reclamações
       return complaintsFilteredPacks;
     }
     

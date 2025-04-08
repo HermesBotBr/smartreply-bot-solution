@@ -11,7 +11,7 @@ interface PacksListProps {
   packs: AllPacksRow[] | any[]; // Alterado para aceitar qualquer array para acomodar reclamações
   isLoading: boolean;
   error: string | null;
-  onSelectPack: (packId: string, isComplaint?: boolean, claimId?: number) => void;
+  onSelectPack: (packId: string, isComplaint?: boolean, claimId?: number, originalPackId?: string | null) => void;
   selectedPackId: string | null;
   sellerId: string | null;
   latestMessages: Record<string, string>;
@@ -325,7 +325,8 @@ const PacksList: React.FC<PacksListProps> = ({
             onClick={() => onSelectPack(
               pack.pack_id, 
               isComplaint, 
-              isComplaint ? pack.claim_id : undefined
+              isComplaint ? pack.claim_id : undefined,
+              pack.original_pack_id // Pass the original pack_id for complaints
             )}
           >
             <div className="flex items-center space-x-3">

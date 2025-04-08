@@ -24,15 +24,18 @@ export function useSaleDetails() {
     }
   }, [showSaleDetails]);
 
-  const fetchSaleDetails = async (packId: string | null, sellerId: string | null) => {
+  const fetchSaleDetails = async (packId: string | null, sellerId: string | null, originalPackId?: string | null) => {
+    // For complaints, use the original pack_id if available
+    const effectivePackId = originalPackId || packId;
+    
     // Skip if no packId or sellerId provided
-    if (!packId || !sellerId) {
+    if (!effectivePackId || !sellerId) {
       setError("ID do pacote ou vendedor não fornecido");
       return;
     }
 
     // Avoid duplicate fetches for the same conversation
-    if (currentConvRef.current.packId === packId && 
+    if (currentConvRef.current.packId === effectivePackId && 
         currentConvRef.current.sellerId === sellerId &&
         saleDetails !== null) {
       return;
@@ -42,7 +45,8 @@ export function useSaleDetails() {
     setError(null);
 
     try {
-      const response = await fetch(getNgrokUrl(`/detetive?seller_id=${sellerId}&pack_id=${packId}`));
+      console.log(`Fetching sale details with: seller_id=${sellerId}&pack_id=${effectivePackId}`);
+      const response = await fetch(getNgrokUrl(`/detetive?seller_id=${sellerId}&pack_id=${effectivePackId}`));
       
       if (!response.ok) {
         throw new Error(`Erro ${response.status}: ${response.statusText}`);
@@ -52,7 +56,7 @@ export function useSaleDetails() {
       console.log("Sale details fetched:", data);
       
       setSaleDetails(data);
-      currentConvRef.current = { packId, sellerId };
+      currentConvRef.current = { packId: effectivePackId, sellerId };
     } catch (error) {
       console.error("Error fetching sale details:", error);
       setError(error instanceof Error ? error.message : "Erro ao buscar detalhes da venda");

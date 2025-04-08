@@ -142,23 +142,25 @@ export function useComplaintsFilter(sellerId: string | null) {
 
     // Transforma cada reclamação em um formato compatível com o PacksList
     for (const complaint of complaints) {
-      // Só adiciona reclamações que têm pack_id ou mensagens disponíveis
-      if (complaint.pack_id || (complaint.claim_id && messagesMap[complaint.claim_id.toString()])) {
-        // Cria um objeto no formato esperado pelo PacksList
-        const formattedPack = {
-          pack_id: complaint.pack_id || `claim-${complaint.claim_id}`,
-          seller_id: sellerId,
-          date_msg: complaint.data_criada,
-          gpt: "não", // Garantindo que seja string e não null
-          // Adiciona informações adicionais específicas de reclamação
-          is_complaint: true,
-          claim_id: complaint.claim_id,
-          complaint_reason: complaint.motivo_reclamacao || "Motivo não especificado",
-          order_id: complaint.order_id
-        };
+      // Gera um ID de exibição e mantém o original pack_id se disponível
+      const displayId = complaint.pack_id || `claim-${complaint.claim_id}`;
+      
+      // Cria um objeto no formato esperado pelo PacksList
+      const formattedPack = {
+        pack_id: displayId,
+        seller_id: sellerId,
+        date_msg: complaint.data_criada,
+        gpt: "não", // Garantindo que seja string e não null
+        // Adiciona informações adicionais específicas de reclamação
+        is_complaint: true,
+        claim_id: complaint.claim_id,
+        complaint_reason: complaint.motivo_reclamacao || "Motivo não especificado",
+        order_id: complaint.order_id,
+        // Armazena o pack_id original (se existir) para uso com o endpoint detetive
+        original_pack_id: complaint.pack_id
+      };
 
-        result.push(formattedPack);
-      }
+      result.push(formattedPack);
     }
 
     return result;

@@ -27,7 +27,7 @@ export interface PackClientMap {
   [packId: string]: ClientData | null;
 }
 
-export function usePackClientData(sellerId: string | null, packs: { pack_id: string }[]) {
+export function usePackClientData(sellerId: string | null, packs: { pack_id: string; original_pack_id?: string | null }[]) {
   const [clientDataMap, setClientDataMap] = useState<PackClientMap>({});
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -62,21 +62,36 @@ export function usePackClientData(sellerId: string | null, packs: { pack_id: str
           // Create an array of promises for the batch
           const batchPromises = batch.map(async (pack) => {
             try {
+              // For complaints, use the original pack_id if available
+              const effectivePackId = pack.original_pack_id || pack.pack_id;
+              
+              // Skip complaint packs with "claim-" prefix and no original_pack_id
+              if (typeof pack.pack_id === 'string' && 
+                  pack.pack_id.startsWith('claim-') && 
+                  !pack.original_pack_id) {
+                console.log(`Skipping fetch for claim without original pack_id: ${pack.pack_id}`);
+                return { 
+                  packId: pack.pack_id, 
+                  data: null 
+                };
+              }
+              
+              console.log(`Fetching data for pack ${pack.pack_id} using effective pack_id ${effectivePackId}`);
               const response = await axios.get(getNgrokUrl(`/detetive`), {
                 params: {
                   seller_id: sellerId,
-                  pack_id: pack.pack_id
+                  pack_id: effectivePackId
                 }
               });
               
-              console.log(`Data for new pack ${pack.pack_id}:`, response.data);
+              console.log(`Data for pack ${pack.pack_id}:`, response.data);
               
               return { 
                 packId: pack.pack_id, 
                 data: response.data 
               };
             } catch (err) {
-              console.error(`Error fetching data for new pack ${pack.pack_id}:`, err);
+              console.error(`Error fetching data for pack ${pack.pack_id}:`, err);
               return { 
                 packId: pack.pack_id, 
                 data: null 
