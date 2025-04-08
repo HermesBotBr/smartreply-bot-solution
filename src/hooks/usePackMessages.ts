@@ -24,6 +24,29 @@ interface Message {
   message_attachments: MessageAttachment[] | null;
 }
 
+// Interface para mensagens de reclamação
+interface ComplaintMessage {
+  sender_role: string;
+  receiver_role: string;
+  message: string;
+  translated_message: string | null;
+  date_created: string;
+  last_updated: string;
+  message_date: string;
+  date_read: string | null;
+  attachments: any[];
+  status: string;
+  stage: string;
+  message_moderation: {
+    status: string;
+    reason: string;
+    source: string;
+    date_moderated: string;
+  };
+  repeated: boolean;
+  hash: string;
+}
+
 interface MessagesResponse {
   total: number;
   limit: number;
@@ -35,6 +58,7 @@ export function usePackMessages(
   packId: string | null, 
   sellerId: string | null,
   refreshTrigger: number = 0,
+  claimId: number | null = null,
   preloadedMessages?: Message[]
 ) {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -44,6 +68,86 @@ export function usePackMessages(
   const backgroundRefreshingRef = useRef(false);
   const existingMessageIdsRef = useRef<Set<string>>(new Set());
   const currentPackIdRef = useRef<string | null>(null);
+  const currentClaimIdRef = useRef<number | null>(null);
+
+  // Função para transformar mensagens de reclamação no formato padrão
+  const transformComplaintMessages = (complaintMessages: ComplaintMessage[]): Message[] => {
+    return complaintMessages.map((msg, index) => {
+      // Determinar o ID do remetente e destinatário com base nos papéis
+      const fromUserId = msg.sender_role === 'respondent' ? 
+        (sellerId ? parseInt(sellerId) : 0) : // se for respondent (vendedor)
+        999999999; // se for complainant (comprador) - ID fictício
+      
+      const toUserId = msg.sender_role === 'respondent' ?
+        999999999 : // se for respondent (vendedor) enviando para o comprador
+        (sellerId ? parseInt(sellerId) : 0); // se for complainant (comprador) enviando para o vendedor
+        
+      // Criar mensagem no formato padrão
+      return {
+        id: msg.hash || `complaint-${index}`,
+        from: { user_id: fromUserId },
+        to: { user_id: toUserId },
+        text: msg.message,
+        message_date: {
+          received: msg.date_created,
+          available: msg.date_created,
+          notified: msg.date_created,
+          created: msg.message_date || msg.date_created,
+          read: msg.date_read || null
+        },
+        message_attachments: msg.attachments?.length ? 
+          msg.attachments.map(att => ({
+            filename: att.filename || '',
+            original_filename: att.original_filename || '',
+            status: 'active'
+          })) : 
+          null
+      };
+    });
+  };
+
+  const fetchComplaintMessages = async (targetClaimId: number) => {
+    if (!sellerId) {
+      return;
+    }
+    
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      console.log(`Buscando mensagens da reclamação ${targetClaimId}`);
+      
+      const response = await axios.get(`${NGROK_BASE_URL}/conversas_rec`, {
+        params: {
+          seller_id: sellerId,
+          claim_id: targetClaimId
+        }
+      });
+      
+      if (response.data && Array.isArray(response.data)) {
+        // Transformar mensagens de reclamação para o formato padrão
+        const formattedMessages = transformComplaintMessages(response.data);
+        
+        // Ordenar mensagens por data (mais antigas primeiro)
+        const sortedMessages = formattedMessages.sort((a, b) => 
+          new Date(a.message_date.created).getTime() - new Date(b.message_date.created).getTime()
+        );
+        
+        console.log(`Carregadas ${sortedMessages.length} mensagens para a reclamação ID: ${targetClaimId}`);
+        setMessages(sortedMessages);
+        existingMessageIdsRef.current = new Set(sortedMessages.map(msg => msg.id));
+        isInitialLoadRef.current = false;
+      } else {
+        console.error("Formato de resposta inválido da API de reclamações:", response.data);
+        setError("Formato de resposta inválido ao carregar mensagens da reclamação");
+      }
+    } catch (error: any) {
+      console.error("Erro ao buscar mensagens da reclamação:", error);
+      setError("Erro ao carregar mensagens da reclamação");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const fetchMessages = async (targetPackId: string, isBackgroundRefresh = false) => {
     if (!sellerId) {
@@ -135,19 +239,29 @@ export function usePackMessages(
   };
 
   useEffect(() => {
-    if (packId !== currentPackIdRef.current) {
+    // Reset when packId or claimId changes
+    if (packId !== currentPackIdRef.current || claimId !== currentClaimIdRef.current) {
       setMessages([]);
       existingMessageIdsRef.current.clear();
       isInitialLoadRef.current = true;
       currentPackIdRef.current = packId;
+      currentClaimIdRef.current = claimId;
     }
     
-    if (packId && sellerId) {
-      fetchMessages(packId);
+    // Fetch appropriate messages based on whether we have a claim_id
+    if (sellerId) {
+      if (claimId) {
+        // Busca mensagens de reclamação
+        fetchComplaintMessages(claimId);
+      } else if (packId) {
+        // Busca mensagens normais
+        fetchMessages(packId);
+      }
     }
     
+    // Set up periodic refresh for normal messages (not complaint messages)
     const periodicRefreshIntervalId = setInterval(() => {
-      if (packId && sellerId && !backgroundRefreshingRef.current && currentPackIdRef.current) {
+      if (packId && sellerId && !backgroundRefreshingRef.current && currentPackIdRef.current && !claimId) {
         console.log('Atualização periódica, buscando mensagens recentes');
         fetchMessages(currentPackIdRef.current, true);
       }
@@ -156,10 +270,16 @@ export function usePackMessages(
     return () => {
       clearInterval(periodicRefreshIntervalId);
     };
-  }, [packId, sellerId, refreshTrigger]);
+  }, [packId, sellerId, refreshTrigger, claimId]);
 
   const updatePackMessages = async (targetPackId: string) => {
     if (!sellerId) return;
+    
+    // Se for um ID de reclamação, não fazemos nada, pois reclamações não mudam rapidamente
+    if (claimId) {
+      console.log(`Ignorando atualização para reclamação ${claimId}`);
+      return;
+    }
     
     console.log(`Atualização endpoint, buscando mensagens para pack_id ${targetPackId}`);
     

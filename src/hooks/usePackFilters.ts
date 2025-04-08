@@ -1,6 +1,7 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
+import { useComplaintsFilter } from './useComplaintsFilter';
 
 export type FilterType = 'all' | 'human' | 'hermes' | 'complaints';
 
@@ -14,7 +15,18 @@ export function usePackFilters(sellerId: string | null) {
   const [humanRequiredPacks, setHumanRequiredPacks] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [complaintsFilteredPacks, setComplaintsFilteredPacks] = useState<any[]>([]);
+  
+  // Usamos o hook de reclamações
+  const { 
+    complaints, 
+    complaintsMessages, 
+    isLoading: complaintsLoading, 
+    error: complaintsError,
+    transformComplaintsToPackFormat 
+  } = useComplaintsFilter(sellerId);
 
+  // Buscando packs que requerem atendimento humano
   useEffect(() => {
     if (!sellerId) return;
 
@@ -47,7 +59,20 @@ export function usePackFilters(sellerId: string | null) {
     fetchHumanRequiredPacks();
   }, [sellerId]);
 
-  const filterPacks = (packs: any[]) => {
+  // Efeito para buscar e processar reclamações quando o filtro mudar para 'complaints'
+  useEffect(() => {
+    if (filter === 'complaints' && sellerId) {
+      const loadComplaints = async () => {
+        const formattedComplaints = await transformComplaintsToPackFormat();
+        setComplaintsFilteredPacks(formattedComplaints);
+      };
+      
+      loadComplaints();
+    }
+  }, [filter, sellerId, transformComplaintsToPackFormat]);
+
+  // Função que aplica os filtros aos pacotes
+  const filterPacks = useCallback((packs: any[]) => {
     if (filter === 'all') {
       return packs;
     } else if (filter === 'human') {
@@ -55,18 +80,21 @@ export function usePackFilters(sellerId: string | null) {
     } else if (filter === 'hermes') {
       // Show only packs that are NOT in the humanRequiredPacks array
       return packs.filter(pack => !humanRequiredPacks.includes(pack.pack_id));
+    } else if (filter === 'complaints') {
+      // Retorna os pacotes formatados de reclamações
+      return complaintsFilteredPacks;
     }
     
-    // Other filters will be implemented later
     return packs;
-  };
+  }, [filter, humanRequiredPacks, complaintsFilteredPacks]);
 
   return {
     filter,
     setFilter,
     humanRequiredPacks,
-    isLoading,
-    error,
-    filterPacks
+    isLoading: isLoading || complaintsLoading,
+    error: error || complaintsError,
+    filterPacks,
+    complaintsMessages
   };
 }
