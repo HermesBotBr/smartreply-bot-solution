@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useCallback } from 'react';
 import { User, AlertTriangle } from "lucide-react";
 import { usePackClientData } from '@/hooks/usePackClientData';
@@ -263,7 +264,7 @@ const PacksList: React.FC<PacksListProps> = ({
                     <h3 className={`font-medium truncate ${isUnread ? 'text-blue-700' : 'text-gray-900'}`}>
                       {isComplaint ? (
                         <>
-                          {complaintData?.motivo_reclamacao ? complaintData.motivo_reclamacao : clientName || `Reclamação #${claimId}`}
+                          {clientName || `Reclamação #${claimId}`}
                           <span className="ml-2 text-xs bg-red-100 text-red-800 px-2 py-0.5 rounded">Reclamação</span>
                         </>
                       ) : (
