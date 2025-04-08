@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 
@@ -72,7 +71,10 @@ export function usePackFilters(sellerId: string | null) {
     try {
       const response = await axios.get(`https://projetohermes-dda7e0c8d836.herokuapp.com/reclama?seller_id=${sellerId}`);
       
-      if (response.data && Array.isArray(response.data)) {
+      if (response.data && response.data.sales && Array.isArray(response.data.sales)) {
+        setComplaints(response.data.sales);
+        console.log(`Found ${response.data.sales.length} complaints for seller ${sellerId}`);
+      } else if (response.data && Array.isArray(response.data)) {
         setComplaints(response.data);
         console.log(`Found ${response.data.length} complaints for seller ${sellerId}`);
       } else {
