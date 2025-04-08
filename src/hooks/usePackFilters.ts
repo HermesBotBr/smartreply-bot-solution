@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 
-export type FilterType = 'all' | 'human' | 'hermes' | 'mixed' | 'complaints';
+export type FilterType = 'all' | 'human' | 'hermes' | 'complaints';
 
 interface OnOffRow {
   pack_id: string;

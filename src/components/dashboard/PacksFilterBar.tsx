@@ -43,12 +43,6 @@ const PacksFilterBar: React.FC<PacksFilterBarProps> = ({
             <span className="hidden sm:inline">Hermes</span>
           </span>
         </ToggleGroupItem>
-        <ToggleGroupItem value="mixed" aria-label="Hermes + Humano">
-          <span className="flex items-center gap-1">
-            <LucideBot className="w-4 h-4" />+<LucideUserCog className="w-4 h-4" />
-            <span className="hidden sm:inline">Misto</span>
-          </span>
-        </ToggleGroupItem>
         <ToggleGroupItem value="complaints" aria-label="Reclamações">
           <span className="flex items-center gap-1">
             <LucideAlertTriangle className="w-4 h-4" />
