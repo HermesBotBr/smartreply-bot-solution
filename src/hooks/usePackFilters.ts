@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 
@@ -51,6 +52,9 @@ export function usePackFilters(sellerId: string | null) {
       return packs;
     } else if (filter === 'human') {
       return packs.filter(pack => humanRequiredPacks.includes(pack.pack_id));
+    } else if (filter === 'hermes') {
+      // Show only packs that are NOT in the humanRequiredPacks array
+      return packs.filter(pack => !humanRequiredPacks.includes(pack.pack_id));
     }
     
     // Other filters will be implemented later
