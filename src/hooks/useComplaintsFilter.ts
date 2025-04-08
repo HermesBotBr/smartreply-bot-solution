@@ -54,9 +54,24 @@ export function useComplaintsFilter(sellerId: string | null) {
         params: { seller_id: sellerId }
       });
 
-      if (response.data && Array.isArray(response.data)) {
-        setComplaints(response.data);
-        console.log(`Encontradas ${response.data.length} reclamações para o vendedor ${sellerId}`);
+      // Novo formato de resposta: { sales: Complaint[] }
+      if (response.data) {
+        let complaintsData: Complaint[] = [];
+        
+        // Verificamos se a resposta está no novo formato com propriedade 'sales'
+        if (response.data.sales && Array.isArray(response.data.sales)) {
+          complaintsData = response.data.sales;
+        } 
+        // Ou se é um array direto (formato antigo)
+        else if (Array.isArray(response.data)) {
+          complaintsData = response.data;
+        } 
+        else {
+          throw new Error('Formato de resposta inválido');
+        }
+        
+        setComplaints(complaintsData);
+        console.log(`Encontradas ${complaintsData.length} reclamações para o vendedor ${sellerId}`);
       } else {
         console.error('Formato de resposta inválido do endpoint de reclamações:', response.data);
         setError('Formato de resposta inválido do endpoint de reclamações');

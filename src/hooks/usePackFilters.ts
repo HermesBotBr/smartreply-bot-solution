@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useComplaintsFilter } from './useComplaintsFilter';
@@ -63,13 +62,18 @@ export function usePackFilters(sellerId: string | null) {
   useEffect(() => {
     if (filter === 'complaints' && sellerId) {
       const loadComplaints = async () => {
-        const formattedComplaints = await transformComplaintsToPackFormat();
-        setComplaintsFilteredPacks(formattedComplaints);
+        try {
+          const formattedComplaints = await transformComplaintsToPackFormat();
+          setComplaintsFilteredPacks(formattedComplaints);
+        } catch (err) {
+          console.error("Erro ao transformar reclamações:", err);
+          setError("Erro ao processar as reclamações");
+        }
       };
       
       loadComplaints();
     }
-  }, [filter, sellerId, transformComplaintsToPackFormat]);
+  }, [filter, sellerId, transformComplaintsToPackFormat, complaints]);
 
   // Função que aplica os filtros aos pacotes
   const filterPacks = useCallback((packs: any[]) => {
