@@ -27,8 +27,9 @@ const messageRoutes = require('./src/api/messageRoutes');
 app.use('/api/messages', messageRoutes);
 // Use the database routes
 app.use('/api/db', dbRoutes);
-// Use the upload routes
+// Use the upload routes at both paths for compatibility
 app.use('/api/uploads', uploadRoutes);
+app.use('/uploads', uploadRoutes);
 
 // Create uploads directory if it doesn't exist
 const uploadDir = path.join(__dirname, 'public/uploads');

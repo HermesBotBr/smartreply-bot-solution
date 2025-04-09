@@ -9,8 +9,8 @@ export async function uploadFile(file: File): Promise<string> {
   formData.append('file', file);
   
   try {
-    // Get correct API URL using the getNgrokUrl helper
-    const uploadUrl = '/api/uploads/upload';
+    // Use a direct relative path to the API endpoint
+    const uploadUrl = '/uploads/upload';
     
     console.log("Uploading file to:", uploadUrl);
     
