@@ -10,7 +10,7 @@ const port = process.env.PORT || 3001;
 app.use(cors({
   origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept']
 }));
 
 // Parse JSON request bodies
@@ -40,8 +40,15 @@ app.use('/api/messages', messageRoutes);
 app.use('/api/db', dbRoutes);
 
 // IMPORTANT: Use the upload routes at both paths to ensure they're accessible in all environments
+// Make sure these routes are defined BEFORE the catch-all routes
 app.use('/api/uploads', uploadRoutes);
 app.use('/uploads', uploadRoutes);
+
+// Log all incoming requests to help with debugging
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
+  next();
+});
 
 // Import the notification endpoint handler directly using dynamic import to handle ESM module
 import('./api/notification-endpoint.js').then(module => {
@@ -51,12 +58,6 @@ import('./api/notification-endpoint.js').then(module => {
   });
 }).catch(err => {
   console.error('Failed to load notification endpoint:', err);
-});
-
-// Log all incoming requests to help with debugging
-app.use((req, res, next) => {
-  console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
-  next();
 });
 
 // Handle 404 for API routes

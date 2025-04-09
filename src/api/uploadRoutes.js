@@ -65,9 +65,14 @@ router.get('/status', (req, res) => {
 router.post('/upload', upload.single('file'), (req, res) => {
   try {
     console.log('Upload request received:', req.method, req.url);
+    console.log('Headers:', req.headers);
     
     if (!req.file) {
       console.log('No file received in upload request');
+      
+      // Always set JSON content type before sending response
+      res.setHeader('Content-Type', 'application/json');
+      
       return res.status(400).json({ 
         success: false, 
         error: 'Nenhum arquivo foi enviado' 
@@ -84,7 +89,8 @@ router.post('/upload', upload.single('file'), (req, res) => {
     // Set the content type explicitly to avoid misinterpretation
     res.setHeader('Content-Type', 'application/json');
     
-    res.status(200).json({
+    // Send response as JSON
+    return res.status(200).json({
       success: true,
       fileUrl: fileUrl,
       fileName: req.file.filename,
@@ -98,7 +104,8 @@ router.post('/upload', upload.single('file'), (req, res) => {
     // Set the content type explicitly to avoid misinterpretation
     res.setHeader('Content-Type', 'application/json');
     
-    res.status(500).json({
+    // Send error response as JSON
+    return res.status(500).json({
       success: false,
       error: 'Erro ao processar o upload do arquivo'
     });

@@ -52,13 +52,23 @@ const ImageUpload = () => {
     setDebugInfo('Iniciando upload...');
     
     try {
-      // Log info for debugging
+      // Log environment info for debugging
       const host = window.location.hostname;
+      const protocol = window.location.protocol;
+      const port = window.location.port;
+      const origin = window.location.origin;
+      
+      setDebugInfo(prev => `${prev}\nEnvironment Info:
+- Hostname: ${host}
+- Protocol: ${protocol}
+- Port: ${port || 'default'}
+- Origin: ${origin}`);
+
       const uploadEndpoint = host === 'www.hermesbot.com.br' || host.includes('hermes') 
         ? '/api/uploads/upload' 
         : '/uploads/upload';
       
-      setDebugInfo(prev => `${prev}\nEndpoint: ${uploadEndpoint}\nHostname: ${host}`);
+      setDebugInfo(prev => `${prev}\nUsing upload endpoint: ${uploadEndpoint}`);
       
       const fileUrl = await uploadFile(selectedImage);
       setUploadedImageUrl(fileUrl);
@@ -132,11 +142,11 @@ const ImageUpload = () => {
               </Button>
             </div>
 
-            {/* Debug Information */}
+            {/* Debug Information - Expanded with more details */}
             {debugInfo && (
               <div className="w-full p-4 bg-gray-50 border border-gray-200 rounded-lg mt-4">
                 <p className="font-medium text-gray-800 mb-2">Informações de Debug:</p>
-                <pre className="bg-white p-3 rounded text-xs overflow-auto max-h-40 whitespace-pre-wrap">{debugInfo}</pre>
+                <pre className="bg-white p-3 rounded text-xs overflow-auto max-h-60 whitespace-pre-wrap">{debugInfo}</pre>
               </div>
             )}
 
