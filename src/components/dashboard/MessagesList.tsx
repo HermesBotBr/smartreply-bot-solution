@@ -1,3 +1,4 @@
+
 import React, { useRef, useEffect, useState } from 'react';
 import { formatDate } from '@/utils/dateFormatters';
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -9,7 +10,7 @@ import { toast } from "sonner";
 import axios from 'axios';
 import { getNgrokUrl } from '@/config/api';
 import { useMlToken } from '@/hooks/useMlToken';
-import { uploadFile } from '@/utils/fileUpload';
+import { uploadFileToMercadoLivre } from '@/utils/fileUpload';
 import { usePackClientData, ClientData } from '@/hooks/usePackClientData';
 import { Complaint } from '@/hooks/usePackFilters';
 
@@ -82,6 +83,7 @@ const MessagesList: React.FC<MessagesListProps> = ({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [filePreview, setFilePreview] = useState<string | null>(null);
   const [uploadingFile, setUploadingFile] = useState(false);
+  const [attachmentId, setAttachmentId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const prevMessagesLengthRef = useRef<number>(0);
   const displayedMessageIdsRef = useRef<Set<string>>(new Set());
@@ -130,48 +132,33 @@ const MessagesList: React.FC<MessagesListProps> = ({
   };
 
   const handleSendMessage = async () => {
-    if ((!messageText.trim() && !selectedFile) || !sellerId || !packId) {
+    if ((!messageText.trim() && !attachmentId) || !sellerId || !packId) {
       return;
     }
 
     setSending(true);
     try {
-      let attachmentUrl = '';
-      
-      if (selectedFile) {
-        setUploadingFile(true);
-        try {
-          attachmentUrl = await uploadFile(selectedFile);
-          console.log("Uploaded file URL:", attachmentUrl);
-        } catch (error) {
-          console.error("Error uploading file:", error);
-          toast.error("Erro ao enviar o arquivo");
-          setSending(false);
-          setUploadingFile(false);
-          return;
-        }
-        setUploadingFile(false);
-      }
-
-      const baseUrl = window.location.origin;
-      const finalAttachmentUrl = attachmentUrl ? (attachmentUrl.startsWith('http') ? attachmentUrl : `${baseUrl}${attachmentUrl}`) : '';
-      
-      const finalMessageText = selectedFile
-        ? messageText.trim()
-          ? `${messageText}\n\nAnexo: ${finalAttachmentUrl}`
-          : `Anexo: ${finalAttachmentUrl}`
-        : messageText;
-
-      const response = await axios.post(getNgrokUrl('/enviamsg'), {
+      // Prepare payload with or without attachment
+      const payload = {
         seller_id: sellerId,
         pack_id: packId,
-        text: finalMessageText
-      });
+        text: messageText.trim()
+      };
+      
+      // Add attachment ID if we have one
+      if (attachmentId) {
+        Object.assign(payload, { attachments: attachmentId });
+      }
+      
+      console.log("Sending message with payload:", payload);
+      
+      const response = await axios.post(getNgrokUrl('/enviamsg'), payload);
 
       toast.success("Mensagem enviada com sucesso");
       setMessageText('');
       setSelectedFile(null);
       setFilePreview(null);
+      setAttachmentId(null);
       
       if (onMessageSent) {
         onMessageSent();
@@ -184,12 +171,12 @@ const MessagesList: React.FC<MessagesListProps> = ({
     }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const file = e.target.files[0];
       
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error("O arquivo é muito grande. O tamanho máximo é 5MB.");
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error("O arquivo é muito grande. O tamanho máximo é 10MB.");
         return;
       }
       
@@ -204,12 +191,32 @@ const MessagesList: React.FC<MessagesListProps> = ({
       } else {
         setFilePreview(null);
       }
+      
+      // Upload file to Mercado Livre if we have a seller ID
+      if (sellerId) {
+        setUploadingFile(true);
+        setAttachmentId(null);
+        
+        try {
+          const id = await uploadFileToMercadoLivre(file, sellerId);
+          setAttachmentId(id);
+          toast.success("Arquivo enviado com sucesso");
+        } catch (error) {
+          console.error("Error uploading file:", error);
+          toast.error("Erro ao fazer upload do arquivo");
+          setSelectedFile(null);
+          setFilePreview(null);
+        } finally {
+          setUploadingFile(false);
+        }
+      }
     }
   };
 
   const handleRemoveFile = () => {
     setSelectedFile(null);
     setFilePreview(null);
+    setAttachmentId(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -558,6 +565,11 @@ const MessagesList: React.FC<MessagesListProps> = ({
                   />
                 </div>
               )}
+              {attachmentId && (
+                <div className="mt-1">
+                  <p className="text-xs text-green-600">Arquivo pronto para envio (ID: {attachmentId.substring(0, 12)}...)</p>
+                </div>
+              )}
             </div>
           )}
           
@@ -572,7 +584,11 @@ const MessagesList: React.FC<MessagesListProps> = ({
                 className="flex-shrink-0"
                 title="Anexar arquivo"
               >
-                <Paperclip size={18} />
+                {uploadingFile ? (
+                  <Loader2 size={18} className="animate-spin" />
+                ) : (
+                  <Paperclip size={18} />
+                )}
               </Button>
               
               <input
@@ -599,15 +615,15 @@ const MessagesList: React.FC<MessagesListProps> = ({
               
               <Button 
                 onClick={handleSendMessage} 
-                disabled={(!messageText.trim() && !selectedFile) || !packId || sending || uploadingFile} 
+                disabled={(!messageText.trim() && !attachmentId) || !packId || sending || uploadingFile} 
                 className="flex-shrink-0"
               >
-                {sending || uploadingFile ? (
+                {sending ? (
                   <Loader2 size={18} className="mr-1 animate-spin" />
                 ) : (
                   <Send size={18} className="mr-1" />
                 )}
-                {uploadingFile ? "Enviando..." : "Enviar"}
+                {sending ? "Enviando..." : "Enviar"}
               </Button>
             </div>
           </div>

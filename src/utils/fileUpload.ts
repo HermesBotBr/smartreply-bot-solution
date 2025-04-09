@@ -1,3 +1,4 @@
+
 /**
  * Uploads a file to the external server
  * @param file The file to upload
@@ -107,5 +108,51 @@ export async function uploadFile(file: File): Promise<string> {
   } catch (error) {
     console.error("Error uploading file:", error);
     throw new Error("Failed to upload file");
+  }
+}
+
+/**
+ * Uploads a file to Mercado Livre's cloud storage via Hermes API
+ * @param file The file to upload
+ * @param sellerId The seller ID
+ * @returns The attachment ID to be used when sending a message
+ */
+export async function uploadFileToMercadoLivre(file: File, sellerId: string): Promise<string> {
+  if (!file || !sellerId) {
+    throw new Error("File and seller ID are required");
+  }
+  
+  const formData = new FormData();
+  formData.append('File', file);
+  formData.append('seller_id', sellerId);
+  
+  try {
+    console.log(`Preparing to upload file to Mercado Livre for seller ${sellerId}`);
+    
+    const uploadUrl = 'https://projetohermes-dda7e0c8d836.herokuapp.com/upload';
+    
+    const response = await fetch(uploadUrl, {
+      method: 'POST',
+      body: formData,
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("Upload failed:", errorText);
+      throw new Error(`Upload failed: ${response.status} ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    console.log("Upload response:", data);
+    
+    if (data && data.id) {
+      console.log("File uploaded successfully, attachment ID:", data.id);
+      return data.id;
+    }
+    
+    throw new Error("Invalid response format: missing attachment ID");
+  } catch (error) {
+    console.error("Error uploading file to Mercado Livre:", error);
+    throw error;
   }
 }
