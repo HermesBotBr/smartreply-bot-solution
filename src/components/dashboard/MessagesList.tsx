@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import axios from 'axios';
 import { getNgrokUrl } from '@/config/api';
 import { useMlToken } from '@/hooks/useMlToken';
-import { uploadFile, uploadFileToMercadoLivre } from '@/utils/fileUpload';
+import { uploadFile } from '@/utils/fileUpload';
 import { usePackClientData, ClientData } from '@/hooks/usePackClientData';
 import { Complaint } from '@/hooks/usePackFilters';
 
@@ -88,8 +88,6 @@ const MessagesList: React.FC<MessagesListProps> = ({
   const mlToken = useMlToken(sellerId);
   const [fullScreenImage, setFullScreenImage] = useState<string | null>(null);
   const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
-  const [attachmentId, setAttachmentId] = useState<string | null>(null);
-  const [uploadProgress, setUploadProgress] = useState<number>(0);
 
   const { gptMessageIds } = useAllGptData(sellerId);
 
@@ -138,29 +136,25 @@ const MessagesList: React.FC<MessagesListProps> = ({
 
     setSending(true);
     try {
-      let finalAttachmentId = attachmentId;
+      let attachmentUrl = '';
       
-      if (selectedFile && !attachmentId) {
+      if (selectedFile) {
         setUploadingFile(true);
-        setUploadProgress(10);
         try {
-          finalAttachmentId = await uploadFileToMercadoLivre(selectedFile, sellerId);
-          setAttachmentId(finalAttachmentId);
-          setUploadProgress(100);
-          toast.success("Arquivo enviado para o Mercado Livre com sucesso");
+          attachmentUrl = await uploadFile(selectedFile);
+          console.log("Uploaded file URL:", attachmentUrl);
         } catch (error) {
-          console.error("Error uploading file to Mercado Livre:", error);
-          toast.error("Erro ao enviar o arquivo para o Mercado Livre");
+          console.error("Error uploading file:", error);
+          toast.error("Erro ao enviar o arquivo");
           setSending(false);
           setUploadingFile(false);
-          setUploadProgress(0);
           return;
         }
         setUploadingFile(false);
       }
 
       const baseUrl = window.location.origin;
-      const finalAttachmentUrl = attachmentId ? (attachmentId.startsWith('http') ? attachmentId : `${baseUrl}${attachmentId}`) : '';
+      const finalAttachmentUrl = attachmentUrl ? (attachmentUrl.startsWith('http') ? attachmentUrl : `${baseUrl}${attachmentUrl}`) : '';
       
       const finalMessageText = selectedFile
         ? messageText.trim()
@@ -168,26 +162,16 @@ const MessagesList: React.FC<MessagesListProps> = ({
           : `Anexo: ${finalAttachmentUrl}`
         : messageText;
 
-      const messagePayload: any = {
+      const response = await axios.post(getNgrokUrl('/enviamsg'), {
         seller_id: sellerId,
         pack_id: packId,
         text: finalMessageText
-      };
-      
-      if (finalAttachmentId) {
-        messagePayload.attachments = finalAttachmentId;
-      }
-
-      console.log("Sending message with payload:", messagePayload);
-      
-      const response = await axios.post(getNgrokUrl('/enviamsg'), messagePayload);
+      });
 
       toast.success("Mensagem enviada com sucesso");
       setMessageText('');
       setSelectedFile(null);
       setFilePreview(null);
-      setAttachmentId(null);
-      setUploadProgress(0);
       
       if (onMessageSent) {
         onMessageSent();
@@ -210,7 +194,6 @@ const MessagesList: React.FC<MessagesListProps> = ({
       }
       
       setSelectedFile(file);
-      setAttachmentId(null);
       
       if (file.type.startsWith('image/')) {
         const reader = new FileReader();
@@ -227,8 +210,6 @@ const MessagesList: React.FC<MessagesListProps> = ({
   const handleRemoveFile = () => {
     setSelectedFile(null);
     setFilePreview(null);
-    setAttachmentId(null);
-    setUploadProgress(0);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -575,20 +556,6 @@ const MessagesList: React.FC<MessagesListProps> = ({
                     alt="Preview" 
                     className="h-20 max-w-full object-contain rounded" 
                   />
-                </div>
-              )}
-              {uploadProgress > 0 && uploadProgress < 100 && (
-                <div className="w-full h-1 bg-gray-200 rounded-full mt-2">
-                  <div 
-                    className="h-full bg-blue-500 rounded-full transition-all duration-300"
-                    style={{ width: `${uploadProgress}%` }}
-                  ></div>
-                </div>
-              )}
-              {attachmentId && (
-                <div className="mt-1 text-xs text-green-600">
-                  <span className="font-medium">Arquivo pronto para envio</span>
-                  <span className="ml-1 text-gray-500">(ID: {attachmentId.substring(0, 8)}...)</span>
                 </div>
               )}
             </div>

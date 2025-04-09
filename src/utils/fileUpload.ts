@@ -1,4 +1,3 @@
-
 /**
  * Uploads a file to the external server
  * @param file The file to upload
@@ -108,59 +107,5 @@ export async function uploadFile(file: File): Promise<string> {
   } catch (error) {
     console.error("Error uploading file:", error);
     throw new Error("Failed to upload file");
-  }
-}
-
-/**
- * Uploads a file to Mercado Livre via Hermes API
- * @param file The file to upload
- * @param sellerId The seller ID
- * @returns The attachment ID from Mercado Livre
- */
-export async function uploadFileToMercadoLivre(file: File, sellerId: string): Promise<string> {
-  if (!file || !sellerId) {
-    throw new Error("File and seller ID are required");
-  }
-
-  try {
-    console.log("Preparing to upload file to Mercado Livre via Hermes API");
-    
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('seller_id', sellerId);
-    
-    const uploadUrl = 'https://projetohermes-dda7e0c8d836.herokuapp.com/upload';
-    console.log("Uploading to ML via Hermes:", uploadUrl);
-    console.log("With seller ID:", sellerId);
-    
-    const response = await fetch(uploadUrl, {
-      method: 'POST',
-      body: formData,
-      // Let the browser set the correct content-type with boundary
-    });
-    
-    console.log("ML Upload response status:", response.status);
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("ML Upload error response:", errorText);
-      throw new Error(`ML Upload failed: ${response.status} ${response.statusText}`);
-    }
-    
-    const data = await response.json();
-    console.log("ML Upload response data:", data);
-    
-    // Extract the attachment ID from the response
-    if (data && data.attachment_id) {
-      console.log("ML Upload successful, attachment ID:", data.attachment_id);
-      return data.attachment_id;
-    } else {
-      console.error("Unexpected ML upload response format:", data);
-      throw new Error("Mercado Livre upload response did not contain attachment_id");
-    }
-    
-  } catch (error) {
-    console.error("Error uploading file to Mercado Livre:", error);
-    throw new Error(`Failed to upload file to Mercado Livre: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
