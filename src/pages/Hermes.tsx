@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import QuestionsList from "@/components/dashboard/QuestionsList";
 import MetricsDisplay from "@/components/dashboard/MetricsDisplay";
@@ -15,6 +16,7 @@ import { usePackClientData } from "@/hooks/usePackClientData";
 import PacksList from "@/components/dashboard/PacksList";
 import MessagesList from "@/components/dashboard/MessagesList";
 import NotificationPermission from "@/components/NotificationPermission";
+import NotificationToggle from "@/components/dashboard/NotificationToggle";
 import ConfigurationsPanel from "@/components/dashboard/ConfigurationsPanel";
 import SaleDetailsPanel from "@/components/dashboard/SaleDetailsPanel";
 import { useSaleDetails } from "@/hooks/useSaleDetails";
@@ -316,7 +318,7 @@ const Hermes = () => {
                       <h2 className="text-lg font-medium">Clientes</h2>
                       <p className="text-sm text-gray-500">Seller ID: {sellerId}</p>
                     </div>
-                    <NotificationPermission />
+                    <NotificationToggle sellerId={sellerId} />
                   </div>
                   
                   <PacksFilterBar 

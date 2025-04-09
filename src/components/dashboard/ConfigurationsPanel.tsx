@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import axios from 'axios';
 import { toast } from "sonner";
+import NotificationToggle from "@/components/dashboard/NotificationToggle";
 
 interface ConfigurationsPanelProps {
   sellerId: string | null;
@@ -16,6 +17,7 @@ interface ConfigData {
   seller_id: string;
   notifica_todos: string;
   notifica_so_human: string;
+  notifica: string;
 }
 
 const ConfigurationsPanel: React.FC<ConfigurationsPanelProps> = ({ sellerId, onClose }) => {
@@ -141,6 +143,18 @@ const ConfigurationsPanel: React.FC<ConfigurationsPanelProps> = ({ sellerId, onC
         <h2 className="text-2xl font-bold">Configurações</h2>
         <Button variant="outline" onClick={onClose}>Voltar</Button>
       </div>
+      
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Status das Notificações</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <Label htmlFor="notification-status">Receber notificações</Label>
+            <NotificationToggle sellerId={sellerId} />
+          </div>
+        </CardContent>
+      </Card>
       
       <Card>
         <CardHeader>
