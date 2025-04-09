@@ -23,7 +23,6 @@ export async function uploadFile(file: File): Promise<string> {
     }
     
     console.log("Uploading file to:", uploadUrl);
-    console.log("Current hostname:", host);
     
     const response = await fetch(uploadUrl, {
       method: 'POST',
@@ -31,9 +30,26 @@ export async function uploadFile(file: File): Promise<string> {
     });
     
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Upload failed with status:", response.status, errorText);
-      throw new Error('Upload failed: ' + response.status);
+      const contentType = response.headers.get('content-type');
+      let errorMessage;
+      
+      if (contentType && contentType.includes('application/json')) {
+        const errorData = await response.json();
+        errorMessage = errorData.error || `Error: ${response.status}`;
+      } else {
+        // Don't try to parse as JSON if it's not JSON
+        errorMessage = `Server error: ${response.status} ${response.statusText}`;
+      }
+      
+      console.error("Upload failed:", errorMessage);
+      throw new Error('Upload failed: ' + errorMessage);
+    }
+    
+    // Check content type to ensure we're parsing JSON
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      console.error("Expected JSON response but got:", contentType);
+      throw new Error('Server returned an invalid response format');
     }
     
     const data = await response.json();

@@ -53,10 +53,21 @@ const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 } // 5MB size limit
 });
 
+// Debug route to test if the upload endpoint is reachable
+router.get('/status', (req, res) => {
+  res.status(200).json({ 
+    status: 'Upload service is running', 
+    timestamp: new Date().toISOString() 
+  });
+});
+
 // Route for file uploads
 router.post('/upload', upload.single('file'), (req, res) => {
   try {
+    console.log('Upload request received:', req.method, req.url);
+    
     if (!req.file) {
+      console.log('No file received in upload request');
       return res.status(400).json({ 
         success: false, 
         error: 'Nenhum arquivo foi enviado' 
@@ -66,16 +77,16 @@ router.post('/upload', upload.single('file'), (req, res) => {
     // Return the correct file URL path that will work when accessed from the frontend
     // Make sure we use a path that works in both development and production
     const fileUrl = `/uploads/${req.file.filename}`;
-    const fullUrl = `${req.protocol}://${req.get('host')}${fileUrl}`;
     
     console.log('File uploaded:', req.file);
     console.log('File URL path:', fileUrl);
-    console.log('Full URL:', fullUrl);
+    
+    // Set the content type explicitly to avoid misinterpretation
+    res.setHeader('Content-Type', 'application/json');
     
     res.status(200).json({
       success: true,
       fileUrl: fileUrl,
-      fullUrl: fullUrl,
       fileName: req.file.filename,
       originalName: req.file.originalname,
       mimeType: req.file.mimetype,
@@ -83,6 +94,10 @@ router.post('/upload', upload.single('file'), (req, res) => {
     });
   } catch (error) {
     console.error('Erro no upload de arquivo:', error);
+    
+    // Set the content type explicitly to avoid misinterpretation
+    res.setHeader('Content-Type', 'application/json');
+    
     res.status(500).json({
       success: false,
       error: 'Erro ao processar o upload do arquivo'
@@ -92,6 +107,11 @@ router.post('/upload', upload.single('file'), (req, res) => {
 
 // Error handling middleware for multer errors
 router.use((err, req, res, next) => {
+  console.error('Upload error:', err);
+  
+  // Set the content type explicitly to avoid misinterpretation
+  res.setHeader('Content-Type', 'application/json');
+  
   if (err instanceof multer.MulterError) {
     if (err.code === 'LIMIT_FILE_SIZE') {
       return res.status(413).json({

@@ -11,6 +11,7 @@ const ImageUpload = () => {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
+  const [debugInfo, setDebugInfo] = useState<string | null>(null);
 
   // Clean up preview URL when component unmounts
   React.useEffect(() => {
@@ -37,6 +38,7 @@ const ImageUpload = () => {
       
       // Reset uploaded image URL when selecting a new image
       setUploadedImageUrl(null);
+      setDebugInfo(null);
     }
   };
 
@@ -47,12 +49,24 @@ const ImageUpload = () => {
     }
 
     setUploading(true);
+    setDebugInfo('Iniciando upload...');
+    
     try {
+      // Log info for debugging
+      const host = window.location.hostname;
+      const uploadEndpoint = host === 'www.hermesbot.com.br' || host.includes('hermes') 
+        ? '/api/uploads/upload' 
+        : '/uploads/upload';
+      
+      setDebugInfo(prev => `${prev}\nEndpoint: ${uploadEndpoint}\nHostname: ${host}`);
+      
       const fileUrl = await uploadFile(selectedImage);
       setUploadedImageUrl(fileUrl);
+      setDebugInfo(prev => `${prev}\nUpload bem-sucedido: ${fileUrl}`);
       toast.success('Imagem enviada com sucesso!');
     } catch (error) {
       console.error('Erro no upload:', error);
+      setDebugInfo(prev => `${prev}\nErro: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
       toast.error(`Falha ao enviar imagem: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
     } finally {
       setUploading(false);
@@ -117,6 +131,14 @@ const ImageUpload = () => {
                 {uploading ? 'Enviando...' : 'Enviar Imagem'}
               </Button>
             </div>
+
+            {/* Debug Information */}
+            {debugInfo && (
+              <div className="w-full p-4 bg-gray-50 border border-gray-200 rounded-lg mt-4">
+                <p className="font-medium text-gray-800 mb-2">Informações de Debug:</p>
+                <pre className="bg-white p-3 rounded text-xs overflow-auto max-h-40 whitespace-pre-wrap">{debugInfo}</pre>
+              </div>
+            )}
 
             {/* Upload Success Message */}
             {uploadedImageUrl && (

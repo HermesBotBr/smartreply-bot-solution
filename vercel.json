@@ -11,16 +11,16 @@
       "destination": "/api/force-refresh-pack"
     },
     {
+      "source": "/api/uploads/:path*",
+      "destination": "/api/uploads/:path*"
+    },
+    {
       "source": "/uploads/:path*",
       "destination": "/api/uploads/:path*"
     },
     {
       "source": "/api/:path*",
       "destination": "/api/:path*"
-    },
-    {
-      "source": "/uploads/:path*",
-      "destination": "/uploads/:path*"
     },
     {
       "source": "/((?!api/|uploads/).*)",
