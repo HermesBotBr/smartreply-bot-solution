@@ -1,4 +1,3 @@
-
 /**
  * Uploads a file to the external server
  * @param file The file to upload
@@ -123,7 +122,7 @@ export async function uploadFileToMercadoLivre(file: File, sellerId: string): Pr
   }
   
   const formData = new FormData();
-  formData.append('File', file);
+  formData.append('file', file); // Corrigido: 'file' em minúsculas ao invés de 'File'
   formData.append('seller_id', sellerId);
   
   try {
@@ -136,21 +135,6 @@ export async function uploadFileToMercadoLivre(file: File, sellerId: string): Pr
     const uploadUrl = 'https://projetohermes-dda7e0c8d836.herokuapp.com/upload';
     console.log("Using upload endpoint:", uploadUrl);
     
-    // Add debugging middleware to check what's being sent
-    const debugResponse = await fetch(uploadUrl, {
-      method: 'OPTIONS',
-      headers: {
-        'Accept': 'application/json'
-      }
-    }).catch(err => {
-      console.log("OPTIONS request failed, but this might be expected:", err);
-      return null;
-    });
-    
-    if (debugResponse) {
-      console.log("OPTIONS response:", debugResponse.status, debugResponse.statusText);
-    }
-    
     // Log what's in the FormData for debugging (can't directly log FormData content)
     for (const pair of formData.entries()) {
       console.log(`FormData entry: ${pair[0]} = ${pair[1] instanceof File ? `File: ${pair[1].name}` : pair[1]}`);
@@ -159,10 +143,9 @@ export async function uploadFileToMercadoLivre(file: File, sellerId: string): Pr
     const response = await fetch(uploadUrl, {
       method: 'POST',
       body: formData,
-      // Explicitly not setting Content-Type header so browser can set it with boundary
+      // Não definimos Content-Type manualmente para o navegador configurar com o boundary correto
       headers: {
-        'Accept': 'application/json',
-        'X-Requested-With': 'XMLHttpRequest'
+        'Accept': 'application/json'
       }
     });
     
