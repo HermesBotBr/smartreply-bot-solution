@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -71,17 +72,38 @@ const HermesLogin: React.FC<HermesLoginProps> = ({ onLoginSuccess }) => {
     fetchEnvData();
   }, []);
 
+  // Function to activate notifications for a seller
+  const activateNotifications = async (sellerId: string) => {
+    try {
+      console.log("Activating notifications for seller:", sellerId);
+      
+      await axios.post(getNgrokUrl('/notifica'), {
+        seller_id: sellerId,
+        notifica: "on"
+      });
+      
+      console.log("Notifications activated successfully");
+    } catch (error) {
+      console.error("Error activating notifications:", error);
+      // We don't show an error toast here to not disturb the user experience
+      // The login process continues normally even if this call fails
+    }
+  };
+
   // Function to notify backend about the login
   const notifyBackendConfig = async (sellerId: string) => {
     try {
       console.log("Notifying backend config for seller:", sellerId);
       
-      await axios.post('https://projetohermes-dda7e0c8d836.herokuapp.com/config', {
+      await axios.post(getNgrokUrl('/config'), {
         seller_id: sellerId,
         command: "add"
       });
       
       console.log("Backend config notification successful");
+      
+      // Also activate notifications for this seller
+      await activateNotifications(sellerId);
     } catch (error) {
       console.error("Error notifying backend config:", error);
       // We don't show an error toast here to not disturb the user experience

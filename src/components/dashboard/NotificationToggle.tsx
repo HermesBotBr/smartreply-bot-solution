@@ -6,6 +6,7 @@ import { Bell } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { usePushNotification } from "@/hooks/use-push-notification";
 import axios from 'axios';
+import { getNgrokUrl } from "@/config/api";
 
 interface NotificationToggleProps {
   sellerId: string | null;
@@ -34,7 +35,7 @@ const NotificationToggle: React.FC<NotificationToggleProps> = ({ sellerId }) => 
     
     setIsLoading(true);
     try {
-      const response = await axios.get('https://projetohermes-dda7e0c8d836.herokuapp.com/api/db/rows/config');
+      const response = await axios.get(getNgrokUrl('/api/db/rows/config'));
       
       if (response.data && Array.isArray(response.data.rows)) {
         const sellerConfig = response.data.rows.find((config: any) => 
@@ -77,10 +78,9 @@ const NotificationToggle: React.FC<NotificationToggleProps> = ({ sellerId }) => 
       setNotificationsEnabled(enabled);
       
       // Enviar atualização para o servidor
-      const command = enabled ? 'notifica=on' : 'notifica=off';
-      await axios.post('https://projetohermes-dda7e0c8d836.herokuapp.com/config', {
+      await axios.post(getNgrokUrl('/notifica'), {
         seller_id: sellerId,
-        command: command
+        notifica: enabled ? "on" : "off"
       });
       
       // Lidar com a assinatura de push notification
