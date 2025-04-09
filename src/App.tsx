@@ -1,4 +1,3 @@
-
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
@@ -19,6 +18,7 @@ import TokenRequest from "./pages/TokenRequest";
 import Hermes from "./pages/Hermes";
 import DesenvolvedorSql from "./pages/DesenvolvedorSql";
 import Anexos from "./pages/Anexos";
+import ImageUpload from "./pages/ImageUpload";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -56,6 +56,7 @@ const AppLayout = () => {
           <Route path="/hermes" element={<Hermes />} />
           <Route path="/desenvolvedorsql" element={<DesenvolvedorSql />} />
           <Route path="/anexos" element={<Anexos />} />
+          <Route path="/upload-imagem" element={<ImageUpload />} />
         </Routes>
       </main>
       {!isUserGiovaniBurgo && !isNotificationEndpoint && !isMlCallback && !isTokenRequest && !isHermes && !isDesenvolvedorSql && <Footer />}
