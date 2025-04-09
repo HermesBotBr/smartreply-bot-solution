@@ -9,13 +9,20 @@ export async function uploadFile(file: File): Promise<string> {
   formData.append('file', file);
   
   try {
-    const response = await fetch('/api/uploads/upload', {
+    // Get correct API URL using the getNgrokUrl helper
+    const uploadUrl = '/api/uploads/upload';
+    
+    console.log("Uploading file to:", uploadUrl);
+    
+    const response = await fetch(uploadUrl, {
       method: 'POST',
       body: formData
     });
     
     if (!response.ok) {
-      throw new Error('Upload failed');
+      const errorText = await response.text();
+      console.error("Upload failed with status:", response.status, errorText);
+      throw new Error('Upload failed: ' + response.status);
     }
     
     const data = await response.json();

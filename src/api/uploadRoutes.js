@@ -57,18 +57,25 @@ const upload = multer({
 router.post('/upload', upload.single('file'), (req, res) => {
   try {
     if (!req.file) {
-      return res.status(400).json({ error: 'Nenhum arquivo foi enviado' });
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Nenhum arquivo foi enviado' 
+      });
     }
     
     // Return the correct file URL path that will work when accessed from the frontend
+    // Make sure we use a path that works in both development and production
     const fileUrl = `/uploads/${req.file.filename}`;
+    const fullUrl = `${req.protocol}://${req.get('host')}${fileUrl}`;
     
     console.log('File uploaded:', req.file);
     console.log('File URL path:', fileUrl);
+    console.log('Full URL:', fullUrl);
     
     res.status(200).json({
       success: true,
       fileUrl: fileUrl,
+      fullUrl: fullUrl,
       fileName: req.file.filename,
       originalName: req.file.originalname,
       mimeType: req.file.mimetype,
@@ -81,6 +88,31 @@ router.post('/upload', upload.single('file'), (req, res) => {
       error: 'Erro ao processar o upload do arquivo'
     });
   }
+});
+
+// Error handling middleware for multer errors
+router.use((err, req, res, next) => {
+  if (err instanceof multer.MulterError) {
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      return res.status(413).json({
+        success: false,
+        error: 'Arquivo muito grande. O limite é 5MB.'
+      });
+    }
+    return res.status(400).json({
+      success: false,
+      error: `Erro no upload: ${err.message}`
+    });
+  }
+  
+  if (err) {
+    return res.status(500).json({
+      success: false,
+      error: err.message || 'Erro desconhecido no upload'
+    });
+  }
+  
+  next();
 });
 
 module.exports = router;
