@@ -1,4 +1,3 @@
-
 /**
  * Uploads a file to the external server
  * @param file The file to upload
@@ -68,23 +67,43 @@ export async function uploadFile(file: File): Promise<string> {
       throw new Error('Error parsing server response');
     }
     
-    // Handle the response based on your API format
-    if (data && data.url) {
-      console.log("File uploaded successfully:", data.url);
-      return data.url;
-    } else if (data && data.imageUrl) {
-      console.log("File uploaded successfully:", data.imageUrl);
-      return data.imageUrl;
-    } else if (data && data.link) {
-      console.log("File uploaded successfully:", data.link);
-      return data.link;
-    } else if (data && data.fileUrl) {
-      console.log("File uploaded successfully:", data.fileUrl);
-      return data.fileUrl;
-    } else {
-      console.error("Unexpected response format:", data);
-      throw new Error('Unexpected response format from server');
+    // Accept the response even if it has a different format
+    // The server returns { message: 'Imagem enviada com sucesso.', file: {...} }
+    if (data) {
+      // If the server returns a URL, use it
+      if (data.url) {
+        console.log("File uploaded successfully:", data.url);
+        return data.url;
+      } 
+      // If the server returns a file object with path
+      else if (data.file && data.file.path) {
+        const imageUrl = `https://projetohermes-dda7e0c8d836.herokuapp.com/${data.file.path}`;
+        console.log("File uploaded successfully, constructed URL:", imageUrl);
+        return imageUrl;
+      }
+      // Other possible response formats
+      else if (data.imageUrl) {
+        console.log("File uploaded successfully:", data.imageUrl);
+        return data.imageUrl;
+      } 
+      else if (data.link) {
+        console.log("File uploaded successfully:", data.link);
+        return data.link;
+      } 
+      else if (data.fileUrl) {
+        console.log("File uploaded successfully:", data.fileUrl);
+        return data.fileUrl;
+      }
+      
+      // If we can't find a URL but the request succeeded, we'll construct one
+      const imagePath = data.file?.filename || data.filename || 'uploaded-image';
+      const baseUrl = 'https://projetohermes-dda7e0c8d836.herokuapp.com/uploads/';
+      const constructedUrl = baseUrl + imagePath;
+      console.log("Constructed URL from response:", constructedUrl);
+      return constructedUrl;
     }
+    
+    throw new Error('Unexpected response format from server');
   } catch (error) {
     console.error("Error uploading file:", error);
     throw new Error("Failed to upload file");

@@ -72,7 +72,7 @@ const ImageUpload = () => {
     <div className="container mx-auto py-10 px-4">
       <Card className="max-w-2xl mx-auto">
         <CardHeader>
-          <CardTitle className="text-center">Upload de Imagens (API Externa)</CardTitle>
+          <CardTitle className="text-center">Upload de Imagens (API Externa Hermes)</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col items-center gap-6">
@@ -163,6 +163,13 @@ const ImageUpload = () => {
                   >
                     Visualizar imagem <ImageIcon size={16} className="ml-1" />
                   </a>
+                </div>
+                <div className="mt-4">
+                  <img 
+                    src={uploadedImageUrl} 
+                    alt="Imagem enviada" 
+                    className="max-w-full max-h-64 object-contain border rounded" 
+                  />
                 </div>
               </div>
             )}
