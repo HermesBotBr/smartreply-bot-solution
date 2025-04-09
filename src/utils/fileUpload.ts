@@ -127,14 +127,47 @@ export async function uploadFileToMercadoLivre(file: File, sellerId: string): Pr
   formData.append('seller_id', sellerId);
   
   try {
-    console.log(`Preparing to upload file to Mercado Livre for seller ${sellerId}`);
+    console.log(`Preparing to upload file to Mercado Livre for seller ${sellerId}`, {
+      fileSize: file.size,
+      fileType: file.type,
+      fileName: file.name
+    });
     
     const uploadUrl = 'https://projetohermes-dda7e0c8d836.herokuapp.com/upload';
+    console.log("Using upload endpoint:", uploadUrl);
+    
+    // Add debugging middleware to check what's being sent
+    const debugResponse = await fetch(uploadUrl, {
+      method: 'OPTIONS',
+      headers: {
+        'Accept': 'application/json'
+      }
+    }).catch(err => {
+      console.log("OPTIONS request failed, but this might be expected:", err);
+      return null;
+    });
+    
+    if (debugResponse) {
+      console.log("OPTIONS response:", debugResponse.status, debugResponse.statusText);
+    }
+    
+    // Log what's in the FormData for debugging (can't directly log FormData content)
+    for (const pair of formData.entries()) {
+      console.log(`FormData entry: ${pair[0]} = ${pair[1] instanceof File ? `File: ${pair[1].name}` : pair[1]}`);
+    }
     
     const response = await fetch(uploadUrl, {
       method: 'POST',
       body: formData,
+      // Explicitly not setting Content-Type header so browser can set it with boundary
+      headers: {
+        'Accept': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest'
+      }
     });
+    
+    console.log("Upload response status:", response.status);
+    console.log("Upload response headers:", [...response.headers.entries()]);
     
     if (!response.ok) {
       const errorText = await response.text();
@@ -142,8 +175,23 @@ export async function uploadFileToMercadoLivre(file: File, sellerId: string): Pr
       throw new Error(`Upload failed: ${response.status} ${response.statusText}`);
     }
     
-    const data = await response.json();
-    console.log("Upload response:", data);
+    const contentType = response.headers.get('content-type');
+    let data;
+    
+    if (contentType && contentType.includes('application/json')) {
+      data = await response.json();
+    } else {
+      const textResponse = await response.text();
+      console.log("Response is not JSON, text:", textResponse);
+      try {
+        data = JSON.parse(textResponse);
+      } catch (e) {
+        console.error("Could not parse response as JSON:", e);
+        throw new Error("Invalid response format from server");
+      }
+    }
+    
+    console.log("Upload response data:", data);
     
     if (data && data.id) {
       console.log("File uploaded successfully, attachment ID:", data.id);
