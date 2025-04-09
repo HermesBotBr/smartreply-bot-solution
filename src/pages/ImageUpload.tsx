@@ -49,26 +49,11 @@ const ImageUpload = () => {
     }
 
     setUploading(true);
-    setDebugInfo('Iniciando upload...');
+    setDebugInfo('Iniciando upload para o servidor externo...');
     
     try {
-      // Log environment info for debugging
-      const host = window.location.hostname;
-      const protocol = window.location.protocol;
-      const port = window.location.port;
-      const origin = window.location.origin;
-      
-      setDebugInfo(prev => `${prev}\nEnvironment Info:
-- Hostname: ${host}
-- Protocol: ${protocol}
-- Port: ${port || 'default'}
-- Origin: ${origin}`);
-
-      const uploadEndpoint = host === 'www.hermesbot.com.br' || host.includes('hermes') 
-        ? '/api/uploads/upload' 
-        : '/uploads/upload';
-      
-      setDebugInfo(prev => `${prev}\nUsing upload endpoint: ${uploadEndpoint}`);
+      setDebugInfo(prev => `${prev}\nEnviando para: https://projetohermes-dda7e0c8d836.herokuapp.com/upload-image`);
+      setDebugInfo(prev => `${prev}\nUsando a chave 'image' para o arquivo`);
       
       const fileUrl = await uploadFile(selectedImage);
       setUploadedImageUrl(fileUrl);
@@ -87,7 +72,7 @@ const ImageUpload = () => {
     <div className="container mx-auto py-10 px-4">
       <Card className="max-w-2xl mx-auto">
         <CardHeader>
-          <CardTitle className="text-center">Upload de Imagens</CardTitle>
+          <CardTitle className="text-center">Upload de Imagens (API Externa)</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col items-center gap-6">
@@ -142,9 +127,17 @@ const ImageUpload = () => {
               </Button>
             </div>
 
-            {/* Debug Information - Expanded with more details */}
+            {/* Information about the external API */}
+            <div className="w-full p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="font-medium text-blue-800 mb-2">API de Destino:</p>
+              <p className="text-sm text-gray-700">https://projetohermes-dda7e0c8d836.herokuapp.com/upload-image</p>
+              <p className="text-sm text-gray-700 mt-2">Método: POST</p>
+              <p className="text-sm text-gray-700">Parâmetro: image (file)</p>
+            </div>
+
+            {/* Debug Information */}
             {debugInfo && (
-              <div className="w-full p-4 bg-gray-50 border border-gray-200 rounded-lg mt-4">
+              <div className="w-full p-4 bg-gray-50 border border-gray-200 rounded-lg">
                 <p className="font-medium text-gray-800 mb-2">Informações de Debug:</p>
                 <pre className="bg-white p-3 rounded text-xs overflow-auto max-h-60 whitespace-pre-wrap">{debugInfo}</pre>
               </div>
@@ -152,7 +145,7 @@ const ImageUpload = () => {
 
             {/* Upload Success Message */}
             {uploadedImageUrl && (
-              <div className="w-full p-4 bg-green-50 border border-green-200 rounded-lg mt-4">
+              <div className="w-full p-4 bg-green-50 border border-green-200 rounded-lg">
                 <div className="flex items-center mb-2">
                   <Check className="text-green-500 mr-2" size={20} />
                   <p className="font-medium text-green-800">Upload concluído com sucesso!</p>
