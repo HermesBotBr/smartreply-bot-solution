@@ -10,8 +10,11 @@ const port = process.env.PORT || 3001;
 app.use(cors({
   origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Accept']
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With']
 }));
+
+// Add OPTIONS handling for preflight requests
+app.options('*', cors());
 
 // Parse JSON request bodies
 app.use(express.json());
@@ -35,20 +38,20 @@ const uploadRoutes = require('./src/api/uploadRoutes');
 // Import the message routes
 const messageRoutes = require('./src/api/messageRoutes');
 
-// Make routes accessible
-app.use('/api/messages', messageRoutes);
-app.use('/api/db', dbRoutes);
-
-// IMPORTANT: Use the upload routes at both paths to ensure they're accessible in all environments
-// Make sure these routes are defined BEFORE the catch-all routes
-app.use('/api/uploads', uploadRoutes);
-app.use('/uploads', uploadRoutes);
-
 // Log all incoming requests to help with debugging
 app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
   next();
 });
+
+// Make routes accessible - ORDER IS IMPORTANT!
+// Handle file uploads FIRST to prevent them from being captured by catch-all routes
+app.use('/api/uploads', uploadRoutes);
+app.use('/uploads', uploadRoutes);
+
+// Then handle other API routes
+app.use('/api/messages', messageRoutes);
+app.use('/api/db', dbRoutes);
 
 // Import the notification endpoint handler directly using dynamic import to handle ESM module
 import('./api/notification-endpoint.js').then(module => {

@@ -9,31 +9,37 @@ export async function uploadFile(file: File): Promise<string> {
   formData.append('file', file);
   
   try {
-    // Determine the correct upload URL based on environment
+    // Get current URL info for debugging
+    const currentUrl = window.location.href;
     const host = window.location.hostname;
-    let uploadUrl;
+    const path = window.location.pathname;
+    console.log("Current URL:", currentUrl);
+    console.log("Current host:", host);
+    console.log("Current path:", path);
     
-    // Check if we're on a specific domain or in local/development
-    if (host === 'www.hermesbot.com.br' || host.includes('hermes')) {
-      // For production environment, use the API path
-      uploadUrl = '/api/uploads/upload';
-    } else {
-      // For local development or other environments
-      uploadUrl = '/uploads/upload';
-    }
-    
+    // Always use explicit path regardless of environment
+    const uploadUrl = '/api/uploads/upload';
     console.log("Uploading file to:", uploadUrl);
     
-    const response = await fetch(uploadUrl, {
+    // Add a cache-busting parameter to avoid caching issues
+    const cacheBuster = new Date().getTime();
+    const urlWithCache = `${uploadUrl}?_=${cacheBuster}`;
+    
+    const response = await fetch(urlWithCache, {
       method: 'POST',
       body: formData,
       headers: {
-        'Accept': 'application/json'
+        'Accept': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest' // Add this to help servers identify AJAX requests
       }
     });
     
     console.log("Response status:", response.status);
     console.log("Response headers:", [...response.headers.entries()]);
+    
+    // Get the content type to check format
+    const contentType = response.headers.get('content-type');
+    console.log("Response content type:", contentType);
     
     if (!response.ok) {
       // Try to get response text for debugging
@@ -42,10 +48,6 @@ export async function uploadFile(file: File): Promise<string> {
       
       throw new Error(`Upload failed: ${response.status} ${response.statusText}`);
     }
-    
-    // Get the content type to ensure we're parsing JSON
-    const contentType = response.headers.get('content-type');
-    console.log("Response content type:", contentType);
     
     if (!contentType || !contentType.includes('application/json')) {
       // Try to get response text for debugging
@@ -57,6 +59,7 @@ export async function uploadFile(file: File): Promise<string> {
     }
     
     const data = await response.json();
+    console.log("API response data:", data);
     
     if (data.success && data.fileUrl) {
       console.log("File uploaded successfully:", data.fileUrl);

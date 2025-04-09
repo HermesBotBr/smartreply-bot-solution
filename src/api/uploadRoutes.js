@@ -55,10 +55,20 @@ const upload = multer({
 
 // Debug route to test if the upload endpoint is reachable
 router.get('/status', (req, res) => {
+  // Set headers before sending response
+  res.setHeader('Content-Type', 'application/json');
   res.status(200).json({ 
     status: 'Upload service is running', 
     timestamp: new Date().toISOString() 
   });
+});
+
+// Handle preflight requests explicitly
+router.options('/upload', (req, res) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept, X-Requested-With');
+  res.status(200).end();
 });
 
 // Route for file uploads
@@ -67,12 +77,11 @@ router.post('/upload', upload.single('file'), (req, res) => {
     console.log('Upload request received:', req.method, req.url);
     console.log('Headers:', req.headers);
     
+    // CRITICAL: Set content type BEFORE any processing
+    res.setHeader('Content-Type', 'application/json');
+    
     if (!req.file) {
       console.log('No file received in upload request');
-      
-      // Always set JSON content type before sending response
-      res.setHeader('Content-Type', 'application/json');
-      
       return res.status(400).json({ 
         success: false, 
         error: 'Nenhum arquivo foi enviado' 
@@ -85,9 +94,6 @@ router.post('/upload', upload.single('file'), (req, res) => {
     
     console.log('File uploaded:', req.file);
     console.log('File URL path:', fileUrl);
-    
-    // Set the content type explicitly to avoid misinterpretation
-    res.setHeader('Content-Type', 'application/json');
     
     // Send response as JSON
     return res.status(200).json({
