@@ -9,10 +9,21 @@ export async function uploadFile(file: File): Promise<string> {
   formData.append('file', file);
   
   try {
-    // Use a direct relative path to the API endpoint
-    const uploadUrl = '/uploads/upload';
+    // Determine the correct upload URL based on environment
+    const host = window.location.hostname;
+    let uploadUrl;
+    
+    // Check if we're on a specific domain or in local/development
+    if (host === 'www.hermesbot.com.br' || host.includes('hermes')) {
+      // For production environment, use the API path
+      uploadUrl = '/api/uploads/upload';
+    } else {
+      // For local development or other environments
+      uploadUrl = '/uploads/upload';
+    }
     
     console.log("Uploading file to:", uploadUrl);
+    console.log("Current hostname:", host);
     
     const response = await fetch(uploadUrl, {
       method: 'POST',
