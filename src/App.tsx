@@ -18,6 +18,7 @@ import MercadoLivreCallback from "./pages/MercadoLivreCallback";
 import TokenRequest from "./pages/TokenRequest";
 import Hermes from "./pages/Hermes";
 import DesenvolvedorSql from "./pages/DesenvolvedorSql";
+import Anexos from "./pages/Anexos";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -54,6 +55,7 @@ const AppLayout = () => {
           <Route path="/token-request" element={<TokenRequest />} />
           <Route path="/hermes" element={<Hermes />} />
           <Route path="/desenvolvedorsql" element={<DesenvolvedorSql />} />
+          <Route path="/anexos" element={<Anexos />} />
         </Routes>
       </main>
       {!isUserGiovaniBurgo && !isNotificationEndpoint && !isMlCallback && !isTokenRequest && !isHermes && !isDesenvolvedorSql && <Footer />}
