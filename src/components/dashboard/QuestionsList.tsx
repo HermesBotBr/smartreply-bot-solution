@@ -33,6 +33,7 @@ interface Product {
   title: string;
   thumbnail: string;
   questions: Question[];
+  hasUnansweredQuestions?: boolean;
 }
 
 interface ProductAPIResponse {
@@ -122,15 +123,25 @@ const QuestionsList: React.FC = () => {
       
       const data = await response.json();
       if (data && data.questions && Array.isArray(data.questions)) {
-        setProducts(prev => prev.map(product => {
-          if (product.id === itemId) {
-            return {
-              ...product,
-              questions: data.questions
-            };
-          }
-          return product;
-        }));
+        setProducts(prev => {
+          const updatedProducts = prev.map(product => {
+            if (product.id === itemId) {
+              const hasUnansweredQuestions = data.questions.some((q: Question) => q.status === "UNANSWERED");
+              return {
+                ...product,
+                questions: data.questions,
+                hasUnansweredQuestions
+              };
+            }
+            return product;
+          });
+          
+          return updatedProducts.sort((a, b) => {
+            if (a.hasUnansweredQuestions && !b.hasUnansweredQuestions) return -1;
+            if (!a.hasUnansweredQuestions && b.hasUnansweredQuestions) return 1;
+            return 0;
+          });
+        });
       }
     } catch (error) {
       console.error(`Erro ao buscar perguntas do produto ${itemId}:`, error);
@@ -200,6 +211,24 @@ const QuestionsList: React.FC = () => {
     }
   };
 
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(date);
+  };
+
+  const toggleExpandedQuestions = (productId: string) => {
+    setExpandedQuestions(prev => ({
+      ...prev,
+      [productId]: !prev[productId]
+    }));
+  };
+
   const filteredProducts = products
     .filter(product => {
       if (searchQuery) {
@@ -262,23 +291,14 @@ const QuestionsList: React.FC = () => {
     })
     .filter(product => product.filteredQuestions.length > 0);
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return new Intl.DateTimeFormat('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    }).format(date);
-  };
-
-  const toggleExpandedQuestions = (productId: string) => {
-    setExpandedQuestions(prev => ({
-      ...prev,
-      [productId]: !prev[productId]
-    }));
-  };
+  const sortedFilteredProducts = [...filteredProducts].sort((a, b) => {
+    const aHasUnanswered = a.filteredQuestions.some(q => q.status === "UNANSWERED");
+    const bHasUnanswered = b.filteredQuestions.some(q => q.status === "UNANSWERED");
+    
+    if (aHasUnanswered && !bHasUnanswered) return -1;
+    if (!aHasUnanswered && bHasUnanswered) return 1;
+    return 0;
+  });
 
   return (
     <div className="flex flex-col h-full">
@@ -310,7 +330,7 @@ const QuestionsList: React.FC = () => {
             <Loader2 className="h-8 w-8 animate-spin text-primary mb-2" />
             <p className="text-gray-500">Carregando perguntas...</p>
           </div>
-        ) : filteredProducts.length === 0 ? (
+        ) : sortedFilteredProducts.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-gray-500">
             <p className="mb-2 text-lg">
               {searchQuery ? "Nenhuma pergunta encontrada para esta pesquisa" : 
@@ -322,7 +342,7 @@ const QuestionsList: React.FC = () => {
           </div>
         ) : (
           <div className="space-y-4">
-            {filteredProducts.map((product) => {
+            {sortedFilteredProducts.map((product) => {
               const isExpanded = expandedQuestions[product.id] || false;
               const questions = product.filteredQuestions || [];
               const visibleQuestions = isExpanded ? questions : questions.slice(0, 3);
