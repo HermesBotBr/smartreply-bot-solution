@@ -6,7 +6,7 @@ export function useMlToken(sellerId: string | null = null) {
   const [mlToken, setMlToken] = useState<string | null>(null);
   const { accessToken } = useAccessToken(sellerId);
 
-  // Quando o accessToken mudar, atualize o mlToken
+  // Update mlToken when accessToken changes
   useEffect(() => {
     if (accessToken) {
       setMlToken(accessToken);

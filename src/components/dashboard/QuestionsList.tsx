@@ -9,6 +9,8 @@ import { Label } from "@/components/ui/label";
 import { ChevronDown, ChevronUp, Loader2, Search, Filter, AlertTriangle } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getNgrokUrl } from "@/config/api";
+import { useMlToken } from "@/hooks/useMlToken";
+import axios from 'axios';
 
 interface Question {
   id: number;
@@ -57,6 +59,8 @@ const QuestionsList: React.FC = () => {
   const [answerText, setAnswerText] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [showDeletedQuestions, setShowDeletedQuestions] = useState(true);
+
+  const mlToken = useMlToken(sellerId);
 
   useEffect(() => {
     const auth = localStorage.getItem('hermesAuth');
@@ -152,30 +156,26 @@ const QuestionsList: React.FC = () => {
   };
 
   const handleSubmitAnswer = async () => {
-    if (!answering || !answerText.trim() || !sellerId) {
+    if (!answering || !answerText.trim() || !sellerId || !mlToken) {
+      if (!mlToken) {
+        toast.error("Token de acesso não disponível");
+      }
       return;
     }
     
     setSubmitting(true);
     try {
-      const response = await fetch(getNgrokUrl('/responder-pergunta'), {
-        method: 'POST',
+      const response = await axios.post('https://api.mercadolibre.com/answers', {
+        question_id: answering.id.toString(),
+        text: answerText
+      }, {
         headers: {
+          'Authorization': `Bearer ${mlToken}`,
           'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          question_id: answering.id.toString(),
-          answer_text: answerText,
-          seller_id: sellerId
-        })
+        }
       });
       
-      if (!response.ok) {
-        throw new Error('Erro ao enviar resposta');
-      }
-      
-      const data = await response.json();
-      if (data.success) {
+      if (response.status >= 200 && response.status < 300) {
         toast.success('Resposta enviada com sucesso');
         
         setProducts(prev => prev.map(product => {
@@ -204,11 +204,20 @@ const QuestionsList: React.FC = () => {
         setAnswering(null);
         setAnswerText('');
       } else {
-        throw new Error(data.message || 'Erro ao enviar resposta');
+        throw new Error(`Erro ao enviar resposta: ${response.statusText}`);
       }
     } catch (error) {
       console.error('Erro ao enviar resposta:', error);
-      toast.error(`Falha ao enviar resposta: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
+      let errorMessage = 'Falha ao enviar resposta';
+      
+      if (axios.isAxiosError(error) && error.response) {
+        errorMessage += `: ${error.response.status} - ${error.response.statusText}`;
+        console.error('Detalhes do erro:', error.response.data);
+      } else if (error instanceof Error) {
+        errorMessage += `: ${error.message}`;
+      }
+      
+      toast.error(errorMessage);
     } finally {
       setSubmitting(false);
     }
