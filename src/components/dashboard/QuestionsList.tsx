@@ -9,7 +9,6 @@ import { Label } from "@/components/ui/label";
 import { ChevronDown, ChevronUp, Loader2, Search, Filter, AlertTriangle } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getNgrokUrl } from "@/config/api";
-import { useMlToken } from "@/hooks/useMlToken";
 import axios from 'axios';
 
 interface Question {
@@ -59,8 +58,6 @@ const QuestionsList: React.FC = () => {
   const [answerText, setAnswerText] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [showDeletedQuestions, setShowDeletedQuestions] = useState(true);
-
-  const mlToken = useMlToken(sellerId);
 
   useEffect(() => {
     const auth = localStorage.getItem('hermesAuth');
@@ -156,23 +153,16 @@ const QuestionsList: React.FC = () => {
   };
 
   const handleSubmitAnswer = async () => {
-    if (!answering || !answerText.trim() || !sellerId || !mlToken) {
-      if (!mlToken) {
-        toast.error("Token de acesso não disponível");
-      }
+    if (!answering || !answerText.trim() || !sellerId) {
       return;
     }
     
     setSubmitting(true);
     try {
-      const response = await axios.post('https://api.mercadolibre.com/answers', {
+      const response = await axios.post(getNgrokUrl('/responde'), {
+        seller_id: sellerId,
         question_id: answering.id.toString(),
         text: answerText
-      }, {
-        headers: {
-          'Authorization': `Bearer ${mlToken}`,
-          'Content-Type': 'application/json'
-        }
       });
       
       if (response.status >= 200 && response.status < 300) {
