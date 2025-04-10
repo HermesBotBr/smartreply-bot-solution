@@ -8,8 +8,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { ChevronDown, ChevronUp, Loader2, Search, Filter } from "lucide-react";
-import ProductThumbnail from './ProductThumbnail';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { getNgrokUrl } from "@/config/api";
 
 interface Question {
   id: number;
@@ -30,17 +30,23 @@ interface Question {
 
 interface Product {
   id: string;
-  title?: string;
-  thumbnail?: string;
-  price?: number;
+  title: string;
+  thumbnail: string;
   questions: Question[];
+}
+
+interface ProductAPIResponse {
+  items: {
+    mlb: string;
+    title: string;
+    image: string;
+  }[];
 }
 
 const QuestionsList: React.FC = () => {
   const [sellerId, setSellerId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
-  const [productDetails, setProductDetails] = useState<Record<string, any>>({});
   const [searchQuery, setSearchQuery] = useState('');
   const [filterNoAnswers, setFilterNoAnswers] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
@@ -78,25 +84,26 @@ const QuestionsList: React.FC = () => {
     
     setLoading(true);
     try {
-      const response = await fetch(`https://projetohermes-dda7e0c8d836.herokuapp.com/anuncios?seller_id=${sellerId}`);
+      const response = await fetch(getNgrokUrl(`/anuncios?seller_id=${sellerId}`));
       if (!response.ok) {
         throw new Error(`Erro ao buscar anúncios: ${response.status}`);
       }
       
-      const data = await response.json();
-      if (data && data.mlbs && Array.isArray(data.mlbs)) {
-        // Inicializa array de produtos com IDs
-        const initialProducts = data.mlbs.map((mlb: string) => ({
-          id: mlb,
+      const data = await response.json() as ProductAPIResponse;
+      if (data && data.items && Array.isArray(data.items)) {
+        // Inicializa array de produtos com dados dos anúncios
+        const initialProducts = data.items.map(item => ({
+          id: item.mlb,
+          title: item.title,
+          thumbnail: item.image.replace('http://', 'https://'),
           questions: []
         }));
         
         setProducts(initialProducts);
         
-        // Busca detalhes e perguntas para cada produto
-        for (const mlb of data.mlbs) {
-          fetchProductDetails(mlb);
-          fetchProductQuestions(mlb);
+        // Busca perguntas para cada produto
+        for (const product of initialProducts) {
+          fetchProductQuestions(product.id);
         }
       }
     } catch (error) {
@@ -107,44 +114,12 @@ const QuestionsList: React.FC = () => {
     }
   };
 
-  // Função para buscar detalhes do produto
-  const fetchProductDetails = async (itemId: string) => {
-    try {
-      const response = await fetch(`https://api.mercadolibre.com/items/${itemId}`);
-      if (!response.ok) {
-        console.error(`Erro ao buscar detalhes do produto ${itemId}: ${response.status}`);
-        return;
-      }
-      
-      const data = await response.json();
-      setProductDetails(prev => ({
-        ...prev,
-        [itemId]: data
-      }));
-      
-      // Atualiza o título e thumbnail do produto no array de produtos
-      setProducts(prev => prev.map(product => {
-        if (product.id === itemId) {
-          return {
-            ...product,
-            title: data.title,
-            thumbnail: data.thumbnail,
-            price: data.price
-          };
-        }
-        return product;
-      }));
-    } catch (error) {
-      console.error(`Erro ao buscar detalhes do produto ${itemId}:`, error);
-    }
-  };
-
   // Função para buscar perguntas de um produto
   const fetchProductQuestions = async (itemId: string) => {
     if (!sellerId) return;
     
     try {
-      const response = await fetch(`https://projetohermes-dda7e0c8d836.herokuapp.com/perguntas?seller_id=${sellerId}&mlb=${itemId}`);
+      const response = await fetch(getNgrokUrl(`/perguntas?seller_id=${sellerId}&mlb=${itemId}`));
       if (!response.ok) {
         console.error(`Erro ao buscar perguntas do produto ${itemId}: ${response.status}`);
         return;
@@ -176,7 +151,7 @@ const QuestionsList: React.FC = () => {
     
     setSubmitting(true);
     try {
-      const response = await fetch('https://projetohermes-dda7e0c8d836.herokuapp.com/responder-pergunta', {
+      const response = await fetch(getNgrokUrl('/responder-pergunta'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -367,9 +342,18 @@ const QuestionsList: React.FC = () => {
                 <Card key={product.id} className="overflow-hidden">
                   <CardHeader className="pb-2">
                     <div className="flex items-center">
-                      <ProductThumbnail itemId={product.id} />
+                      <div className="rounded-full overflow-hidden w-12 h-12 border border-gray-300">
+                        <img 
+                          src={product.thumbnail} 
+                          alt={product.title}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = "https://http2.mlstatic.com/frontend-assets/ui-navigation/5.19.5/mercadolibre/navigation_image_not_found.svg";
+                          }}
+                        />
+                      </div>
                       <div className="ml-3 flex-1">
-                        <h3 className="font-medium text-sm">{product.title || product.id}</h3>
+                        <h3 className="font-medium text-sm">{product.title}</h3>
                         <p className="text-xs text-gray-500">{product.id}</p>
                       </div>
                     </div>
@@ -476,9 +460,18 @@ const QuestionsList: React.FC = () => {
                     className={`flex items-center p-2 hover:bg-gray-100 rounded-md cursor-pointer ${selectedProduct === product.id ? 'bg-blue-50' : ''}`}
                     onClick={() => setSelectedProduct(product.id)}
                   >
-                    <ProductThumbnail itemId={product.id} />
+                    <div className="rounded-full overflow-hidden w-8 h-8 border border-gray-300">
+                      <img 
+                        src={product.thumbnail} 
+                        alt={product.title}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = "https://http2.mlstatic.com/frontend-assets/ui-navigation/5.19.5/mercadolibre/navigation_image_not_found.svg";
+                        }}
+                      />
+                    </div>
                     <div className="ml-3 flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{product.title || product.id}</p>
+                      <p className="text-sm font-medium truncate">{product.title}</p>
                       <p className="text-xs text-gray-500">{product.id}</p>
                     </div>
                   </div>
@@ -519,7 +512,18 @@ const QuestionsList: React.FC = () => {
               <div>
                 <h3 className="text-sm font-semibold mb-1 text-gray-500">Produto</h3>
                 <div className="flex items-center p-2 bg-gray-50 rounded">
-                  <ProductThumbnail itemId={answering.item_id} />
+                  {products.find(p => p.id === answering.item_id) && (
+                    <div className="rounded-full overflow-hidden w-8 h-8 border border-gray-300">
+                      <img 
+                        src={products.find(p => p.id === answering.item_id)?.thumbnail}
+                        alt={products.find(p => p.id === answering.item_id)?.title}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = "https://http2.mlstatic.com/frontend-assets/ui-navigation/5.19.5/mercadolibre/navigation_image_not_found.svg";
+                        }}
+                      />
+                    </div>
+                  )}
                   <div className="ml-3">
                     <p className="text-sm font-medium">
                       {products.find(p => p.id === answering.item_id)?.title || answering.item_id}
@@ -583,4 +587,3 @@ const QuestionsList: React.FC = () => {
 };
 
 export default QuestionsList;
-
