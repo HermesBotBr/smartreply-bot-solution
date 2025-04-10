@@ -126,7 +126,10 @@ const QuestionsList: React.FC = () => {
         setProducts(prev => {
           const updatedProducts = prev.map(product => {
             if (product.id === itemId) {
-              const hasUnansweredQuestions = data.questions.some((q: Question) => q.status === "UNANSWERED");
+              const hasUnansweredQuestions = data.questions.some((q: Question) => 
+                q.status === "UNANSWERED" && !q.deleted_from_listing
+              );
+              
               return {
                 ...product,
                 questions: data.questions,
@@ -292,8 +295,8 @@ const QuestionsList: React.FC = () => {
     .filter(product => product.filteredQuestions.length > 0);
 
   const sortedFilteredProducts = [...filteredProducts].sort((a, b) => {
-    const aHasUnanswered = a.filteredQuestions.some(q => q.status === "UNANSWERED");
-    const bHasUnanswered = b.filteredQuestions.some(q => q.status === "UNANSWERED");
+    const aHasUnanswered = a.filteredQuestions.some(q => q.status === "UNANSWERED" && !q.deleted_from_listing);
+    const bHasUnanswered = b.filteredQuestions.some(q => q.status === "UNANSWERED" && !q.deleted_from_listing);
     
     if (aHasUnanswered && !bHasUnanswered) return -1;
     if (!aHasUnanswered && bHasUnanswered) return 1;
