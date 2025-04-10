@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,7 +6,7 @@ import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { ChevronDown, ChevronUp, Loader2, Search, Filter } from "lucide-react";
+import { ChevronDown, ChevronUp, Loader2, Search, Filter, AlertTriangle } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getNgrokUrl } from "@/config/api";
 
@@ -18,6 +17,7 @@ interface Question {
   seller_id: number;
   status: string;
   text: string;
+  deleted_from_listing: boolean;
   answer: {
     text: string;
     status: string;
@@ -55,8 +55,8 @@ const QuestionsList: React.FC = () => {
   const [answering, setAnswering] = useState<Question | null>(null);
   const [answerText, setAnswerText] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [showDeletedQuestions, setShowDeletedQuestions] = useState(true);
 
-  // Carrega o Seller ID do localStorage
   useEffect(() => {
     const auth = localStorage.getItem('hermesAuth');
     if (auth) {
@@ -71,14 +71,12 @@ const QuestionsList: React.FC = () => {
     }
   }, []);
 
-  // Busca os anúncios do vendedor quando o Seller ID estiver disponível
   useEffect(() => {
     if (sellerId) {
       fetchAnuncios();
     }
   }, [sellerId]);
 
-  // Função para buscar os anúncios do vendedor
   const fetchAnuncios = async () => {
     if (!sellerId) return;
     
@@ -91,7 +89,6 @@ const QuestionsList: React.FC = () => {
       
       const data = await response.json() as ProductAPIResponse;
       if (data && data.items && Array.isArray(data.items)) {
-        // Inicializa array de produtos com dados dos anúncios
         const initialProducts = data.items.map(item => ({
           id: item.mlb,
           title: item.title,
@@ -101,7 +98,6 @@ const QuestionsList: React.FC = () => {
         
         setProducts(initialProducts);
         
-        // Busca perguntas para cada produto
         for (const product of initialProducts) {
           fetchProductQuestions(product.id);
         }
@@ -114,7 +110,6 @@ const QuestionsList: React.FC = () => {
     }
   };
 
-  // Função para buscar perguntas de um produto
   const fetchProductQuestions = async (itemId: string) => {
     if (!sellerId) return;
     
@@ -127,7 +122,6 @@ const QuestionsList: React.FC = () => {
       
       const data = await response.json();
       if (data && data.questions && Array.isArray(data.questions)) {
-        // Atualiza as perguntas do produto
         setProducts(prev => prev.map(product => {
           if (product.id === itemId) {
             return {
@@ -143,7 +137,6 @@ const QuestionsList: React.FC = () => {
     }
   };
 
-  // Responder a uma pergunta
   const handleSubmitAnswer = async () => {
     if (!answering || !answerText.trim() || !sellerId) {
       return;
@@ -171,7 +164,6 @@ const QuestionsList: React.FC = () => {
       if (data.success) {
         toast.success('Resposta enviada com sucesso');
         
-        // Atualiza as perguntas do produto para refletir a resposta
         setProducts(prev => prev.map(product => {
           if (product.id === answering.item_id) {
             return {
@@ -208,10 +200,8 @@ const QuestionsList: React.FC = () => {
     }
   };
 
-  // Filtra produtos e perguntas com base na pesquisa e filtros
   const filteredProducts = products
     .filter(product => {
-      // Filtro por texto de pesquisa
       if (searchQuery) {
         const title = product.title || product.id;
         const allQuestionTexts = product.questions.map(q => q.text).join(' ');
@@ -229,12 +219,10 @@ const QuestionsList: React.FC = () => {
         }
       }
       
-      // Filtro por produto selecionado
       if (selectedProduct && product.id !== selectedProduct) {
         return false;
       }
       
-      // Filtro de perguntas sem resposta
       if (filterNoAnswers) {
         const hasUnansweredQuestions = product.questions.some(q => q.status === "UNANSWERED");
         if (!hasUnansweredQuestions) {
@@ -245,9 +233,11 @@ const QuestionsList: React.FC = () => {
       return true;
     })
     .map(product => {
-      // Filtra as perguntas dentro de cada produto
       const filteredQuestions = product.questions.filter(question => {
-        // Filtro de pesquisa para perguntas
+        if (!showDeletedQuestions && question.deleted_from_listing) {
+          return false;
+        }
+        
         if (searchQuery) {
           const questionText = question.text.toLowerCase();
           const answerText = question.answer?.text?.toLowerCase() || '';
@@ -258,7 +248,6 @@ const QuestionsList: React.FC = () => {
           }
         }
         
-        // Filtro de perguntas sem resposta
         if (filterNoAnswers && question.status !== "UNANSWERED") {
           return false;
         }
@@ -370,29 +359,44 @@ const QuestionsList: React.FC = () => {
                       <TableBody>
                         {visibleQuestions.map((question) => {
                           const isUnanswered = question.status === "UNANSWERED";
+                          const isDeleted = question.deleted_from_listing;
                           
                           return (
                             <TableRow 
                               key={question.id}
-                              className={`cursor-pointer ${isUnanswered ? 'bg-amber-50' : ''}`}
+                              className={`cursor-pointer ${isUnanswered ? 'bg-amber-50' : ''} ${isDeleted ? 'bg-gray-100' : ''}`}
                               onClick={() => {
                                 setAnswering(question);
                                 setAnswerText(question.answer?.text || '');
                               }}
                             >
                               <TableCell className="font-medium">
-                                {question.text.length > 80 
-                                  ? `${question.text.substring(0, 80)}...` 
-                                  : question.text}
+                                <div className="flex items-center gap-1">
+                                  {isDeleted && (
+                                    <AlertTriangle size={16} className="text-orange-500 shrink-0" />
+                                  )}
+                                  <span className={isDeleted ? "text-gray-500 line-through" : ""}>
+                                    {question.text.length > 80 
+                                      ? `${question.text.substring(0, 80)}...` 
+                                      : question.text}
+                                  </span>
+                                </div>
                               </TableCell>
                               <TableCell>
-                                <span className={`px-2 py-1 rounded-full text-xs ${
-                                  isUnanswered 
-                                    ? 'bg-amber-100 text-amber-800' 
-                                    : 'bg-green-100 text-green-800'
-                                }`}>
-                                  {isUnanswered ? 'Sem resposta' : 'Respondida'}
-                                </span>
+                                <div className="flex gap-1 items-center">
+                                  <span className={`px-2 py-1 rounded-full text-xs ${
+                                    isUnanswered 
+                                      ? 'bg-amber-100 text-amber-800' 
+                                      : 'bg-green-100 text-green-800'
+                                  }`}>
+                                    {isUnanswered ? 'Sem resposta' : 'Respondida'}
+                                  </span>
+                                  {isDeleted && (
+                                    <span className="px-2 py-1 rounded-full text-xs bg-orange-100 text-orange-800">
+                                      Deletada
+                                    </span>
+                                  )}
+                                </div>
                               </TableCell>
                               <TableCell>{formatDate(question.date_created)}</TableCell>
                             </TableRow>
@@ -428,7 +432,6 @@ const QuestionsList: React.FC = () => {
         )}
       </div>
       
-      {/* Modal de filtros */}
       <Dialog open={filterModalOpen} onOpenChange={setFilterModalOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -443,6 +446,15 @@ const QuestionsList: React.FC = () => {
                 onCheckedChange={setFilterNoAnswers}
               />
               <Label htmlFor="filter-no-answers">Mostrar apenas perguntas sem respostas</Label>
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <Switch 
+                id="show-deleted-questions"
+                checked={showDeletedQuestions}
+                onCheckedChange={setShowDeletedQuestions}
+              />
+              <Label htmlFor="show-deleted-questions">Mostrar perguntas deletadas</Label>
             </div>
             
             <div className="space-y-2">
@@ -487,6 +499,7 @@ const QuestionsList: React.FC = () => {
               onClick={() => {
                 setFilterNoAnswers(false);
                 setSelectedProduct(null);
+                setShowDeletedQuestions(true);
               }}
             >
               Limpar filtros
@@ -498,12 +511,17 @@ const QuestionsList: React.FC = () => {
         </DialogContent>
       </Dialog>
       
-      {/* Modal de resposta */}
       <Dialog open={!!answering} onOpenChange={(open) => !open && setAnswering(null)}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>
               {answering?.status === "UNANSWERED" ? "Responder Pergunta" : "Detalhes da Pergunta"}
+              {answering?.deleted_from_listing && (
+                <span className="ml-2 text-sm font-normal text-orange-500 flex items-center">
+                  <AlertTriangle size={16} className="mr-1" />
+                  Esta pergunta foi deletada da listagem
+                </span>
+              )}
             </DialogTitle>
           </DialogHeader>
           
@@ -535,11 +553,21 @@ const QuestionsList: React.FC = () => {
               
               <div>
                 <h3 className="text-sm font-semibold mb-1 text-gray-500">Pergunta</h3>
-                <div className="p-3 bg-gray-50 rounded">
-                  <p className="whitespace-pre-wrap">{answering.text}</p>
-                  <p className="text-xs text-gray-500 mt-1 text-right">
-                    {formatDate(answering.date_created)}
+                <div className={`p-3 rounded ${answering.deleted_from_listing ? 'bg-orange-50' : 'bg-gray-50'}`}>
+                  <p className={`whitespace-pre-wrap ${answering.deleted_from_listing ? 'text-gray-500' : ''}`}>
+                    {answering.text}
                   </p>
+                  <div className="flex justify-between items-center mt-1">
+                    <p className="text-xs text-gray-500 text-right">
+                      {formatDate(answering.date_created)}
+                    </p>
+                    {answering.deleted_from_listing && (
+                      <span className="text-xs flex items-center text-orange-600">
+                        <AlertTriangle size={14} className="mr-1" />
+                        Deletada
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
               
@@ -561,21 +589,28 @@ const QuestionsList: React.FC = () => {
                     placeholder="Digite sua resposta aqui..."
                     value={answerText}
                     onChange={(e) => setAnswerText(e.target.value)}
+                    disabled={answering.deleted_from_listing}
                   />
-                  <Button 
-                    className="w-full mt-2" 
-                    onClick={handleSubmitAnswer}
-                    disabled={!answerText.trim() || submitting}
-                  >
-                    {submitting ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Enviando...
-                      </>
-                    ) : (
-                      'Enviar Resposta'
-                    )}
-                  </Button>
+                  {answering.deleted_from_listing ? (
+                    <div className="mt-2 p-3 bg-orange-100 rounded text-sm text-orange-800">
+                      Esta pergunta foi removida da listagem e não pode ser respondida.
+                    </div>
+                  ) : (
+                    <Button 
+                      className="w-full mt-2" 
+                      onClick={handleSubmitAnswer}
+                      disabled={!answerText.trim() || submitting}
+                    >
+                      {submitting ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Enviando...
+                        </>
+                      ) : (
+                        'Enviar Resposta'
+                      )}
+                    </Button>
+                  )}
                 </div>
               )}
             </div>
