@@ -9,7 +9,9 @@ import { Label } from "@/components/ui/label";
 import { ChevronDown, ChevronUp, Loader2, Search, Filter, AlertTriangle } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getNgrokUrl } from "@/config/api";
+import { Badge } from "@/components/ui/badge";
 import axios from 'axios';
+import { useHermesAnswers } from "@/hooks/useHermesAnswers";
 
 interface Question {
   id: number;
@@ -58,6 +60,8 @@ const QuestionsList: React.FC = () => {
   const [answerText, setAnswerText] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [showDeletedQuestions, setShowDeletedQuestions] = useState(true);
+  
+  const { hermesQuestionIds } = useHermesAnswers(sellerId);
 
   useEffect(() => {
     const auth = localStorage.getItem('hermesAuth');
@@ -231,6 +235,10 @@ const QuestionsList: React.FC = () => {
     }));
   };
 
+  const isHermesAnswer = (questionId: number) => {
+    return hermesQuestionIds.includes(questionId.toString());
+  };
+
   const filteredProducts = products
     .filter(product => {
       if (searchQuery) {
@@ -382,6 +390,7 @@ const QuestionsList: React.FC = () => {
                         {visibleQuestions.map((question) => {
                           const isUnanswered = question.status === "UNANSWERED";
                           const isDeleted = question.deleted_from_listing;
+                          const isHermesAnswered = isHermesAnswer(question.id);
                           
                           return (
                             <TableRow 
@@ -405,7 +414,7 @@ const QuestionsList: React.FC = () => {
                                 </div>
                               </TableCell>
                               <TableCell>
-                                <div className="flex gap-1 items-center">
+                                <div className="flex gap-1 items-center flex-wrap">
                                   <span className={`px-2 py-1 rounded-full text-xs ${
                                     isUnanswered 
                                       ? 'bg-amber-100 text-amber-800' 
@@ -413,6 +422,13 @@ const QuestionsList: React.FC = () => {
                                   }`}>
                                     {isUnanswered ? 'Sem resposta' : 'Respondida'}
                                   </span>
+                                  
+                                  {isHermesAnswered && (
+                                    <Badge variant="secondary" className="bg-blue-100 text-blue-800 hover:bg-blue-200">
+                                      Hermes
+                                    </Badge>
+                                  )}
+                                  
                                   {isDeleted && (
                                     <span className="px-2 py-1 rounded-full text-xs bg-orange-100 text-orange-800">
                                       Deletada
