@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -35,6 +36,7 @@ interface Product {
   id: string;
   title: string;
   thumbnail: string;
+  active: boolean;
   questions: Question[];
   hasUnansweredQuestions?: boolean;
 }
@@ -44,6 +46,7 @@ interface ProductAPIResponse {
     mlb: string;
     title: string;
     image: string;
+    active: boolean;
   }[];
 }
 
@@ -99,6 +102,7 @@ const QuestionsList: React.FC = () => {
           id: item.mlb,
           title: item.title,
           thumbnail: item.image.replace('http://', 'https://'),
+          active: item.active,
           questions: []
         }));
         
@@ -356,6 +360,7 @@ const QuestionsList: React.FC = () => {
               const isExpanded = expandedQuestions[product.id] || false;
               const questions = product.filteredQuestions || [];
               const visibleQuestions = isExpanded ? questions : questions.slice(0, 3);
+              const isProductActive = product.active;
               
               return (
                 <Card key={product.id} className="overflow-hidden">
@@ -372,7 +377,14 @@ const QuestionsList: React.FC = () => {
                         />
                       </div>
                       <div className="ml-3 flex-1">
-                        <h3 className="font-medium text-sm">{product.title}</h3>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-medium text-sm">{product.title}</h3>
+                          {!isProductActive && (
+                            <Badge variant="outline" className="bg-gray-100 text-gray-700 hover:bg-gray-200 border-gray-300">
+                              Inativo
+                            </Badge>
+                          )}
+                        </div>
                         <p className="text-xs text-gray-500">{product.id}</p>
                       </div>
                     </div>
@@ -580,10 +592,17 @@ const QuestionsList: React.FC = () => {
                       />
                     </div>
                   )}
-                  <div className="ml-3">
-                    <p className="text-sm font-medium">
-                      {products.find(p => p.id === answering.item_id)?.title || answering.item_id}
-                    </p>
+                  <div className="ml-3 flex-1">
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-medium">
+                        {products.find(p => p.id === answering.item_id)?.title || answering.item_id}
+                      </p>
+                      {products.find(p => p.id === answering.item_id)?.active === false && (
+                        <Badge variant="outline" className="bg-gray-100 text-gray-700 hover:bg-gray-200 border-gray-300">
+                          Inativo
+                        </Badge>
+                      )}
+                    </div>
                     <p className="text-xs text-gray-500">{answering.item_id}</p>
                   </div>
                 </div>
@@ -627,11 +646,15 @@ const QuestionsList: React.FC = () => {
                     placeholder="Digite sua resposta aqui..."
                     value={answerText}
                     onChange={(e) => setAnswerText(e.target.value)}
-                    disabled={answering.deleted_from_listing}
+                    disabled={answering.deleted_from_listing || products.find(p => p.id === answering.item_id)?.active === false}
                   />
                   {answering.deleted_from_listing ? (
                     <div className="mt-2 p-3 bg-orange-100 rounded text-sm text-orange-800">
                       Esta pergunta foi removida da listagem e não pode ser respondida.
+                    </div>
+                  ) : products.find(p => p.id === answering.item_id)?.active === false ? (
+                    <div className="mt-2 p-3 bg-gray-100 rounded text-sm text-gray-800">
+                      Este produto está inativo e não pode receber respostas.
                     </div>
                   ) : (
                     <Button 
