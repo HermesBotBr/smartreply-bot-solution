@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,12 +6,13 @@ import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { ChevronDown, ChevronUp, Loader2, Search, Filter, AlertTriangle } from "lucide-react";
+import { ChevronDown, ChevronUp, Loader2, Search, Filter, AlertTriangle, User } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getNgrokUrl } from "@/config/api";
 import { Badge } from "@/components/ui/badge";
 import axios from 'axios';
 import { useHermesAnswers } from "@/hooks/useHermesAnswers";
+import { useBuyerInfo } from "@/hooks/useBuyerInfo";
 
 interface Question {
   id: number;
@@ -63,8 +63,10 @@ const QuestionsList: React.FC = () => {
   const [answerText, setAnswerText] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [showDeletedQuestions, setShowDeletedQuestions] = useState(true);
-  
+  const [buyerId, setBuyerId] = useState<number | null>(null);
+
   const { hermesQuestionIds } = useHermesAnswers(sellerId);
+  const { buyerInfo, isLoading: buyerLoading } = useBuyerInfo(sellerId, buyerId);
 
   useEffect(() => {
     const auth = localStorage.getItem('hermesAuth');
@@ -427,6 +429,8 @@ const QuestionsList: React.FC = () => {
                               onClick={() => {
                                 setAnswering(question);
                                 setAnswerText(question.answer?.text || '');
+                                // Set the buyer ID from the question
+                                setBuyerId(question.from?.id || null);
                               }}
                             >
                               <TableCell className="font-medium">
@@ -625,7 +629,18 @@ const QuestionsList: React.FC = () => {
               </div>
               
               <div>
-                <h3 className="text-sm font-semibold mb-1 text-gray-500">Pergunta</h3>
+                <h3 className="text-sm font-semibold mb-1 text-gray-500">
+                  Pergunta 
+                  {buyerInfo && (
+                    <span className="font-normal ml-1 text-gray-500 flex items-center inline-flex">
+                      de <User size={14} className="mx-1" />
+                      <span className="font-medium text-primary">{buyerInfo.nickname}</span>
+                    </span>
+                  )}
+                  {buyerLoading && (
+                    <span className="font-normal ml-1 text-gray-400">(Carregando usuário...)</span>
+                  )}
+                </h3>
                 <div className={`p-3 rounded ${answering.deleted_from_listing ? 'bg-orange-50' : 'bg-gray-50'}`}>
                   <p className={`whitespace-pre-wrap ${answering.deleted_from_listing ? 'text-gray-500' : ''}`}>
                     {answering.text}
