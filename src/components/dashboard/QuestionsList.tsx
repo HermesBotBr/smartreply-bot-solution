@@ -9,6 +9,8 @@ import { Label } from "@/components/ui/label";
 import { ChevronDown, ChevronUp, Loader2, Search, Filter, AlertTriangle } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getNgrokUrl } from "@/config/api";
+import { Badge } from "@/components/ui/badge";
+import { useAllGptData } from "@/hooks/useAllGptData";
 import axios from 'axios';
 
 interface Question {
@@ -27,6 +29,7 @@ interface Question {
   from: {
     id: number;
   };
+  isHermesAnswer?: boolean;
 }
 
 interface Product {
@@ -58,6 +61,8 @@ const QuestionsList: React.FC = () => {
   const [answerText, setAnswerText] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [showDeletedQuestions, setShowDeletedQuestions] = useState(true);
+  
+  const { gptQuestionIds, isLoading: gptDataLoading } = useAllGptData(sellerId);
 
   useEffect(() => {
     const auth = localStorage.getItem('hermesAuth');
@@ -124,16 +129,21 @@ const QuestionsList: React.FC = () => {
       
       const data = await response.json();
       if (data && data.questions && Array.isArray(data.questions)) {
+        const questionsWithHermesFlag = data.questions.map((q: Question) => ({
+          ...q,
+          isHermesAnswer: gptQuestionIds.includes(q.id.toString())
+        }));
+        
         setProducts(prev => {
           const updatedProducts = prev.map(product => {
             if (product.id === itemId) {
-              const hasUnansweredQuestions = data.questions.some((q: Question) => 
+              const hasUnansweredQuestions = questionsWithHermesFlag.some((q: Question) => 
                 q.status === "UNANSWERED" && !q.deleted_from_listing
               );
               
               return {
                 ...product,
-                questions: data.questions,
+                questions: questionsWithHermesFlag,
                 hasUnansweredQuestions
               };
             }
@@ -327,7 +337,7 @@ const QuestionsList: React.FC = () => {
       </div>
       
       <div className="flex-1 overflow-auto p-4">
-        {loading ? (
+        {loading || gptDataLoading ? (
           <div className="flex flex-col items-center justify-center h-full">
             <Loader2 className="h-8 w-8 animate-spin text-primary mb-2" />
             <p className="text-gray-500">Carregando perguntas...</p>
@@ -382,6 +392,7 @@ const QuestionsList: React.FC = () => {
                         {visibleQuestions.map((question) => {
                           const isUnanswered = question.status === "UNANSWERED";
                           const isDeleted = question.deleted_from_listing;
+                          const isHermesAnswer = question.isHermesAnswer;
                           
                           return (
                             <TableRow 
@@ -417,6 +428,9 @@ const QuestionsList: React.FC = () => {
                                     <span className="px-2 py-1 rounded-full text-xs bg-orange-100 text-orange-800">
                                       Deletada
                                     </span>
+                                  )}
+                                  {isHermesAnswer && (
+                                    <Badge variant="secondary" className="ml-1">Hermes</Badge>
                                   )}
                                 </div>
                               </TableCell>
@@ -542,6 +556,11 @@ const QuestionsList: React.FC = () => {
                 <span className="ml-2 text-sm font-normal text-orange-500 flex items-center">
                   <AlertTriangle size={16} className="mr-1" />
                   Esta pergunta foi deletada da listagem
+                </span>
+              )}
+              {answering?.isHermesAnswer && (
+                <span className="ml-2">
+                  <Badge variant="secondary">Hermes</Badge>
                 </span>
               )}
             </DialogTitle>
