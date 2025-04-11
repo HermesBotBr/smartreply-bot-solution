@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -151,12 +152,12 @@ const QuestionsList: React.FC = () => {
           });
           
           return updatedProducts.sort((a, b) => {
-            // First sort by active status (active products come first)
+            // First sort by active status (always put inactive products last)
             if (a.active && !b.active) return -1;
             if (!a.active && b.active) return 1;
             
-            // Then, only for active products, sort by unanswered questions
-            if (a.active && b.active) {
+            // If both products have the same active status, continue with the regular sort
+            if (a.active === b.active) {
               if (a.hasUnansweredQuestions && !b.hasUnansweredQuestions) return -1;
               if (!a.hasUnansweredQuestions && b.hasUnansweredQuestions) return 1;
             }
@@ -316,17 +317,20 @@ const QuestionsList: React.FC = () => {
     .filter(product => product.filteredQuestions.length > 0);
 
   const sortedFilteredProducts = [...filteredProducts].sort((a, b) => {
-    // First sort by active status (active products come first)
+    // First sort by active status (always put inactive products last)
     if (a.active && !b.active) return -1;
     if (!a.active && b.active) return 1;
     
-    // Then, only for active products, sort by unanswered questions
-    if (a.active && b.active) {
-      const aHasUnanswered = a.filteredQuestions.some(q => q.status === "UNANSWERED" && !q.deleted_from_listing);
-      const bHasUnanswered = b.filteredQuestions.some(q => q.status === "UNANSWERED" && !q.deleted_from_listing);
-      
-      if (aHasUnanswered && !bHasUnanswered) return -1;
-      if (!aHasUnanswered && bHasUnanswered) return 1;
+    // If both products have the same active status (both active or both inactive)
+    if (a.active === b.active) {
+      // Only sort by unanswered questions for active products
+      if (a.active) {
+        const aHasUnanswered = a.filteredQuestions.some(q => q.status === "UNANSWERED" && !q.deleted_from_listing);
+        const bHasUnanswered = b.filteredQuestions.some(q => q.status === "UNANSWERED" && !q.deleted_from_listing);
+        
+        if (aHasUnanswered && !bHasUnanswered) return -1;
+        if (!aHasUnanswered && bHasUnanswered) return 1;
+      }
     }
     
     return 0;
