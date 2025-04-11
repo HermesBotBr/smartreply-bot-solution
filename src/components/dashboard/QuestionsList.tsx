@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -129,10 +130,13 @@ const QuestionsList: React.FC = () => {
       
       const data = await response.json();
       if (data && data.questions && Array.isArray(data.questions)) {
+        // Map through questions and add isHermesAnswer flag
         const questionsWithHermesFlag = data.questions.map((q: Question) => ({
           ...q,
           isHermesAnswer: gptQuestionIds.includes(q.id.toString())
         }));
+        
+        console.log("Questions with Hermes flag:", questionsWithHermesFlag.filter((q: any) => q.isHermesAnswer));
         
         setProducts(prev => {
           const updatedProducts = prev.map(product => {

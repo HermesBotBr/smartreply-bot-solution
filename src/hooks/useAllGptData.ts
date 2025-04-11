@@ -35,6 +35,7 @@ export function useAllGptData(sellerId: string | null) {
         
         setGptQuestionIds(questionIds);
         console.log(`Found ${questionIds.length} GPT-answered questions for seller ID ${sellerId}`);
+        console.log("GPT Question IDs:", questionIds);
       } catch (err: any) {
         console.error("Error fetching allgpt_perguntas data:", err);
         setError("Erro ao buscar dados da tabela allgpt_perguntas");
