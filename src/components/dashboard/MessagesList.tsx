@@ -1,3 +1,4 @@
+
 import React, { useRef, useEffect, useState } from 'react';
 import { formatDate } from '@/utils/dateFormatters';
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -90,7 +91,7 @@ const MessagesList: React.FC<MessagesListProps> = ({
   const [fullScreenImage, setFullScreenImage] = useState<string | null>(null);
   const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
 
-  const { gptQuestionIds } = useAllGptData(sellerId);
+  const { gptMessageIds } = useAllGptData(sellerId);
 
   useEffect(() => {
     if (messages && messages.length > 0) {
@@ -137,12 +138,14 @@ const MessagesList: React.FC<MessagesListProps> = ({
 
     setSending(true);
     try {
+      // Prepare payload with or without attachment
       const payload = {
         seller_id: sellerId,
         pack_id: packId,
         text: messageText.trim()
       };
       
+      // Add attachment ID if we have one
       if (attachmentId) {
         Object.assign(payload, { attachments: attachmentId });
       }
@@ -189,6 +192,7 @@ const MessagesList: React.FC<MessagesListProps> = ({
         setFilePreview(null);
       }
       
+      // Upload file to Mercado Livre if we have a seller ID
       if (sellerId) {
         setUploadingFile(true);
         setAttachmentId(null);
@@ -443,7 +447,7 @@ const MessagesList: React.FC<MessagesListProps> = ({
               
               {dateEntry[1].map((message) => {
                 const isSeller = message.from.user_id === sellerIdNum;
-                const isGptMessage = isSeller && gptQuestionIds.includes(message.id);
+                const isGptMessage = isSeller && gptMessageIds.includes(message.id);
                 const isComplaintMessage = (message as any).isComplaintMessage === true;
                 
                 return (

@@ -3,20 +3,30 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { NGROK_BASE_URL } from '@/config/api';
 
-interface AllGptQuestion {
-  question_id: string;
-  seller_id: string;
+interface AllGptColumn {
+  Field: string;
+  Type: string;
+  Null: string;
+  Key: string;
+  Default: string | null;
+  Extra: string;
+}
+
+interface AllGptRow {
+  [key: string]: any;
 }
 
 export function useAllGptData(sellerId: string | null) {
-  const [gptQuestionIds, setGptQuestionIds] = useState<string[]>([]);
+  const [columns, setColumns] = useState<AllGptColumn[]>([]);
+  const [rows, setRows] = useState<AllGptRow[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [gptMessageIds, setGptMessageIds] = useState<string[]>([]);
 
   useEffect(() => {
     const fetchAllGptData = async () => {
       if (!sellerId) {
-        setGptQuestionIds([]);
+        setGptMessageIds([]);
         return;
       }
 
@@ -24,22 +34,37 @@ export function useAllGptData(sellerId: string | null) {
       setError(null);
 
       try {
-        // Fetch rows from the allgpt_perguntas table
-        const response = await axios.get(`${NGROK_BASE_URL}/api/db/rows/allgpt_perguntas`);
-        const allRows: AllGptQuestion[] = response.data.rows || [];
+        // Fetch columns to identify the correct column for this seller
+        const columnsResponse = await axios.get(`${NGROK_BASE_URL}/api/db/columns/allgpt`);
+        const allColumns: AllGptColumn[] = columnsResponse.data.columns || [];
+        setColumns(allColumns);
         
-        // Filter for questions that belong to this seller
-        const questionIds = allRows
-          .filter(row => row.seller_id === sellerId)
-          .map(row => row.question_id);
+        // Check if there's a column for this seller
+        const sellerColumnExists = allColumns.some(col => col.Field === sellerId);
         
-        setGptQuestionIds(questionIds);
-        console.log(`Found ${questionIds.length} GPT-answered questions for seller ID ${sellerId}`);
-        console.log("GPT Question IDs:", questionIds);
+        if (!sellerColumnExists) {
+          console.log(`No column found for seller ID: ${sellerId} in allgpt table`);
+          setGptMessageIds([]);
+          setIsLoading(false);
+          return;
+        }
+
+        // Fetch rows from the allgpt table
+        const rowsResponse = await axios.get(`${NGROK_BASE_URL}/api/db/rows/allgpt`);
+        const allRows: AllGptRow[] = rowsResponse.data.rows || [];
+        setRows(allRows);
+        
+        // Extract message IDs for this seller
+        const messageIds = allRows
+          .filter(row => row[sellerId] !== null && row[sellerId] !== '')
+          .map(row => row[sellerId]);
+        
+        setGptMessageIds(messageIds);
+        console.log(`Found ${messageIds.length} GPT messages for seller ID ${sellerId}`);
       } catch (err: any) {
-        console.error("Error fetching allgpt_perguntas data:", err);
-        setError("Erro ao buscar dados da tabela allgpt_perguntas");
-        setGptQuestionIds([]);
+        console.error("Error fetching allgpt data:", err);
+        setError("Erro ao buscar dados da tabela allgpt");
+        setGptMessageIds([]);
       } finally {
         setIsLoading(false);
       }
@@ -48,5 +73,5 @@ export function useAllGptData(sellerId: string | null) {
     fetchAllGptData();
   }, [sellerId]);
 
-  return { gptQuestionIds, isLoading, error };
+  return { gptMessageIds, isLoading, error };
 }
