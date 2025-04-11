@@ -149,8 +149,16 @@ const QuestionsList: React.FC = () => {
           });
           
           return updatedProducts.sort((a, b) => {
-            if (a.hasUnansweredQuestions && !b.hasUnansweredQuestions) return -1;
-            if (!a.hasUnansweredQuestions && b.hasUnansweredQuestions) return 1;
+            // First sort by active status (active products come first)
+            if (a.active && !b.active) return -1;
+            if (!a.active && b.active) return 1;
+            
+            // Then, only for active products, sort by unanswered questions
+            if (a.active && b.active) {
+              if (a.hasUnansweredQuestions && !b.hasUnansweredQuestions) return -1;
+              if (!a.hasUnansweredQuestions && b.hasUnansweredQuestions) return 1;
+            }
+            
             return 0;
           });
         });
@@ -306,11 +314,19 @@ const QuestionsList: React.FC = () => {
     .filter(product => product.filteredQuestions.length > 0);
 
   const sortedFilteredProducts = [...filteredProducts].sort((a, b) => {
-    const aHasUnanswered = a.filteredQuestions.some(q => q.status === "UNANSWERED" && !q.deleted_from_listing);
-    const bHasUnanswered = b.filteredQuestions.some(q => q.status === "UNANSWERED" && !q.deleted_from_listing);
+    // First sort by active status (active products come first)
+    if (a.active && !b.active) return -1;
+    if (!a.active && b.active) return 1;
     
-    if (aHasUnanswered && !bHasUnanswered) return -1;
-    if (!aHasUnanswered && bHasUnanswered) return 1;
+    // Then, only for active products, sort by unanswered questions
+    if (a.active && b.active) {
+      const aHasUnanswered = a.filteredQuestions.some(q => q.status === "UNANSWERED" && !q.deleted_from_listing);
+      const bHasUnanswered = b.filteredQuestions.some(q => q.status === "UNANSWERED" && !q.deleted_from_listing);
+      
+      if (aHasUnanswered && !bHasUnanswered) return -1;
+      if (!aHasUnanswered && bHasUnanswered) return 1;
+    }
+    
     return 0;
   });
 
