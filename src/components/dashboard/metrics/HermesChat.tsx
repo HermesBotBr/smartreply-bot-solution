@@ -133,7 +133,7 @@ const HermesChat: React.FC<HermesChatProps> = ({ sellerId }) => {
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Envie uma mensagem ao Hermes..."
-            className="resize-none border-none bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 p-0 max-h-20 w-full"
+            className="resize-none border-none bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 p-0 max-h-20 w-full text-sm"
             disabled={isLoading}
             rows={1}
           />
