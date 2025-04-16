@@ -68,7 +68,9 @@ const UserGiovaniBurgo = () => {
     initPushNotification();
   }, [subscribe]);
 
-  const sellerId = typeof mlToken === 'object' && mlToken !== null ? mlToken.seller_id : null;
+  const sellerId = mlToken && typeof mlToken === 'object' && 'seller_id' in mlToken 
+    ? (mlToken as { seller_id: string }).seller_id 
+    : null;
 
   return (
     <div className="flex h-screen overflow-hidden">
