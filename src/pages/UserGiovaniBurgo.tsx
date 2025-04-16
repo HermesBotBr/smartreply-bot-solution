@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import QuestionsList from "@/components/dashboard/QuestionsList";
 import MetricsDisplay from "@/components/dashboard/MetricsDisplay";
@@ -39,7 +38,6 @@ const UserGiovaniBurgo = () => {
   } = useSaleDetails();
   const isMobile = useMediaQuery('(max-width: 768px)');
 
-  // Use the hook usePushNotification instead of manually registering
   const { subscribe, subscription } = usePushNotification();
 
   const handleLogout = () => {
@@ -48,14 +46,11 @@ const UserGiovaniBurgo = () => {
   };
 
   useEffect(() => {
-    // Replace manual service worker initialization and subscription
-    // with the usePushNotification hook
     const initPushNotification = async () => {
       try {
         const result = await subscribe();
         if (result) {
           console.log("User subscribed to push notifications:", result.endpoint);
-          // Save subscription to server if needed
           fetch("/api/save-subscription", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -72,6 +67,8 @@ const UserGiovaniBurgo = () => {
     
     initPushNotification();
   }, [subscribe]);
+
+  const sellerId = typeof mlToken === 'object' && mlToken !== null ? mlToken.seller_id : null;
 
   return (
     <div className="flex h-screen overflow-hidden">
@@ -120,7 +117,7 @@ const UserGiovaniBurgo = () => {
                   console.error('Conversation not found for orderId:', orderId);
                 }
               }}
-              sellerId={mlToken?.seller_id || null}
+              sellerId={sellerId}
             />
           </div>
         )}
