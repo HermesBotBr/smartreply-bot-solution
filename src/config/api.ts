@@ -1,4 +1,3 @@
-
 // Store the base URL here for easy updates
 export const NGROK_BASE_URL = (() => {
   // Check if we're in the Lovable preview environment
@@ -6,7 +5,7 @@ export const NGROK_BASE_URL = (() => {
     window.location.hostname.includes('preview--smartreply-bot-solution.lovable.app');
   
   // Always use our local server/relative URLs to avoid CORS issues
-  return isPreview ? '' : 'https://projetohermes-dda7e0c8d836.herokuapp.com';
+  return isPreview ? '' : 'https://74ffabb23ee3.ngrok.app';
 })();
 
 // Helper function to construct full URLs
