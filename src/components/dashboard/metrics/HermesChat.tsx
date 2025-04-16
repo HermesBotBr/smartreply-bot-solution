@@ -127,14 +127,15 @@ const HermesChat: React.FC<HermesChatProps> = ({ sellerId }) => {
       <Separator />
       
       <div className="p-3 border-t">
-        <div className="flex gap-2 items-center rounded-full bg-gray-50 pl-4 pr-1 py-1 border">
+        <div className="flex gap-2 items-center rounded-full bg-gray-50 pl-4 pr-2 py-1 border">
           <Textarea
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Envie uma mensagem ao Hermes..."
-            className="resize-none border-none bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 p-0 max-h-20"
+            className="resize-none border-none bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 p-0 max-h-20 w-full"
             disabled={isLoading}
+            rows={1}
           />
           <Button 
             onClick={handleSendMessage} 
@@ -157,3 +158,4 @@ const HermesChat: React.FC<HermesChatProps> = ({ sellerId }) => {
 };
 
 export default HermesChat;
+
