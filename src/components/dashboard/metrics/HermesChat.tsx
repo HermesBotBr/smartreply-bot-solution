@@ -86,12 +86,12 @@ const HermesChat: React.FC<HermesChatProps> = ({ sellerId }) => {
   };
 
   return (
-    <div className="flex flex-col h-full border rounded-lg overflow-hidden bg-white shadow">
-      <div className="p-4 bg-primary text-white font-medium flex items-center">
+    <div className="flex flex-col h-full border rounded-lg overflow-hidden bg-white shadow max-w-3xl mx-auto">
+      <div className="p-3 bg-primary text-white font-medium flex items-center">
         <h2 className="text-lg">Hermes Assistente</h2>
       </div>
       
-      <div className="flex-1 overflow-auto p-4 space-y-4">
+      <div className="flex-1 overflow-auto p-4 space-y-4 min-h-[400px]">
         {messages.length === 0 ? (
           <div className="h-full flex items-center justify-center text-gray-500">
             <p>Envie uma mensagem para começar a conversar com Hermes.</p>
@@ -126,20 +126,21 @@ const HermesChat: React.FC<HermesChatProps> = ({ sellerId }) => {
       
       <Separator />
       
-      <div className="p-4">
-        <div className="flex gap-2">
+      <div className="p-3 border-t">
+        <div className="flex gap-2 items-center rounded-full bg-gray-50 pl-4 pr-1 py-1 border">
           <Textarea
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Envie uma mensagem ao Hermes..."
-            className="resize-none"
+            className="resize-none border-none bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 p-0 max-h-20"
             disabled={isLoading}
           />
           <Button 
             onClick={handleSendMessage} 
             disabled={!inputValue.trim() || isLoading || !sellerId}
-            className="flex-shrink-0"
+            className="flex-shrink-0 rounded-full size-9 p-0"
+            variant="default"
           >
             <Send className="h-4 w-4" />
             <span className="sr-only">Enviar</span>

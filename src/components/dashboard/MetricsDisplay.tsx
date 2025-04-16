@@ -121,7 +121,7 @@ const MetricsDisplay = ({
           </Button>
         </div>
 
-        <div className="h-[500px] mt-8">
+        <div className="h-[600px] mt-8">
           <HermesChat sellerId={sellerId || null} />
         </div>
       </div>
