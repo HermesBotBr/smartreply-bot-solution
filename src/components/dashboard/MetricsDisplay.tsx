@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useComplaintsData } from '@/hooks/useComplaintsData';
@@ -8,6 +8,8 @@ import { useReportGeneration } from '@/hooks/useReportGeneration';
 import ComplaintsPopup from './metrics/ComplaintsPopup';
 import MetricsSummaryCards from './metrics/MetricsSummaryCards';
 import HermesChat from './metrics/HermesChat';
+import { getNgrokUrl } from '@/config/api';
+import { toast } from "sonner";
 
 const MetricsDisplay = ({ 
   onOrderClick,
@@ -25,6 +27,35 @@ const MetricsDisplay = ({
     complaintsData.unpreventedComplaints
   );
   const { generatingReport, handleReportButtonClick } = useReportGeneration();
+
+  // Efeito para limpar o histórico do GPT quando o componente é montado
+  useEffect(() => {
+    const clearChatHistory = async () => {
+      if (!sellerId) return;
+      
+      try {
+        const response = await fetch(getNgrokUrl('/clearHistory'), {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ seller_id: sellerId })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          console.log('Histórico de chat limpo com sucesso');
+        } else {
+          console.error('Erro ao limpar histórico de chat:', data.error || 'Erro desconhecido');
+        }
+      } catch (error) {
+        console.error('Falha ao conectar com o serviço de limpeza de histórico:', error);
+      }
+    };
+    
+    clearChatHistory();
+  }, [sellerId]);
 
   const handleOrderClick = (orderId: string) => {
     setShowPopup(false);
