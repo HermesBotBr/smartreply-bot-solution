@@ -7,8 +7,15 @@ import { useMetricsData } from '@/hooks/useMetricsData';
 import { useReportGeneration } from '@/hooks/useReportGeneration';
 import ComplaintsPopup from './metrics/ComplaintsPopup';
 import MetricsSummaryCards from './metrics/MetricsSummaryCards';
+import HermesChat from './metrics/HermesChat';
 
-const MetricsDisplay = ({ onOrderClick }: { onOrderClick?: (orderId: string) => void }) => {
+const MetricsDisplay = ({ 
+  onOrderClick,
+  sellerId
+}: { 
+  onOrderClick?: (orderId: string) => void,
+  sellerId?: string | null
+}) => {
   const [showPopup, setShowPopup] = useState(false);
   const [activeComplaintType, setActiveComplaintType] = useState<'prevented' | 'unprevented'>('prevented');
   
@@ -83,8 +90,8 @@ const MetricsDisplay = ({ onOrderClick }: { onOrderClick?: (orderId: string) => 
           </Button>
         </div>
 
-        <div className="text-center text-gray-700 text-xl font-medium my-12 py-12">
-          Mais detalhes em breve!
+        <div className="h-[500px] mt-8">
+          <HermesChat sellerId={sellerId || null} />
         </div>
       </div>
 

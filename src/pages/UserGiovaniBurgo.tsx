@@ -110,15 +110,18 @@ const UserGiovaniBurgo = () => {
           </div>
         ) : (
           <div className="w-full h-full overflow-auto">
-            <MetricsDisplay onOrderClick={(orderId) => {
-              const conversation = conversations.find(conv => conv.orderId.toString() === orderId.toString());
-              if (conversation) {
-                setSelectedConv(conversation);
-                setActiveTab('conversas');
-              } else {
-                console.error('Conversation not found for orderId:', orderId);
-              }
-            }} />
+            <MetricsDisplay 
+              onOrderClick={(orderId) => {
+                const conversation = conversations.find(conv => conv.orderId.toString() === orderId.toString());
+                if (conversation) {
+                  setSelectedConv(conversation);
+                  setActiveTab('conversas');
+                } else {
+                  console.error('Conversation not found for orderId:', orderId);
+                }
+              }}
+              sellerId={mlToken?.seller_id || null}
+            />
           </div>
         )}
       </div>

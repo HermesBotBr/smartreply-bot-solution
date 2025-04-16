@@ -403,9 +403,12 @@ const Hermes = () => {
               </div>
             ) : (
               <div className="w-full h-full overflow-auto">
-                <MetricsDisplay onOrderClick={(orderId) => {
-                  console.log('Order clicked:', orderId);
-                }} />
+                <MetricsDisplay 
+                  onOrderClick={(orderId) => {
+                    console.log('Order clicked:', orderId);
+                  }} 
+                  sellerId={sellerId}
+                />
               </div>
             )}
           </div>
