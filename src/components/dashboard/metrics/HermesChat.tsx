@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Send } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
@@ -22,7 +21,6 @@ const HermesChat: React.FC<HermesChatProps> = ({ sellerId }) => {
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
@@ -133,7 +131,7 @@ const HermesChat: React.FC<HermesChatProps> = ({ sellerId }) => {
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Envie uma mensagem ao Hermes..."
-            className="resize-none border-none bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 p-0 max-h-20 w-full text-sm"
+            className="resize-none border-none bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 p-0 max-h-12 w-full text-sm leading-tight"
             disabled={isLoading}
             rows={1}
           />
@@ -158,4 +156,3 @@ const HermesChat: React.FC<HermesChatProps> = ({ sellerId }) => {
 };
 
 export default HermesChat;
-
