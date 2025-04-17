@@ -6,7 +6,7 @@ export const NGROK_BASE_URL = (() => {
     window.location.hostname.includes('preview--smartreply-bot-solution.lovable.app');
   
   // Always use our local server/relative URLs to avoid CORS issues
-  return isPreview ? '' : 'https://0495208c2fdf.ngrok.app/';
+  return isPreview ? '' : 'https://588df737825f.ngrok.app';
 })();
 
 // Helper function to construct full URLs
