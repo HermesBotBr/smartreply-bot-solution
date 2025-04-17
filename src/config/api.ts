@@ -1,3 +1,4 @@
+
 // Store the base URL here for easy updates
 export const NGROK_BASE_URL = (() => {
   // Check if we're in the Lovable preview environment
@@ -5,7 +6,7 @@ export const NGROK_BASE_URL = (() => {
     window.location.hostname.includes('preview--smartreply-bot-solution.lovable.app');
   
   // Always use our local server/relative URLs to avoid CORS issues
-  return isPreview ? '' : 'https://74ffabb23ee3.ngrok.app';
+  return isPreview ? '' : 'https://588df737825f.ngrok.app';
 })();
 
 // Helper function to construct full URLs
@@ -22,3 +23,4 @@ export const getLocalApiUrl = (path: string): string => {
   const baseUrl = window.location.origin;
   return `${baseUrl}/api${path.startsWith('/') ? path : `/${path}`}`;
 };
+
