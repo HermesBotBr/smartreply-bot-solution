@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, useState } from 'react';
 import { formatDate } from '@/utils/dateFormatters';
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -484,6 +483,10 @@ const MessagesList: React.FC<MessagesListProps> = ({
                             Mensagem de venda
                           </span>
                         </div>
+                      )}
+                      
+                      {isGptMessage && (
+                        console.log(`Mensagem GPT detectada - ID: ${message.id}`)
                       )}
                       
                       {message.message_attachments && message.message_attachments.length > 0 && (

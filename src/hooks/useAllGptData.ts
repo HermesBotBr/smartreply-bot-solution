@@ -39,11 +39,13 @@ export function useAllGptData(sellerId: string | null) {
         const allColumns: AllGptColumn[] = columnsResponse.data.columns || [];
         setColumns(allColumns);
         
+        console.log("Colunas da tabela allgpt:", allColumns.map(col => col.Field));
+        
         // Check if there's a column for this seller
         const sellerColumnExists = allColumns.some(col => col.Field === sellerId);
         
         if (!sellerColumnExists) {
-          console.log(`No column found for seller ID: ${sellerId} in allgpt table`);
+          console.log(`Nenhuma coluna encontrada para o ID do vendedor: ${sellerId} na tabela allgpt`);
           setGptMessageIds([]);
           setIsLoading(false);
           return;
@@ -54,15 +56,18 @@ export function useAllGptData(sellerId: string | null) {
         const allRows: AllGptRow[] = rowsResponse.data.rows || [];
         setRows(allRows);
         
+        console.log(`Total de linhas recebidas da tabela allgpt: ${allRows.length}`);
+        
         // Extract message IDs for this seller
         const messageIds = allRows
           .filter(row => row[sellerId] !== null && row[sellerId] !== '')
           .map(row => row[sellerId]);
         
         setGptMessageIds(messageIds);
-        console.log(`Found ${messageIds.length} GPT messages for seller ID ${sellerId}`);
+        console.log(`ALLGPT - IDs de mensagens GPT para o vendedor ${sellerId}:`, messageIds);
+        console.log(`Total de ${messageIds.length} IDs de mensagens GPT encontrados`);
       } catch (err: any) {
-        console.error("Error fetching allgpt data:", err);
+        console.error("Erro ao buscar dados allgpt:", err);
         setError("Erro ao buscar dados da tabela allgpt");
         setGptMessageIds([]);
       } finally {

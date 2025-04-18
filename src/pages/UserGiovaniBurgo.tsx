@@ -95,7 +95,7 @@ const UserGiovaniBurgo = () => {
             showSaleDetails={showSaleDetails}
             setShowSaleDetails={setShowSaleDetails}
             gptIds={gptIds}
-            mlToken={mlToken}
+            mlToken={mlToken || null}
             setFullScreenImage={setFullScreenImage}
             fetchSaleDetails={fetchSaleDetails}
             saleDetails={saleDetails}
