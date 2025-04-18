@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect, useRef } from 'react';
-import { MlTokenType } from '@/hooks/useMlToken';
 import { User } from 'lucide-react';
+import { useMlToken } from '@/hooks/useMlToken';
 
 interface ProductThumbnailProps {
   itemId: string;

@@ -13,7 +13,8 @@ interface AllGptColumn {
 }
 
 interface AllGptRow {
-  [key: string]: any;
+  [key: string]: string | null;
+  entry_id: number;
 }
 
 export function useAllGptData(sellerId: string | null) {
@@ -34,29 +35,9 @@ export function useAllGptData(sellerId: string | null) {
       setError(null);
 
       try {
-        // Fetch columns to identify the correct column for this seller
-        const columnsResponse = await axios.get(`${NGROK_BASE_URL}/api/db/columns/allgpt`);
-        const allColumns: AllGptColumn[] = columnsResponse.data.columns || [];
-        setColumns(allColumns);
-        
-        console.log("Colunas da tabela allgpt:", allColumns.map(col => col.Field));
-        
-        // Check if there's a column for this seller
-        const sellerColumnExists = allColumns.some(col => col.Field === sellerId);
-        
-        if (!sellerColumnExists) {
-          console.log(`Nenhuma coluna encontrada para o ID do vendedor: ${sellerId} na tabela allgpt`);
-          setGptMessageIds([]);
-          setIsLoading(false);
-          return;
-        }
-
-        // Fetch all rows from the allgpt table with custom query to ensure no limit
-        const queryResponse = await axios.post(`${NGROK_BASE_URL}/api/db/query`, {
-          query: `SELECT * FROM allgpt`
-        });
-        
-        const allRows = queryResponse.data.results || [];
+        // Fetch all rows directly from the allgpt table using the correct endpoint
+        const response = await axios.get(`${NGROK_BASE_URL}/api/db/rows/allgpt`);
+        const allRows = response.data.rows || [];
         setRows(allRows);
         
         console.log(`Total de linhas recebidas da tabela allgpt: ${allRows.length}`);
@@ -64,7 +45,7 @@ export function useAllGptData(sellerId: string | null) {
         // Extract message IDs for this seller
         const messageIds = allRows
           .filter(row => row[sellerId] !== null && row[sellerId] !== '')
-          .map(row => row[sellerId]);
+          .map(row => row[sellerId] as string);
         
         setGptMessageIds(messageIds);
         console.log(`ALLGPT - IDs de mensagens GPT para o vendedor ${sellerId}:`, messageIds);
