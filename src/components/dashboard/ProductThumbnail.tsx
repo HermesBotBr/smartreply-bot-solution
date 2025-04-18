@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { useMlToken } from '@/hooks/useMlToken';
+import { MlTokenType } from '@/hooks/useMlToken';
 import { User } from 'lucide-react';
 
 interface ProductThumbnailProps {
@@ -36,11 +36,21 @@ const ProductThumbnail: React.FC<ProductThumbnailProps> = ({ itemId, sellerId })
     
     async function fetchThumbnail() {
       try {
-        console.log("Fetching thumbnail for itemId:", itemId, "with token length:", mlToken.length);
+        const tokenValue = typeof mlToken === 'string' ? mlToken : (mlToken?.seller_id ? `seller_id=${mlToken.seller_id}` : '');
+        console.log("Fetching thumbnail for itemId:", itemId, "with token type:", typeof mlToken);
         
         if (!isMountedRef.current) return;
         
-        const response = await fetch(`https://api.mercadolibre.com/items/${itemId}?access_token=${mlToken}`);
+        // Adjust URL based on token type
+        let apiUrl = `https://api.mercadolibre.com/items/${itemId}`;
+        if (typeof mlToken === 'string') {
+          apiUrl += `?access_token=${mlToken}`;
+        } else if (mlToken?.seller_id) {
+          // For object type tokens, use a different approach or endpoint if needed
+          apiUrl += `?seller_id=${mlToken.seller_id}`;
+        }
+        
+        const response = await fetch(apiUrl);
         
         if (!response.ok) {
           throw new Error(`API responded with status: ${response.status}`);

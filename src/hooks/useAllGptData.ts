@@ -51,9 +51,12 @@ export function useAllGptData(sellerId: string | null) {
           return;
         }
 
-        // Fetch rows from the allgpt table
-        const rowsResponse = await axios.get(`${NGROK_BASE_URL}/api/db/rows/allgpt`);
-        const allRows: AllGptRow[] = rowsResponse.data.rows || [];
+        // Fetch all rows from the allgpt table with custom query to ensure no limit
+        const queryResponse = await axios.post(`${NGROK_BASE_URL}/api/db/query`, {
+          query: `SELECT * FROM allgpt`
+        });
+        
+        const allRows = queryResponse.data.results || [];
         setRows(allRows);
         
         console.log(`Total de linhas recebidas da tabela allgpt: ${allRows.length}`);

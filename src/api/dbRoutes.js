@@ -1,3 +1,4 @@
+
 const express = require('express');
 const router = express.Router();
 const { pool } = require('../utils/dbConnection');
@@ -47,24 +48,26 @@ router.get('/columns/:table', asyncHandler(async (req, res) => {
   res.json({ columns });
 }));
 
-// Rota para obter dados da tabela
+// Rota para obter dados da tabela - sem limite
 router.get('/data', asyncHandler(async (req, res) => {
   const { table } = req.query;
   if (!table) {
     return res.status(400).json({ error: 'Nome da tabela não fornecido' });
   }
   
+  // Removido o LIMIT para retornar todos os registros
   const [data] = await pool.query(`SELECT * FROM ${table}`);
   res.json({ data });
 }));
 
-// Rota para obter linhas de uma tabela específica
+// Rota para obter linhas de uma tabela específica - sem limite
 router.get('/rows/:table', asyncHandler(async (req, res) => {
   const { table } = req.params;
   if (!table) {
     return res.status(400).json({ error: 'Nome da tabela não fornecido' });
   }
   
+  // Removido o LIMIT para retornar todos os registros
   const [rows] = await pool.query(`SELECT * FROM ${table}`);
   res.json({ rows });
 }));
