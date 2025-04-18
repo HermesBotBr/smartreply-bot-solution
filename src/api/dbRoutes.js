@@ -1,4 +1,3 @@
-
 const express = require('express');
 const router = express.Router();
 const { pool } = require('../utils/dbConnection');
@@ -55,7 +54,7 @@ router.get('/data', asyncHandler(async (req, res) => {
     return res.status(400).json({ error: 'Nome da tabela não fornecido' });
   }
   
-  const [data] = await pool.query(`SELECT * FROM ${table} LIMIT 100`);
+  const [data] = await pool.query(`SELECT * FROM ${table}`);
   res.json({ data });
 }));
 
@@ -66,7 +65,7 @@ router.get('/rows/:table', asyncHandler(async (req, res) => {
     return res.status(400).json({ error: 'Nome da tabela não fornecido' });
   }
   
-  const [rows] = await pool.query(`SELECT * FROM ${table} LIMIT 100`);
+  const [rows] = await pool.query(`SELECT * FROM ${table}`);
   res.json({ rows });
 }));
 
