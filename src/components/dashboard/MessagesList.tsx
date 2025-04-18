@@ -441,26 +441,6 @@ const MessagesList: React.FC<MessagesListProps> = ({
       
       <ScrollArea className="flex-1">
         <div className="p-4">
-          {isComplaint && complaintData && (
-            <div className="my-4 p-4 bg-orange-50 border border-orange-200 rounded-lg">
-              <h4 className="font-medium text-orange-700">Detalhes da Reclamação</h4>
-              <p className="text-sm text-orange-700 mt-1">Motivo: {complaintData.motivo_reclamacao}</p>
-              <p className="text-sm text-orange-700">Pedido: {complaintData.order_id}</p>
-              <p className="text-sm text-orange-700">ID da Reclamação: {complaintData.claim_id}</p>
-              <p className="text-sm text-orange-700">Data: {new Date(complaintData.data_criada).toLocaleDateString()}</p>
-              <p className="text-sm text-orange-700">Afetou Reputação: {complaintData.afetou_reputacao}</p>
-            </div>
-          )}
-
-          {complaintMessages.length > 0 && (
-            <div className="my-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg flex items-center gap-2">
-              <AlertTriangle size={16} className="text-yellow-500" />
-              <p className="text-sm text-yellow-700">
-                Exibindo {complaintMessages.length} mensagens da reclamação e {messages.length} mensagens da venda
-              </p>
-            </div>
-          )}
-
           {Object.entries(messagesByDate).map((dateEntry) => (
             <div key={dateEntry[0]}>
               <div className="flex justify-center my-3">
@@ -507,47 +487,6 @@ const MessagesList: React.FC<MessagesListProps> = ({
                           <span className="text-xs text-gray-500 font-medium">
                             Mensagem de venda
                           </span>
-                        </div>
-                      )}
-                      
-                      {isGptMessage && (
-                        <div className="text-xs text-blue-600 mb-1">
-                          Mensagem GPT (ID: {message.id})
-                        </div>
-                      )}
-                      
-                      {message.message_attachments && message.message_attachments.length > 0 && (
-                        <div className="mb-2">
-                          {message.message_attachments.map((attachment, idx) => {
-                            if (attachment.filename && attachment.filename.trim()) {
-                              const attachmentUrl = getAttachmentUrl(attachment.filename);
-                              
-                              if (failedImages.has(attachmentUrl)) {
-                                return (
-                                  <div key={idx} className="mb-2 p-2 bg-gray-100 rounded text-sm text-gray-500">
-                                    [Imagem indisponível]
-                                  </div>
-                                );
-                              }
-                              
-                              return (
-                                <div 
-                                  key={idx}
-                                  className="mb-2 cursor-pointer" 
-                                  onClick={() => setFullScreenImage(attachmentUrl)}
-                                >
-                                  <img
-                                    src={attachmentUrl}
-                                    alt={`Anexo ${idx + 1}`}
-                                    className="w-24 h-24 object-cover rounded"
-                                    onError={(e) => handleImageError(attachmentUrl, e)}
-                                    loading="lazy"
-                                  />
-                                </div>
-                              );
-                            }
-                            return null;
-                          })}
                         </div>
                       )}
                       
