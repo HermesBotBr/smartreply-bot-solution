@@ -120,6 +120,16 @@ const MessagesList: React.FC<MessagesListProps> = ({
     }
   }, [messages]);
 
+  useEffect(() => {
+    if (messages.length > 0) {
+      console.log(`IDs das mensagens desta conversa (${packId}):`);
+      messages.forEach(msg => {
+        const isGptMessage = gptMessageIds.includes(msg.id);
+        console.log(`ID: ${msg.id}${isGptMessage ? ' (GPT)' : ''}`);
+      });
+    }
+  }, [messages, gptMessageIds, packId]);
+
   const sellerIdNum = sellerId ? parseInt(sellerId, 10) : null;
 
   const getAttachmentUrl = (filename: string): string => {
@@ -137,14 +147,12 @@ const MessagesList: React.FC<MessagesListProps> = ({
 
     setSending(true);
     try {
-      // Prepare payload with or without attachment
       const payload = {
         seller_id: sellerId,
         pack_id: packId,
         text: messageText.trim()
       };
       
-      // Add attachment ID if we have one
       if (attachmentId) {
         Object.assign(payload, { attachments: attachmentId });
       }
@@ -191,7 +199,6 @@ const MessagesList: React.FC<MessagesListProps> = ({
         setFilePreview(null);
       }
       
-      // Upload file to Mercado Livre if we have a seller ID
       if (sellerId) {
         setUploadingFile(true);
         setAttachmentId(null);
@@ -486,7 +493,9 @@ const MessagesList: React.FC<MessagesListProps> = ({
                       )}
                       
                       {isGptMessage && (
-                        console.log(`Mensagem GPT detectada - ID: ${message.id}`)
+                        <div className="text-xs text-blue-600 mb-1">
+                          Mensagem GPT (ID: {message.id})
+                        </div>
                       )}
                       
                       {message.message_attachments && message.message_attachments.length > 0 && (
