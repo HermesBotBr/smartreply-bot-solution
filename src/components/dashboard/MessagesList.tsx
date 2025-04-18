@@ -130,6 +130,24 @@ const MessagesList: React.FC<MessagesListProps> = ({
     }
   }, [messages, gptMessageIds, packId]);
 
+  useEffect(() => {
+    if (messages.length > 0 && gptMessageIds.length > 0) {
+      const gptMessagesInConversation = messages
+        .filter(msg => gptMessageIds.includes(msg.id))
+        .map(msg => msg.id);
+      
+      if (gptMessagesInConversation.length > 0) {
+        console.log(`\nMensagens GPT encontradas nesta conversa (${packId}):`);
+        gptMessagesInConversation.forEach((id, index) => {
+          console.log(`${index + 1}. ID: ${id}`);
+        });
+        console.log(`Total: ${gptMessagesInConversation.length} mensagens GPT nesta conversa\n`);
+      } else {
+        console.log(`\nNenhuma mensagem GPT encontrada nesta conversa (${packId})\n`);
+      }
+    }
+  }, [messages, gptMessageIds, packId]);
+
   const sellerIdNum = sellerId ? parseInt(sellerId, 10) : null;
 
   const getAttachmentUrl = (filename: string): string => {
