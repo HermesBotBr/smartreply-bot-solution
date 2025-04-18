@@ -5,6 +5,7 @@ import ChatPanel from './ChatPanel';
 import SaleDetailsPanel from './SaleDetailsPanel';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { ClientData } from '@/hooks/usePackClientData';
+import { MlTokenType } from '@/hooks/useMlToken';
 
 interface ConversationsTabProps {
   conversations: any[];
@@ -18,7 +19,7 @@ interface ConversationsTabProps {
   showSaleDetails: boolean;
   setShowSaleDetails: (show: boolean) => void;
   gptIds: string[];
-  mlToken: string | null;
+  mlToken: MlTokenType;
   setFullScreenImage: (url: string | null) => void;
   fetchSaleDetails: (packId: string | null, sellerId: string | null) => Promise<void>;
   saleDetails: ClientData | null;
@@ -50,15 +51,19 @@ const ConversationsTab: React.FC<ConversationsTabProps> = ({
   // Set up the fetch interval only when the panel is open
   useEffect(() => {
     let intervalId: NodeJS.Timeout | undefined;
-    if (showSaleDetails && selectedConv && mlToken) {
-      // Initial fetch
-      fetchSaleDetails(selectedConv.pack_id, selectedConv.seller_id);
+    
+    if (showSaleDetails && selectedConv) {
+      // Initial fetch - safely extract seller_id if mlToken is an object
+      const tokenSellerId = 
+        typeof mlToken === 'object' && mlToken !== null && 'seller_id' in mlToken 
+          ? mlToken.seller_id 
+          : null;
+      
+      fetchSaleDetails(selectedConv.pack_id, tokenSellerId);
       
       // Set up interval
       intervalId = setInterval(() => {
-        if (mlToken) {
-          fetchSaleDetails(selectedConv.pack_id, selectedConv.seller_id);
-        }
+        fetchSaleDetails(selectedConv.pack_id, tokenSellerId);
       }, 20000);
     }
     

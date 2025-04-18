@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import QuestionsList from "@/components/dashboard/QuestionsList";
 import MetricsDisplay from "@/components/dashboard/MetricsDisplay";
@@ -68,6 +69,7 @@ const UserGiovaniBurgo = () => {
     initPushNotification();
   }, [subscribe]);
 
+  // Get sellerId from mlToken safely
   let sellerId: string | null = null;
   
   if (mlToken !== null && typeof mlToken === 'object' && 'seller_id' in mlToken) {
@@ -94,7 +96,7 @@ const UserGiovaniBurgo = () => {
             showSaleDetails={showSaleDetails}
             setShowSaleDetails={setShowSaleDetails}
             gptIds={gptIds}
-            mlToken={mlToken || null}
+            mlToken={mlToken}
             setFullScreenImage={setFullScreenImage}
             fetchSaleDetails={fetchSaleDetails}
             saleDetails={saleDetails}
