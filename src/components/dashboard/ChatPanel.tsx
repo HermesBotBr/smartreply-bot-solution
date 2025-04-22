@@ -117,7 +117,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
       toast({
         title: "Alerta",
         description: "Por favor, insira uma mensagem antes de enviar.",
-        variant: "warning",
+        variant: "destructive",
       });
       return;
     }

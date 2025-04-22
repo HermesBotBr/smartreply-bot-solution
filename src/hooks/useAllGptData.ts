@@ -14,7 +14,7 @@ interface AllGptColumn {
 
 interface AllGptRow {
   [key: string]: string | null;
-  entry_id: number;
+  entry_id: string | number;  // Updated to accept both string and number to fix the type error
 }
 
 export function useAllGptData(sellerId: string | null) {
