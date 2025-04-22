@@ -103,6 +103,19 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
     setFullScreenImage(imageUrl);
   };
 
+  const getAttachmentUrl = (filename: string): string => {
+    if (!filename || !filename.trim()) return '';
+    
+    // Check if filename already contains a full URL
+    if (filename.startsWith('http')) {
+      return filename;
+    }
+    
+    const tokenParam = mlToken?.accessToken ? `&access_token=${mlToken.accessToken}` : '';
+    
+    return `https://api.mercadolibre.com/messages/attachments/${filename.trim()}?site_id=MLB${tokenParam}`;
+  };
+
   const handleSend = async () => {
     if (!selectedConv || !selectedConv.pack_id) {
       toast({
@@ -182,29 +195,47 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
           <p className="text-sm break-words">{message.text}</p>
           {message.message_attachments && message.message_attachments.length > 0 && (
             <div className="mt-2">
-              {message.message_attachments.map((attachment, index) => (
-                <div key={index} className="flex items-center space-x-2">
-                  {attachment.filename.match(/\.(jpg|jpeg|png|gif)$/i) ? (
-                    <button onClick={() => handleImageClick(`https://projetohermes-dda7e0c8d836.herokuapp.com/download?file=${attachment.filename}`)} className="inline-block">
-                      <img
-                        src={`https://projetohermes-dda7e0c8d836.herokuapp.com/download?file=${attachment.filename}`}
-                        alt={attachment.original_filename}
-                        className="max-w-40 max-h-40 rounded-md cursor-pointer"
-                      />
-                    </button>
-                  ) : (
-                    <a
-                      href={`https://projetohermes-dda7e0c8d836.herokuapp.com/download?file=${attachment.filename}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-400 hover:underline flex items-center"
-                    >
-                      <FileText className="mr-1 w-4 h-4" />
-                      {attachment.original_filename}
-                    </a>
-                  )}
-                </div>
-              ))}
+              {message.message_attachments.map((attachment, index) => {
+                if (attachment.filename && attachment.filename.trim()) {
+                  const attachmentUrl = getAttachmentUrl(attachment.filename);
+                  const isImage = attachment.filename.match(/\.(jpg|jpeg|png|gif)$/i) || 
+                                 (attachment.type && attachment.type.startsWith('image/'));
+                  
+                  if (isImage) {
+                    return (
+                      <button 
+                        key={index}
+                        onClick={() => handleImageClick(attachmentUrl)} 
+                        className="inline-block"
+                      >
+                        <img
+                          src={attachmentUrl}
+                          alt={attachment.original_filename || 'Image attachment'}
+                          className="max-w-full w-auto h-auto max-h-40 rounded-md cursor-pointer mt-2"
+                          onError={(e) => {
+                            console.error("Error loading image:", e);
+                            (e.target as HTMLImageElement).style.display = 'none';
+                          }}
+                        />
+                      </button>
+                    );
+                  } else {
+                    return (
+                      <a
+                        key={index}
+                        href={attachmentUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-400 hover:underline flex items-center mt-2"
+                      >
+                        <FileText className="mr-1 w-4 h-4" />
+                        {attachment.original_filename || attachment.filename}
+                      </a>
+                    );
+                  }
+                }
+                return null;
+              })}
             </div>
           )}
           {isGptMessage && (

@@ -153,6 +153,10 @@ const MessagesList: React.FC<MessagesListProps> = ({
   const getAttachmentUrl = (filename: string): string => {
     if (!filename || !filename.trim()) return '';
     
+    if (filename.startsWith('http')) {
+      return filename;
+    }
+    
     const tokenParam = mlToken ? `&access_token=${mlToken}` : '';
     
     return `https://api.mercadolibre.com/messages/attachments/${filename.trim()}?site_id=MLB${tokenParam}`;
@@ -525,6 +529,8 @@ const MessagesList: React.FC<MessagesListProps> = ({
                                   </div>
                                 );
                               }
+
+                              console.log(`Attempting to display image attachment: ${attachmentUrl}`);
                               
                               return (
                                 <div 
@@ -535,7 +541,7 @@ const MessagesList: React.FC<MessagesListProps> = ({
                                   <img
                                     src={attachmentUrl}
                                     alt={`Anexo ${idx + 1}`}
-                                    className="w-24 h-24 object-cover rounded"
+                                    className="max-w-full w-auto h-auto max-h-60 object-contain rounded"
                                     onError={(e) => handleImageError(attachmentUrl, e)}
                                     loading="lazy"
                                   />
