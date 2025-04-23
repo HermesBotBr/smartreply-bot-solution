@@ -13,8 +13,8 @@ interface AllGptColumn {
 }
 
 interface AllGptRow {
-  [key: string]: string | number | null;  // Changed the index signature to accept string, number, or null
-  entry_id: string | number;  // Accept both string and number for entry_id
+  [key: string]: string | number | null;
+  entry_id: string | number;
 }
 
 export function useAllGptData(sellerId: string | null) {

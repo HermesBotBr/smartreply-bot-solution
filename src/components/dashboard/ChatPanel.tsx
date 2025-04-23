@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Loader2, ChevronLeft, Info, X, FileText, Send, Image as ImageIcon } from 'lucide-react';
 import { MlTokenType } from '@/hooks/useMlToken';
@@ -111,7 +112,8 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
       return filename;
     }
     
-    const tokenParam = mlToken?.accessToken ? `&access_token=${mlToken.accessToken}` : '';
+    // Fixed: Changed from mlToken.accessToken to check if mlToken is an object with access_token property
+    const tokenParam = typeof mlToken === 'object' && mlToken?.access_token ? `&access_token=${mlToken.access_token}` : '';
     
     return `https://api.mercadolibre.com/messages/attachments/${filename.trim()}?site_id=MLB${tokenParam}`;
   };
