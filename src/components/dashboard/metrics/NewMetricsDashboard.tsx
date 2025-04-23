@@ -1,14 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
-import { 
-  Star, 
-  CalendarRange, 
-  ShoppingCart, 
-  AlertTriangle, 
-  MessageSquare,
-  Percent,
-  Shield
-} from 'lucide-react';
+import { Star, ShoppingCart, AlertTriangle, MessageSquare, Percent, Shield } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { MetricCard } from './MetricCard';
@@ -19,19 +12,18 @@ import { useComplaintsData } from '@/hooks/useComplaintsData';
 import { useTagsData } from '@/hooks/useTagsData';
 import { SalesItem, FilteredTag } from '@/types/metrics';
 import HermesChat from './HermesChat';
-import { Card, CardContent } from '@/components/ui/card';
 
 interface NewMetricsDashboardProps {
   sellerId: string | null;
 }
 
 export function NewMetricsDashboard({ sellerId }: NewMetricsDashboardProps) {
-  // Date range state
   const [startDate, setStartDate] = useState<Date | undefined>(
     new Date(new Date().setDate(new Date().getDate() - 30))
   );
   const [endDate, setEndDate] = useState<Date | undefined>(new Date());
   const [fetchData, setFetchData] = useState(false);
+  const [activeTab, setActiveTab] = useState("metrics");
   
   // Data hooks
   const { reputation, isLoading: reputationLoading } = useReputationData(sellerId);
@@ -121,142 +113,127 @@ export function NewMetricsDashboard({ sellerId }: NewMetricsDashboardProps) {
     }
   }, [complaintsData, filteredTags]);
   
-  // Handle filter button click
   const handleFilter = () => {
     if (!startDate || !endDate) {
       toast.error("Por favor, selecione um período válido");
       return;
     }
-    
     setFetchData(true);
-  };
-  
-  // Reputation level color mapping
-  const getReputationColor = (levelId: string | undefined) => {
-    if (!levelId) return 'bg-gray-500';
-    
-    const colorMap: Record<string, string> = {
-      '1_red': 'bg-red-500',
-      '2_orange': 'bg-orange-500',
-      '3_yellow': 'bg-yellow-500',
-      '4_light_green': 'bg-lime-500',
-      '5_green': 'bg-green-500'
-    };
-    
-    return colorMap[levelId] || 'bg-gray-500';
   };
 
   return (
-    <div className="p-4 space-y-6">
-      <h2 className="text-2xl font-bold mb-6">Métricas e Estatísticas</h2>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Box 1: Reputação atual */}
-        <MetricCard
-          title="Reputação atual"
-          value={reputation?.seller_reputation?.transactions?.ratings?.negative 
-            ? `${(reputation.seller_reputation.transactions.ratings.negative * 100).toFixed(2)}%`
-            : '-'
-          }
-          icon={Star}
-          description="Reclamações/vendas dos últimos 6 meses"
-          isLoading={reputationLoading}
-          color={getReputationColor(reputation?.seller_reputation?.level_id)}
-        />
-        
-        {/* Box 2: Filtro de data */}
-        <Card className="col-span-1 md:col-span-2">
-          <CardContent className="p-4">
-            <div className="flex flex-col md:flex-row md:items-end gap-4">
-              <div className="flex-grow">
-                <h3 className="text-sm font-medium mb-2">Período de análise</h3>
-                <DateRangePicker
-                  startDate={startDate}
-                  endDate={endDate}
-                  onStartDateChange={setStartDate}
-                  onEndDateChange={setEndDate}
-                />
-              </div>
-              <Button 
-                className="mt-2" 
-                onClick={handleFilter}
-                disabled={!startDate || !endDate || isLoading}
-              >
-                {isLoading ? "Carregando..." : "Filtrar"}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-        
-        {/* Box 3: Total de compras do período */}
-        <MetricCard
-          title="Total de vendas"
-          value={totalSales}
-          icon={ShoppingCart}
-          description={startDate && endDate ? 
-            `De ${startDate.toLocaleDateString('pt-BR')} até ${endDate.toLocaleDateString('pt-BR')}` : 
-            "Selecione um período"
-          }
-          isLoading={salesLoading}
-          color="bg-blue-600"
-        />
-        
-        {/* Box 4: Total de reclamações do período */}
-        <MetricCard
-          title="Total de reclamações"
-          value={totalComplaints}
-          icon={AlertTriangle}
-          description="Todas as reclamações no período"
-          isLoading={complaintsLoading}
-          color="bg-red-600"
-        />
-        
-        {/* Box 5: Total de queixas */}
-        <MetricCard
-          title="Total de queixas"
-          value={totalQueixas}
-          icon={MessageSquare}
-          description="Mensagens com tags IH4002 ou PD4002"
-          isLoading={tagsLoading || salesLoading}
-          color="bg-orange-500"
-        />
-        
-        {/* Box 6: Total de problemas */}
-        <MetricCard
-          title="Total de problemas"
-          value={totalProblems}
-          icon={AlertTriangle}
-          description="Queixas + reclamações (sem duplicatas)"
-          isLoading={complaintsLoading || tagsLoading || salesLoading}
-          color="bg-purple-600"
-        />
-        
-        {/* Box 7: Porcentagem de reclamações sobre vendas */}
-        <MetricCard
-          title="% Reclamações/Vendas"
-          value={`${complaintPercentage.toFixed(2)}%`}
-          icon={Percent}
-          description="Percentual de reclamações sobre o total de vendas"
-          isLoading={complaintsLoading || salesLoading}
-          color="bg-indigo-600"
-        />
-        
-        {/* Box 8: Porcentagem de reclamações evitadas */}
-        <MetricCard
-          title="% Reclamações evitadas"
-          value={`${avoidedComplaintsPercentage.toFixed(2)}%`}
-          icon={Shield}
-          description="Reclamações que não impactaram a reputação"
-          isLoading={impactedComplaintsLoading}
-          color="bg-emerald-600"
-        />
+    <div className="space-y-6">
+      <div className="flex justify-between items-center border-b pb-4">
+        <h2 className="text-3xl font-bold">Métricas e Estatísticas</h2>
+        <Button variant="outline" onClick={handleFilter}>
+          Filtrar
+        </Button>
       </div>
-      
-      {/* Hermes Chat section */}
-      <div className="mt-12 h-[600px]">
-        <h3 className="text-xl font-semibold mb-4">Hermes Assistente</h3>
-        <HermesChat sellerId={sellerId} />
+
+      <div className="bg-card p-4 rounded-lg mb-6">
+        <div className="flex flex-col gap-4">
+          <h3 className="text-sm font-medium">Período de análise</h3>
+          <DateRangePicker
+            startDate={startDate}
+            endDate={endDate}
+            onStartDateChange={setStartDate}
+            onEndDateChange={setEndDate}
+          />
+        </div>
       </div>
+
+      <Tabs defaultValue="metrics" className="w-full">
+        <TabsList className="mb-4">
+          <TabsTrigger value="metrics">Métricas de Vendas</TabsTrigger>
+          <TabsTrigger value="hermes">Hermes Assistente</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="metrics">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <MetricCard
+              title="Reputação atual"
+              value={reputation?.seller_reputation?.transactions?.ratings?.negative 
+                ? `${(reputation.seller_reputation.transactions.ratings.negative * 100).toFixed(2)}%`
+                : '-'
+              }
+              icon={Star}
+              description="Reclamações/vendas dos últimos 6 meses"
+              isLoading={reputationLoading}
+              color="bg-emerald-500"
+              textColor="text-white"
+            />
+            
+            <MetricCard
+              title="Total de vendas"
+              value={totalSales}
+              icon={ShoppingCart}
+              description={startDate && endDate ? 
+                `De ${startDate.toLocaleDateString('pt-BR')} até ${endDate.toLocaleDateString('pt-BR')}` : 
+                "Selecione um período"
+              }
+              isLoading={salesLoading}
+              color="bg-blue-500"
+              textColor="text-white"
+            />
+            
+            <MetricCard
+              title="Total de reclamações"
+              value={totalComplaints}
+              icon={AlertTriangle}
+              description="Todas as reclamações no período"
+              isLoading={complaintsLoading}
+              color="bg-red-500"
+              textColor="text-white"
+            />
+            
+            <MetricCard
+              title="Total de queixas"
+              value={totalQueixas}
+              icon={MessageSquare}
+              description="Mensagens com tags IH4002 ou PD4002"
+              isLoading={tagsLoading || salesLoading}
+              color="bg-orange-500"
+              textColor="text-white"
+            />
+            
+            <MetricCard
+              title="Total de problemas"
+              value={totalProblems}
+              icon={AlertTriangle}
+              description="Queixas + reclamações (sem duplicatas)"
+              isLoading={complaintsLoading || tagsLoading || salesLoading}
+              color="bg-purple-500"
+              textColor="text-white"
+            />
+            
+            <MetricCard
+              title="% Reclamações/Vendas"
+              value={`${complaintPercentage.toFixed(2)}%`}
+              icon={Percent}
+              description="Percentual de reclamações sobre o total de vendas"
+              isLoading={complaintsLoading || salesLoading}
+              color="bg-indigo-500"
+              textColor="text-white"
+            />
+            
+            <MetricCard
+              title="% Reclamações evitadas"
+              value={`${avoidedComplaintsPercentage.toFixed(2)}%`}
+              icon={Shield}
+              description="Reclamações que não impactaram a reputação"
+              isLoading={impactedComplaintsLoading}
+              color="bg-teal-500"
+              textColor="text-white"
+            />
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="hermes">
+          <div className="h-[600px]">
+            <HermesChat sellerId={sellerId} />
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

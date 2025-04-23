@@ -25,8 +25,8 @@ export function MetricCard({
   textColor = 'text-white'
 }: MetricCardProps) {
   return (
-    <Card className={`overflow-hidden ${className}`}>
-      <div className={`p-3 ${color} ${textColor}`}>
+    <Card className={`overflow-hidden transition-all hover:scale-[1.02] ${className}`}>
+      <div className={`p-4 ${color} ${textColor}`}>
         <div className="flex items-center justify-between">
           <h3 className="font-medium text-sm">{title}</h3>
           <Icon className="h-5 w-5 opacity-80" />
@@ -34,11 +34,18 @@ export function MetricCard({
       </div>
       <CardContent className="p-4">
         {isLoading ? (
-          <div className="h-8 w-24 bg-gray-200 animate-pulse rounded"></div>
+          <div className="space-y-2">
+            <div className="h-8 w-24 bg-gray-200 animate-pulse rounded" />
+            {description && (
+              <div className="h-4 w-32 bg-gray-100 animate-pulse rounded" />
+            )}
+          </div>
         ) : (
           <div className="flex flex-col">
             <p className="text-2xl font-bold">{value}</p>
-            {description && <p className="text-xs text-gray-500 mt-1">{description}</p>}
+            {description && (
+              <p className="text-xs text-gray-500 mt-1">{description}</p>
+            )}
           </div>
         )}
       </CardContent>

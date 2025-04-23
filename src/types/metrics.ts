@@ -1,4 +1,3 @@
-
 export interface SellerReputation {
   level_id: string;
   power_seller_status: string | null;
@@ -78,11 +77,12 @@ export interface ComplaintsResponse {
   complaints: Complaint[];
 }
 
+export interface TagsDbRow {
+  [key: string]: string | number | null;
+}
+
 export interface TagsResponse {
-  rows: {
-    [key: string]: string | null;
-    entry_id: number;
-  }[];
+  rows: TagsDbRow[];
 }
 
 export interface FilteredTag {
