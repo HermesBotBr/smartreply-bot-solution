@@ -74,13 +74,22 @@ const mockChartData = [
 export function MetricsGrid() {
   const [selectedTab, setSelectedTab] = useState('reputation');
 
+const handleTabChange = (tab: string) => {
+  setSelectedTab(tab);
+  // Rola suavemente o card selecionado até o centro
+  const el = document.getElementById(`tab-${tab}`);
+  el?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+};
+
+
   return (
-    <Tabs defaultValue="reputation" value={selectedTab} onValueChange={setSelectedTab} className="space-y-4">
+    <Tabs defaultValue="reputation" value={selectedTab} onValueChange={handleTabChange} className="space-y-4">
       <TabsList className="overflow-x-auto flex gap-2 pb-2 scrollbar-hide snap-x snap-mandatory">
         {metrics.map(({ key, label, icon: Icon, value }) => (
 <TabsTrigger
   key={key}
   value={key}
+  id={`tab-${key}`}
   className="min-w-[200px] snap-start flex-col items-start py-4 px-5 bg-primary text-white rounded-2xl hover:opacity-90 data-[state=active]:bg-primary/80"
 >
 
