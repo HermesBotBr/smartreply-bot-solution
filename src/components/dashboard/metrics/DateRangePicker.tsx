@@ -23,10 +23,11 @@ export function DateRangePicker({
   onFilter,
 }: DateRangePickerProps) {
   const [open, setOpen] = useState(false);
-  const [range, setRange] = useState<{ from: Date | undefined; to: Date | undefined }>({
-    from: startDate,
-    to: endDate,
-  });
+  const [range, setRange] = useState<{ from?: Date; to?: Date }>({
+  from: startDate ?? undefined,
+  to: endDate ?? undefined,
+});
+
 
   const formatDate = (date: Date | undefined) =>
     date ? format(date, 'dd/MM/yyyy') : 'Selecionar';
@@ -37,11 +38,13 @@ export function DateRangePicker({
     onStartDateChange(value.from);
     onEndDateChange(value.to);
   } else {
-    // Evita erro ao clicar duas vezes na mesma data
-    setRange({ from: undefined, to: undefined });
-    onStartDateChange(undefined);
-    onEndDateChange(undefined);
-  }
+  // Limpa a seleção e permite uma nova seleção
+  const reset = { from: undefined, to: undefined };
+  setRange(reset);
+  onStartDateChange(undefined);
+  onEndDateChange(undefined);
+}
+
 };
 
 
