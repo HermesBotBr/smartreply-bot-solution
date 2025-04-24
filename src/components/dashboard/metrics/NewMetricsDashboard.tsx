@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { DateRangeFilterSection } from './DateRangeFilterSection';
-import { MetricsGrid } from './MetricsGrid';
+import { MetricsGrid } from './MetricsTabsGrid';
 import HermesChat from './HermesChat';
 import { useReputationData } from '@/hooks/useReputationData';
 import { useSalesData } from '@/hooks/useSalesData';
