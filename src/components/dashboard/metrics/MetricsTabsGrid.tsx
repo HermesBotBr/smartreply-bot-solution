@@ -87,7 +87,8 @@ export function MetricsGrid() {
 <div className="overflow-x-auto scrollbar-hide p-4 bg-white rounded-xl shadow-md h-[480px] flex flex-col justify-between gap-y-4">
         
         {/* LISTA DE ABAS */}
-        <TabsList className="flex gap-2 snap-x snap-mandatory w-max">
+        <TabsList className="mt-6 flex gap-2 snap-x snap-mandatory w-max">
+
           {metrics.map(({ key, label, icon: Icon, value }) => (
             <TabsTrigger
               key={key}
