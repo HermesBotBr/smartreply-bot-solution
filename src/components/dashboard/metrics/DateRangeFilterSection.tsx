@@ -20,12 +20,13 @@ export function DateRangeFilterSection({
     <div className="mb-4">
       <h3 className="text-base font-medium text-gray-700 mb-2">Período de análise</h3>
       <DateRangePicker
-        startDate={startDate}
-        endDate={endDate}
-        onStartDateChange={onStartDateChange}
-        onEndDateChange={onEndDateChange}
-        onPresetSelect={() => {}}
-      />
+  startDate={startDate}
+  endDate={endDate}
+  onStartDateChange={onStartDateChange}
+  onEndDateChange={onEndDateChange}
+  onFilter={onFilter}
+/>
+
     </div>
   );
 }
