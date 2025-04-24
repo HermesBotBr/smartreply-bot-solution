@@ -63,11 +63,14 @@ export function DateRangePicker({
         </PopoverTrigger>
         <PopoverContent className="w-auto p-4 space-y-4">
           <Calendar
-            mode="range"
-            selected={range}
-            onSelect={handleSelect}
-            locale={ptBR}
-          />
+  mode="range"
+  selected={
+    range.from || range.to ? range : undefined
+  }
+  onSelect={handleSelect}
+  locale={ptBR}
+/>
+
           <Button
             onClick={() => {
               onFilter();
