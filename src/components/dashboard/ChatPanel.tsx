@@ -107,6 +107,7 @@ export default function ChatPanel({
       fileRef.current.value = "";
     }
   };
+  
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
