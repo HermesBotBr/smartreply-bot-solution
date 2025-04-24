@@ -76,13 +76,14 @@ export function MetricsGrid() {
 
   return (
     <Tabs defaultValue="reputation" value={selectedTab} onValueChange={setSelectedTab} className="space-y-4">
-      <TabsList className="overflow-x-auto flex gap-2 scrollbar-hide">
+      <TabsList className="overflow-x-auto flex gap-2 pb-2 scrollbar-hide snap-x snap-mandatory">
         {metrics.map(({ key, label, icon: Icon, value }) => (
-          <TabsTrigger
-            key={key}
-            value={key}
-            className="min-w-[200px] text-left flex-col items-start py-4 px-5 bg-primary text-white rounded-2xl hover:opacity-90 data-[state=active]:bg-primary/80"
-          >
+<TabsTrigger
+  key={key}
+  value={key}
+  className="min-w-[200px] snap-start flex-col items-start py-4 px-5 bg-primary text-white rounded-2xl hover:opacity-90 data-[state=active]:bg-primary/80"
+>
+
             <div className="flex justify-between items-center w-full">
               <span className="text-sm font-medium">{label}</span>
               <Icon className="w-4 h-4 text-white/70" />
