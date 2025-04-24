@@ -11,57 +11,87 @@ interface MetricTab {
   description: string;
 }
 
-const metrics: MetricTab[] = [
-  {
-    key: 'reputation',
-    label: 'Reputação atual',
-    icon: Star,
-    value: '18.00%',
-    description: 'Reclamações/vendas dos últimos 6 meses',
-  },
-  {
-    key: 'sales',
-    label: 'Total de vendas',
-    icon: ShoppingCart,
-    value: 75,
-    description: 'De 15/04/2025 até 18/04/2025',
-  },
-  {
-    key: 'complaints',
-    label: 'Total de reclamações',
-    icon: AlertTriangle,
-    value: 11,
-    description: 'Todas as reclamações no período',
-  },
-  {
-    key: 'queixas',
-    label: 'Total de queixas',
-    icon: MessageSquare,
-    value: 1,
-    description: 'Mensagens com tags IH4002 ou PD4002',
-  },
-  {
-    key: 'problemas',
-    label: 'Problemas totais',
-    icon: AlertTriangle,
-    value: 98,
-    description: 'Queixas + reclamações (sem duplicatas)',
-  },
-  {
-    key: 'percReclamacoes',
-    label: '% Reclamações/Vendas',
-    icon: Percent,
-    value: '14.67%',
-    description: 'Percentual de reclamações sobre o total de vendas',
-  },
-  {
-    key: 'evitadas',
-    label: '% Reclamações evitadas',
-    icon: Shield,
-    value: '72.73%',
-    description: 'Reclamações que não impactaram a reputação',
-  },
-];
+interface MetricsGridProps {
+  reputation: any;
+  totalSales: number;
+  totalComplaints: number;
+  totalQueixas: number;
+  totalProblems: number;
+  complaintPercentage: number;
+  avoidedComplaintsPercentage: number;
+  startDate?: Date;
+  endDate?: Date;
+}
+
+export function MetricsGrid({
+  reputation,
+  totalSales,
+  totalComplaints,
+  totalQueixas,
+  totalProblems,
+  complaintPercentage,
+  avoidedComplaintsPercentage,
+  startDate,
+  endDate,
+}: MetricsGridProps) {
+  const [selectedTab, setSelectedTab] = useState('reputation');
+
+  const metrics: MetricTab[] = [
+    {
+      key: 'reputation',
+      label: 'Reputação atual',
+      icon: Star,
+      value: reputation?.seller_reputation?.transactions?.ratings?.negative
+        ? `${(reputation.seller_reputation.transactions.ratings.negative * 100).toFixed(2)}%`
+        : '-',
+      description: 'Reclamações/vendas dos últimos 6 meses',
+    },
+    {
+      key: 'sales',
+      label: 'Total de vendas',
+      icon: ShoppingCart,
+      value: totalSales,
+      description: startDate && endDate
+        ? `De ${startDate.toLocaleDateString('pt-BR')} até ${endDate.toLocaleDateString('pt-BR')}`
+        : 'Selecione um período',
+    },
+    {
+      key: 'complaints',
+      label: 'Total de reclamações',
+      icon: AlertTriangle,
+      value: totalComplaints,
+      description: 'Todas as reclamações no período',
+    },
+    {
+      key: 'queixas',
+      label: 'Total de queixas',
+      icon: MessageSquare,
+      value: totalQueixas,
+      description: 'Mensagens com tags IH4002 ou PD4002',
+    },
+    {
+      key: 'problemas',
+      label: 'Problemas totais',
+      icon: AlertTriangle,
+      value: totalProblems,
+      description: 'Queixas + reclamações (sem duplicatas)',
+    },
+    {
+      key: 'percReclamacoes',
+      label: '% Reclamações/Vendas',
+      icon: Percent,
+      value: `${complaintPercentage.toFixed(2)}%`,
+      description: 'Percentual de reclamações sobre o total de vendas',
+    },
+    {
+      key: 'evitadas',
+      label: '% Reclamações evitadas',
+      icon: Shield,
+      value: `${avoidedComplaintsPercentage.toFixed(2)}%`,
+      description: 'Reclamações que não impactaram a reputação',
+    },
+  ];
+
 
 const mockChartData = [
   { name: 'Item 1', valor: 18 },
@@ -71,9 +101,6 @@ const mockChartData = [
   { name: 'Item 5', valor: 33 },
 ];
 
-export function MetricsGrid() {
-  const [selectedTab, setSelectedTab] = useState('reputation');
-
   const handleTabChange = (tab: string) => {
     setSelectedTab(tab);
     const el = document.getElementById(`tab-${tab}`);
@@ -82,6 +109,7 @@ export function MetricsGrid() {
 
   return (
     <Tabs defaultValue="reputation" value={selectedTab} onValueChange={handleTabChange} className="space-y-4">
+
       
       {/* WRAPPER de tudo: abas + gráfico */}
 <div className="overflow-x-auto scrollbar-hide p-4 bg-white rounded-xl shadow-md h-[480px] flex flex-col justify-between gap-y-4">
