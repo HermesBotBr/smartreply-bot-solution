@@ -41,7 +41,8 @@ export function MetricsGrid({
   const baseGradient = "bg-gradient-to-br from-primary to-primary/80";
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+  <div className="flex flex-row overflow-x-auto space-x-4 pb-2 scrollbar-hide">
+
       <MetricCard
         title="Reputação atual"
         value={reputation?.seller_reputation?.transactions?.ratings?.negative 
