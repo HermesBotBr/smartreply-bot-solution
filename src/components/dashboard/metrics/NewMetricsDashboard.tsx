@@ -25,15 +25,14 @@ export function NewMetricsDashboard({ sellerId }: NewMetricsDashboardProps) {
   
   // Data fetching hooks
   const { reputation, isLoading: reputationLoading } = useReputationData(sellerId);
-  const { salesData, isLoading: salesLoading, refetch: refetchSales } = useSalesData(sellerId, startDate, endDate, fetchData);
-  const { complaintsData, isLoading: complaintsLoading, refetch: refetchComplaints } = useComplaintsData(
-  sellerId, startDate, endDate, false, fetchData
+  const { salesData, isLoading: salesLoading, refetch: refetchSales } = useSalesData(sellerId, startDate, endDate);
+const { complaintsData, isLoading: complaintsLoading, refetch: refetchComplaints } = useComplaintsData(
+  sellerId, startDate, endDate, false
 );
-
-  const { complaintsData: impactedComplaintsData, isLoading: impactedComplaintsLoading, refetch: refetchImpactedComplaints } = 
-  useComplaintsData(sellerId, startDate, endDate, true, fetchData);
-
+const { complaintsData: impactedComplaintsData, isLoading: impactedComplaintsLoading, refetch: refetchImpactedComplaints } = 
+  useComplaintsData(sellerId, startDate, endDate, true);
 const { filteredTags, isLoading: tagsLoading, refetch: refetchTags } = useTagsData(sellerId);
+
 
   
   // Derived state
