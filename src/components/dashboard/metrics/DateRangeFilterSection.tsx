@@ -20,19 +20,24 @@ export function DateRangeFilterSection({
   onFilter
 }: DateRangeFilterSectionProps) {
   return (
-    <div className="bg-card p-4 rounded-lg mb-6">
-      <div className="flex flex-col gap-4">
-        <h3 className="text-sm font-medium">Período de análise</h3>
-        <DateRangePicker
-          startDate={startDate}
-          endDate={endDate}
-          onStartDateChange={onStartDateChange}
-          onEndDateChange={onEndDateChange}
-        />
-        <Button variant="outline" onClick={onFilter}>
-          Filtrar
+    <Card className="bg-white/50 backdrop-blur-sm shadow-lg mb-6 p-6">
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold text-gray-800">Período de análise</h3>
+        <div className="bg-white rounded-lg p-4 shadow-sm">
+          <DateRangePicker
+            startDate={startDate}
+            endDate={endDate}
+            onStartDateChange={onStartDateChange}
+            onEndDateChange={onEndDateChange}
+          />
+        </div>
+        <Button 
+          onClick={onFilter}
+          className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 transition-colors duration-200"
+        >
+          Aplicar Filtros
         </Button>
       </div>
-    </div>
+    </Card>
   );
 }

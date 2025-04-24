@@ -23,7 +23,7 @@ export function MetricCard({
   isLoading = false,
   color = 'bg-white',
   className = '',
-  textColor = 'text-gray-900',
+  textColor = 'text-white',
   change,
   changeType = 'neutral'
 }: MetricCardProps) {
@@ -34,30 +34,34 @@ export function MetricCard({
   };
 
   return (
-    <div className={`${className} border-r border-gray-200 px-6 py-4 flex-1 ${color}`}>
-      <div className="flex flex-col">
-        <h3 className="text-sm font-medium text-gray-500 flex items-center">
-          {title}
-          {Icon && <Icon className="h-4 w-4 ml-2 opacity-60" />}
-        </h3>
+    <div className={`${className} rounded-xl shadow-lg overflow-hidden ${color}`}>
+      <div className="p-6 flex flex-col h-full">
+        <div className="flex items-start justify-between mb-4">
+          <h3 className={`text-sm font-medium opacity-90 ${textColor}`}>
+            {title}
+          </h3>
+          {Icon && <Icon className={`h-5 w-5 ${textColor} opacity-75`} />}
+        </div>
         
         {isLoading ? (
-          <div className="mt-2">
-            <div className="h-8 w-24 bg-gray-200 animate-pulse rounded" />
-            {description && (
-              <div className="h-4 w-32 bg-gray-100 animate-pulse rounded mt-1" />
-            )}
+          <div className="space-y-3">
+            <div className="h-8 bg-gray-200/20 animate-pulse rounded" />
+            <div className="h-4 w-3/4 bg-gray-200/20 animate-pulse rounded" />
           </div>
         ) : (
-          <div className="flex flex-col">
-            <p className={`text-2xl font-bold ${textColor}`}>{value}</p>
-            {change && (
-              <span className={`text-xs px-2 py-0.5 rounded mt-1 inline-flex items-center w-fit ${getChangeColor()}`}>
-                {change}
-              </span>
-            )}
+          <div className="flex flex-col flex-1 justify-between">
+            <div className="mb-2">
+              <p className={`text-3xl font-bold ${textColor}`}>{value}</p>
+              {change && (
+                <span className={`text-xs px-2 py-1 rounded mt-2 inline-flex items-center ${getChangeColor()}`}>
+                  {change}
+                </span>
+              )}
+            </div>
             {description && (
-              <p className="text-xs text-gray-600 mt-1">{description}</p>
+              <p className={`text-sm mt-2 ${textColor} opacity-75`}>
+                {description}
+              </p>
             )}
           </div>
         )}
