@@ -25,13 +25,16 @@ export function NewMetricsDashboard({ sellerId }: NewMetricsDashboardProps) {
   
   // Data fetching hooks
   const { reputation, isLoading: reputationLoading } = useReputationData(sellerId);
-  const { salesData, isLoading: salesLoading } = useSalesData(sellerId, startDate, endDate, fetchData);
-  const { complaintsData, isLoading: complaintsLoading } = useComplaintsData(
-    sellerId, startDate, endDate, false, fetchData
-  );
-  const { complaintsData: impactedComplaintsData, isLoading: impactedComplaintsLoading } = 
-    useComplaintsData(sellerId, startDate, endDate, true, fetchData);
-  const { filteredTags, isLoading: tagsLoading } = useTagsData(sellerId);
+  const { salesData, isLoading: salesLoading, refetch: refetchSales } = useSalesData(sellerId, startDate, endDate, fetchData);
+  const { complaintsData, isLoading: complaintsLoading, refetch: refetchComplaints } = useComplaintsData(
+  sellerId, startDate, endDate, false, fetchData
+);
+
+  const { complaintsData: impactedComplaintsData, isLoading: impactedComplaintsLoading, refetch: refetchImpactedComplaints } = 
+  useComplaintsData(sellerId, startDate, endDate, true, fetchData);
+
+const { filteredTags, isLoading: tagsLoading, refetch: refetchTags } = useTagsData(sellerId);
+
   
   // Derived state
   const [totalSales, setTotalSales] = useState<number>(0);
@@ -100,13 +103,24 @@ export function NewMetricsDashboard({ sellerId }: NewMetricsDashboardProps) {
     }
   }, [complaintsData, filteredTags]);
   
-  const handleFilter = () => {
-    if (!startDate || !endDate) {
-      toast.error("Por favor, selecione um período válido");
-      return;
-    }
-    setFetchData(true);
-  };
+  const handleFilter = async () => {
+  if (!startDate || !endDate) {
+    toast.error("Por favor, selecione um período válido");
+    return;
+  }
+
+  try {
+    await Promise.all([
+      refetchSales(),
+      refetchComplaints(),
+      refetchImpactedComplaints(),
+      refetchTags(),
+    ]);
+  } catch (error) {
+    toast.error("Erro ao buscar os dados. Tente novamente.");
+  }
+};
+
 
   return (
     <div className="space-y-6">
