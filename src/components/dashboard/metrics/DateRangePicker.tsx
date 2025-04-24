@@ -37,15 +37,19 @@ export function DateRangePicker({
     setRange(value);
     onStartDateChange(value.from);
     onEndDateChange(value.to);
+  } else if (value?.from && !value?.to) {
+    // Começou uma nova seleção (clicou em um dia válido)
+    setRange({ from: value.from, to: undefined });
+    onStartDateChange(value.from);
+    onEndDateChange(undefined);
   } else {
-  // Limpa a seleção e permite uma nova seleção
-  const reset = { from: undefined, to: undefined };
-  setRange(reset);
-  onStartDateChange(undefined);
-  onEndDateChange(undefined);
-}
-
+    // Clicou duas vezes na mesma data = limpar tudo
+    setRange({ from: undefined, to: undefined });
+    onStartDateChange(undefined);
+    onEndDateChange(undefined);
+  }
 };
+
 
 
   return (
