@@ -1,123 +1,112 @@
-
-import React from 'react';
+import React, { useState } from 'react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Star, ShoppingCart, AlertTriangle, MessageSquare, Percent, Shield } from 'lucide-react';
-import { MetricCard } from './MetricCard';
-import { ReputationResponse } from '@/types/metrics';
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
-interface MetricsGridProps {
-  reputation: ReputationResponse | null;
-  reputationLoading: boolean;
-  totalSales: number;
-  salesLoading: boolean;
-  totalComplaints: number;
-  complaintsLoading: boolean;
-  totalQueixas: number;
-  totalProblems: number;
-  complaintPercentage: number;
-  avoidedComplaintsPercentage: number;
-  tagsLoading: boolean;
-  impactedComplaintsLoading: boolean;
-  startDate?: Date;
-  endDate?: Date;
+interface MetricTab {
+  key: string;
+  label: string;
+  icon: React.ElementType;
+  value: string | number;
+  description: string;
 }
 
-export function MetricsGrid({
-  reputation,
-  reputationLoading,
-  totalSales,
-  salesLoading,
-  totalComplaints,
-  complaintsLoading,
-  totalQueixas,
-  totalProblems,
-  complaintPercentage,
-  avoidedComplaintsPercentage,
-  tagsLoading,
-  impactedComplaintsLoading,
-  startDate,
-  endDate,
-}: MetricsGridProps) {
-  // Define a consistent color gradient
-  const baseGradient = "bg-gradient-to-br from-primary to-primary/80";
+const metrics: MetricTab[] = [
+  {
+    key: 'reputation',
+    label: 'Reputação atual',
+    icon: Star,
+    value: '18.00%',
+    description: 'Reclamações/vendas dos últimos 6 meses',
+  },
+  {
+    key: 'sales',
+    label: 'Total de vendas',
+    icon: ShoppingCart,
+    value: 75,
+    description: 'De 15/04/2025 até 18/04/2025',
+  },
+  {
+    key: 'complaints',
+    label: 'Total de reclamações',
+    icon: AlertTriangle,
+    value: 11,
+    description: 'Todas as reclamações no período',
+  },
+  {
+    key: 'queixas',
+    label: 'Total de queixas',
+    icon: MessageSquare,
+    value: 1,
+    description: 'Mensagens com tags IH4002 ou PD4002',
+  },
+  {
+    key: 'problemas',
+    label: 'Total de problemas',
+    icon: AlertTriangle,
+    value: 98,
+    description: 'Queixas + reclamações (sem duplicatas)',
+  },
+  {
+    key: 'percReclamacoes',
+    label: '% Reclamações/Vendas',
+    icon: Percent,
+    value: '14.67%',
+    description: 'Percentual de reclamações sobre o total de vendas',
+  },
+  {
+    key: 'evitadas',
+    label: '% Reclamações evitadas',
+    icon: Shield,
+    value: '72.73%',
+    description: 'Reclamações que não impactaram a reputação',
+  },
+];
+
+const mockChartData = [
+  { name: 'Item 1', valor: 18 },
+  { name: 'Item 2', valor: 27 },
+  { name: 'Item 3', valor: 23 },
+  { name: 'Item 4', valor: 35 },
+  { name: 'Item 5', valor: 33 },
+];
+
+export function MetricsGrid() {
+  const [selectedTab, setSelectedTab] = useState('reputation');
 
   return (
-  <div className="flex flex-row overflow-x-auto space-x-4 pb-2 scrollbar-hide">
+    <Tabs defaultValue="reputation" value={selectedTab} onValueChange={setSelectedTab} className="space-y-4">
+      <TabsList className="overflow-x-auto flex gap-2 scrollbar-hide">
+        {metrics.map(({ key, label, icon: Icon, value }) => (
+          <TabsTrigger
+            key={key}
+            value={key}
+            className="min-w-[200px] text-left flex-col items-start py-4 px-5 bg-primary text-white rounded-2xl hover:opacity-90 data-[state=active]:bg-primary/80"
+          >
+            <div className="flex justify-between items-center w-full">
+              <span className="text-sm font-medium">{label}</span>
+              <Icon className="w-4 h-4 text-white/70" />
+            </div>
+            <div className="mt-1 text-xl font-bold">{value}</div>
+          </TabsTrigger>
+        ))}
+      </TabsList>
 
-      <MetricCard
-        title="Reputação atual"
-        value={reputation?.seller_reputation?.transactions?.ratings?.negative 
-          ? `${(reputation.seller_reputation.transactions.ratings.negative * 100).toFixed(2)}%`
-          : '-'
-        }
-        icon={Star}
-        description="Reclamações/vendas dos últimos 6 meses"
-        isLoading={reputationLoading}
-        color={baseGradient}
-        textColor="text-white"
-      />
-      
-      <MetricCard
-        title="Total de vendas"
-        value={totalSales}
-        icon={ShoppingCart}
-        description={startDate && endDate ? 
-          `De ${startDate.toLocaleDateString('pt-BR')} até ${endDate.toLocaleDateString('pt-BR')}` : 
-          "Selecione um período"
-        }
-        isLoading={salesLoading}
-        color={baseGradient}
-        textColor="text-white"
-      />
-      
-      <MetricCard
-        title="Total de reclamações"
-        value={totalComplaints}
-        icon={AlertTriangle}
-        description="Todas as reclamações no período"
-        isLoading={complaintsLoading}
-        color={baseGradient}
-        textColor="text-white"
-      />
-      
-      <MetricCard
-        title="Total de queixas"
-        value={totalQueixas}
-        icon={MessageSquare}
-        description="Mensagens com tags IH4002 ou PD4002"
-        isLoading={tagsLoading || salesLoading}
-        color={baseGradient}
-        textColor="text-white"
-      />
-      
-      <MetricCard
-        title="Total de problemas"
-        value={totalProblems}
-        icon={AlertTriangle}
-        description="Queixas + reclamações (sem duplicatas)"
-        isLoading={complaintsLoading || tagsLoading || salesLoading}
-        color={baseGradient}
-        textColor="text-white"
-      />
-      
-      <MetricCard
-        title="% Reclamações/Vendas"
-        value={`${complaintPercentage.toFixed(2)}%`}
-        icon={Percent}
-        description="Percentual de reclamações sobre o total de vendas"
-        isLoading={complaintsLoading || salesLoading}
-        color={baseGradient}
-        textColor="text-white"
-      />
-      
-      <MetricCard
-        title="% Reclamações evitadas"
-        value={`${avoidedComplaintsPercentage.toFixed(2)}%`}
-        icon={Shield}
-        description="Reclamações que não impactaram a reputação"
-        isLoading={impactedComplaintsLoading}
-        color={baseGradient}
-        textColor="text-white"
-      />
-    </div>
+      {metrics.map(({ key, description }) => (
+        <TabsContent key={key} value={key} className="bg-white/20 p-4 rounded-xl shadow-inner">
+          <p className="mb-2 text-sm text-muted-foreground">{description}</p>
+          <div className="h-[280px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={mockChartData}>
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
+                <Line type="monotone" dataKey="valor" stroke="#8884d8" strokeWidth={2} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </TabsContent>
+      ))}
+    </Tabs>
   );
 }
