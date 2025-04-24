@@ -25,7 +25,10 @@ export function DateRangePicker({
   onEndDateChange,
   onPresetSelect,
 }: DateRangePickerProps) {
+  const [selectedPreset, setSelectedPreset] = React.useState<string>('last7');
+
   const handlePresetChange = (value: string) => {
+    setSelectedPreset(value);
     if (onPresetSelect) {
       onPresetSelect(value);
     }
@@ -48,19 +51,28 @@ export function DateRangePicker({
         </Select>
       </div>
 
-      <div className="flex-1">
-        <div className="mb-2 text-sm text-gray-500">Comparar com</div>
-        <Select defaultValue="previous">
-          <SelectTrigger className="w-full border-gray-300">
-            <SelectValue placeholder="Período anterior" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="previous">Período anterior</SelectItem>
-            <SelectItem value="lastYear">Mesmo período do ano passado</SelectItem>
-            <SelectItem value="none">Não comparar</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+      {selectedPreset === 'custom' && (
+        <div className="flex flex-col sm:flex-row gap-4 flex-1">
+          <div className="flex-1">
+            <div className="mb-2 text-sm text-gray-500">Data inicial</div>
+            <Calendar
+              mode="single"
+              selected={startDate}
+              onSelect={onStartDateChange}
+              locale={ptBR}
+            />
+          </div>
+          <div className="flex-1">
+            <div className="mb-2 text-sm text-gray-500">Data final</div>
+            <Calendar
+              mode="single"
+              selected={endDate}
+              onSelect={onEndDateChange}
+              locale={ptBR}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
