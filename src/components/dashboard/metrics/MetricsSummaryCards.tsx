@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { MessageSquare, Users, ShoppingBag, AlertTriangle } from "lucide-react";
 
 interface MetricsSummaryCardsProps {
@@ -12,67 +11,63 @@ interface MetricsSummaryCardsProps {
   onUnpreventedClick: () => void;
 }
 
+const MetricCard = ({
+  label,
+  value,
+  icon: Icon,
+  onClick,
+}: {
+  label: string;
+  value: number;
+  icon: React.ElementType;
+  onClick?: () => void;
+}) => (
+  <Card
+    onClick={onClick}
+    className={`min-w-[180px] p-4 flex flex-col justify-between cursor-pointer hover:shadow-md transition-all ${
+      onClick ? 'hover:bg-gray-100 dark:hover:bg-gray-800' : ''
+    }`}
+  >
+    <div className="text-xs text-muted-foreground mb-2">{label}</div>
+    <div className="flex items-center justify-between">
+      <div className="text-2xl font-bold">{value}</div>
+      <Icon className="w-5 h-5 text-muted-foreground" />
+    </div>
+  </Card>
+);
+
 const MetricsSummaryCards: React.FC<MetricsSummaryCardsProps> = ({
   complaintsAvoided,
   totalMessages,
   totalQuestions,
   unpreventedComplaints,
   onPreventedClick,
-  onUnpreventedClick
+  onUnpreventedClick,
 }) => {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-      <Card onClick={onPreventedClick} className="cursor-pointer">
-        <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <div className="flex flex-col space-y-1">
-            <CardTitle className="text-sm font-medium">Reclamações Evitadas</CardTitle>
-            <CardDescription>Período total</CardDescription>
-          </div>
-          <ShoppingBag className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{complaintsAvoided}</div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <div className="flex flex-col space-y-1">
-            <CardTitle className="text-sm font-medium">Total de Mensagens</CardTitle>
-            <CardDescription>Período total</CardDescription>
-          </div>
-          <MessageSquare className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{totalMessages}</div>
-        </CardContent>
-      </Card>
-      
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <div className="flex flex-col space-y-1">
-            <CardTitle className="text-sm font-medium">Perguntas Recebidas</CardTitle>
-            <CardDescription>Período total</CardDescription>
-          </div>
-          <Users className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{totalQuestions}</div>
-        </CardContent>
-      </Card>
-      
-      <Card onClick={onUnpreventedClick} className="cursor-pointer">
-        <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <div className="flex flex-col space-y-1">
-            <CardTitle className="text-sm font-medium">Reclamações não impedidas</CardTitle>
-            <CardDescription>Período total</CardDescription>
-          </div>
-          <AlertTriangle className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{unpreventedComplaints}</div>
-        </CardContent>
-      </Card>
+    <div className="flex flex-row overflow-x-auto space-x-4 scrollbar-hide pb-2">
+      <MetricCard
+        label="Reclamações Evitadas"
+        value={complaintsAvoided}
+        icon={ShoppingBag}
+        onClick={onPreventedClick}
+      />
+      <MetricCard
+        label="Total de Mensagens"
+        value={totalMessages}
+        icon={MessageSquare}
+      />
+      <MetricCard
+        label="Perguntas Recebidas"
+        value={totalQuestions}
+        icon={Users}
+      />
+      <MetricCard
+        label="Reclamações não impedidas"
+        value={unpreventedComplaints}
+        icon={AlertTriangle}
+        onClick={onUnpreventedClick}
+      />
     </div>
   );
 };
