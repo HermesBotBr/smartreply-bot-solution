@@ -84,7 +84,7 @@ const handleTabChange = (tab: string) => {
 
   return (
     <Tabs defaultValue="reputation" value={selectedTab} onValueChange={handleTabChange} className="space-y-4">
-      <TabsList className="overflow-x-auto flex gap-2 pb-2 scrollbar-hide snap-x snap-mandatory">
+<TabsList className="overflow-x-auto flex gap-2 pb-6 z-10 relative scrollbar-hide snap-x snap-mandatory">
         {metrics.map(({ key, label, icon: Icon, value }) => (
 <TabsTrigger
   key={key}
