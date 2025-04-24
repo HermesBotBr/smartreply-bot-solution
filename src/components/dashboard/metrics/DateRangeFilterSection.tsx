@@ -12,6 +12,8 @@ interface DateRangeFilterSectionProps {
   onFilter: () => void;
 }
 
+import { subDays, endOfDay } from 'date-fns';
+
 export function DateRangeFilterSection({
   startDate,
   endDate,
@@ -19,6 +21,24 @@ export function DateRangeFilterSection({
   onEndDateChange,
   onFilter
 }: DateRangeFilterSectionProps) {
+  const handlePresetSelect = (preset: string) => {
+    const today = endOfDay(new Date());
+    let newStartDate: Date;
+
+    if (preset === 'last7') {
+      newStartDate = subDays(today, 6);
+    } else if (preset === 'last30') {
+      newStartDate = subDays(today, 29);
+    } else if (preset === 'last60') {
+      newStartDate = subDays(today, 59);
+    } else {
+      return; // não altera datas se for personalizado
+    }
+
+    onStartDateChange(newStartDate);
+    onEndDateChange(today);
+  };
+
   return (
     <Card className="bg-white/50 backdrop-blur-sm shadow-lg mb-6 p-6">
       <div className="space-y-4">
