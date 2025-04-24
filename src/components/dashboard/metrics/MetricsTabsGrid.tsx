@@ -84,7 +84,7 @@ export function MetricsGrid() {
     <Tabs defaultValue="reputation" value={selectedTab} onValueChange={handleTabChange} className="space-y-4">
       
       {/* WRAPPER de tudo: abas + gráfico */}
-      <div className="overflow-x-auto scrollbar-hide p-4 bg-white rounded-xl shadow-md h-[480px] flex flex-col justify-between">
+<div className="overflow-x-auto scrollbar-hide p-4 bg-white rounded-xl shadow-md h-[480px] flex flex-col justify-between gap-y-4">
         
         {/* LISTA DE ABAS */}
         <TabsList className="flex gap-2 snap-x snap-mandatory w-max">
