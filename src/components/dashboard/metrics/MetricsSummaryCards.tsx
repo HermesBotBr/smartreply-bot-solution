@@ -45,7 +45,7 @@ const MetricsSummaryCards: React.FC<MetricsSummaryCardsProps> = ({
   onUnpreventedClick,
 }) => {
   return (
-    <div className="flex flex-row overflow-x-auto space-x-4 scrollbar-hide pb-2">
+    <div className="flex flex-row overflow-x-auto space-x-4 pb-2 scrollbar-hide">
       <MetricCard
         label="Reclamações Evitadas"
         value={complaintsAvoided}
