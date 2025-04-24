@@ -74,25 +74,22 @@ const mockChartData = [
 export function MetricsGrid() {
   const [selectedTab, setSelectedTab] = useState('reputation');
 
-const handleTabChange = (tab: string) => {
-  setSelectedTab(tab);
-  // Rola suavemente o card selecionado até o centro
-  const el = document.getElementById(`tab-${tab}`);
-  el?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-};
-
+  const handleTabChange = (tab: string) => {
+    setSelectedTab(tab);
+    const el = document.getElementById(`tab-${tab}`);
+    el?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+  };
 
   return (
     <Tabs defaultValue="reputation" value={selectedTab} onValueChange={handleTabChange} className="space-y-4">
-<TabsList className="overflow-x-auto flex gap-2 pb-6 z-10 relative scrollbar-hide snap-x snap-mandatory">
+      <TabsList className="overflow-x-auto flex gap-2 p-4 bg-white shadow-md rounded-xl z-10 relative scrollbar-hide snap-x snap-mandatory">
         {metrics.map(({ key, label, icon: Icon, value }) => (
-<TabsTrigger
-  key={key}
-  value={key}
-  id={`tab-${key}`}
-  className="min-w-[200px] snap-start flex-col items-start py-4 px-5 bg-primary text-white rounded-2xl hover:opacity-90 data-[state=active]:bg-primary/80"
->
-
+          <TabsTrigger
+            key={key}
+            value={key}
+            id={`tab-${key}`}
+            className="min-w-[200px] snap-start flex-col items-start py-4 px-5 bg-primary text-white rounded-2xl hover:opacity-90 data-[state=active]:bg-primary/80"
+          >
             <div className="flex justify-between items-center w-full">
               <span className="text-sm font-medium">{label}</span>
               <Icon className="w-4 h-4 text-white/70" />
@@ -102,21 +99,23 @@ const handleTabChange = (tab: string) => {
         ))}
       </TabsList>
 
-      {metrics.map(({ key, description }) => (
-        <TabsContent key={key} value={key} className="bg-white/20 p-4 rounded-xl shadow-inner">
-          <p className="mb-2 text-sm text-muted-foreground">{description}</p>
-          <div className="h-[280px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={mockChartData}>
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Line type="monotone" dataKey="valor" stroke="#8884d8" strokeWidth={2} />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </TabsContent>
-      ))}
+      <div className="mt-4">
+        {metrics.map(({ key, description }) => (
+          <TabsContent key={key} value={key} className="bg-white/20 p-4 rounded-xl shadow-inner">
+            <p className="mb-2 text-sm text-muted-foreground">{description}</p>
+            <div className="h-[280px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={mockChartData}>
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip />
+                  <Line type="monotone" dataKey="valor" stroke="#8884d8" strokeWidth={2} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </TabsContent>
+        ))}
+      </div>
     </Tabs>
   );
 }
