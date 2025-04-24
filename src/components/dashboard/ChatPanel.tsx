@@ -55,7 +55,7 @@ const gpt_ids = {
   "smartreply.com.br@gmail.com": "653796959f99a3993c4f596b",
 };
 
-export function ChatPanel({ 
+export default function ChatPanel({ 
   selectedConv,
   showSaleDetails,
   setShowSaleDetails,
