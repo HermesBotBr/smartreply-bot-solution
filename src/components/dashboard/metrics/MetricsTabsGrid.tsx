@@ -85,7 +85,7 @@ export function MetricsGrid() {
       
       {/* WRAPPER DE SCROLL APENAS PARA AS ABAS */}
       <div className="overflow-x-auto scrollbar-hide">
-        <TabsList className="flex gap-2 py-4 px-4 bg-white shadow-md rounded-xl z-10 snap-x snap-mandatory w-max">
+        <TabsList className="flex gap-2 py-4 px-4 snap-x snap-mandatory w-max">
           {metrics.map(({ key, label, icon: Icon, value }) => (
             <TabsTrigger
               key={key}
