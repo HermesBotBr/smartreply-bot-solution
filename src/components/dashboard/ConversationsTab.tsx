@@ -1,7 +1,7 @@
 
 import React, { useEffect } from 'react';
 import ConversationsList from './ConversationsList';
-import ChatPanel from './ChatPanel';
+import { ChatPanel } from './ChatPanel';  // Changed from default import to named import
 import SaleDetailsPanel from './SaleDetailsPanel';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { ClientData } from '@/hooks/usePackClientData';
