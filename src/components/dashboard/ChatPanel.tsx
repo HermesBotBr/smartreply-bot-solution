@@ -1,4 +1,3 @@
-
 import React, {
   useState,
   useRef,
@@ -30,7 +29,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { MlTokenType } from "@/hooks/useMlToken";
 
 interface ChatPanelProps {
-  selectedConv: any; // Added to match usage in ConversationsTab
+  selectedConv: any;
   showSaleDetails: boolean;
   setShowSaleDetails: (show: boolean) => void;
   gptIds: string[];
@@ -41,7 +40,7 @@ interface ChatPanelProps {
   setInitialAutoScrollDone: (done: boolean) => void;
   onBack?: () => void;
   isMobile: boolean;
-  conversation?: any; // Keep existing prop for backward compatibility
+  conversation?: any;
   isGpt?: boolean;
   isComplaint?: boolean;
   complaintData?: any;
@@ -73,7 +72,6 @@ export function ChatPanel({
   isComplaint,
   complaintData 
 }: ChatPanelProps) {
-  // Use either selectedConv or conversation (for backward compatibility)
   const activeConversation = selectedConv || conversation;
   const [messageInput, setMessageInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -126,18 +124,16 @@ export function ChatPanel({
     formData.append("packId", activeConversation.packId || "");
     formData.append("orderId", activeConversation.orderId?.toString() || "");
     
-    // Fix the access_token error by checking if mlToken has the access_token property
     let accessToken = "";
     if (mlToken && typeof mlToken === 'object') {
       if ('access_token' in mlToken) {
-        accessToken = mlToken.access_token;
+        accessToken = String(mlToken.access_token || '');
       } else if ('seller_id' in mlToken) {
-        // If no access_token, use a default or placeholder
         accessToken = "no-token-available";
       }
     }
     
-    formData.append("accessToken", accessToken || "");
+    formData.append("accessToken", accessToken);
 
     try {
       setIsSubmitting(true);
