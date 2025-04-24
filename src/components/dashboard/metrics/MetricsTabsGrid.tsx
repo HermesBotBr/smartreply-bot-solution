@@ -1,76 +1,3 @@
-import React, { useState } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Star, ShoppingCart, AlertTriangle, MessageSquare, Percent, Shield } from 'lucide-react';
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-
-interface MetricTab {
-  key: string;
-  label: string;
-  icon: React.ElementType;
-  value: string | number;
-  description: string;
-}
-
-const metrics: MetricTab[] = [
-  {
-    key: 'reputation',
-    label: 'Reputação atual',
-    icon: Star,
-    value: '18.00%',
-    description: 'Reclamações/vendas dos últimos 6 meses',
-  },
-  {
-    key: 'sales',
-    label: 'Total de vendas',
-    icon: ShoppingCart,
-    value: 75,
-    description: 'De 15/04/2025 até 18/04/2025',
-  },
-  {
-    key: 'complaints',
-    label: 'Total de reclamações',
-    icon: AlertTriangle,
-    value: 11,
-    description: 'Todas as reclamações no período',
-  },
-  {
-    key: 'queixas',
-    label: 'Total de queixas',
-    icon: MessageSquare,
-    value: 1,
-    description: 'Mensagens com tags IH4002 ou PD4002',
-  },
-  {
-    key: 'problemas',
-    label: 'Problemas totais',
-    icon: AlertTriangle,
-    value: 98,
-    description: 'Queixas + reclamações (sem duplicatas)',
-  },
-  {
-    key: 'percReclamacoes',
-    label: '% Reclamações/Vendas',
-    icon: Percent,
-    value: '14.67%',
-    description: 'Percentual de reclamações sobre o total de vendas',
-  },
-  {
-    key: 'evitadas',
-    label: '% Reclamações evitadas',
-    icon: Shield,
-    value: '72.73%',
-    description: 'Reclamações que não impactaram a reputação',
-  },
-];
-
-const mockChartData = [
-  { name: 'Item 1', valor: 18 },
-  { name: 'Item 2', valor: 27 },
-  { name: 'Item 3', valor: 23 },
-  { name: 'Item 4', valor: 35 },
-  { name: 'Item 5', valor: 33 },
-];
-
 export function MetricsGrid() {
   const [selectedTab, setSelectedTab] = useState('reputation');
 
@@ -83,9 +10,11 @@ export function MetricsGrid() {
   return (
     <Tabs defaultValue="reputation" value={selectedTab} onValueChange={handleTabChange} className="space-y-4">
       
-      {/* WRAPPER DE SCROLL APENAS PARA AS ABAS */}
-      <div className="overflow-x-auto scrollbar-hide">
-        <TabsList className="flex gap-2 py-4 px-4 snap-x snap-mandatory w-max">
+      {/* WRAPPER de tudo: abas + gráfico */}
+      <div className="overflow-x-auto scrollbar-hide p-4 bg-white rounded-xl shadow-md h-[480px] flex flex-col justify-between">
+        
+        {/* LISTA DE ABAS */}
+        <TabsList className="flex gap-2 snap-x snap-mandatory w-max">
           {metrics.map(({ key, label, icon: Icon, value }) => (
             <TabsTrigger
               key={key}
@@ -101,27 +30,26 @@ export function MetricsGrid() {
             </TabsTrigger>
           ))}
         </TabsList>
-      </div> {/* <-- Fecha aqui o div de scroll! */}
 
-      {/* ÁREA DE CONTEÚDO COM O GRÁFICO */}
-      <div className="mt-4">
-        {metrics.map(({ key, description }) => (
-          <TabsContent key={key} value={key} className="bg-white/20 p-4 rounded-xl shadow-inner">
-            <p className="mb-2 text-sm text-muted-foreground">{description}</p>
-            <div className="h-[280px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={mockChartData}>
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
-                  <Line type="monotone" dataKey="valor" stroke="#8884d8" strokeWidth={2} />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </TabsContent>
-        ))}
+        {/* GRÁFICO */}
+        <div className="mt-4 w-full flex-1">
+          {metrics.map(({ key, description }) => (
+            <TabsContent key={key} value={key} className="h-full">
+              <p className="mb-2 text-sm text-muted-foreground">{description}</p>
+              <div className="h-[280px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={mockChartData}>
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip />
+                    <Line type="monotone" dataKey="valor" stroke="#8884d8" strokeWidth={2} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </TabsContent>
+          ))}
+        </div>
       </div>
     </Tabs>
   );
 }
-
