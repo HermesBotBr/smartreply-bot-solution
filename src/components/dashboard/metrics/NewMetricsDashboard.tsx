@@ -25,7 +25,6 @@ export function NewMetricsDashboard({ sellerId }: NewMetricsDashboardProps) {
   const [fetchData, setFetchData] = useState(false);
   const [activeTab, setActiveTab] = useState("metrics");
   
-  // Data hooks
   const { reputation, isLoading: reputationLoading } = useReputationData(sellerId);
   const { salesData, isLoading: salesLoading } = useSalesData(sellerId, startDate, endDate, fetchData);
   const { complaintsData, isLoading: complaintsLoading } = useComplaintsData(
@@ -35,7 +34,6 @@ export function NewMetricsDashboard({ sellerId }: NewMetricsDashboardProps) {
     useComplaintsData(sellerId, startDate, endDate, true, fetchData);
   const { filteredTags, isLoading: tagsLoading } = useTagsData(sellerId);
   
-  // Derived metrics state
   const [totalSales, setTotalSales] = useState<number>(0);
   const [totalComplaints, setTotalComplaints] = useState<number>(0);
   const [totalQueixas, setTotalQueixas] = useState<number>(0);
@@ -46,7 +44,6 @@ export function NewMetricsDashboard({ sellerId }: NewMetricsDashboardProps) {
   const isLoading = reputationLoading || salesLoading || complaintsLoading || 
                     impactedComplaintsLoading || tagsLoading;
                     
-  // Filter sales by date range and calculate total sales
   useEffect(() => {
     if (salesData && salesData.sales) {
       const total = salesData.sales.reduce((acc, item) => acc + item.total_sales, 0);
@@ -54,14 +51,12 @@ export function NewMetricsDashboard({ sellerId }: NewMetricsDashboardProps) {
     }
   }, [salesData]);
 
-  // Calculate total complaints
   useEffect(() => {
     if (complaintsData && complaintsData.complaints) {
       setTotalComplaints(complaintsData.complaints.length);
     }
   }, [complaintsData]);
   
-  // Calculate complaints with reputation impact
   useEffect(() => {
     if (impactedComplaintsData && impactedComplaintsData.complaints && totalComplaints > 0) {
       const percentage = ((totalComplaints - impactedComplaintsData.complaints.length) / totalComplaints) * 100;
@@ -69,14 +64,12 @@ export function NewMetricsDashboard({ sellerId }: NewMetricsDashboardProps) {
     }
   }, [impactedComplaintsData, totalComplaints]);
   
-  // Calculate complaint percentage
   useEffect(() => {
     if (totalSales > 0 && totalComplaints > 0) {
       setComplaintPercentage((totalComplaints / totalSales) * 100);
     }
   }, [totalSales, totalComplaints]);
   
-  // Calculate queixas based on sales data and tags
   useEffect(() => {
     if (!salesData || !salesData.sales || !filteredTags.length) return;
     
@@ -84,7 +77,6 @@ export function NewMetricsDashboard({ sellerId }: NewMetricsDashboardProps) {
       (item: SalesItem) => item.orders.map(order => order.order_id.toString())
     );
     
-    // Check which filtered tags contain the target tags and are in our sales period
     const matchingTags = filteredTags.filter(tag => {
       return orderIds.includes(tag.orderId) && 
              (tag.tags.includes('IH4002') || tag.tags.includes('PD4002'));
@@ -93,9 +85,7 @@ export function NewMetricsDashboard({ sellerId }: NewMetricsDashboardProps) {
     setTotalQueixas(matchingTags.length);
   }, [salesData, filteredTags]);
   
-  // Calculate total problems (queixas + complaints)
   useEffect(() => {
-    // Use a Set to ensure no duplicate order IDs
     if (complaintsData && complaintsData.complaints) {
       const complaintOrderIds = new Set(
         complaintsData.complaints.map(complaint => complaint.order_id.toString())
@@ -107,7 +97,6 @@ export function NewMetricsDashboard({ sellerId }: NewMetricsDashboardProps) {
           .map(tag => tag.orderId)
       );
       
-      // Combine both sets and count unique entries
       const allProblemOrderIds = new Set([...complaintOrderIds, ...queixaOrderIds]);
       setTotalProblems(allProblemOrderIds.size);
     }
@@ -160,7 +149,7 @@ export function NewMetricsDashboard({ sellerId }: NewMetricsDashboardProps) {
               description="Reclamações/vendas dos últimos 6 meses"
               isLoading={reputationLoading}
               color="bg-emerald-500"
-              textColor="text-white"
+              textColor="text-gray-900"
             />
             
             <MetricCard
@@ -172,8 +161,8 @@ export function NewMetricsDashboard({ sellerId }: NewMetricsDashboardProps) {
                 "Selecione um período"
               }
               isLoading={salesLoading}
-              color="bg-blue-500"
-              textColor="text-white"
+              color="bg-white"
+              textColor="text-gray-900"
             />
             
             <MetricCard
@@ -182,8 +171,8 @@ export function NewMetricsDashboard({ sellerId }: NewMetricsDashboardProps) {
               icon={AlertTriangle}
               description="Todas as reclamações no período"
               isLoading={complaintsLoading}
-              color="bg-red-500"
-              textColor="text-white"
+              color="bg-white"
+              textColor="text-gray-900"
             />
             
             <MetricCard
@@ -192,8 +181,8 @@ export function NewMetricsDashboard({ sellerId }: NewMetricsDashboardProps) {
               icon={MessageSquare}
               description="Mensagens com tags IH4002 ou PD4002"
               isLoading={tagsLoading || salesLoading}
-              color="bg-orange-500"
-              textColor="text-white"
+              color="bg-white"
+              textColor="text-gray-900"
             />
             
             <MetricCard
@@ -202,8 +191,8 @@ export function NewMetricsDashboard({ sellerId }: NewMetricsDashboardProps) {
               icon={AlertTriangle}
               description="Queixas + reclamações (sem duplicatas)"
               isLoading={complaintsLoading || tagsLoading || salesLoading}
-              color="bg-purple-500"
-              textColor="text-white"
+              color="bg-white"
+              textColor="text-gray-900"
             />
             
             <MetricCard
@@ -212,8 +201,8 @@ export function NewMetricsDashboard({ sellerId }: NewMetricsDashboardProps) {
               icon={Percent}
               description="Percentual de reclamações sobre o total de vendas"
               isLoading={complaintsLoading || salesLoading}
-              color="bg-indigo-500"
-              textColor="text-white"
+              color="bg-white"
+              textColor="text-gray-900"
             />
             
             <MetricCard
@@ -222,8 +211,8 @@ export function NewMetricsDashboard({ sellerId }: NewMetricsDashboardProps) {
               icon={Shield}
               description="Reclamações que não impactaram a reputação"
               isLoading={impactedComplaintsLoading}
-              color="bg-teal-500"
-              textColor="text-white"
+              color="bg-white"
+              textColor="text-gray-900"
             />
           </div>
         </TabsContent>

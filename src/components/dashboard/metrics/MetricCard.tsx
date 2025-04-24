@@ -21,9 +21,9 @@ export function MetricCard({
   icon: Icon,
   description,
   isLoading = false,
-  color = 'bg-primary',
+  color = 'bg-white',
   className = '',
-  textColor = 'text-black',
+  textColor = 'text-gray-900',
   change,
   changeType = 'neutral'
 }: MetricCardProps) {
@@ -34,7 +34,7 @@ export function MetricCard({
   };
 
   return (
-    <div className={`${className} border-r border-gray-200 px-6 py-4 flex-1`}>
+    <div className={`${className} border-r border-gray-200 px-6 py-4 flex-1 ${color}`}>
       <div className="flex flex-col">
         <h3 className="text-sm font-medium text-gray-500 flex items-center">
           {title}
@@ -57,7 +57,7 @@ export function MetricCard({
               </span>
             )}
             {description && (
-              <p className="text-xs text-gray-500 mt-1">{description}</p>
+              <p className="text-xs text-gray-600 mt-1">{description}</p>
             )}
           </div>
         )}
