@@ -31,11 +31,19 @@ export function DateRangePicker({
   const formatDate = (date: Date | undefined) =>
     date ? format(date, 'dd/MM/yyyy') : 'Selecionar';
 
-  const handleSelect = (value: { from: Date | undefined; to: Date | undefined }) => {
+  const handleSelect = (value: { from?: Date; to?: Date } | undefined) => {
+  if (value?.from && value?.to) {
     setRange(value);
     onStartDateChange(value.from);
     onEndDateChange(value.to);
-  };
+  } else {
+    // Evita erro ao clicar duas vezes na mesma data
+    setRange({ from: undefined, to: undefined });
+    onStartDateChange(undefined);
+    onEndDateChange(undefined);
+  }
+};
+
 
   return (
     <div className="flex items-center">
