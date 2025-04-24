@@ -45,11 +45,13 @@ export function DateRangeFilterSection({
         <h3 className="text-lg font-semibold text-gray-800">Período de análise</h3>
         <div className="bg-white rounded-lg p-4 shadow-sm">
           <DateRangePicker
-            startDate={startDate}
-            endDate={endDate}
-            onStartDateChange={onStartDateChange}
-            onEndDateChange={onEndDateChange}
-          />
+  startDate={startDate}
+  endDate={endDate}
+  onStartDateChange={onStartDateChange}
+  onEndDateChange={onEndDateChange}
+  onPresetSelect={handlePresetSelect}
+/>
+
         </div>
         <Button 
           onClick={onFilter}
