@@ -1,3 +1,4 @@
+import React, { useState } from 'react';
 export function MetricsGrid() {
   const [selectedTab, setSelectedTab] = useState('reputation');
 
