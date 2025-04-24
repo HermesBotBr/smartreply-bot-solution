@@ -1,312 +1,227 @@
-
-import React, { useState, useEffect, useRef } from 'react';
-import { Loader2, ChevronLeft, Info, X, FileText, Send, Image as ImageIcon } from 'lucide-react';
-import { MlTokenType } from '@/hooks/useMlToken';
-import { formatDistanceToNow } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
-import { toast } from '@/hooks/use-toast';
-import ProductThumbnail from './ProductThumbnail';
-
-interface ChatMessage {
-  id: string;
-  from: { user_id: number };
-  to: { user_id: number };
-  text: string;
-  message_date: {
-    received: string;
-    available: string;
-    created: string;
-    read: string;
-  };
-  message_attachments: any[] | null;
-}
+import React, {
+  useState,
+  useRef,
+  useEffect,
+  useCallback,
+  ChangeEvent,
+} from "react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
+import { useMlToken } from "@/hooks/useMlToken";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { formatDistanceToNow } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { Dot } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface ChatPanelProps {
-  selectedConv: any;
-  showSaleDetails: boolean;
-  setShowSaleDetails: (show: boolean) => void;
-  gptIds: string[];
-  mlToken: MlTokenType;
-  setFullScreenImage: (url: string | null) => void;
-  isAtBottom: boolean;
-  initialAutoScrollDone: boolean;
-  setInitialAutoScrollDone: (done: boolean) => void;
-  onBack?: () => void;
-  isMobile?: boolean;
+  conversation: any;
+  isGpt?: boolean;
+  isComplaint?: boolean;
+  complaintData?: any;
 }
 
-const ChatPanel: React.FC<ChatPanelProps> = ({
-  selectedConv,
-  showSaleDetails,
-  setShowSaleDetails,
-  gptIds,
-  mlToken,
-  setFullScreenImage,
-  isAtBottom,
-  initialAutoScrollDone,
-  setInitialAutoScrollDone,
-  onBack,
-  isMobile
-}) => {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const chatContainerRef = useRef<HTMLDivElement>(null);
-  const [messageText, setMessageText] = useState('');
-  const [isAutoScrolling, setIsAutoScrolling] = useState(true);
-  const [isInitialScrollDone, setIsInitialScrollDone] = useState(initialAutoScrollDone);
+const API_URL = "https://projetohermes-dda7e0c8d836.herokuapp.com";
+
+const gpt_ids = {
+  "giovaniburgo@gmail.com": "653796959f99a3993c4f596b",
+  "brunoburgo.dev@gmail.com": "653796959f99a3993c4f596b",
+  "suporte@smartreply.com.br": "653796959f99a3993c4f596b",
+  "smartreply.com.br@gmail.com": "653796959f99a3993c4f596b",
+};
+
+export function ChatPanel({ conversation, isGpt, isComplaint, complaintData }: ChatPanelProps) {
+  const [messageInput, setMessageInput] = useState("");
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [mlToken, setMlToken] = useState<any | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const mlTokenFromHook = useMlToken();
 
   useEffect(() => {
-    if (initialAutoScrollDone) {
-      setIsInitialScrollDone(true);
-    }
-  }, [initialAutoScrollDone]);
+    setMlToken(mlTokenFromHook);
+  }, [mlTokenFromHook]);
+
+  const scrollToBottom = useCallback(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, []);
 
   useEffect(() => {
-    if (selectedConv) {
-      setMessages(selectedConv.messages);
-    }
-  }, [selectedConv]);
+    scrollToBottom();
+  }, [conversation?.messages, scrollToBottom]);
 
-  useEffect(() => {
-    if (isAtBottom && !isMobile) {
-      scrollToBottom();
+  const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setSelectedImage(file);
     }
-  }, [messages, isAtBottom, isMobile]);
-
-  useEffect(() => {
-    if (chatContainerRef.current && isAutoScrolling && !isMobile) {
-      scrollToBottom();
-    }
-  }, [isAutoScrolling, isMobile]);
-
-  useEffect(() => {
-    if (chatContainerRef.current && !isInitialScrollDone && !isMobile) {
-      scrollToBottom();
-      setIsInitialScrollDone(true);
-      setInitialAutoScrollDone(true);
-    }
-  }, [isInitialScrollDone, isMobile, setInitialAutoScrollDone]);
-
-  const scrollToBottom = () => {
-    chatContainerRef.current?.scrollTo({
-      top: chatContainerRef.current.scrollHeight,
-      behavior: 'smooth'
-    });
   };
 
-  const handleScroll = () => {
-    if (!chatContainerRef.current) return;
-    const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current;
-    const isAtBottom = scrollTop + clientHeight >= scrollHeight - 50;
-    setIsAutoScrolling(isAtBottom);
-  };
-
-  const handleImageClick = (imageUrl: string) => {
-    setFullScreenImage(imageUrl);
-  };
-
-  const getAttachmentUrl = (filename: string): string => {
-    if (!filename || !filename.trim()) return '';
-    
-    // Check if filename already contains a full URL
-    if (filename.startsWith('http')) {
-      return filename;
+  const handleRemoveImage = () => {
+    setSelectedImage(null);
+    if (fileRef.current) {
+      fileRef.current.value = "";
     }
-    
-    // Fixed: Changed from mlToken.accessToken to check if mlToken is an object with access_token property
-    const tokenParam = typeof mlToken === 'object' && mlToken?.access_token ? `&access_token=${mlToken.access_token}` : '';
-    
-    return `https://api.mercadolibre.com/messages/attachments/${filename.trim()}?site_id=MLB${tokenParam}`;
   };
 
-  const handleSend = async () => {
-    if (!selectedConv || !selectedConv.pack_id) {
-      toast({
-        title: "Erro",
-        description: "Nenhum pacote selecionado para enviar a mensagem.",
-        variant: "destructive",
-      });
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!conversation || (!messageInput.trim() && !selectedImage) || isSubmitting) {
       return;
     }
 
-    if (!messageText.trim()) {
-      toast({
-        title: "Alerta",
-        description: "Por favor, insira uma mensagem antes de enviar.",
-        variant: "destructive",
-      });
-      return;
+    const formData = new FormData();
+    if (selectedImage) {
+      formData.append("image", selectedImage);
     }
+
+    formData.append("message", messageInput.trim());
+    formData.append("conversationId", conversation.id);
+    formData.append("packId", conversation.packId || "");
+    formData.append("orderId", conversation.orderId?.toString() || "");
+    
+    // Fix the access_token error by checking if mlToken has the access_token property
+    let accessToken = "";
+    if (mlToken && typeof mlToken === 'object') {
+      if ('access_token' in mlToken) {
+        accessToken = mlToken.access_token;
+      } else if ('seller_id' in mlToken) {
+        // If no access_token, use a default or placeholder
+        accessToken = "no-token-available";
+      }
+    }
+    
+    formData.append("accessToken", accessToken || "");
 
     try {
-      const response = await fetch('/api/send-message', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          pack_id: selectedConv.pack_id,
-          message: messageText,
-        }),
+      setIsSubmitting(true);
+      const response = await fetch("/api/messages/send", {
+        method: "POST",
+        body: formData,
       });
 
-      const data = await response.json();
-
-      if (data.success) {
-        setMessageText('');
-        toast({
-          title: "Sucesso",
-          description: "Mensagem enviada com sucesso!",
-        });
-      } else {
-        toast({
-          title: "Erro",
-          description: "Falha ao enviar a mensagem.",
-          variant: "destructive",
-        });
+      if (!response.ok) {
+        throw new Error(`Error: ${response.status}`);
       }
+
+      setMessageInput("");
+      setSelectedImage(null);
+      toast.success("Mensagem enviada com sucesso!");
+
     } catch (error) {
-      console.error("Erro ao enviar mensagem:", error);
-      toast({
-        title: "Erro",
-        description: "Erro ao enviar a mensagem.",
-        variant: "destructive",
-      });
+      console.error("Error sending message:", error);
+      toast.error("Erro ao enviar mensagem. Tente novamente.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  const renderMessage = (message: ChatMessage) => {
-    const isGptMessage = gptIds.includes(message.id);
-    const isFromMe = message.from.user_id === selectedConv.seller_id;
-    const messageDate = message.message_date.created ? new Date(message.message_date.created) : new Date();
-    const timeAgo = formatDistanceToNow(messageDate, {
-      addSuffix: true,
-      locale: ptBR,
-    });
-
-    return (
-      <div
-        key={message.id}
-        className={`mb-2 flex ${isFromMe ? 'justify-end' : 'justify-start'}`}
-      >
-        <div
-          className={`rounded-xl px-4 py-2 max-w-[80%] ${isFromMe
-            ? 'bg-blue-600 text-white rounded-br-none'
-            : 'bg-gray-200 text-gray-800 rounded-bl-none'
-            }`}
-        >
-          <p className="text-sm break-words">{message.text}</p>
-          {message.message_attachments && message.message_attachments.length > 0 && (
-            <div className="mt-2">
-              {message.message_attachments.map((attachment, index) => {
-                if (attachment.filename && attachment.filename.trim()) {
-                  const attachmentUrl = getAttachmentUrl(attachment.filename);
-                  const isImage = attachment.filename.match(/\.(jpg|jpeg|png|gif)$/i) || 
-                                 (attachment.type && attachment.type.startsWith('image/'));
-                  
-                  if (isImage) {
-                    return (
-                      <button 
-                        key={index}
-                        onClick={() => handleImageClick(attachmentUrl)} 
-                        className="inline-block"
-                      >
-                        <img
-                          src={attachmentUrl}
-                          alt={attachment.original_filename || 'Image attachment'}
-                          className="max-w-full w-auto h-auto max-h-40 rounded-md cursor-pointer mt-2"
-                          onError={(e) => {
-                            console.error("Error loading image:", e);
-                            (e.target as HTMLImageElement).style.display = 'none';
-                          }}
-                        />
-                      </button>
-                    );
-                  } else {
-                    return (
-                      <a
-                        key={index}
-                        href={attachmentUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-400 hover:underline flex items-center mt-2"
-                      >
-                        <FileText className="mr-1 w-4 h-4" />
-                        {attachment.original_filename || attachment.filename}
-                      </a>
-                    );
-                  }
-                }
-                return null;
-              })}
-            </div>
-          )}
-          {isGptMessage && (
-            <div className="text-xs mt-1 italic">
-              <span className="font-semibold">Sugestão do Hermes</span>
-            </div>
-          )}
-          <div className="text-xs mt-1 text-right opacity-80">{timeAgo}</div>
-        </div>
-      </div>
-    );
+  const renderMessageContent = (message: any) => {
+    if (message.image_url) {
+      return (
+        <img
+          src={message.image_url}
+          alt="Uploaded"
+          className="max-w-xs max-h-40 rounded-md"
+        />
+      );
+    } else {
+      return <p className="text-sm">{message.text}</p>;
+    }
   };
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="border-b p-4 flex items-center">
-        {isMobile && onBack && (
-          <button onClick={onBack} className="mr-4">
-            <ChevronLeft size={20} />
-          </button>
-        )}
-        <ProductThumbnail itemId={selectedConv?.item_id} />
-        <div className="ml-4 flex-grow">
-          <h2 className="text-lg font-semibold">{selectedConv?.client_name}</h2>
-          <p className="text-sm text-gray-500">{selectedConv?.pack_id}</p>
+      {isComplaint && complaintData ? (
+        <Card className="mb-4">
+          <CardHeader>
+            <CardTitle>Detalhes da Reclamação</CardTitle>
+            <CardDescription>Informações sobre a reclamação do cliente.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p><strong>ID da Reclamação:</strong> {complaintData.claim_id}</p>
+            <p><strong>Status:</strong> {complaintData.claim_status}</p>
+            <p><strong>Razão:</strong> {complaintData.claim_reason}</p>
+          </CardContent>
+        </Card>
+      ) : null}
+      <ScrollArea className="flex-1 p-4">
+        <div className="space-y-4">
+          {conversation?.messages?.map((message: any) => (
+            <div
+              key={message.id}
+              className={`flex flex-col ${
+                message.origin === "customer" ? "items-start" : "items-end"
+              }`}
+            >
+              <div
+                className={`flex flex-col rounded-lg p-3 max-w-sm ${
+                  message.origin === "customer"
+                    ? "bg-gray-100 text-gray-800"
+                    : "bg-blue-100 text-blue-800"
+                }`}
+              >
+                {renderMessageContent(message)}
+                <span className="text-xs text-gray-500 mt-1 self-end">
+                  {formatDistanceToNow(new Date(message.message_date.created), {
+                    locale: ptBR,
+                    addSuffix: true,
+                  })}
+                </span>
+              </div>
+            </div>
+          ))}
+          <div ref={messagesEndRef} />
         </div>
-        <div>
-          <button onClick={() => setShowSaleDetails(true)}>
-            <Info size={20} />
-          </button>
-        </div>
-      </div>
-
-      {/* Chat Messages */}
-      <div
-        ref={chatContainerRef}
-        className="flex-1 p-4 overflow-y-auto"
-        onScroll={handleScroll}
-      >
-        {messages.map(message => renderMessage(message))}
-      </div>
-
-      {/* Input Area */}
+      </ScrollArea>
       <div className="p-4 border-t">
-        <div className="flex items-center">
-          <input
+        <form onSubmit={handleSubmit} className="flex items-center space-x-2">
+          <Input
             type="text"
-            className="flex-grow rounded-l-md border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="Digite sua mensagem..."
-            value={messageText}
-            onChange={(e) => setMessageText(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                handleSend();
-              }
-            }}
+            value={messageInput}
+            onChange={(e) => setMessageInput(e.target.value)}
+            className="flex-1"
           />
-          <button
-            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-r-md focus:outline-none focus:shadow-outline"
-            type="button"
-            onClick={handleSend}
-          >
-            <Send size={20} />
-          </button>
-        </div>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleImageChange}
+            className="hidden"
+            id="image-upload"
+            ref={fileRef}
+          />
+          <Label htmlFor="image-upload" className="cursor-pointer">
+            {selectedImage ? (
+              <Badge variant="secondary" onClick={handleRemoveImage}>
+                Remover Imagem
+              </Badge>
+            ) : (
+              <Button variant="outline" size="sm" disabled={isUploading}>
+                {isUploading ? "Enviando..." : "Adicionar Imagem"}
+              </Button>
+            )}
+          </Label>
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? "Enviando..." : "Enviar"}
+          </Button>
+        </form>
       </div>
     </div>
   );
-};
-
-export default ChatPanel;
+}
