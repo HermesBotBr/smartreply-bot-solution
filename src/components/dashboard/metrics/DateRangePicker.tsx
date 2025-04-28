@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { ptBR } from 'date-fns/locale';
 import { format } from 'date-fns';
@@ -6,6 +7,7 @@ import { CalendarRange } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { DateRange } from 'react-day-picker';
 
 interface DateRangePickerProps {
   startDate: Date | undefined;
@@ -23,34 +25,33 @@ export function DateRangePicker({
   onFilter,
 }: DateRangePickerProps) {
   const [open, setOpen] = useState(false);
-  const [range, setRange] = useState<{ from?: Date; to?: Date }>({
-  from: startDate ?? undefined,
-  to: endDate ?? undefined,
-});
-
+  const [range, setRange] = useState<DateRange | undefined>(
+    startDate && endDate
+      ? {
+          from: startDate,
+          to: endDate,
+        }
+      : undefined
+  );
 
   const formatDate = (date: Date | undefined) =>
     date ? format(date, 'dd/MM/yyyy') : 'Selecionar';
 
-  const handleSelect = (value: { from?: Date; to?: Date } | undefined) => {
-  if (value?.from && value?.to) {
+  const handleSelect = (value: DateRange | undefined) => {
     setRange(value);
-    onStartDateChange(value.from);
-    onEndDateChange(value.to);
-  } else if (value?.from && !value?.to) {
-    // Começou uma nova seleção (clicou em um dia válido)
-    setRange({ from: value.from, to: undefined });
-    onStartDateChange(value.from);
-    onEndDateChange(undefined);
-  } else {
-    // Clicou duas vezes na mesma data = limpar tudo
-    setRange({ from: undefined, to: undefined });
-    onStartDateChange(undefined);
-    onEndDateChange(undefined);
-  }
-};
-
-
+    
+    if (value?.from) {
+      onStartDateChange(value.from);
+    } else {
+      onStartDateChange(undefined);
+    }
+    
+    if (value?.to) {
+      onEndDateChange(value.to);
+    } else {
+      onEndDateChange(undefined);
+    }
+  };
 
   return (
     <div className="flex items-center">
@@ -59,7 +60,7 @@ export function DateRangePicker({
           <Button variant="outline" className="flex items-center gap-2">
             <CalendarRange className="h-4 w-4" />
             <span>
-              {range.from && range.to
+              {range?.from && range?.to
                 ? `${formatDate(range.from)} até ${formatDate(range.to)}`
                 : 'Data personalizada'}
             </span>
@@ -67,13 +68,12 @@ export function DateRangePicker({
         </PopoverTrigger>
         <PopoverContent className="w-auto p-4 space-y-4">
           <Calendar
-  mode="range"
-  selected={
-    range.from || range.to ? range : undefined
-  }
-  onSelect={handleSelect}
-  locale={ptBR}
-/>
+            mode="range"
+            selected={range}
+            onSelect={handleSelect}
+            locale={ptBR}
+            className="pointer-events-auto"
+          />
 
           <Button
             onClick={() => {

@@ -20,21 +20,18 @@ export function NewMetricsDashboard({ sellerId }: NewMetricsDashboardProps) {
     new Date(new Date().setDate(new Date().getDate() - 30))
   );
   const [endDate, setEndDate] = useState<Date | undefined>(new Date());
-  const [fetchData, setFetchData] = useState(false);
   const [activeTab, setActiveTab] = useState("metrics");
   
   // Data fetching hooks
   const { reputation, isLoading: reputationLoading } = useReputationData(sellerId);
   const { salesData, isLoading: salesLoading, refetch: refetchSales } = useSalesData(sellerId, startDate, endDate);
-const { complaintsData, isLoading: complaintsLoading, refetch: refetchComplaints } = useComplaintsData(
-  sellerId, startDate, endDate, false
-);
-const { complaintsData: impactedComplaintsData, isLoading: impactedComplaintsLoading, refetch: refetchImpactedComplaints } = 
-  useComplaintsData(sellerId, startDate, endDate, true);
-const { filteredTags, isLoading: tagsLoading, refetch: refetchTags } = useTagsData(sellerId);
+  const { complaintsData, isLoading: complaintsLoading, refetch: refetchComplaints } = useComplaintsData(
+    sellerId, startDate, endDate, false
+  );
+  const { complaintsData: impactedComplaintsData, isLoading: impactedComplaintsLoading, refetch: refetchImpactedComplaints } = 
+    useComplaintsData(sellerId, startDate, endDate, true);
+  const { filteredTags, isLoading: tagsLoading, refetch: refetchTags } = useTagsData(sellerId);
 
-
-  
   // Derived state
   const [totalSales, setTotalSales] = useState<number>(0);
   const [totalComplaints, setTotalComplaints] = useState<number>(0);
@@ -103,23 +100,22 @@ const { filteredTags, isLoading: tagsLoading, refetch: refetchTags } = useTagsDa
   }, [complaintsData, filteredTags]);
   
   const handleFilter = async () => {
-  if (!startDate || !endDate) {
-    toast.error("Por favor, selecione um período válido");
-    return;
-  }
+    if (!startDate || !endDate) {
+      toast.error("Por favor, selecione um período válido");
+      return;
+    }
 
-  try {
-    await Promise.all([
-      refetchSales(),
-      refetchComplaints(),
-      refetchImpactedComplaints(),
-      refetchTags(),
-    ]);
-  } catch (error) {
-    toast.error("Erro ao buscar os dados. Tente novamente.");
-  }
-};
-
+    try {
+      await Promise.all([
+        refetchSales(),
+        refetchComplaints(),
+        refetchImpactedComplaints(),
+        refetchTags(),
+      ]);
+    } catch (error) {
+      toast.error("Erro ao buscar os dados. Tente novamente.");
+    }
+  };
 
   return (
     <div className="space-y-6">

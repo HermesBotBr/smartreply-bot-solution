@@ -14,38 +14,40 @@ export function useSalesData(
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const fetchData = async () => {
+    if (!sellerId || !startDate || !endDate) {
+      return;
+    }
+
+    const formattedStartDate = startDate.toISOString().split('T')[0] + 'T00:00:00Z';
+    const formattedEndDate = endDate.toISOString().split('T')[0] + 'T23:59:59Z';
+
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await axios.get(`${NGROK_BASE_URL}/vendas_ordem`, {
+        params: {
+          seller_id: sellerId,
+          start_date: formattedStartDate,
+          end_date: formattedEndDate,
+          include_pack_id: true,
+          include_created_date: true
+        }
+      });
+      setSalesData(response.data);
+    } catch (err) {
+      console.error('Error fetching sales data:', err);
+      setError('Falha ao carregar dados de vendas');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchData = async () => {
-      if (!sellerId || !startDate || !endDate || !shouldFetch) {
-        return;
-      }
-
-      const formattedStartDate = startDate.toISOString().split('T')[0] + 'T00:00:00Z';
-      const formattedEndDate = endDate.toISOString().split('T')[0] + 'T23:59:59Z';
-
-      try {
-        setIsLoading(true);
-        setError(null);
-        const response = await axios.get(`${NGROK_BASE_URL}/vendas_ordem`, {
-          params: {
-            seller_id: sellerId,
-            start_date: formattedStartDate,
-            end_date: formattedEndDate,
-            include_pack_id: true,
-            include_created_date: true
-          }
-        });
-        setSalesData(response.data);
-      } catch (err) {
-        console.error('Error fetching sales data:', err);
-        setError('Falha ao carregar dados de vendas');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchData();
+    if (shouldFetch) {
+      fetchData();
+    }
   }, [sellerId, startDate, endDate, shouldFetch]);
 
-  return { salesData, isLoading, error };
+  return { salesData, isLoading, error, refetch: fetchData };
 }
