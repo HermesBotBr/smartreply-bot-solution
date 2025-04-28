@@ -14,7 +14,7 @@ const Index = () => {
             Automatize seu atendimento no Mercado Livre
           </h1>
           <p className="text-xl mb-8 animate-fade-up">
-            Aumente suas vendas e melhore seu ranqueamento com respostas rápidas e personalizadas
+            Venda no mínimo 45% mais e melhore seu ranqueamento acabando com as reclamações de sua conta
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <ContactFormDialog>
