@@ -1,56 +1,64 @@
+
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Star, ShoppingCart, AlertTriangle, MessageSquare, Percent, Shield } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-
-interface MetricTab {
-  key: string;
-  label: string;
-  icon: React.ElementType;
-  value: string | number;
-  description: string;
-}
+import { ReputationResponse } from '@/types/metrics';
 
 interface MetricsGridProps {
-  reputation: any;
+  reputation: ReputationResponse | null;
+  reputationLoading: boolean;
   totalSales: number;
+  salesLoading: boolean;
   totalComplaints: number;
+  complaintsLoading: boolean;
   totalQueixas: number;
   totalProblems: number;
   complaintPercentage: number;
   avoidedComplaintsPercentage: number;
+  tagsLoading: boolean;
+  impactedComplaintsLoading: boolean;
   startDate?: Date;
   endDate?: Date;
 }
 
 export function MetricsGrid({
   reputation,
+  reputationLoading,
   totalSales,
+  salesLoading,
   totalComplaints,
+  complaintsLoading,
   totalQueixas,
   totalProblems,
   complaintPercentage,
   avoidedComplaintsPercentage,
+  tagsLoading,
+  impactedComplaintsLoading,
   startDate,
   endDate,
 }: MetricsGridProps) {
   const [selectedTab, setSelectedTab] = useState('reputation');
 
-  const metrics: MetricTab[] = [
+  const metrics: {
+    key: string;
+    label: string;
+    icon: React.ElementType;
+    value: string | number;
+    description: string;
+  }[] = [
     {
       key: 'reputation',
       label: 'Reputação atual',
       icon: Star,
-      value: reputation?.seller_reputation?.transactions?.ratings?.negative
-        ? `${(reputation.seller_reputation.transactions.ratings.negative * 100).toFixed(2)}%`
-        : '-',
+      value: reputationLoading ? 'Carregando...' : `${reputation?.seller_reputation?.metrics?.claims?.rate.toFixed(2) || '0.00'}%`,
       description: 'Reclamações/vendas dos últimos 6 meses',
     },
     {
       key: 'sales',
       label: 'Total de vendas',
       icon: ShoppingCart,
-      value: totalSales,
+      value: salesLoading ? 'Carregando...' : totalSales,
       description: startDate && endDate
         ? `De ${startDate.toLocaleDateString('pt-BR')} até ${endDate.toLocaleDateString('pt-BR')}`
         : 'Selecione um período',
@@ -59,35 +67,35 @@ export function MetricsGrid({
       key: 'complaints',
       label: 'Total de reclamações',
       icon: AlertTriangle,
-      value: totalComplaints,
+      value: complaintsLoading ? 'Carregando...' : totalComplaints,
       description: 'Todas as reclamações no período',
     },
     {
       key: 'queixas',
       label: 'Total de queixas',
       icon: MessageSquare,
-      value: totalQueixas,
+      value: tagsLoading ? 'Carregando...' : totalQueixas,
       description: 'Mensagens com tags IH4002 ou PD4002',
     },
     {
       key: 'problemas',
       label: 'Problemas totais',
       icon: AlertTriangle,
-      value: totalProblems,
+      value: complaintsLoading || tagsLoading ? 'Carregando...' : totalProblems,
       description: 'Queixas + reclamações (sem duplicatas)',
     },
     {
       key: 'percReclamacoes',
       label: '% Reclamações/Vendas',
       icon: Percent,
-      value: `${complaintPercentage.toFixed(2)}%`,
+      value: salesLoading || complaintsLoading ? 'Carregando...' : `${complaintPercentage.toFixed(2)}%`,
       description: 'Percentual de reclamações sobre o total de vendas',
     },
     {
       key: 'evitadas',
       label: '% Reclamações evitadas',
       icon: Shield,
-      value: `${avoidedComplaintsPercentage.toFixed(2)}%`,
+      value: impactedComplaintsLoading ? 'Carregando...' : `${avoidedComplaintsPercentage.toFixed(2)}%`,
       description: 'Reclamações que não impactaram a reputação',
     },
   ];
