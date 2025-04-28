@@ -37,15 +37,16 @@ jobs:
         ping -c 3 ${{ secrets.FTP_SERVER }} || echo "Ping não disponível"
 
     - name: Deploy via FTP
-      uses: SamKirkland/FTP-Deploy-Action@4.3.0
-      with:
-        server: ${{ secrets.FTP_SERVER }}
-        username: ${{ secrets.FTP_USERNAME }}
-        password: ${{ secrets.FTP_PASSWORD }}
-        port: 21
-        protocol: ftp
-        local-dir: ./dist/
-        server-dir: ./
-        dangerous-clean-slate: true
+  uses: SamKirkland/FTP-Deploy-Action@4.3.0
+  with:
+    server: ${{ secrets.FTP_SERVER }}
+    username: ${{ secrets.FTP_USERNAME }}
+    password: ${{ secrets.FTP_PASSWORD }}
+    port: 21
+    protocol: ftp
+    local-dir: ./dist/
+    server-dir: public_html/
+    dangerous-clean-slate: true
+
         timeout: 60000  # Aumentando o timeout para 60 segundos
 
