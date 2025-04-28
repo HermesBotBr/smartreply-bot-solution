@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { MessageCircle } from "lucide-react";
 
@@ -13,7 +14,7 @@ const WhatsAppButton = () => {
   }, []);
 
   const handleWhatsAppClick = () => {
-    const phoneNumber = "5511962021565";
+    const phoneNumber = "5511948609350";
     const message = encodeURIComponent("Olá, tenho interesse no HermesBot");
     window.open(`https://wa.me/${phoneNumber}?text=${message}`, "_blank");
   };
