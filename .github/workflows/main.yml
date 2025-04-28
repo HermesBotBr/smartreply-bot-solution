@@ -1,3 +1,4 @@
+
 name: Deploy React App to Hostinger via FTP
 
 on:
@@ -30,6 +31,7 @@ jobs:
         server: ${{ secrets.FTP_SERVER }}
         username: ${{ secrets.FTP_USERNAME }}
         password: ${{ secrets.FTP_PASSWORD }}
-        port: ${{ secrets.FTP_PORT }}
-        local-dir: dist/          # Atualizado para 'dist/'
-        protocol: ftp             # Use 'ftps' se estiver usando FTP seguro
+        port: 21  # A porta padrão FTP é 21, vamos definir explicitamente
+        local-dir: ./dist/       # Certifique-se que esse caminho está correto
+        server-dir: ./           # Define o diretório raiz no servidor FTP
+        dangerous-clean-slate: true  # Limpa o diretório remoto antes de subir os arquivos (tenha cuidado!)
