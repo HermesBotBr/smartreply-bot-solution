@@ -24,6 +24,17 @@ jobs:
 
     - name: Build Project
       run: npm run build
+      
+    - name: Debug - List Files
+      run: |
+        ls -la
+        ls -la dist/ || echo "Diretório dist/ não encontrado"
+        
+    - name: Check Network
+      run: |
+        echo "Tentando verificar conectividade com o servidor FTP..."
+        nslookup ${{ secrets.FTP_SERVER }} || echo "Não foi possível resolver o nome do servidor"
+        ping -c 3 ${{ secrets.FTP_SERVER }} || echo "Ping não disponível"
 
     - name: Deploy via FTP
       uses: SamKirkland/FTP-Deploy-Action@4.3.0
@@ -31,7 +42,10 @@ jobs:
         server: ${{ secrets.FTP_SERVER }}
         username: ${{ secrets.FTP_USERNAME }}
         password: ${{ secrets.FTP_PASSWORD }}
-        port: 21  # A porta padrão FTP é 21, vamos definir explicitamente
-        local-dir: ./dist/       # Certifique-se que esse caminho está correto
-        server-dir: ./           # Define o diretório raiz no servidor FTP
-        dangerous-clean-slate: true  # Limpa o diretório remoto antes de subir os arquivos (tenha cuidado!)
+        port: 21
+        protocol: ftp
+        local-dir: ./dist/
+        server-dir: ./
+        dangerous-clean-slate: true
+        timeout: 60000  # Aumentando o timeout para 60 segundos
+
