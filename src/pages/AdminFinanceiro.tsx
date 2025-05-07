@@ -2,8 +2,7 @@
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChartBar, Package, FileSpreadsheet, ArrowLeft } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { DateRangeFilterSection } from "@/components/dashboard/metrics/DateRangeFilterSection";
 import { FinancialMetrics } from '@/components/financeiro/FinancialMetrics';
 import { DataInput } from '@/components/financeiro/DataInput';
@@ -17,7 +16,9 @@ const AdminFinanceiro = () => {
   const [metrics, setMetrics] = useState({
     grossSales: 0,
     totalAmount: 0,
-    unitsSold: 0
+    unitsSold: 0,
+    totalMLRepasses: 0,
+    totalMLFees: 0
   });
   const [shouldFilter, setShouldFilter] = useState(false);
   const [activeTab, setActiveTab] = useState('metricas');
@@ -34,13 +35,25 @@ const AdminFinanceiro = () => {
     setMetrics(parsedData);
   };
 
-  const parseSettlementData = (data: string): { grossSales: number; totalAmount: number; unitsSold: number } => {
+  const parseSettlementData = (data: string): { 
+    grossSales: number; 
+    totalAmount: number; 
+    unitsSold: number; 
+    totalMLRepasses: number;
+    totalMLFees: number;
+  } => {
     try {
       // Skip the first two lines (title and headers)
       const lines = data.split('\n').filter(line => line.trim() !== '');
       
       if (lines.length < 3) {
-        return { grossSales: 0, totalAmount: 0, unitsSold: 0 };
+        return { 
+          grossSales: 0, 
+          totalAmount: 0, 
+          unitsSold: 0,
+          totalMLRepasses: 0,
+          totalMLFees: 0
+        };
       }
 
       // Skip the first two lines (settlement: and headers)
@@ -55,12 +68,28 @@ const AdminFinanceiro = () => {
       
       // Calculate metrics
       let totalAmount = 0;
+      let totalMLRepasses = 0;
+      let totalMLFees = 0;
+      
       settlementLines.forEach(line => {
         const columns = line.split(',');
         // TRANSACTION_AMOUNT is the 8th column (index 7)
         const transactionAmount = parseFloat(columns[7].trim().replace(/"/g, ''));
+        // FEE_AMOUNT is the 11th column (index 10)
+        const feeAmount = parseFloat(columns[10].trim().replace(/"/g, ''));
+        // SETTLEMENT_NET_AMOUNT is the 12th column (index 11)
+        const settlementNetAmount = parseFloat(columns[11].trim().replace(/"/g, ''));
+        
         if (!isNaN(transactionAmount)) {
           totalAmount += transactionAmount;
+        }
+        
+        if (!isNaN(feeAmount)) {
+          totalMLFees += feeAmount;
+        }
+        
+        if (!isNaN(settlementNetAmount)) {
+          totalMLRepasses += settlementNetAmount;
         }
       });
       
@@ -68,11 +97,19 @@ const AdminFinanceiro = () => {
       return {
         grossSales: totalAmount,
         totalAmount: totalAmount,
-        unitsSold: settlementLines.length
+        unitsSold: settlementLines.length,
+        totalMLRepasses,
+        totalMLFees
       };
     } catch (error) {
       console.error('Error parsing settlement data:', error);
-      return { grossSales: 0, totalAmount: 0, unitsSold: 0 };
+      return { 
+        grossSales: 0, 
+        totalAmount: 0, 
+        unitsSold: 0,
+        totalMLRepasses: 0,
+        totalMLFees: 0
+      };
     }
   };
 
@@ -115,6 +152,8 @@ const AdminFinanceiro = () => {
               grossSales={metrics.grossSales}
               totalAmount={metrics.totalAmount}
               unitsSold={metrics.unitsSold}
+              totalMLRepasses={metrics.totalMLRepasses}
+              totalMLFees={metrics.totalMLFees}
             />
           </TabsContent>
           
