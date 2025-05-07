@@ -13,12 +13,18 @@ const AdminFinanceiro = () => {
   const [startDate, setStartDate] = useState<Date | undefined>(new Date());
   const [endDate, setEndDate] = useState<Date | undefined>(new Date());
   const [settlementData, setSettlementData] = useState<string>('');
+  const [releaseData, setReleaseData] = useState<string>('');
   const [metrics, setMetrics] = useState({
     grossSales: 0,
     totalAmount: 0,
     unitsSold: 0,
     totalMLRepasses: 0,
-    totalMLFees: 0
+    totalMLFees: 0,
+    totalReleased: 0,
+    totalClaims: 0,
+    totalDebts: 0,
+    totalTransfers: 0,
+    totalCreditCard: 0
   });
   const [shouldFilter, setShouldFilter] = useState(false);
   const [activeTab, setActiveTab] = useState('metricas');
@@ -32,7 +38,33 @@ const AdminFinanceiro = () => {
 
     // Parse settlement data and calculate metrics
     const parsedData = parseSettlementData(data);
-    setMetrics(parsedData);
+    
+    // Update metrics while preserving release data metrics
+    setMetrics(prevMetrics => ({
+      ...prevMetrics,
+      grossSales: parsedData.grossSales,
+      totalAmount: parsedData.totalAmount,
+      unitsSold: parsedData.unitsSold,
+      totalMLRepasses: parsedData.totalMLRepasses,
+      totalMLFees: parsedData.totalMLFees
+    }));
+  };
+
+  const handleReleaseDataChange = (data: string) => {
+    setReleaseData(data);
+
+    // Parse release data and calculate metrics
+    const parsedData = parseReleaseData(data);
+    
+    // Update metrics while preserving settlement data metrics
+    setMetrics(prevMetrics => ({
+      ...prevMetrics,
+      totalReleased: parsedData.totalReleased,
+      totalClaims: parsedData.totalClaims,
+      totalDebts: parsedData.totalDebts,
+      totalTransfers: parsedData.totalTransfers,
+      totalCreditCard: parsedData.totalCreditCard
+    }));
   };
 
   const parseSettlementData = (data: string): { 
@@ -113,6 +145,151 @@ const AdminFinanceiro = () => {
     }
   };
 
+  const parseReleaseData = (data: string): {
+    totalReleased: number;
+    totalClaims: number;
+    totalDebts: number;
+    totalTransfers: number;
+    totalCreditCard: number;
+  } => {
+    try {
+      // Skip the first two lines (title and headers)
+      const lines = data.split('\n').filter(line => line.trim() !== '');
+      
+      if (lines.length < 3) {
+        return {
+          totalReleased: 0,
+          totalClaims: 0,
+          totalDebts: 0,
+          totalTransfers: 0,
+          totalCreditCard: 0
+        };
+      }
+
+      // Skip the first two lines (release: and headers) and the last line (total)
+      const dataLines = lines.slice(2, -1);
+      
+      let totalReleased = 0;
+      let totalClaims = 0;
+      let totalDebts = 0;
+      let totalTransfers = 0;
+      let totalCreditCard = 0;
+      
+      // Group operations by SOURCE_ID to process them together
+      const operationsBySourceId: Record<string, {
+        creditAmount: number;
+        debitAmount: number;
+        descriptions: Record<string, { creditCount: number; debitCount: number; }>;
+      }> = {};
+      
+      dataLines.forEach(line => {
+        if (!line.trim()) return;
+        
+        const columns = line.split(',');
+        if (columns.length < 7) return;
+        
+        // Skip initial_available_balance line
+        if (columns[4].includes('initial_available_balance')) return;
+        
+        // SOURCE_ID is the 2nd column (index 1)
+        const sourceId = columns[1].trim();
+        // DESCRIPTION is the 5th column (index 4)
+        const description = columns[4].trim();
+        // NET_CREDIT_AMOUNT is the 6th column (index 5)
+        const creditAmount = parseFloat(columns[5].trim().replace(/"/g, '') || '0');
+        // NET_DEBIT_AMOUNT is the 7th column (index 6)
+        const debitAmount = parseFloat(columns[6].trim().replace(/"/g, '') || '0');
+        
+        if (!sourceId) return;
+        
+        if (!operationsBySourceId[sourceId]) {
+          operationsBySourceId[sourceId] = {
+            creditAmount: 0,
+            debitAmount: 0,
+            descriptions: {}
+          };
+        }
+        
+        operationsBySourceId[sourceId].creditAmount += isNaN(creditAmount) ? 0 : creditAmount;
+        operationsBySourceId[sourceId].debitAmount += isNaN(debitAmount) ? 0 : debitAmount;
+        
+        if (!operationsBySourceId[sourceId].descriptions[description]) {
+          operationsBySourceId[sourceId].descriptions[description] = {
+            creditCount: 0,
+            debitCount: 0
+          };
+        }
+        
+        if (creditAmount > 0) {
+          operationsBySourceId[sourceId].descriptions[description].creditCount++;
+        }
+        
+        if (debitAmount > 0) {
+          operationsBySourceId[sourceId].descriptions[description].debitCount++;
+        }
+      });
+      
+      // Process each operation group
+      Object.entries(operationsBySourceId).forEach(([sourceId, operation]) => {
+        const netAmount = operation.creditAmount - operation.debitAmount;
+        
+        // Determine the predominant description for this operation
+        let predominantDescription = '';
+        let maxCount = 0;
+        
+        // If net amount is positive, look for predominant credit description
+        // If net amount is negative, look for predominant debit description
+        const descriptionEntries = Object.entries(operation.descriptions);
+        
+        if (netAmount >= 0) {
+          descriptionEntries.forEach(([description, counts]) => {
+            if (counts.creditCount > maxCount) {
+              maxCount = counts.creditCount;
+              predominantDescription = description;
+            }
+          });
+        } else {
+          descriptionEntries.forEach(([description, counts]) => {
+            if (counts.debitCount > maxCount) {
+              maxCount = counts.debitCount;
+              predominantDescription = description;
+            }
+          });
+        }
+        
+        // Categorize the operation based on the predominant description
+        if (predominantDescription === 'payment') {
+          totalReleased += netAmount;
+        } else if (['reserve_for_dispute', 'reserve_for_bpp_shipping_return', 'refund', 'reserve_for_refund', 'mediation'].includes(predominantDescription)) {
+          totalClaims += netAmount;
+        } else if (predominantDescription === 'reserve_for_debt_payment') {
+          totalDebts += netAmount;
+        } else if (['payout', 'reserve_for_payout'].includes(predominantDescription)) {
+          totalTransfers += netAmount;
+        } else if (predominantDescription === 'credit_payment') {
+          totalCreditCard += netAmount;
+        }
+      });
+      
+      return {
+        totalReleased,
+        totalClaims,
+        totalDebts,
+        totalTransfers,
+        totalCreditCard
+      };
+    } catch (error) {
+      console.error('Error parsing release data:', error);
+      return {
+        totalReleased: 0,
+        totalClaims: 0,
+        totalDebts: 0,
+        totalTransfers: 0,
+        totalCreditCard: 0
+      };
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-100">
       <div className="container mx-auto px-4 py-8">
@@ -154,13 +331,20 @@ const AdminFinanceiro = () => {
               unitsSold={metrics.unitsSold}
               totalMLRepasses={metrics.totalMLRepasses}
               totalMLFees={metrics.totalMLFees}
+              totalReleased={metrics.totalReleased}
+              totalClaims={metrics.totalClaims}
+              totalDebts={metrics.totalDebts}
+              totalTransfers={metrics.totalTransfers}
+              totalCreditCard={metrics.totalCreditCard}
             />
           </TabsContent>
           
           <TabsContent value="entrada" className="mt-4">
             <DataInput 
               settlementData={settlementData}
+              releaseData={releaseData}
               onSettlementDataChange={handleSettlementDataChange}
+              onReleaseDataChange={handleReleaseDataChange}
             />
           </TabsContent>
         </Tabs>

@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChartBar, Package, DollarSign, TrendingDown } from "lucide-react";
+import { ChartBar, Package, DollarSign, TrendingDown, CreditCard, AlertCircle, ArrowDown, WalletCards } from "lucide-react";
 
 interface FinancialMetricsProps {
   grossSales: number;
@@ -9,6 +9,12 @@ interface FinancialMetricsProps {
   unitsSold: number;
   totalMLRepasses: number;
   totalMLFees: number;
+  // New release metrics
+  totalReleased: number;
+  totalClaims: number;
+  totalDebts: number;
+  totalTransfers: number;
+  totalCreditCard: number;
 }
 
 export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ 
@@ -16,7 +22,12 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
   totalAmount, 
   unitsSold,
   totalMLRepasses,
-  totalMLFees
+  totalMLFees,
+  totalReleased,
+  totalClaims,
+  totalDebts,
+  totalTransfers,
+  totalCreditCard
 }) => {
   // Format numbers with Brazilian currency and number format
   const formatCurrency = (value: number): string => {
@@ -31,7 +42,7 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
   };
 
   return (
-    <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-5">
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Vendas Brutas</CardTitle>
@@ -93,6 +104,72 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
           <div className="text-2xl font-bold">{formatCurrency(totalMLFees)}</div>
           <p className="text-xs text-muted-foreground">
             Total de taxas e envios
+          </p>
+        </CardContent>
+      </Card>
+
+      {/* Release data metrics */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Valor Liberado na Conta</CardTitle>
+          <DollarSign className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{formatCurrency(totalReleased)}</div>
+          <p className="text-xs text-muted-foreground">
+            Total de pagamentos liberados
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Reclamações</CardTitle>
+          <AlertCircle className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{formatCurrency(totalClaims)}</div>
+          <p className="text-xs text-muted-foreground">
+            Valor total descontado
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Dívidas</CardTitle>
+          <TrendingDown className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{formatCurrency(totalDebts)}</div>
+          <p className="text-xs text-muted-foreground">
+            Valor total descontado
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Transferências</CardTitle>
+          <ArrowDown className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{formatCurrency(totalTransfers)}</div>
+          <p className="text-xs text-muted-foreground">
+            Valor total descontado
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Cartão de Crédito</CardTitle>
+          <CreditCard className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{formatCurrency(totalCreditCard)}</div>
+          <p className="text-xs text-muted-foreground">
+            Valor total descontado
           </p>
         </CardContent>
       </Card>
