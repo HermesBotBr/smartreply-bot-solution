@@ -1,9 +1,18 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { FileSpreadsheet } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { TransactionsList } from './TransactionsList';
+
+interface Transaction {
+  date: string;
+  sourceId: string;
+  descriptions: string[];
+  group: string;
+  value: number;
+}
 
 interface DataInputProps {
   settlementData: string;
@@ -18,12 +27,163 @@ export const DataInput: React.FC<DataInputProps> = ({
   onSettlementDataChange,
   onReleaseDataChange
 }) => {
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+
   const handleSettlementChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     onSettlementDataChange(e.target.value);
   };
 
   const handleReleaseChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     onReleaseDataChange(e.target.value);
+  };
+
+  useEffect(() => {
+    if (releaseData) {
+      const parsedTransactions = parseReleaseTransactions(releaseData);
+      setTransactions(parsedTransactions);
+    } else {
+      setTransactions([]);
+    }
+  }, [releaseData]);
+
+  const parseReleaseTransactions = (data: string): Transaction[] => {
+    try {
+      // Skip the first two lines (title and headers) and the last line (total)
+      const lines = data.split('\n').filter(line => line.trim() !== '');
+      
+      if (lines.length < 3) {
+        return [];
+      }
+
+      // Skip the first two lines (release: and headers) and potentially the last line (total)
+      const dataLines = lines.slice(2).filter(line => !line.startsWith(',,,total'));
+
+      // Group operations by SOURCE_ID
+      const operationsBySourceId: Record<string, {
+        date: string;
+        creditAmount: number;
+        debitAmount: number;
+        descriptions: Record<string, { creditCount: number; debitCount: number; }>;
+        order: number; // To maintain original order
+      }> = {};
+      
+      let operationOrder = 0;
+      
+      dataLines.forEach(line => {
+        if (!line.trim()) return;
+        
+        const columns = line.split(',');
+        if (columns.length < 7) return;
+        
+        // Skip initial_available_balance line
+        if (columns[4].includes('initial_available_balance')) return;
+        
+        // DATE is the 1st column (index 0)
+        const date = columns[0].trim();
+        // SOURCE_ID is the 2nd column (index 1)
+        const sourceId = columns[1].trim();
+        // DESCRIPTION is the 5th column (index 4)
+        const description = columns[4].trim();
+        // NET_CREDIT_AMOUNT is the 6th column (index 5)
+        const creditAmount = parseFloat(columns[5].trim().replace(/"/g, '') || '0');
+        // NET_DEBIT_AMOUNT is the 7th column (index 6)
+        const debitAmount = parseFloat(columns[6].trim().replace(/"/g, '') || '0');
+        
+        if (!sourceId) return;
+        
+        if (!operationsBySourceId[sourceId]) {
+          operationsBySourceId[sourceId] = {
+            date,
+            creditAmount: 0,
+            debitAmount: 0,
+            descriptions: {},
+            order: operationOrder++
+          };
+        }
+        
+        operationsBySourceId[sourceId].creditAmount += isNaN(creditAmount) ? 0 : creditAmount;
+        operationsBySourceId[sourceId].debitAmount += isNaN(debitAmount) ? 0 : debitAmount;
+        
+        if (!operationsBySourceId[sourceId].descriptions[description]) {
+          operationsBySourceId[sourceId].descriptions[description] = {
+            creditCount: 0,
+            debitCount: 0
+          };
+        }
+        
+        if (creditAmount > 0) {
+          operationsBySourceId[sourceId].descriptions[description].creditCount++;
+        }
+        
+        if (debitAmount > 0) {
+          operationsBySourceId[sourceId].descriptions[description].debitCount++;
+        }
+      });
+      
+      // Convert to array of transactions
+      const result: Transaction[] = Object.entries(operationsBySourceId).map(([sourceId, operation]) => {
+        const netAmount = operation.creditAmount - operation.debitAmount;
+        
+        // Determine the predominant description for this operation
+        let predominantDescription = '';
+        let maxCount = 0;
+        const descriptionList: string[] = [];
+        
+        // If net amount is positive, look for predominant credit description
+        // If net amount is negative, look for predominant debit description
+        const descriptionEntries = Object.entries(operation.descriptions);
+        
+        if (netAmount >= 0) {
+          descriptionEntries.forEach(([description, counts]) => {
+            descriptionList.push(description);
+            if (counts.creditCount > maxCount) {
+              maxCount = counts.creditCount;
+              predominantDescription = description;
+            }
+          });
+        } else {
+          descriptionEntries.forEach(([description, counts]) => {
+            descriptionList.push(description);
+            if (counts.debitCount > maxCount) {
+              maxCount = counts.debitCount;
+              predominantDescription = description;
+            }
+          });
+        }
+        
+        // Categorize the operation based on the predominant description
+        let group = "Outros";
+        if (predominantDescription === 'payment') {
+          group = "Liberação";
+        } else if (['reserve_for_dispute', 'reserve_for_bpp_shipping_return', 'refund', 'reserve_for_refund', 'mediation'].includes(predominantDescription)) {
+          group = "Reclamações";
+        } else if (predominantDescription === 'reserve_for_debt_payment') {
+          group = "Dívidas";
+        } else if (['payout', 'reserve_for_payout'].includes(predominantDescription)) {
+          group = "Transferências";
+        } else if (predominantDescription === 'credit_payment') {
+          group = "Cartão de Crédito";
+        }
+
+        return {
+          date: operation.date,
+          sourceId,
+          descriptions: [...new Set(descriptionList)], // Remove duplicates
+          group,
+          value: netAmount
+        };
+      });
+      
+      // Sort by original order
+      return result.sort((a, b) => {
+        const orderA = operationsBySourceId[a.sourceId].order;
+        const orderB = operationsBySourceId[b.sourceId].order;
+        return orderA - orderB;
+      });
+    } catch (error) {
+      console.error('Error parsing release transactions:', error);
+      return [];
+    }
   };
 
   return (
@@ -89,6 +249,9 @@ DATE,SOURCE_ID,EXTERNAL_REFERENCE,RECORD_TYPE,DESCRIPTION,NET_CREDIT_AMOUNT,NET_
             </div>
           </CardFooter>
         </Card>
+
+        {/* Display transactions list */}
+        <TransactionsList transactions={transactions} />
       </TabsContent>
     </Tabs>
   );
