@@ -24,7 +24,8 @@ const AdminFinanceiro = () => {
     totalClaims: 0,
     totalDebts: 0,
     totalTransfers: 0,
-    totalCreditCard: 0
+    totalCreditCard: 0,
+    totalShippingCashback: 0
   });
   const [shouldFilter, setShouldFilter] = useState(false);
   const [activeTab, setActiveTab] = useState('metricas');
@@ -63,7 +64,8 @@ const AdminFinanceiro = () => {
       totalClaims: parsedData.totalClaims,
       totalDebts: parsedData.totalDebts,
       totalTransfers: parsedData.totalTransfers,
-      totalCreditCard: parsedData.totalCreditCard
+      totalCreditCard: parsedData.totalCreditCard,
+      totalShippingCashback: parsedData.totalShippingCashback
     }));
   };
 
@@ -151,6 +153,7 @@ const AdminFinanceiro = () => {
     totalDebts: number;
     totalTransfers: number;
     totalCreditCard: number;
+    totalShippingCashback: number;
   } => {
     try {
       // Skip the first two lines (title and headers)
@@ -162,18 +165,20 @@ const AdminFinanceiro = () => {
           totalClaims: 0,
           totalDebts: 0,
           totalTransfers: 0,
-          totalCreditCard: 0
+          totalCreditCard: 0,
+          totalShippingCashback: 0
         };
       }
 
       // Skip the first two lines (release: and headers) and the last line (total)
-      const dataLines = lines.slice(2, -1);
+      const dataLines = lines.slice(2).filter(line => !line.startsWith(',,,total'));
       
       let totalReleased = 0;
       let totalClaims = 0;
       let totalDebts = 0;
       let totalTransfers = 0;
       let totalCreditCard = 0;
+      let totalShippingCashback = 0;
       
       // Group operations by SOURCE_ID to process them together
       const operationsBySourceId: Record<string, {
@@ -268,6 +273,8 @@ const AdminFinanceiro = () => {
           totalTransfers += netAmount;
         } else if (predominantDescription === 'credit_payment') {
           totalCreditCard += netAmount;
+        } else if (['shipping', 'cashback'].includes(predominantDescription)) {
+          totalShippingCashback += netAmount;
         }
       });
       
@@ -276,7 +283,8 @@ const AdminFinanceiro = () => {
         totalClaims,
         totalDebts,
         totalTransfers,
-        totalCreditCard
+        totalCreditCard,
+        totalShippingCashback
       };
     } catch (error) {
       console.error('Error parsing release data:', error);
@@ -285,7 +293,8 @@ const AdminFinanceiro = () => {
         totalClaims: 0,
         totalDebts: 0,
         totalTransfers: 0,
-        totalCreditCard: 0
+        totalCreditCard: 0,
+        totalShippingCashback: 0
       };
     }
   };
@@ -336,6 +345,7 @@ const AdminFinanceiro = () => {
               totalDebts={metrics.totalDebts}
               totalTransfers={metrics.totalTransfers}
               totalCreditCard={metrics.totalCreditCard}
+              totalShippingCashback={metrics.totalShippingCashback}
             />
           </TabsContent>
           

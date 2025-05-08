@@ -163,6 +163,8 @@ export const DataInput: React.FC<DataInputProps> = ({
           group = "Transferências";
         } else if (predominantDescription === 'credit_payment') {
           group = "Cartão de Crédito";
+        } else if (['shipping', 'cashback'].includes(predominantDescription)) {
+          group = "Correção de Envios e Cashbacks";
         }
 
         return {
