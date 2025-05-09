@@ -10,6 +10,7 @@ interface SettlementTransaction {
   sourceId: string;
   orderId: string;
   group: string;
+  units?: number;
   grossValue: number;
   netValue: number;
 }
@@ -42,7 +43,7 @@ export const SettlementTransactionsList: React.FC<SettlementTransactionsListProp
       <CardContent>
         {transactions.length === 0 ? (
           <div className="text-center py-4 text-muted-foreground">
-            Nenhuma transação encontrada. Insira dados de liquidação para visualizar.
+            Nenhuma transação encontrada. Insira um período de análise válido para visualizar.
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -53,6 +54,7 @@ export const SettlementTransactionsList: React.FC<SettlementTransactionsListProp
                   <TableHead>SOURCE_ID</TableHead>
                   <TableHead>ORDER_ID</TableHead>
                   <TableHead>Grupo</TableHead>
+                  <TableHead>Unidades</TableHead>
                   <TableHead className="text-right">Valor Bruto</TableHead>
                   <TableHead className="text-right">Valor Repasse</TableHead>
                 </TableRow>
@@ -64,6 +66,7 @@ export const SettlementTransactionsList: React.FC<SettlementTransactionsListProp
                     <TableCell>{transaction.sourceId}</TableCell>
                     <TableCell>{transaction.orderId}</TableCell>
                     <TableCell>{transaction.group}</TableCell>
+                    <TableCell>{transaction.units || 1}</TableCell>
                     <TableCell className="text-right">
                       {formatCurrency(transaction.grossValue)}
                     </TableCell>

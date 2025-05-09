@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -7,6 +6,8 @@ import { DateRangeFilterSection } from "@/components/dashboard/metrics/DateRange
 import { FinancialMetrics } from '@/components/financeiro/FinancialMetrics';
 import { DataInput } from '@/components/financeiro/DataInput';
 import { useNavigate } from 'react-router-dom';
+import { useMlToken } from '@/hooks/useMlToken';
+import { useSettlementData } from '@/hooks/useSettlementData';
 
 const AdminFinanceiro = () => {
   const navigate = useNavigate();
@@ -27,55 +28,49 @@ const AdminFinanceiro = () => {
     totalCreditCard: 0,
     totalShippingCashback: 0
   });
-  const [shouldFilter, setShouldFilter] = useState(false);
   const [activeTab, setActiveTab] = useState('metricas');
+  
+  // Get seller_id from mlToken
+  const mlToken = useMlToken();
+  let sellerId: string | null = null;
+  
+  if (mlToken !== null && typeof mlToken === 'object' && 'seller_id' in mlToken) {
+    sellerId = (mlToken as { seller_id: string }).seller_id;
+  }
+
+  // Use our new hook to fetch settlement data
+  const { 
+    totalGrossSales, 
+    totalNetSales, 
+    totalUnits, 
+    refetch: refetchSettlement
+  } = useSettlementData(sellerId, startDate, endDate);
 
   const handleFilter = () => {
     // Apply the date filter to both settlement and release data
-    setShouldFilter(true);
-    
-    // Re-parse data with the new date filters
-    if (settlementData) {
-      const parsedData = parseSettlementData(settlementData, startDate, endDate);
-      setMetrics(prevMetrics => ({
-        ...prevMetrics,
-        grossSales: parsedData.grossSales,
-        totalAmount: parsedData.totalAmount,
-        unitsSold: parsedData.unitsSold,
-        totalMLRepasses: parsedData.totalMLRepasses,
-        totalMLFees: parsedData.totalMLFees
-      }));
-    }
-    
-    if (releaseData) {
-      const parsedData = parseReleaseData(releaseData, startDate, endDate);
-      setMetrics(prevMetrics => ({
-        ...prevMetrics,
-        totalReleased: parsedData.totalReleased,
-        totalClaims: parsedData.totalClaims,
-        totalDebts: parsedData.totalDebts,
-        totalTransfers: parsedData.totalTransfers,
-        totalCreditCard: parsedData.totalCreditCard,
-        totalShippingCashback: parsedData.totalShippingCashback
-      }));
+    if (startDate && endDate) {
+      // Refetch settlement data from API
+      refetchSettlement();
+      
+      // Re-parse release data with the new date filters
+      if (releaseData) {
+        const parsedData = parseReleaseData(releaseData, startDate, endDate);
+        setMetrics(prevMetrics => ({
+          ...prevMetrics,
+          totalReleased: parsedData.totalReleased,
+          totalClaims: parsedData.totalClaims,
+          totalDebts: parsedData.totalDebts,
+          totalTransfers: parsedData.totalTransfers,
+          totalCreditCard: parsedData.totalCreditCard,
+          totalShippingCashback: parsedData.totalShippingCashback
+        }));
+      }
     }
   };
 
   const handleSettlementDataChange = (data: string) => {
     setSettlementData(data);
-
-    // Parse settlement data and calculate metrics
-    const parsedData = parseSettlementData(data, startDate, endDate);
-    
-    // Update metrics while preserving release data metrics
-    setMetrics(prevMetrics => ({
-      ...prevMetrics,
-      grossSales: parsedData.grossSales,
-      totalAmount: parsedData.totalAmount,
-      unitsSold: parsedData.unitsSold,
-      totalMLRepasses: parsedData.totalMLRepasses,
-      totalMLFees: parsedData.totalMLFees
-    }));
+    // We don't parse settlement data anymore as it's coming from API
   };
 
   const handleReleaseDataChange = (data: string) => {
@@ -116,94 +111,8 @@ const AdminFinanceiro = () => {
     }
   };
 
-  const parseSettlementData = (
-    data: string,
-    startDate?: Date,
-    endDate?: Date
-  ): { 
-    grossSales: number; 
-    totalAmount: number; 
-    unitsSold: number; 
-    totalMLRepasses: number;
-    totalMLFees: number;
-  } => {
-    try {
-      // Skip the first two lines (title and headers)
-      const lines = data.split('\n').filter(line => line.trim() !== '');
-      
-      if (lines.length < 3) {
-        return { 
-          grossSales: 0, 
-          totalAmount: 0, 
-          unitsSold: 0,
-          totalMLRepasses: 0,
-          totalMLFees: 0
-        };
-      }
-
-      // Skip the first two lines (settlement: and headers)
-      const dataLines = lines.slice(2);
-      
-      // Filter for SETTLEMENT transactions only within the date range
-      const settlementLines = dataLines.filter(line => {
-        const columns = line.split(',');
-        
-        // TRANSACTION_TYPE is the 7th column (index 6)
-        // SETTLEMENT_DATE is the 14th column (index 13)
-        if (columns.length <= 13) return false;
-        
-        const isSettlement = columns[6].trim() === 'SETTLEMENT';
-        const settlementDate = columns[13].trim();
-        
-        return isSettlement && isDateInRange(settlementDate, startDate, endDate);
-      });
-      
-      // Calculate metrics
-      let totalAmount = 0;
-      let totalMLRepasses = 0;
-      let totalMLFees = 0;
-      
-      settlementLines.forEach(line => {
-        const columns = line.split(',');
-        // TRANSACTION_AMOUNT is the 8th column (index 7)
-        const transactionAmount = parseFloat(columns[7].trim().replace(/"/g, ''));
-        // FEE_AMOUNT is the 11th column (index 10)
-        const feeAmount = parseFloat(columns[10].trim().replace(/"/g, ''));
-        // SETTLEMENT_NET_AMOUNT is the 12th column (index 11)
-        const settlementNetAmount = parseFloat(columns[11].trim().replace(/"/g, ''));
-        
-        if (!isNaN(transactionAmount)) {
-          totalAmount += transactionAmount;
-        }
-        
-        if (!isNaN(feeAmount)) {
-          totalMLFees += feeAmount;
-        }
-        
-        if (!isNaN(settlementNetAmount)) {
-          totalMLRepasses += settlementNetAmount;
-        }
-      });
-      
-      // Return the calculated metrics
-      return {
-        grossSales: totalAmount,
-        totalAmount: totalAmount,
-        unitsSold: settlementLines.length,
-        totalMLRepasses,
-        totalMLFees
-      };
-    } catch (error) {
-      console.error('Error parsing settlement data:', error);
-      return { 
-        grossSales: 0, 
-        totalAmount: 0, 
-        unitsSold: 0,
-        totalMLRepasses: 0,
-        totalMLFees: 0
-      };
-    }
-  };
+  // We don't need this function anymore as we're fetching from API
+  // const parseSettlementData = (data: string, startDate?: Date, endDate?: Date): {} => {...}
 
   const parseReleaseData = (
     data: string,
@@ -376,6 +285,18 @@ const AdminFinanceiro = () => {
       };
     }
   };
+
+  // Update metrics with data from the settlement API
+  React.useEffect(() => {
+    setMetrics(prevMetrics => ({
+      ...prevMetrics,
+      grossSales: totalGrossSales,
+      totalAmount: totalGrossSales,
+      unitsSold: totalUnits,
+      totalMLRepasses: totalNetSales,
+      totalMLFees: totalGrossSales - totalNetSales
+    }));
+  }, [totalGrossSales, totalNetSales, totalUnits]);
 
   return (
     <div className="min-h-screen bg-gray-100">

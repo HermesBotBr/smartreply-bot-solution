@@ -5,6 +5,8 @@ import { FileSpreadsheet } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TransactionsList } from './TransactionsList';
 import { SettlementTransactionsList } from './SettlementTransactionsList';
+import { useSettlementData } from '@/hooks/useSettlementData';
+import { useMlToken } from '@/hooks/useMlToken';
 
 interface Transaction {
   date: string;
@@ -19,6 +21,7 @@ interface SettlementTransaction {
   sourceId: string;
   orderId: string;
   group: string;
+  units?: number;
   grossValue: number;
   netValue: number;
 }
@@ -41,7 +44,19 @@ export const DataInput: React.FC<DataInputProps> = ({
   endDate
 }) => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [settlementTransactions, setSettlementTransactions] = useState<SettlementTransaction[]>([]);
+  const mlToken = useMlToken();
+  let sellerId: string | null = null;
+  
+  if (mlToken !== null && typeof mlToken === 'object' && 'seller_id' in mlToken) {
+    sellerId = (mlToken as { seller_id: string }).seller_id;
+  }
+
+  // Use our new hook to fetch settlement data
+  const { 
+    settlementTransactions, 
+    isLoading: settlementLoading,
+    error: settlementError 
+  } = useSettlementData(sellerId, startDate, endDate, true);
 
   const handleSettlementChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     onSettlementDataChange(e.target.value);
@@ -79,15 +94,6 @@ export const DataInput: React.FC<DataInputProps> = ({
       setTransactions([]);
     }
   }, [releaseData, startDate, endDate]);
-
-  useEffect(() => {
-    if (settlementData) {
-      const parsedTransactions = parseSettlementTransactions(settlementData, startDate, endDate);
-      setSettlementTransactions(parsedTransactions);
-    } else {
-      setSettlementTransactions([]);
-    }
-  }, [settlementData, startDate, endDate]);
 
   const parseReleaseTransactions = (data: string, startDate?: Date, endDate?: Date): Transaction[] => {
     try {
@@ -245,60 +251,6 @@ export const DataInput: React.FC<DataInputProps> = ({
     }
   };
 
-  const parseSettlementTransactions = (data: string, startDate?: Date, endDate?: Date): SettlementTransaction[] => {
-    try {
-      // Skip the first two lines (title and headers)
-      const lines = data.split('\n').filter(line => line.trim() !== '');
-      
-      if (lines.length < 3) {
-        return [];
-      }
-
-      // Skip the first two lines (settlement: and headers)
-      const dataLines = lines.slice(2);
-      
-      // Filter for SETTLEMENT transactions only within the date range
-      const settlementLines = dataLines.filter(line => {
-        const columns = line.split(',');
-        
-        // TRANSACTION_TYPE is the 7th column (index 6)
-        // SETTLEMENT_DATE is the 14th column (index 13)
-        if (columns.length <= 13) return false;
-        
-        const isSettlement = columns[6].trim().replace(/"/g, '') === 'SETTLEMENT';
-        const settlementDate = columns[13].trim().replace(/"/g, '');
-        
-        return isSettlement && isDateInRange(settlementDate, startDate, endDate);
-      });
-      
-      // Parse each settlement line into a SettlementTransaction
-      const result: SettlementTransaction[] = settlementLines.map((line, index) => {
-        const columns = line.split(',');
-        
-        // Get data from appropriate columns
-        const settlementDate = columns[13].trim().replace(/"/g, '');
-        const sourceId = columns[1].trim().replace(/"/g, '');
-        const orderId = columns[17].trim().replace(/"/g, '');
-        const transactionAmount = parseFloat(columns[7].trim().replace(/"/g, '') || '0');
-        const settlementNetAmount = parseFloat(columns[11].trim().replace(/"/g, '') || '0');
-        
-        return {
-          date: settlementDate,
-          sourceId,
-          orderId,
-          group: 'Venda',
-          grossValue: transactionAmount,
-          netValue: settlementNetAmount
-        };
-      });
-      
-      return result;
-    } catch (error) {
-      console.error('Error parsing settlement transactions:', error);
-      return [];
-    }
-  };
-
   return (
     <Tabs defaultValue="settlement" className="w-full">
       <TabsList className="mb-6">
@@ -314,24 +266,27 @@ export const DataInput: React.FC<DataInputProps> = ({
               <CardTitle>Entrada de Dados de Liquidação (Settlement)</CardTitle>
             </div>
             <CardDescription>
-              Cole os dados do relatório de settlement no formato CSV abaixo
+              Os dados de liquidação são carregados automaticamente do período selecionado
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Textarea 
-              value={settlementData}
-              onChange={handleSettlementChange}
-              placeholder="settlement:
-EXTERNAL_REFERENCE,SOURCE_ID,USER_ID,PAYMENT_METHOD_TYPE,PAYMENT_METHOD,SITE,TRANSACTION_TYPE,TRANSACTION_AMOUNT,TRANSACTION_CURRENCY,TRANSACTION_DATE,FEE_AMOUNT,SETTLEMENT_NET_AMOUNT,SETTLEMENT_CURRENCY,SETTLEMENT_DATE,REAL_AMOUNT,COUPON_AMOUNT,METADATA,ORDER_ID,SHIPPING_ID,SHIPMENT_MODE,PACK_ID
-..."
-              className="min-h-[400px] font-mono text-sm"
-            />
+            {settlementLoading ? (
+              <div className="text-center py-4 text-muted-foreground">
+                Carregando dados do período selecionado...
+              </div>
+            ) : settlementError ? (
+              <div className="text-center py-4 text-red-500">
+                Erro ao carregar dados: {settlementError}
+              </div>
+            ) : (
+              <div className="text-center py-4 text-muted-foreground">
+                {settlementTransactions.length > 0 ? 
+                  `${settlementTransactions.length} transações encontradas para o período selecionado` : 
+                  "Nenhuma transação encontrada. Selecione um período válido para consultar."
+                }
+              </div>
+            )}
           </CardContent>
-          <CardFooter className="flex justify-between items-center">
-            <div className="text-sm text-muted-foreground">
-              Apenas transações com TRANSACTION_TYPE = SETTLEMENT serão consideradas vendas
-            </div>
-          </CardFooter>
         </Card>
 
         {/* Display settlement transactions list */}
