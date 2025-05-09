@@ -1,10 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { FileSpreadsheet } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TransactionsList } from './TransactionsList';
+import { SettlementTransactionsList } from './SettlementTransactionsList';
 
 interface Transaction {
   date: string;
@@ -12,6 +12,15 @@ interface Transaction {
   descriptions: string[];
   group: string;
   value: number;
+}
+
+interface SettlementTransaction {
+  date: string;
+  sourceId: string;
+  orderId: string;
+  group: string;
+  grossValue: number;
+  netValue: number;
 }
 
 interface DataInputProps {
@@ -32,6 +41,7 @@ export const DataInput: React.FC<DataInputProps> = ({
   endDate
 }) => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [settlementTransactions, setSettlementTransactions] = useState<SettlementTransaction[]>([]);
 
   const handleSettlementChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     onSettlementDataChange(e.target.value);
@@ -69,6 +79,15 @@ export const DataInput: React.FC<DataInputProps> = ({
       setTransactions([]);
     }
   }, [releaseData, startDate, endDate]);
+
+  useEffect(() => {
+    if (settlementData) {
+      const parsedTransactions = parseSettlementTransactions(settlementData, startDate, endDate);
+      setSettlementTransactions(parsedTransactions);
+    } else {
+      setSettlementTransactions([]);
+    }
+  }, [settlementData, startDate, endDate]);
 
   const parseReleaseTransactions = (data: string, startDate?: Date, endDate?: Date): Transaction[] => {
     try {
@@ -226,6 +245,60 @@ export const DataInput: React.FC<DataInputProps> = ({
     }
   };
 
+  const parseSettlementTransactions = (data: string, startDate?: Date, endDate?: Date): SettlementTransaction[] => {
+    try {
+      // Skip the first two lines (title and headers)
+      const lines = data.split('\n').filter(line => line.trim() !== '');
+      
+      if (lines.length < 3) {
+        return [];
+      }
+
+      // Skip the first two lines (settlement: and headers)
+      const dataLines = lines.slice(2);
+      
+      // Filter for SETTLEMENT transactions only within the date range
+      const settlementLines = dataLines.filter(line => {
+        const columns = line.split(',');
+        
+        // TRANSACTION_TYPE is the 7th column (index 6)
+        // SETTLEMENT_DATE is the 14th column (index 13)
+        if (columns.length <= 13) return false;
+        
+        const isSettlement = columns[6].trim().replace(/"/g, '') === 'SETTLEMENT';
+        const settlementDate = columns[13].trim().replace(/"/g, '');
+        
+        return isSettlement && isDateInRange(settlementDate, startDate, endDate);
+      });
+      
+      // Parse each settlement line into a SettlementTransaction
+      const result: SettlementTransaction[] = settlementLines.map((line, index) => {
+        const columns = line.split(',');
+        
+        // Get data from appropriate columns
+        const settlementDate = columns[13].trim().replace(/"/g, '');
+        const sourceId = columns[1].trim().replace(/"/g, '');
+        const orderId = columns[17].trim().replace(/"/g, '');
+        const transactionAmount = parseFloat(columns[7].trim().replace(/"/g, '') || '0');
+        const settlementNetAmount = parseFloat(columns[11].trim().replace(/"/g, '') || '0');
+        
+        return {
+          date: settlementDate,
+          sourceId,
+          orderId,
+          group: 'Venda',
+          grossValue: transactionAmount,
+          netValue: settlementNetAmount
+        };
+      });
+      
+      return result;
+    } catch (error) {
+      console.error('Error parsing settlement transactions:', error);
+      return [];
+    }
+  };
+
   return (
     <Tabs defaultValue="settlement" className="w-full">
       <TabsList className="mb-6">
@@ -260,6 +333,9 @@ EXTERNAL_REFERENCE,SOURCE_ID,USER_ID,PAYMENT_METHOD_TYPE,PAYMENT_METHOD,SITE,TRA
             </div>
           </CardFooter>
         </Card>
+
+        {/* Display settlement transactions list */}
+        <SettlementTransactionsList transactions={settlementTransactions} />
       </TabsContent>
       
       <TabsContent value="release">
