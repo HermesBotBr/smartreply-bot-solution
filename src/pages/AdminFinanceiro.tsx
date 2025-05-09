@@ -31,14 +31,41 @@ const AdminFinanceiro = () => {
   const [activeTab, setActiveTab] = useState('metricas');
 
   const handleFilter = () => {
+    // Apply the date filter to both settlement and release data
     setShouldFilter(true);
+    
+    // Re-parse data with the new date filters
+    if (settlementData) {
+      const parsedData = parseSettlementData(settlementData, startDate, endDate);
+      setMetrics(prevMetrics => ({
+        ...prevMetrics,
+        grossSales: parsedData.grossSales,
+        totalAmount: parsedData.totalAmount,
+        unitsSold: parsedData.unitsSold,
+        totalMLRepasses: parsedData.totalMLRepasses,
+        totalMLFees: parsedData.totalMLFees
+      }));
+    }
+    
+    if (releaseData) {
+      const parsedData = parseReleaseData(releaseData, startDate, endDate);
+      setMetrics(prevMetrics => ({
+        ...prevMetrics,
+        totalReleased: parsedData.totalReleased,
+        totalClaims: parsedData.totalClaims,
+        totalDebts: parsedData.totalDebts,
+        totalTransfers: parsedData.totalTransfers,
+        totalCreditCard: parsedData.totalCreditCard,
+        totalShippingCashback: parsedData.totalShippingCashback
+      }));
+    }
   };
 
   const handleSettlementDataChange = (data: string) => {
     setSettlementData(data);
 
     // Parse settlement data and calculate metrics
-    const parsedData = parseSettlementData(data);
+    const parsedData = parseSettlementData(data, startDate, endDate);
     
     // Update metrics while preserving release data metrics
     setMetrics(prevMetrics => ({
@@ -55,7 +82,7 @@ const AdminFinanceiro = () => {
     setReleaseData(data);
 
     // Parse release data and calculate metrics
-    const parsedData = parseReleaseData(data);
+    const parsedData = parseReleaseData(data, startDate, endDate);
     
     // Update metrics while preserving settlement data metrics
     setMetrics(prevMetrics => ({
@@ -69,7 +96,31 @@ const AdminFinanceiro = () => {
     }));
   };
 
-  const parseSettlementData = (data: string): { 
+  // Helper function to check if a date string is within the filter range
+  const isDateInRange = (dateStr: string, startDate?: Date, endDate?: Date): boolean => {
+    if (!startDate || !endDate || !dateStr) return true;
+    
+    try {
+      const date = new Date(dateStr);
+      // Set time to 00:00:00 for startDate and 23:59:59 for endDate for proper range comparison
+      const start = new Date(startDate);
+      start.setHours(0, 0, 0, 0);
+      
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
+      
+      return date >= start && date <= end;
+    } catch (e) {
+      console.error('Invalid date format:', dateStr);
+      return false;
+    }
+  };
+
+  const parseSettlementData = (
+    data: string,
+    startDate?: Date,
+    endDate?: Date
+  ): { 
     grossSales: number; 
     totalAmount: number; 
     unitsSold: number; 
@@ -93,11 +144,18 @@ const AdminFinanceiro = () => {
       // Skip the first two lines (settlement: and headers)
       const dataLines = lines.slice(2);
       
-      // Filter for SETTLEMENT transactions only
+      // Filter for SETTLEMENT transactions only within the date range
       const settlementLines = dataLines.filter(line => {
         const columns = line.split(',');
+        
         // TRANSACTION_TYPE is the 7th column (index 6)
-        return columns.length > 6 && columns[6].trim() === 'SETTLEMENT';
+        // SETTLEMENT_DATE is the 14th column (index 13)
+        if (columns.length <= 13) return false;
+        
+        const isSettlement = columns[6].trim() === 'SETTLEMENT';
+        const settlementDate = columns[13].trim();
+        
+        return isSettlement && isDateInRange(settlementDate, startDate, endDate);
       });
       
       // Calculate metrics
@@ -147,7 +205,11 @@ const AdminFinanceiro = () => {
     }
   };
 
-  const parseReleaseData = (data: string): {
+  const parseReleaseData = (
+    data: string,
+    startDate?: Date,
+    endDate?: Date
+  ): {
     totalReleased: number;
     totalClaims: number;
     totalDebts: number;
@@ -173,6 +235,22 @@ const AdminFinanceiro = () => {
       // Skip the first two lines (release: and headers) and the last line (total)
       const dataLines = lines.slice(2).filter(line => !line.startsWith(',,,total'));
       
+      // Filter data by date if startDate and endDate are provided
+      const filteredDataLines = dataLines.filter(line => {
+        if (!line.trim()) return false;
+        
+        const columns = line.split(',');
+        if (columns.length < 2) return false;
+        
+        // DATE is the 1st column (index 0)
+        const dateStr = columns[0].trim();
+        
+        // Skip initial_available_balance line
+        if (columns.length >= 5 && columns[4].includes('initial_available_balance')) return false;
+        
+        return isDateInRange(dateStr, startDate, endDate);
+      });
+      
       let totalReleased = 0;
       let totalClaims = 0;
       let totalDebts = 0;
@@ -187,7 +265,7 @@ const AdminFinanceiro = () => {
         descriptions: Record<string, { creditCount: number; debitCount: number; }>;
       }> = {};
       
-      dataLines.forEach(line => {
+      filteredDataLines.forEach(line => {
         if (!line.trim()) return;
         
         const columns = line.split(',');
@@ -355,6 +433,8 @@ const AdminFinanceiro = () => {
               releaseData={releaseData}
               onSettlementDataChange={handleSettlementDataChange}
               onReleaseDataChange={handleReleaseDataChange}
+              startDate={startDate}
+              endDate={endDate}
             />
           </TabsContent>
         </Tabs>

@@ -19,13 +19,17 @@ interface DataInputProps {
   releaseData: string;
   onSettlementDataChange: (data: string) => void;
   onReleaseDataChange: (data: string) => void;
+  startDate?: Date;
+  endDate?: Date;
 }
 
 export const DataInput: React.FC<DataInputProps> = ({ 
   settlementData,
   releaseData,
   onSettlementDataChange,
-  onReleaseDataChange
+  onReleaseDataChange,
+  startDate,
+  endDate
 }) => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
 
@@ -37,16 +41,36 @@ export const DataInput: React.FC<DataInputProps> = ({
     onReleaseDataChange(e.target.value);
   };
 
+  // Helper function to check if a date string is within the filter range
+  const isDateInRange = (dateStr: string, startDate?: Date, endDate?: Date): boolean => {
+    if (!startDate || !endDate || !dateStr) return true;
+    
+    try {
+      const date = new Date(dateStr);
+      // Set time to 00:00:00 for startDate and 23:59:59 for endDate for proper range comparison
+      const start = new Date(startDate);
+      start.setHours(0, 0, 0, 0);
+      
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
+      
+      return date >= start && date <= end;
+    } catch (e) {
+      console.error('Invalid date format:', dateStr);
+      return false;
+    }
+  };
+
   useEffect(() => {
     if (releaseData) {
-      const parsedTransactions = parseReleaseTransactions(releaseData);
+      const parsedTransactions = parseReleaseTransactions(releaseData, startDate, endDate);
       setTransactions(parsedTransactions);
     } else {
       setTransactions([]);
     }
-  }, [releaseData]);
+  }, [releaseData, startDate, endDate]);
 
-  const parseReleaseTransactions = (data: string): Transaction[] => {
+  const parseReleaseTransactions = (data: string, startDate?: Date, endDate?: Date): Transaction[] => {
     try {
       // Skip the first two lines (title and headers) and the last line (total)
       const lines = data.split('\n').filter(line => line.trim() !== '');
@@ -58,6 +82,20 @@ export const DataInput: React.FC<DataInputProps> = ({
       // Skip the first two lines (release: and headers) and potentially the last line (total)
       const dataLines = lines.slice(2).filter(line => !line.startsWith(',,,total'));
 
+      // Filter by date range if needed
+      const filteredDataLines = dataLines.filter(line => {
+        if (!line.trim()) return false;
+        const columns = line.split(',');
+        if (columns.length < 1) return false;
+        
+        // Skip initial_available_balance line
+        if (columns.length >= 5 && columns[4].includes('initial_available_balance')) return false;
+        
+        // DATE is the 1st column (index 0)
+        const dateStr = columns[0].trim();
+        return isDateInRange(dateStr, startDate, endDate);
+      });
+      
       // Group operations by SOURCE_ID
       const operationsBySourceId: Record<string, {
         date: string;
@@ -69,7 +107,7 @@ export const DataInput: React.FC<DataInputProps> = ({
       
       let operationOrder = 0;
       
-      dataLines.forEach(line => {
+      filteredDataLines.forEach(line => {
         if (!line.trim()) return;
         
         const columns = line.split(',');
