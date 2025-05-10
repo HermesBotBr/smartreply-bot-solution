@@ -8,11 +8,14 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface RepassesPopupProps {
   transactions: SettlementTransaction[];
+  open: boolean;
+  onClose: () => void;
 }
 
-export const RepassesPopup: React.FC<RepassesPopupProps> = ({ transactions }) => {
+export const RepassesPopup: React.FC<RepassesPopupProps> = ({ transactions, open, onClose }) => {
   return (
-<Dialog open={true} onOpenChange={() => {}}>
+    <Dialog open={open} onOpenChange={onClose}>
+
   <DialogContent className="max-w-5xl w-full">
     <DialogHeader>
       <DialogTitle>Detalhamento de Repasses</DialogTitle>
