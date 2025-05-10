@@ -37,17 +37,18 @@ export const RepassesPopup: React.FC<RepassesPopupProps> = ({ transactions }) =>
                   <th className="p-2 border">Valor Repasse</th>
                 </tr>
               </thead>
-              <tbody>
-                {transactions.map((item, idx) => (
-                  <tr key={idx} className="hover:bg-gray-50">
-                    <td className="p-2 border">{item.orderId}</td>
-                    <td className="p-2 border">{(item as any).itemId || '-'}</td>
-                    <td className="p-2 border">{(item as any).title || '-'}</td>
-                    <td className="p-2 border">{item.units}</td>
-                    <td className="p-2 border">R$ {(item.netValue || 0).toFixed(2)}</td>
-                  </tr>
-                ))}
-              </tbody>
+<tbody>
+  {Array.isArray(transactions) && transactions.map((item, idx) => (
+    <tr key={idx} className="hover:bg-gray-50">
+      <td className="p-2 border">{item.orderId}</td>
+      <td className="p-2 border">{(item as any).itemId || '-'}</td>
+      <td className="p-2 border">{(item as any).title || '-'}</td>
+      <td className="p-2 border">{item.units}</td>
+      <td className="p-2 border">R$ {(item.netValue || 0).toFixed(2)}</td>
+    </tr>
+  ))}
+</tbody>
+
             </table>
           </ScrollArea>
         </div>
