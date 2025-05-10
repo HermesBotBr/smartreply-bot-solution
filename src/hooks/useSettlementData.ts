@@ -4,6 +4,7 @@ import axios from 'axios';
 interface Payment {
   transaction_amount: number;
   date_approved: string;
+  date_created: string; 
   id: number;
   order_id: number;
   status?: string;
@@ -114,7 +115,7 @@ export function useSettlementData(
             const payment = order.payments[0]; // sempre pega o primeiro pagamento, mesmo que não esteja aprovado
 const transaction = transactionsMap.get(orderId)!;
 
-transaction.date = payment.date_approved || '';
+transaction.date = payment.date_approved || payment.date_created || new Date().toISOString();
 transaction.sourceId = payment.id.toString();
 
 const transactionAmount = payment.transaction_amount || 0;
