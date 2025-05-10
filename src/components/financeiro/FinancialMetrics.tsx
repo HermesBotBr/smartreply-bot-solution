@@ -2,6 +2,8 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartBar, Package, DollarSign, TrendingDown, CreditCard, AlertCircle, ArrowDown, WalletCards, Package2 } from "lucide-react";
+import { RepassesPopup } from "@/components/financeiro/RepassesPopup";
+
 
 interface FinancialMetricsProps {
   grossSales: number;
@@ -15,8 +17,10 @@ interface FinancialMetricsProps {
   totalDebts: number;
   totalTransfers: number;
   totalCreditCard: number;
-  totalShippingCashback: number; // New metric
+  totalShippingCashback: number;
+  settlementTransactions: any[]; // 👈 Adiciona isso aqui (melhor tipar depois com SettlementTransaction[])
 }
+
 
 export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ 
   grossSales, 
@@ -29,8 +33,11 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
   totalDebts,
   totalTransfers,
   totalCreditCard,
-  totalShippingCashback
+  totalShippingCashback,
+  settlementTransactions // ✅ adiciona aqui
 }) => {
+  const [popupOpen, setPopupOpen] = React.useState(false); // ✅ move para dentro do componente
+
   // Format numbers with Brazilian currency and number format
   const formatCurrency = (value: number): string => {
     return new Intl.NumberFormat('pt-BR', { 
@@ -99,18 +106,27 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
       </Card>
 
       
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Repasses ML</CardTitle>
-          <DollarSign className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{formatCurrency(totalMLRepasses)}</div>
-          <p className="text-xs text-muted-foreground">
-            Repasses líquidos das vendas
-          </p>
-        </CardContent>
-      </Card>
+<>
+  <Card onClick={() => setPopupOpen(true)} className="cursor-pointer hover:shadow-lg transition">
+    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+      <CardTitle className="text-sm font-medium">Repasses ML</CardTitle>
+      <DollarSign className="h-4 w-4 text-muted-foreground" />
+    </CardHeader>
+    <CardContent>
+      <div className="text-2xl font-bold">{formatCurrency(totalMLRepasses)}</div>
+      <p className="text-xs text-muted-foreground">
+        Repasses líquidos das vendas
+      </p>
+    </CardContent>
+  </Card>
+
+  <RepassesPopup
+    open={popupOpen}
+    onClose={() => setPopupOpen(false)}
+    transactions={settlementTransactions}
+  />
+</>
+
 
 
 
