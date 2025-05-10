@@ -117,14 +117,17 @@ const transaction = transactionsMap.get(orderId)!;
 let totalAmount = 0;
 let mainPayment: Payment | null = null;
 
-order.payments.forEach((payment) => {
-  const amount = payment.transaction_amount || 0;
-  totalAmount += amount;
+order.payments
+  .filter(p => p.status === 'approved')
+  .forEach((payment) => {
+    const amount = payment.transaction_amount || 0;
+    totalAmount += amount;
 
-  if (!mainPayment || amount > (mainPayment.transaction_amount || 0)) {
-    mainPayment = payment;
-  }
-});
+    if (!mainPayment || amount > (mainPayment.transaction_amount || 0)) {
+      mainPayment = payment;
+    }
+  });
+
 
 if (mainPayment) {
   transaction.date = mainPayment.date_approved || mainPayment.date_created || new Date().toISOString();
