@@ -1,10 +1,11 @@
 // src/components/financeiro/RepassesPopup.tsx
 
-import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+import React, { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { SettlementTransaction } from "@/hooks/useSettlementData";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 interface RepassesPopupProps {
   transactions: SettlementTransaction[];
@@ -13,41 +14,75 @@ interface RepassesPopupProps {
 }
 
 export const RepassesPopup: React.FC<RepassesPopupProps> = ({ transactions, open, onClose }) => {
+  const [groupedView, setGroupedView] = useState(false);
+
+  const groupedData = transactions.reduce((acc, item) => {
+    const key = item.itemId || "unknown";
+    if (!acc[key]) {
+      acc[key] = {
+        itemId: item.itemId || '-',
+        title: item.title || '-',
+        units: 0,
+        netValue: 0
+      };
+    }
+    acc[key].units += item.units;
+    acc[key].netValue += item.netValue || 0;
+    return acc;
+  }, {} as Record<string, { itemId: string; title: string; units: number; netValue: number }>);
+
+  const groupedList = Object.values(groupedData);
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="max-w-5xl w-full">
+        <DialogHeader>
+          <DialogTitle>Detalhamento de Repasses</DialogTitle>
+        </DialogHeader>
 
-  <DialogContent className="max-w-5xl w-full">
-    <DialogHeader>
-      <DialogTitle>Detalhamento de Repasses</DialogTitle>
-    </DialogHeader>
-    <div className="mt-4 max-h-[500px] overflow-auto">
-      <ScrollArea className="w-full">
-        <table className="w-full border text-sm">
-          <thead>
-            <tr className="bg-gray-100 text-left">
-              <th className="p-2 border">ORDER_ID</th>
-              <th className="p-2 border">ID do Anúncio</th>
-              <th className="p-2 border">Título do Anúncio</th>
-              <th className="p-2 border">Unidades</th>
-              <th className="p-2 border">Valor Repasse</th>
-            </tr>
-          </thead>
-          <tbody>
-            {Array.isArray(transactions) && transactions.map((item, idx) => (
-              <tr key={idx} className="hover:bg-gray-50">
-                <td className="p-2 border">{item.orderId}</td>
-                <td className="p-2 border">{(item as any).itemId || '-'}</td>
-                <td className="p-2 border">{(item as any).title || '-'}</td>
-                <td className="p-2 border">{item.units}</td>
-                <td className="p-2 border">R$ {(item.netValue || 0).toFixed(2)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </ScrollArea>
-    </div>
-  </DialogContent>
-</Dialog>
+        <div className="flex items-center gap-2 mb-4">
+          <Switch id="toggle-view" checked={groupedView} onCheckedChange={setGroupedView} />
+          <Label htmlFor="toggle-view">Agrupar por Anúncio</Label>
+        </div>
 
+        <div className="mt-2 max-h-[500px] overflow-auto">
+          <ScrollArea className="w-full">
+            <table className="w-full border text-sm">
+              <thead>
+                <tr className="bg-gray-100 text-left">
+                  {!groupedView && <th className="p-2 border">ORDER_ID</th>}
+                  <th className="p-2 border">ID do Anúncio</th>
+                  <th className="p-2 border">Título do Anúncio</th>
+                  <th className="p-2 border">Unidades</th>
+                  <th className="p-2 border">Valor Repasse</th>
+                </tr>
+              </thead>
+              <tbody>
+                {groupedView ? (
+                  groupedList.map((item, idx) => (
+                    <tr key={idx} className="hover:bg-gray-50">
+                      <td className="p-2 border">{item.itemId}</td>
+                      <td className="p-2 border">{item.title}</td>
+                      <td className="p-2 border">{item.units}</td>
+                      <td className="p-2 border">R$ {item.netValue.toFixed(2)}</td>
+                    </tr>
+                  ))
+                ) : (
+                  transactions.map((item, idx) => (
+                    <tr key={idx} className="hover:bg-gray-50">
+                      <td className="p-2 border">{item.orderId}</td>
+                      <td className="p-2 border">{item.itemId || '-'}</td>
+                      <td className="p-2 border">{item.title || '-'}</td>
+                      <td className="p-2 border">{item.units}</td>
+                      <td className="p-2 border">R$ {(item.netValue || 0).toFixed(2)}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </ScrollArea>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 };
