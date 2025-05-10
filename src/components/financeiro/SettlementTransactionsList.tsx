@@ -23,21 +23,32 @@ export const SettlementTransactionsList: React.FC<SettlementTransactionsListProp
   // Function to format the date to a readable format
   const formatDate = (dateString: string): string => {
     try {
+      if (!dateString) return 'Data não disponível';
       return new Date(dateString).toLocaleString('pt-BR', { 
         dateStyle: 'short', 
         timeStyle: 'short' 
       });
     } catch (e) {
-      return dateString;
+      return dateString || 'Data não disponível';
     }
   };
+
+  // Calculate totals for display at the bottom
+  const totalUnits = transactions.reduce((sum, transaction) => sum + (transaction.units || 1), 0);
+  const totalGrossValue = transactions.reduce((sum, transaction) => sum + transaction.grossValue, 0);
+  const totalNetValue = transactions.reduce((sum, transaction) => sum + transaction.netValue, 0);
 
   return (
     <Card className="w-full mt-6">
       <CardHeader>
-        <div className="flex items-center gap-2">
-          <FileBarChart className="h-5 w-5" />
-          <CardTitle>Lista de Transações de Liquidação</CardTitle>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <FileBarChart className="h-5 w-5" />
+            <CardTitle>Lista de Transações de Liquidação</CardTitle>
+          </div>
+          <div className="text-sm text-muted-foreground">
+            Total: {transactions.length} transações
+          </div>
         </div>
       </CardHeader>
       <CardContent>
@@ -61,9 +72,12 @@ export const SettlementTransactionsList: React.FC<SettlementTransactionsListProp
               </TableHeader>
               <TableBody>
                 {transactions.map((transaction, index) => (
-                  <TableRow key={`${transaction.sourceId}-${index}`}>
+                  <TableRow 
+                    key={`${transaction.orderId}-${index}`}
+                    className={transaction.grossValue <= 0 ? "bg-gray-50 text-gray-500" : ""}
+                  >
                     <TableCell>{formatDate(transaction.date)}</TableCell>
-                    <TableCell>{transaction.sourceId}</TableCell>
+                    <TableCell>{transaction.sourceId || 'N/A'}</TableCell>
                     <TableCell>{transaction.orderId}</TableCell>
                     <TableCell>{transaction.group}</TableCell>
                     <TableCell>{transaction.units || 1}</TableCell>
@@ -75,6 +89,14 @@ export const SettlementTransactionsList: React.FC<SettlementTransactionsListProp
                     </TableCell>
                   </TableRow>
                 ))}
+                
+                {/* Footer row with totals */}
+                <TableRow className="font-bold bg-gray-100">
+                  <TableCell colSpan={4} className="text-right">Totais:</TableCell>
+                  <TableCell>{totalUnits}</TableCell>
+                  <TableCell className="text-right">{formatCurrency(totalGrossValue)}</TableCell>
+                  <TableCell className="text-right">{formatCurrency(totalNetValue)}</TableCell>
+                </TableRow>
               </TableBody>
             </Table>
           </div>
