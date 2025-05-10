@@ -7,6 +7,7 @@ interface Payment {
   date_approved: string;
   id: number;
   order_id: number;
+  status?: string;
 }
 
 interface OrderItem {
@@ -80,45 +81,73 @@ export function useSettlementData(
       console.log("API Response:", response.data);
 
       // Process the API response
-      const transactions: SettlementTransaction[] = [];
+      const transactionsMap = new Map<number, SettlementTransaction>();
       let grossTotal = 0;
       let netTotal = 0;
       let unitsTotal = 0;
 
       if (response.data && response.data.results) {
         response.data.results.forEach(order => {
-          if (order.payments && order.payments.length > 0) {
-            // Calculate total units from order items
-            const units = order.order_items?.reduce((sum, item) => sum + (item.quantity || 1), 0) || 1;
+          // Get the order ID
+          const orderId = order.id;
+          
+          // Calculate total units from order items (once per order)
+          const units = order.order_items?.reduce((sum, item) => sum + (item.quantity || 1), 0) || 1;
+          
+          // Initialize order transaction if it doesn't exist
+          if (!transactionsMap.has(orderId)) {
             unitsTotal += units;
-
-            // Process each payment
-            order.payments.forEach(payment => {
-              const transactionAmount = payment.transaction_amount || 0;
-              grossTotal += transactionAmount;
-              
-              // As we don't have netValue in the API response, we're estimating it as 70% of gross
-              // This is just a placeholder, you should adjust this based on actual commission rates
-              const netValue = transactionAmount * 0.7;
-              netTotal += netValue;
-
-              transactions.push({
-                date: payment.date_approved,
-                sourceId: payment.id.toString(),
-                orderId: order.id.toString(),
-                group: 'Venda',
-                units: units,
-                grossValue: transactionAmount,
-                netValue: netValue
-              });
+            
+            transactionsMap.set(orderId, {
+              date: '',  // Will be updated with the approved payment date
+              sourceId: '',  // Will use the first approved payment ID
+              orderId: orderId.toString(),
+              group: 'Venda',
+              units,
+              grossValue: 0,  // Will accumulate from valid payments
+              netValue: 0     // Will accumulate from valid payments
             });
+          }
+          
+          // Find approved payment for this order (if any)
+          const approvedPayment = order.payments?.find(p => p.status === 'approved');
+          
+          if (approvedPayment) {
+            const transaction = transactionsMap.get(orderId)!;
+            
+            // Update the date with the approved payment date
+            transaction.date = approvedPayment.date_approved || '';
+            
+            // Update the sourceId with the approved payment ID
+            transaction.sourceId = approvedPayment.id.toString();
+            
+            // Add the transaction amount
+            const transactionAmount = approvedPayment.transaction_amount || 0;
+            transaction.grossValue = transactionAmount;
+            
+            // As we don't have netValue in the API response, we're estimating it as 70% of gross
+            transaction.netValue = transactionAmount * 0.7;
+            
+            // Update totals
+            grossTotal += transactionAmount;
+            netTotal += transaction.netValue;
+          } else if (order.payments && order.payments.length > 0) {
+            // If no approved payment, use the first payment for display purposes
+            // but don't count it in the totals if it's not approved
+            const firstPayment = order.payments[0];
+            const transaction = transactionsMap.get(orderId)!;
+            transaction.date = firstPayment.date_approved || '';
+            transaction.sourceId = firstPayment.id.toString();
           }
         });
       }
 
-      console.log("Processed transactions:", transactions.length);
+      console.log("Processed unique orders:", transactionsMap.size);
       console.log("Financial totals:", { grossTotal, netTotal, unitsTotal });
 
+      // Convert the map to an array of transactions
+      const transactions = Array.from(transactionsMap.values()).filter(t => t.grossValue > 0);
+      
       setSettlementTransactions(transactions);
       setTotalGrossSales(grossTotal);
       setTotalNetSales(netTotal);
