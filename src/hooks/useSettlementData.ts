@@ -111,32 +111,19 @@ export function useSettlementData(
           // Process payments for this order
           if (order.payments && order.payments.length > 0) {
             // Look for approved payment first
-            const approvedPayment = order.payments.find(p => p.status === 'approved');
-            
-            if (approvedPayment) {
-              // Use approved payment details
-              const transaction = transactionsMap.get(orderId)!;
-              transaction.date = approvedPayment.date_approved || '';
-              transaction.sourceId = approvedPayment.id.toString();
-              
-              const transactionAmount = approvedPayment.transaction_amount || 0;
-              transaction.grossValue = transactionAmount;
-              transaction.netValue = transactionAmount * 0.7; // Estimated net value
-              
-              // Add to totals
-              grossTotal += transactionAmount;
-              netTotal += transaction.netValue;
-            } else {
-              // If no approved payment, use the first payment for display purposes
-              const firstPayment = order.payments[0];
-              const transaction = transactionsMap.get(orderId)!;
-              
-              transaction.date = firstPayment.date_approved || '';
-              transaction.sourceId = firstPayment.id.toString();
-              
-              // Don't add to financial totals if payment not approved
-              // But keep transaction in the list for UI display
-            }
+            const payment = order.payments[0]; // sempre pega o primeiro pagamento, mesmo que não esteja aprovado
+const transaction = transactionsMap.get(orderId)!;
+
+transaction.date = payment.date_approved || '';
+transaction.sourceId = payment.id.toString();
+
+const transactionAmount = payment.transaction_amount || 0;
+transaction.grossValue = transactionAmount;
+transaction.netValue = transactionAmount * 0.7; // valor estimado do repasse
+
+grossTotal += transactionAmount;
+netTotal += transaction.netValue;
+
           }
         });
       }
