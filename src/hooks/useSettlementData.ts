@@ -111,21 +111,20 @@ export function useSettlementData(
           
           // Process payments for this order
           if (order.payments && order.payments.length > 0) {
-            // Look for approved payment first
-            const payment = order.payments[0]; // sempre pega o primeiro pagamento, mesmo que não esteja aprovado
-const transaction = transactionsMap.get(orderId)!;
+            const payment = order.payments[0]; // considera o primeiro pagamento, independente do status
+            const transaction = transactionsMap.get(orderId)!;
 
-transaction.date = payment.date_approved || payment.date_created || new Date().toISOString();
-transaction.sourceId = payment.id.toString();
+            transaction.date = payment.date_approved || payment.date_created || new Date().toISOString();
+            transaction.sourceId = payment.id.toString();
 
-const transactionAmount = payment.transaction_amount || 0;
-transaction.grossValue = transactionAmount;
-transaction.netValue = transactionAmount * 0.7; // valor estimado do repasse
+            const transactionAmount = payment.transaction_amount ?? 0; // usa ?? para garantir que 0 não seja descartado
+            transaction.grossValue = transactionAmount;
+            transaction.netValue = transactionAmount * 0.7; // valor estimado do repasse
 
-grossTotal += transactionAmount;
-netTotal += transaction.netValue;
-
+            grossTotal += transactionAmount;
+            netTotal += transactionAmount * 0.7;
           }
+
         });
       }
 
