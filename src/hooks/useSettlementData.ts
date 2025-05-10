@@ -32,7 +32,10 @@ export interface SettlementTransaction {
   units: number;
   grossValue: number;
   netValue: number;
+  itemId?: string;
+  title?: string;
 }
+
 
 export function useSettlementData(
   sellerId: string | null,
@@ -99,15 +102,20 @@ export function useSettlementData(
           unitsTotal += units;
           
           // Initialize order transaction
-          transactionsMap.set(orderId, {
-            date: '',
-            sourceId: '',
-            orderId: orderId.toString(),
-            group: 'Venda',
-            units,
-            grossValue: 0,
-            netValue: 0
-          });
+          const firstItem = order.order_items?.[0]?.item;
+
+transactionsMap.set(orderId, {
+  date: '',
+  sourceId: '',
+  orderId: orderId.toString(),
+  group: 'Venda',
+  units,
+  grossValue: 0,
+  netValue: 0,
+  itemId: firstItem?.id || '',
+  title: firstItem?.title || ''
+});
+
           
           // Process payments for this order
           if (order.payments && order.payments.length > 0) {
