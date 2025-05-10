@@ -348,18 +348,20 @@ const AdminFinanceiro = () => {
             />
             
             <FinancialMetrics 
-              grossSales={metrics.grossSales}
-              totalAmount={metrics.totalAmount}
-              unitsSold={metrics.unitsSold}
-              totalMLRepasses={metrics.totalMLRepasses}
-              totalMLFees={metrics.totalMLFees}
-              totalReleased={metrics.totalReleased}
-              totalClaims={metrics.totalClaims}
-              totalDebts={metrics.totalDebts}
-              totalTransfers={metrics.totalTransfers}
-              totalCreditCard={metrics.totalCreditCard}
-              totalShippingCashback={metrics.totalShippingCashback}
-            />
+  grossSales={metrics.grossSales}
+  totalAmount={metrics.totalAmount}
+  unitsSold={metrics.unitsSold}
+  totalMLRepasses={metrics.totalMLRepasses}
+  totalMLFees={metrics.totalMLFees}
+  totalReleased={metrics.totalReleased}
+  totalClaims={metrics.totalClaims}
+  totalDebts={metrics.totalDebts}
+  totalTransfers={metrics.totalTransfers}
+  totalCreditCard={metrics.totalCreditCard}
+  totalShippingCashback={metrics.totalShippingCashback}
+  settlementTransactions={settlementTransactions}
+/>
+
           </TabsContent>
           
           <TabsContent value="entrada" className="mt-4">
