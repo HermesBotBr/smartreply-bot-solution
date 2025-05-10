@@ -31,15 +31,19 @@ const AdminFinanceiro = () => {
   });
   const [activeTab, setActiveTab] = useState('metricas');
   
-  // Get seller_id from mlToken
+  // Get seller_id from mlToken or use hardcoded value for testing
   const mlToken = useMlToken();
-  let sellerId: string | null = null;
+  // Hardcoded seller ID for testing
+  let sellerId = "681274853";
   
+  // If mlToken is available, use it instead of the hardcoded value
   if (mlToken !== null && typeof mlToken === 'object' && 'seller_id' in mlToken) {
     sellerId = (mlToken as { seller_id: string }).seller_id;
   }
 
-  // Use our new hook to fetch settlement data
+  console.log("Using seller ID:", sellerId);
+
+  // Use our hook to fetch settlement data
   const { 
     settlementTransactions,
     totalGrossSales, 

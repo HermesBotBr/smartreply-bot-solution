@@ -67,7 +67,7 @@ export function useSettlementData(
       const formattedStartDate = formatDateForApi(startDate);
       const formattedEndDate = formatDateForApi(endDate);
 
-      console.log(`Fetching settlement data for date range: ${formattedStartDate} to ${formattedEndDate}`);
+      console.log(`Fetching settlement data for seller ${sellerId} with date range: ${formattedStartDate} to ${formattedEndDate}`);
 
       const response = await axios.get<SalesResponse>(`https://projetohermes-dda7e0c8d836.herokuapp.com/vendas_adm`, {
         params: {
@@ -132,8 +132,8 @@ export function useSettlementData(
   };
 
   useEffect(() => {
-    if (shouldFetch && startDate && endDate) {
-      console.log("Triggering API fetch with dates:", startDate, endDate);
+    if (shouldFetch && startDate && endDate && sellerId) {
+      console.log("Triggering API fetch with dates and sellerId:", startDate, endDate, sellerId);
       fetchData();
     }
   }, [sellerId, startDate, endDate, shouldFetch]);
