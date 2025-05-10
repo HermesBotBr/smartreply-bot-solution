@@ -12,7 +12,12 @@ interface Payment {
 
 interface OrderItem {
   quantity: number;
+  item: {
+    id: string;
+    title: string;
+  };
 }
+
 
 interface SalesResult {
   payments: Payment[];
@@ -167,6 +172,8 @@ netTotal += totalAmount * 0.7;
       // Include ALL transactions, not just ones with gross value > 0
       const transactions = Array.from(transactionsMap.values());
       
+console.log("Transações finais:", transactions);
+
       setSettlementTransactions(transactions);
       setTotalGrossSales(grossTotal);
       setTotalNetSales(netTotal);
