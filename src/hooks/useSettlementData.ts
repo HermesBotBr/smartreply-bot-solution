@@ -111,18 +111,33 @@ export function useSettlementData(
           
           // Process payments for this order
           if (order.payments && order.payments.length > 0) {
-            const payment = order.payments[0]; // considera o primeiro pagamento, independente do status
-            const transaction = transactionsMap.get(orderId)!;
+            // Somar todos os pagamentos da venda
+const transaction = transactionsMap.get(orderId)!;
 
-            transaction.date = payment.date_approved || payment.date_created || new Date().toISOString();
-            transaction.sourceId = payment.id.toString();
+let totalAmount = 0;
+let mainPayment: Payment | null = null;
 
-            const transactionAmount = payment.transaction_amount ?? 0; // usa ?? para garantir que 0 não seja descartado
-            transaction.grossValue = transactionAmount;
-            transaction.netValue = transactionAmount * 0.7; // valor estimado do repasse
+order.payments.forEach((payment) => {
+  const amount = payment.transaction_amount || 0;
+  totalAmount += amount;
 
-            grossTotal += transactionAmount;
-            netTotal += transactionAmount * 0.7;
+  if (!mainPayment || amount > (mainPayment.transaction_amount || 0)) {
+    mainPayment = payment;
+  }
+});
+
+if (mainPayment) {
+  transaction.date = mainPayment.date_approved || mainPayment.date_created || new Date().toISOString();
+  transaction.sourceId = mainPayment.id.toString();
+}
+
+transaction.grossValue = totalAmount;
+transaction.netValue = totalAmount * 0.7;
+
+grossTotal += totalAmount;
+netTotal += totalAmount * 0.7;
+
+
           }
 
         });
