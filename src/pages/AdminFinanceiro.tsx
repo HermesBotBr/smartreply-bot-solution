@@ -324,7 +324,7 @@ const AdminFinanceiro = () => {
             <ArrowLeft className="h-4 w-4 mr-2" />
             Voltar
           </Button>
-          <h1 className="text-3xl font-bold">Administração Financeira</h1>
+          <h1 className="text-3xl font-bold">ADMINISTRAÇÃO FINANCEIRA</h1>
         </div>
 
         <Tabs 
