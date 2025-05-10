@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 
@@ -7,6 +6,7 @@ interface Payment {
   date_approved: string;
   id: number;
   order_id: number;
+  status: string;
 }
 
 interface OrderItem {
@@ -80,41 +80,84 @@ export function useSettlementData(
       console.log("API Response:", response.data);
 
       // Process the API response
-      const transactions: SettlementTransaction[] = [];
+      // Group transactions by order_id to avoid duplicating amounts
+      const orderMap = new Map<string, {
+        date: string,
+        units: number,
+        grossValue: number,
+        netValue: number,
+        sourceIds: string[],
+        orderId: string
+      }>();
+      
       let grossTotal = 0;
       let netTotal = 0;
       let unitsTotal = 0;
 
       if (response.data && response.data.results) {
         response.data.results.forEach(order => {
-          if (order.payments && order.payments.length > 0) {
-            // Calculate total units from order items
-            const units = order.order_items?.reduce((sum, item) => sum + (item.quantity || 1), 0) || 1;
-            unitsTotal += units;
-
-            // Process each payment
-            order.payments.forEach(payment => {
-              const transactionAmount = payment.transaction_amount || 0;
-              grossTotal += transactionAmount;
+          // Calculate total units from order items (once per order)
+          const units = order.order_items?.reduce((sum, item) => sum + (item.quantity || 1), 0) || 1;
+          
+          // Get approved payments only
+          const approvedPayments = order.payments?.filter(payment => payment.status === 'approved') || [];
+          
+          if (approvedPayments.length > 0) {
+            const orderId = order.id.toString();
+            
+            // If this is the first time we're seeing this order, add it to our map
+            if (!orderMap.has(orderId)) {
+              // Get most recent payment date
+              const mostRecentPayment = approvedPayments.reduce((latest, payment) => {
+                if (!latest.date_approved) return payment;
+                return new Date(payment.date_approved) > new Date(latest.date_approved) ? payment : latest;
+              }, approvedPayments[0]);
+              
+              const date = mostRecentPayment.date_approved || '';
+              
+              // Sum up all transaction amounts for this order
+              const totalGrossValue = approvedPayments.reduce((sum, payment) => sum + (payment.transaction_amount || 0), 0);
               
               // As we don't have netValue in the API response, we're estimating it as 70% of gross
-              // This is just a placeholder, you should adjust this based on actual commission rates
-              const netValue = transactionAmount * 0.7;
-              netTotal += netValue;
-
-              transactions.push({
-                date: payment.date_approved,
-                sourceId: payment.id.toString(),
-                orderId: order.id.toString(),
-                group: 'Venda',
-                units: units,
-                grossValue: transactionAmount,
-                netValue: netValue
+              const totalNetValue = totalGrossValue * 0.7;
+              
+              // Keep track of all source IDs for this order
+              const sourceIds = approvedPayments.map(payment => payment.id.toString());
+              
+              orderMap.set(orderId, {
+                date,
+                units,
+                grossValue: totalGrossValue,
+                netValue: totalNetValue,
+                sourceIds,
+                orderId
               });
-            });
+              
+              // Add to our totals (only once per order)
+              grossTotal += totalGrossValue;
+              netTotal += totalNetValue;
+              unitsTotal += units;
+            }
           }
         });
       }
+
+      // Convert our map to the settlement transactions array
+      const transactions: SettlementTransaction[] = [];
+      orderMap.forEach(orderData => {
+        // Use the first source ID for display purposes
+        const primarySourceId = orderData.sourceIds[0] || '';
+        
+        transactions.push({
+          date: orderData.date,
+          sourceId: primarySourceId,
+          orderId: orderData.orderId,
+          group: 'Venda',
+          units: orderData.units,
+          grossValue: orderData.grossValue,
+          netValue: orderData.netValue
+        });
+      });
 
       console.log("Processed transactions:", transactions.length);
       console.log("Financial totals:", { grossTotal, netTotal, unitsTotal });
