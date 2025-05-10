@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ptBR } from 'date-fns/locale';
 import { format } from 'date-fns';
 import { CalendarRange } from 'lucide-react';
@@ -34,10 +34,21 @@ export function DateRangePicker({
       : undefined
   );
 
+  // Update range when props change
+  useEffect(() => {
+    if (startDate && endDate) {
+      setRange({
+        from: startDate,
+        to: endDate,
+      });
+    }
+  }, [startDate, endDate]);
+
   const formatDate = (date: Date | undefined) =>
     date ? format(date, 'dd/MM/yyyy') : 'Selecionar';
 
   const handleSelect = (value: DateRange | undefined) => {
+    console.log("Date range selected:", value);
     setRange(value);
     
     if (value?.from) {
@@ -51,6 +62,12 @@ export function DateRangePicker({
     } else {
       onEndDateChange(undefined);
     }
+  };
+
+  const handleApplyFilter = () => {
+    console.log("Applying filter with range:", range);
+    onFilter();
+    setOpen(false);
   };
 
   return (
@@ -76,10 +93,7 @@ export function DateRangePicker({
           />
 
           <Button
-            onClick={() => {
-              onFilter();
-              setOpen(false);
-            }}
+            onClick={handleApplyFilter}
             className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium"
           >
             Aplicar Filtros

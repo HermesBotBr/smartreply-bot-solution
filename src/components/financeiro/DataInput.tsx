@@ -33,6 +33,8 @@ interface DataInputProps {
   onReleaseDataChange: (data: string) => void;
   startDate?: Date;
   endDate?: Date;
+  settlementTransactions: SettlementTransaction[];
+  settlementLoading: boolean;
 }
 
 export const DataInput: React.FC<DataInputProps> = ({ 
@@ -41,22 +43,11 @@ export const DataInput: React.FC<DataInputProps> = ({
   onSettlementDataChange,
   onReleaseDataChange,
   startDate,
-  endDate
+  endDate,
+  settlementTransactions,
+  settlementLoading
 }) => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const mlToken = useMlToken();
-  let sellerId: string | null = null;
-  
-  if (mlToken !== null && typeof mlToken === 'object' && 'seller_id' in mlToken) {
-    sellerId = (mlToken as { seller_id: string }).seller_id;
-  }
-
-  // Use our new hook to fetch settlement data
-  const { 
-    settlementTransactions, 
-    isLoading: settlementLoading,
-    error: settlementError 
-  } = useSettlementData(sellerId, startDate, endDate, true);
 
   const handleSettlementChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     onSettlementDataChange(e.target.value);
@@ -273,10 +264,6 @@ export const DataInput: React.FC<DataInputProps> = ({
             {settlementLoading ? (
               <div className="text-center py-4 text-muted-foreground">
                 Carregando dados do período selecionado...
-              </div>
-            ) : settlementError ? (
-              <div className="text-center py-4 text-red-500">
-                Erro ao carregar dados: {settlementError}
               </div>
             ) : (
               <div className="text-center py-4 text-muted-foreground">

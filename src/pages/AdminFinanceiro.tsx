@@ -8,6 +8,7 @@ import { DataInput } from '@/components/financeiro/DataInput';
 import { useNavigate } from 'react-router-dom';
 import { useMlToken } from '@/hooks/useMlToken';
 import { useSettlementData } from '@/hooks/useSettlementData';
+import { toast } from 'sonner';
 
 const AdminFinanceiro = () => {
   const navigate = useNavigate();
@@ -40,15 +41,19 @@ const AdminFinanceiro = () => {
 
   // Use our new hook to fetch settlement data
   const { 
+    settlementTransactions,
     totalGrossSales, 
     totalNetSales, 
     totalUnits, 
+    isLoading: settlementLoading,
     refetch: refetchSettlement
-  } = useSettlementData(sellerId, startDate, endDate);
+  } = useSettlementData(sellerId, startDate, endDate, true);
 
   const handleFilter = () => {
     // Apply the date filter to both settlement and release data
     if (startDate && endDate) {
+      console.log("Filter button clicked, refetching data for:", startDate, endDate);
+      
       // Refetch settlement data from API
       refetchSettlement();
       
@@ -65,6 +70,10 @@ const AdminFinanceiro = () => {
           totalShippingCashback: parsedData.totalShippingCashback
         }));
       }
+      
+      toast.info(`Filtrando dados para o período de ${startDate.toLocaleDateString()} até ${endDate.toLocaleDateString()}`);
+    } else {
+      toast.error("Selecione um período válido para filtrar os dados");
     }
   };
 
@@ -288,6 +297,7 @@ const AdminFinanceiro = () => {
 
   // Update metrics with data from the settlement API
   React.useEffect(() => {
+    console.log("Updating metrics with settlement data:", { totalGrossSales, totalNetSales, totalUnits });
     setMetrics(prevMetrics => ({
       ...prevMetrics,
       grossSales: totalGrossSales,
@@ -352,10 +362,12 @@ const AdminFinanceiro = () => {
             <DataInput 
               settlementData={settlementData}
               releaseData={releaseData}
-              onSettlementDataChange={handleSettlementDataChange}
+              onSettlementDataChange={setSettlementData}
               onReleaseDataChange={handleReleaseDataChange}
               startDate={startDate}
               endDate={endDate}
+              settlementTransactions={settlementTransactions}
+              settlementLoading={settlementLoading}
             />
           </TabsContent>
         </Tabs>

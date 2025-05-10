@@ -1,7 +1,6 @@
 
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { NGROK_BASE_URL } from '@/config/api';
 
 interface Payment {
   transaction_amount: number;
@@ -49,6 +48,7 @@ export function useSettlementData(
 
   const fetchData = async () => {
     if (!sellerId || !startDate || !endDate) {
+      console.log("Missing parameters for fetchData:", { sellerId, startDate, endDate });
       return;
     }
 
@@ -67,13 +67,17 @@ export function useSettlementData(
       const formattedStartDate = formatDateForApi(startDate);
       const formattedEndDate = formatDateForApi(endDate);
 
-      const response = await axios.get<SalesResponse>(`${NGROK_BASE_URL}/vendas_adm`, {
+      console.log(`Fetching settlement data for date range: ${formattedStartDate} to ${formattedEndDate}`);
+
+      const response = await axios.get<SalesResponse>(`https://projetohermes-dda7e0c8d836.herokuapp.com/vendas_adm`, {
         params: {
           seller_id: sellerId,
           start_date: formattedStartDate,
           end_date: formattedEndDate
         }
       });
+
+      console.log("API Response:", response.data);
 
       // Process the API response
       const transactions: SettlementTransaction[] = [];
@@ -112,6 +116,9 @@ export function useSettlementData(
         });
       }
 
+      console.log("Processed transactions:", transactions.length);
+      console.log("Financial totals:", { grossTotal, netTotal, unitsTotal });
+
       setSettlementTransactions(transactions);
       setTotalGrossSales(grossTotal);
       setTotalNetSales(netTotal);
@@ -125,7 +132,8 @@ export function useSettlementData(
   };
 
   useEffect(() => {
-    if (shouldFetch) {
+    if (shouldFetch && startDate && endDate) {
+      console.log("Triggering API fetch with dates:", startDate, endDate);
       fetchData();
     }
   }, [sellerId, startDate, endDate, shouldFetch]);
