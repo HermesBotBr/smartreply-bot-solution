@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 
@@ -6,7 +7,6 @@ interface Payment {
   date_approved: string;
   id: number;
   order_id: number;
-  status?: string;
 }
 
 interface OrderItem {
@@ -80,74 +80,45 @@ export function useSettlementData(
       console.log("API Response:", response.data);
 
       // Process the API response
-      const transactionsMap = new Map<number, SettlementTransaction>();
+      const transactions: SettlementTransaction[] = [];
       let grossTotal = 0;
       let netTotal = 0;
       let unitsTotal = 0;
 
-      // First pass: Initialize all orders with their units
       if (response.data && response.data.results) {
         response.data.results.forEach(order => {
-          // Get the order ID
-          const orderId = order.id;
-          
-          // Calculate total units from order items (once per order)
-          const units = order.order_items?.reduce((sum, item) => sum + (item.quantity || 1), 0) || 1;
-          
-          // Add units to total (count every unique order)
-          unitsTotal += units;
-          
-          // Initialize order transaction
-          transactionsMap.set(orderId, {
-            date: '',
-            sourceId: '',
-            orderId: orderId.toString(),
-            group: 'Venda',
-            units,
-            grossValue: 0,
-            netValue: 0
-          });
-          
-          // Process payments for this order
           if (order.payments && order.payments.length > 0) {
-            // Look for approved payment first
-            const approvedPayment = order.payments.find(p => p.status === 'approved');
-            
-            if (approvedPayment) {
-              // Use approved payment details
-              const transaction = transactionsMap.get(orderId)!;
-              transaction.date = approvedPayment.date_approved || '';
-              transaction.sourceId = approvedPayment.id.toString();
-              
-              const transactionAmount = approvedPayment.transaction_amount || 0;
-              transaction.grossValue = transactionAmount;
-              transaction.netValue = transactionAmount * 0.7; // Estimated net value
-              
-              // Add to totals
+            // Calculate total units from order items
+            const units = order.order_items?.reduce((sum, item) => sum + (item.quantity || 1), 0) || 1;
+            unitsTotal += units;
+
+            // Process each payment
+            order.payments.forEach(payment => {
+              const transactionAmount = payment.transaction_amount || 0;
               grossTotal += transactionAmount;
-              netTotal += transaction.netValue;
-            } else {
-              // If no approved payment, use the first payment for display purposes
-              const firstPayment = order.payments[0];
-              const transaction = transactionsMap.get(orderId)!;
               
-              transaction.date = firstPayment.date_approved || '';
-              transaction.sourceId = firstPayment.id.toString();
-              
-              // Don't add to financial totals if payment not approved
-              // But keep transaction in the list for UI display
-            }
+              // As we don't have netValue in the API response, we're estimating it as 70% of gross
+              // This is just a placeholder, you should adjust this based on actual commission rates
+              const netValue = transactionAmount * 0.7;
+              netTotal += netValue;
+
+              transactions.push({
+                date: payment.date_approved,
+                sourceId: payment.id.toString(),
+                orderId: order.id.toString(),
+                group: 'Venda',
+                units: units,
+                grossValue: transactionAmount,
+                netValue: netValue
+              });
+            });
           }
         });
       }
 
-      console.log("Processed unique orders:", transactionsMap.size);
+      console.log("Processed transactions:", transactions.length);
       console.log("Financial totals:", { grossTotal, netTotal, unitsTotal });
 
-      // Convert the map to an array of transactions
-      // Include ALL transactions, not just ones with gross value > 0
-      const transactions = Array.from(transactionsMap.values());
-      
       setSettlementTransactions(transactions);
       setTotalGrossSales(grossTotal);
       setTotalNetSales(netTotal);
