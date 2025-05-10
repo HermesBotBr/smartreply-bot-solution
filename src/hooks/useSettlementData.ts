@@ -118,7 +118,11 @@ let totalAmount = 0;
 let mainPayment: Payment | null = null;
 
 order.payments
-  .filter(p => (p.transaction_amount || 0) > 0 && (p.transaction_amount_refunded || 0) < (p.transaction_amount || 0))
+  .filter(p => 
+    (p.transaction_amount || 0) > 0 &&
+    p.status !== 'cancelled' &&
+    p.status !== 'rejected'
+  )
   .forEach((payment) => {
     const amount = payment.transaction_amount || 0;
     totalAmount += amount;
@@ -127,6 +131,7 @@ order.payments
       mainPayment = payment;
     }
   });
+
 
 
 
