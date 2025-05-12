@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
@@ -18,6 +19,8 @@ interface TransfersPopupProps {
   open: boolean;
   onClose: () => void;
   transfers: ReleaseOperation[];
+  startDate?: Date;  // Adicionando data inicial do filtro
+  endDate?: Date;    // Adicionando data final do filtro
 }
 
 interface TransferDescription {
@@ -40,7 +43,9 @@ interface ApiDescription {
 export const TransfersPopup: React.FC<TransfersPopupProps> = ({
   open,
   onClose,
-  transfers
+  transfers,
+  startDate,
+  endDate
 }) => {
   const [transfersWithDescriptions, setTransfersWithDescriptions] = useState<TransferWithDescriptions[]>([]);
   const [activeTransferId, setActiveTransferId] = useState<string | null>(null);
@@ -238,14 +243,34 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
     };
   });
 
+  // Filtrar transações com base nas datas de início e fim
+  const filteredTransactions = transferTransactions.filter(transaction => {
+    // Se as datas não foram fornecidas, mostrar todas as transações
+    if (!startDate || !endDate) return true;
+    
+    // Converter a string de data da transação para um objeto Date
+    const transactionDate = new Date(transaction.date);
+    
+    // Definir hora, minuto, segundo e milissegundo para 0 para a data de início
+    const startOfDay = new Date(startDate);
+    startOfDay.setHours(0, 0, 0, 0);
+    
+    // Definir hora, minuto, segundo e milissegundo para o final do dia para a data de fim
+    const endOfDay = new Date(endDate);
+    endOfDay.setHours(23, 59, 59, 999);
+    
+    // Verificar se a data da transação está dentro do intervalo
+    return transactionDate >= startOfDay && transactionDate <= endOfDay;
+  });
+
   // Calculate summary values
   const calculateSummaryValues = () => {
     let totalValue = 0;
     let totalDeclared = 0;
 
-    transfersWithDescriptions.forEach(transfer => {
-      totalValue += transfer.amount;
-      totalDeclared += getDeclaredTotal(transfer);
+    filteredTransactions.forEach(transaction => {
+      totalValue += transaction.value;
+      totalDeclared += getDeclaredTotal(transaction as TransferWithDescriptions);
     });
 
     return {
@@ -264,6 +289,11 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
           <DialogTitle>Detalhamento de Transferências</DialogTitle>
           <DialogDescription>
             Lista de todas as transferências registradas no período selecionado
+            {startDate && endDate && (
+              <span className="block text-sm mt-1">
+                Período: {startDate.toLocaleDateString('pt-BR')} até {endDate.toLocaleDateString('pt-BR')}
+              </span>
+            )}
           </DialogDescription>
         </DialogHeader>
 
@@ -293,7 +323,7 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
           <div>
             <h3 className="text-lg font-semibold mb-2">Lista de Transferências</h3>
             <TransactionsList 
-              transactions={transferTransactions}
+              transactions={filteredTransactions}
               renderActions={(transaction) => (
                 <Button 
                   variant="outline" 
