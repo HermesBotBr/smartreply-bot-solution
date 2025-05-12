@@ -323,20 +323,20 @@ Object.entries(operationsBySourceId).forEach(([sourceId, operation]) => {
     description = columns[4]?.trim() || '';
   }
 
-  if (externalRef || itemId || title) {
-    operationsWithOrder.push({
-      orderId: externalRef || sourceId,
-      itemId: itemId || '-',
-      title: title || description || 'Descrição indisponível',
-      amount: netAmount
-    });
-  } else {
-    otherOperations.push({
-      description: description || 'Sem descrição',
-      amount: netAmount
-    });
-  }
-});
+ if (externalRef && itemId) {
+  operationsWithOrder.push({
+    orderId: externalRef,
+    itemId,
+    title: title || description || 'Descrição indisponível',
+    amount: netAmount
+  });
+} else {
+  otherOperations.push({
+    description: description || 'Sem descrição',
+    amount: netAmount
+  });
+}
+
 
 
 
