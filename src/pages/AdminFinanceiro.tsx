@@ -207,19 +207,20 @@ const AdminFinanceiro = () => {
       operationsWithOrder,
       otherOperations
     };
-      } catch (error) {
-      console.error('Error parsing release data:', error);
-      return {
-        totalReleased: 0,
-        totalClaims: 0,
-        totalDebts: 0,
-        totalTransfers: 0,
-        totalCreditCard: 0,
-        totalShippingCashback: 0,
-        operationsWithOrder: [],
-        otherOperations: []
-      };
-    }
+  } catch (error) {
+    console.error('Error parsing release data:', error);
+    return {
+      totalReleased: 0,
+      totalClaims: 0,
+      totalDebts: 0,
+      totalTransfers: 0,
+      totalCreditCard: 0,
+      totalShippingCashback: 0,
+      operationsWithOrder: [],
+      otherOperations: []
+    };
+  }
+
 
 
 React.useEffect(() => {
