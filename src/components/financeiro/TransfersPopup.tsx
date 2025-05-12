@@ -64,7 +64,7 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
     value: transfer.amount
   }));
 
-  // Group transfers by sourceId to calculate total and remaining values
+  // Group transfers by sourceId to calculate total and described values
   const transfersBySourceId = transfers.reduce((acc: Record<string, {total: number, described: number}>, transfer) => {
     const sourceId = transfer.sourceId || '';
     if (!acc[sourceId]) {
@@ -72,7 +72,7 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
     }
     acc[sourceId].total += transfer.amount;
     
-    // If it has a description that is not the default, it's been described
+    // Only count as described if it has a non-default description
     if (transfer.description && transfer.description !== 'Transferência') {
       acc[sourceId].described += transfer.amount;
     }
@@ -81,7 +81,11 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
   }, {});
 
   const handleTransactionClick = (sourceId: string, totalValue: number) => {
+    // Calculate remaining value
     const transferGroup = transfersBySourceId[sourceId];
+    
+    // IMPORTANT FIX: Use the total value as remaining value if no descriptions exist
+    // or subtract only the described amount from the total
     const remainingValue = transferGroup ? (transferGroup.total - transferGroup.described) : totalValue;
     
     setSelectedTransfer({
@@ -89,7 +93,10 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
       value: totalValue,
       remainingValue
     });
+    
+    // IMPORTANT FIX: Initialize the form with the actual remaining value
     form.setValue('value', remainingValue);
+    
     setIsDescriptionModalOpen(true);
   };
 
