@@ -223,8 +223,12 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
     // Calculate the total declared amount
     const totalDeclared = getDeclaredTotal(transfer);
     
+    // Create a date object for the current day - simulate a date for the transfer
+    // This ensures we have a valid date for the transaction list
+    const currentDate = new Date().toISOString();
+    
     return {
-      date: '',
+      date: currentDate,  // Use a valid date string instead of empty string
       sourceId: transfer.sourceId || '',
       descriptions: allDescriptions,
       group: 'Transferência',
