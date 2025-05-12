@@ -1,12 +1,9 @@
-
-import React, { useState, useEffect } from 'react';
-import { MetricCard } from '@/components/dashboard/metrics/MetricCard';
-import { SettlementTransaction } from '@/hooks/useSettlementData';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { RepassesPopup } from './RepassesPopup';
-import { ReleasePopup } from './ReleasePopup';
-import { TransfersPopup } from './TransfersPopup';
-import { ReleaseOperation } from '@/types/ReleaseOperation';
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ChartBar, Package, DollarSign, TrendingDown, CreditCard, AlertCircle, ArrowDown, WalletCards, Package2 } from "lucide-react";
+import { RepassesPopup } from "@/components/financeiro/RepassesPopup";
+import { ReleasePopup } from "@/components/financeiro/ReleasePopup";
+import { ReleaseOperation } from "@/types/ReleaseOperation";
 
 interface FinancialMetricsProps {
   grossSales: number;
@@ -14,20 +11,21 @@ interface FinancialMetricsProps {
   unitsSold: number;
   totalMLRepasses: number;
   totalMLFees: number;
+  // Release metrics
   totalReleased: number;
   totalClaims: number;
   totalDebts: number;
   totalTransfers: number;
   totalCreditCard: number;
   totalShippingCashback: number;
-  settlementTransactions: SettlementTransaction[];
+  settlementTransactions: any[]; // 👈 Adiciona isso aqui (melhor tipar depois com SettlementTransaction[])
   releaseOperationsWithOrder: ReleaseOperation[];
   releaseOtherOperations: ReleaseOperation[];
 }
 
-export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
-  grossSales,
-  totalAmount,
+export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ 
+  grossSales, 
+  totalAmount, 
   unitsSold,
   totalMLRepasses,
   totalMLFees,
@@ -39,213 +37,192 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
   totalShippingCashback,
   settlementTransactions,
   releaseOperationsWithOrder,
-  releaseOtherOperations,
+  releaseOtherOperations
 }) => {
-  const [repassesPopupOpen, setRepassesPopupOpen] = useState(false);
-  const [releasePopupOpen, setReleasePopupOpen] = useState(false);
-  const [transfersPopupOpen, setTransfersPopupOpen] = useState(false);
-  const [transferOperations, setTransferOperations] = useState<ReleaseOperation[]>([]);
-  const [hasUndescribedTransfers, setHasUndescribedTransfers] = useState(false);
 
-  // Filter transfers from other operations
-  useEffect(() => {
-    const operations = releaseOtherOperations.filter(op => 
-      op.description?.toLowerCase().includes('payout') || 
-      op.description?.toLowerCase().includes('transfer')
-    );
+  const [releasePopupOpen, setReleasePopupOpen] = React.useState(false);
 
-    setTransferOperations(operations);
+  const [popupOpen, setPopupOpen] = React.useState(false); // ✅ move para dentro do componente
 
-    // Check if any transfers lack proper descriptions
-    const transfersBySourceId = operations.reduce((acc: Record<string, {total: number, described: number}>, transfer) => {
-      const sourceId = transfer.sourceId || '';
-      if (!acc[sourceId]) {
-        acc[sourceId] = { total: 0, described: 0 };
-      }
-      acc[sourceId].total += transfer.amount;
-      
-      // If it has a description that is not the default, it's been described
-      if (transfer.description && transfer.description !== 'Transferência') {
-        acc[sourceId].described += transfer.amount;
-      }
-      
-      return acc;
-    }, {});
+  // Format numbers with Brazilian currency and number format
+  const formatCurrency = (value: number): string => {
+    return new Intl.NumberFormat('pt-BR', { 
+      style: 'currency', 
+      currency: 'BRL' 
+    }).format(value);
+  };
 
-    // Check if there are any undescribed transfers
-    const hasUndescribed = Object.values(transfersBySourceId).some(
-      transfer => transfer.described < transfer.total
-    );
-    
-    setHasUndescribedTransfers(hasUndescribed);
-  }, [releaseOtherOperations]);
-
-  // Handle updating transfer descriptions
-  const handleUpdateTransferDescription = (sourceId: string, description: string, value: number) => {
-    // Create a new transfer operation with the provided description
-    const newTransferOperation: ReleaseOperation = {
-      sourceId,
-      description,
-      amount: value
-    };
-
-    // Find the matching transfer to adjust its amount
-    const updatedOperations = transferOperations.map(op => {
-      if (op.sourceId === sourceId && (!op.description || op.description === 'Transferência')) {
-        // Reduce the amount of the original operation
-        return {
-          ...op,
-          amount: op.amount - value
-        };
-      }
-      return op;
-    });
-
-    // Add the new operation with description
-    const finalOperations = [...updatedOperations, newTransferOperation];
-    
-    // Filter out any operations with zero amount
-    const filteredOperations = finalOperations.filter(op => op.amount !== 0);
-    
-    setTransferOperations(filteredOperations);
-    
-    // Re-check if there are still undescribed transfers
-    const transfersBySourceId = filteredOperations.reduce((acc: Record<string, {total: number, described: number}>, transfer) => {
-      const sourceId = transfer.sourceId || '';
-      if (!acc[sourceId]) {
-        acc[sourceId] = { total: 0, described: 0 };
-      }
-      acc[sourceId].total += transfer.amount;
-      
-      if (transfer.description && transfer.description !== 'Transferência') {
-        acc[sourceId].described += transfer.amount;
-      }
-      
-      return acc;
-    }, {});
-
-    const stillHasUndescribed = Object.values(transfersBySourceId).some(
-      transfer => transfer.described < transfer.total
-    );
-    
-    setHasUndescribedTransfers(stillHasUndescribed);
+  const formatNumber = (value: number): string => {
+    return new Intl.NumberFormat('pt-BR').format(value);
   };
 
   return (
-    <div>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <MetricCard
-          title="Total Bruto (ML)"
-          value={`R$ ${grossSales.toFixed(2)}`}
-          description={`Unidades vendidas: ${unitsSold}`}
-          className="bg-gray-50 hover:bg-gray-100 transition-colors"
-          textColor="text-gray-800"
-        />
-        <MetricCard
-          title="Repasse Total (ML)"
-          value={`R$ ${totalMLRepasses.toFixed(2)}`}
-          description={`Clique para detalhar`}
-          className="bg-blue-50 hover:bg-blue-100 transition-colors"
-          textColor="text-blue-800"
-          onClick={() => setRepassesPopupOpen(true)}
-        />
-        <MetricCard
-          title="Taxas (ML)"
-          value={`R$ ${totalMLFees.toFixed(2)}`}
-          description={`${((totalMLFees / (grossSales || 1)) * 100).toFixed(1)}% do valor bruto`}
-          className="bg-red-50 hover:bg-red-100 transition-colors"
-          textColor="text-red-800"
-        />
-        <MetricCard
-          title="Liberado"
-          value={`R$ ${totalReleased.toFixed(2)}`}
-          description={`Clique para detalhar`}
-          className="bg-green-50 hover:bg-green-100 transition-colors"
-          textColor="text-green-800"
-          onClick={() => setReleasePopupOpen(true)}
-        />
-      </div>
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Vendas Brutas</CardTitle>
+          <ChartBar className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{formatCurrency(grossSales)}</div>
+          <p className="text-xs text-muted-foreground">
+            Valor total das transações SETTLEMENT
+          </p>
+        </CardContent>
+      </Card>
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="col-span-full md:col-span-2">
-          <Tabs defaultValue="maior-detalhe">
-            <TabsList className="grid grid-cols-2 mb-4">
-              <TabsTrigger value="maior-detalhe">Maior Detalhe</TabsTrigger>
-              <TabsTrigger value="resumido">Resumido</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="maior-detalhe" className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <MetricCard
-                  title="Contestações"
-                  value={`R$ ${Math.abs(totalClaims).toFixed(2)}`}
-                  description={`${((Math.abs(totalClaims) / (grossSales || 1)) * 100).toFixed(1)}% do valor bruto`}
-                  className="bg-amber-50 hover:bg-amber-100 transition-colors"
-                  textColor="text-amber-800"
-                />
-                
-                <MetricCard
-                  title="Dívidas"
-                  value={`R$ ${Math.abs(totalDebts).toFixed(2)}`}
-                  description={`${((Math.abs(totalDebts) / (grossSales || 1)) * 100).toFixed(1)}% do valor bruto`}
-                  className="bg-purple-50 hover:bg-purple-100 transition-colors"
-                  textColor="text-purple-800"
-                />
-                
-                <MetricCard
-                  title={hasUndescribedTransfers ? "Transferências ●" : "Transferências"}
-                  value={`R$ ${Math.abs(totalTransfers).toFixed(2)}`}
-                  description={`${((Math.abs(totalTransfers) / (grossSales || 1)) * 100).toFixed(1)}% do valor bruto`}
-                  className={`${hasUndescribedTransfers ? "border-2 border-indigo-300" : ""} bg-indigo-50 hover:bg-indigo-100 transition-colors`}
-                  textColor="text-indigo-800"
-                  onClick={() => setTransfersPopupOpen(true)}
-                />
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="resumido" className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <MetricCard
-                  title="Cartão de Crédito"
-                  value={`R$ ${Math.abs(totalCreditCard).toFixed(2)}`}
-                  description={`${((Math.abs(totalCreditCard) / (grossSales || 1)) * 100).toFixed(1)}% do valor bruto`}
-                  className="bg-lime-50 hover:bg-lime-100 transition-colors"
-                  textColor="text-lime-800"
-                />
-                
-                <MetricCard
-                  title="Frete e Cashback"
-                  value={`R$ ${Math.abs(totalShippingCashback).toFixed(2)}`}
-                  description={`${((Math.abs(totalShippingCashback) / (grossSales || 1)) * 100).toFixed(1)}% do valor bruto`}
-                  className="bg-sky-50 hover:bg-sky-100 transition-colors"
-                  textColor="text-sky-800"
-                />
-              </div>
-            </TabsContent>
-          </Tabs>
-        </div>
-      </div>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Valor Total Faturado</CardTitle>
+          <ChartBar className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{formatCurrency(totalAmount)}</div>
+          <p className="text-xs text-muted-foreground">
+            Valor total das transações processadas
+          </p>
+        </CardContent>
+      </Card>
       
-      <RepassesPopup 
-        transactions={settlementTransactions}
-        open={repassesPopupOpen}
-        onClose={() => setRepassesPopupOpen(false)}
-      />
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Unidades Vendidas</CardTitle>
+          <Package className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{formatNumber(unitsSold)}</div>
+          <p className="text-xs text-muted-foreground">
+            Total de transações SETTLEMENT
+          </p>
+        </CardContent>
+      </Card>
       
-      <ReleasePopup
-        operationsWithOrder={releaseOperationsWithOrder}
-        otherOperations={releaseOtherOperations}
-        settlementTransactions={settlementTransactions}
-        open={releasePopupOpen}
-        onClose={() => setReleasePopupOpen(false)}
-      />
+
+            <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Taxas e Envios ML</CardTitle>
+          <TrendingDown className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{formatCurrency(totalMLFees)}</div>
+          <p className="text-xs text-muted-foreground">
+            Total de taxas e envios
+          </p>
+        </CardContent>
+      </Card>
+
       
-      <TransfersPopup
-        transfers={transferOperations}
-        open={transfersPopupOpen}
-        onClose={() => setTransfersPopupOpen(false)}
-        onUpdateTransferDescription={handleUpdateTransferDescription}
-      />
+<>
+  <Card onClick={() => setPopupOpen(true)} className="cursor-pointer hover:shadow-lg transition">
+    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+      <CardTitle className="text-sm font-medium">Repasses ML</CardTitle>
+      <DollarSign className="h-4 w-4 text-muted-foreground" />
+    </CardHeader>
+    <CardContent>
+      <div className="text-2xl font-bold">{formatCurrency(totalMLRepasses)}</div>
+      <p className="text-xs text-muted-foreground">
+        Repasses líquidos das vendas
+      </p>
+    </CardContent>
+  </Card>
+
+  <RepassesPopup
+    open={popupOpen}
+    onClose={() => setPopupOpen(false)}
+    transactions={settlementTransactions}
+  />
+</>
+
+
+
+
+      {/* Release data metrics */}
+<Card onClick={() => setReleasePopupOpen(true)} className="cursor-pointer hover:shadow-lg transition">
+  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+    <CardTitle className="text-sm font-medium">Valor Liberado na Conta</CardTitle>
+    <DollarSign className="h-4 w-4 text-muted-foreground" />
+  </CardHeader>
+  <CardContent>
+    <div className="text-2xl font-bold">{formatCurrency(totalReleased)}</div>
+    <p className="text-xs text-muted-foreground">
+      Total de pagamentos liberados
+    </p>
+  </CardContent>
+</Card>
+
+<ReleasePopup
+  open={releasePopupOpen}
+  onClose={() => setReleasePopupOpen(false)}
+  operationsWithOrder={releaseOperationsWithOrder}
+  otherOperations={releaseOtherOperations}
+/>
+
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Reclamações</CardTitle>
+          <AlertCircle className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{formatCurrency(totalClaims)}</div>
+          <p className="text-xs text-muted-foreground">
+            Valor total descontado
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Dívidas</CardTitle>
+          <TrendingDown className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{formatCurrency(totalDebts)}</div>
+          <p className="text-xs text-muted-foreground">
+            Valor total descontado
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Transferências</CardTitle>
+          <ArrowDown className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{formatCurrency(totalTransfers)}</div>
+          <p className="text-xs text-muted-foreground">
+            Valor total descontado
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Cartão de Crédito</CardTitle>
+          <CreditCard className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{formatCurrency(totalCreditCard)}</div>
+          <p className="text-xs text-muted-foreground">
+            Valor total descontado
+          </p>
+        </CardContent>
+      </Card>
+
+      {/* New metrics box for Shipping and Cashback */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Correção de Envios e Cashbacks</CardTitle>
+          <Package2 className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{formatCurrency(totalShippingCashback)}</div>
+          <p className="text-xs text-muted-foreground">
+            Valor total de correções de envio e cashbacks
+          </p>
+        </CardContent>
+      </Card>
     </div>
   );
 };
