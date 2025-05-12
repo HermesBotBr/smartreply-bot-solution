@@ -39,8 +39,11 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
   totalTransfers,
   totalCreditCard,
   totalShippingCashback,
-  settlementTransactions // ✅ adiciona aqui
+  settlementTransactions,
+  releaseOperationsWithOrder,
+  releaseOtherOperations
 }) => {
+
   const [releasePopupOpen, setReleasePopupOpen] = React.useState(false);
 
   const [popupOpen, setPopupOpen] = React.useState(false); // ✅ move para dentro do componente
