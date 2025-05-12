@@ -303,8 +303,7 @@ const otherOperations: ReleaseOperation[] = [];
 
 Object.entries(operationsBySourceId).forEach(([sourceId, operation]) => {
   const netAmount = operation.creditAmount - operation.debitAmount;
-  
-  // Tentar encontrar uma linha correspondente no CSV para obter detalhes
+
   const matchingLine = filteredDataLines.find(line => {
     const columns = line.split(',');
     return columns[1]?.trim() === sourceId;
@@ -323,23 +322,22 @@ Object.entries(operationsBySourceId).forEach(([sourceId, operation]) => {
     description = columns[4]?.trim() || '';
   }
 
- if (externalRef && itemId) {
-  operationsWithOrder.push({
-    orderId: externalRef,
-    itemId,
-    title: title || description || 'Descrição indisponível',
-    amount: netAmount
-  });
-} else {
-  otherOperations.push({
-    description: description || 'Sem descrição',
-    amount: netAmount
-  });
-}
+  if (externalRef && itemId) {
+    operationsWithOrder.push({
+      orderId: externalRef,
+      itemId,
+      title: title || description || 'Descrição indisponível',
+      amount: netAmount
+    });
+  } else {
+    otherOperations.push({
+      description: description || 'Sem descrição',
+      amount: netAmount
+    });
+  }
+});
 
-
-
-
+// ✅ Agora sim, fora do forEach:
 return {
   totalReleased,
   totalClaims,
@@ -350,6 +348,7 @@ return {
   operationsWithOrder,
   otherOperations
 };
+
 
 
     } catch (error) {
