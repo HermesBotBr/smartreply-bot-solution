@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -10,6 +9,7 @@ import { useNavigate } from 'react-router-dom';
 import { useMlToken } from '@/hooks/useMlToken';
 import { useSettlementData } from '@/hooks/useSettlementData';
 import { toast } from 'sonner';
+import { ReleaseOperation } from '@/types/ReleaseOperation';
 
 interface ReleaseOperation {
   orderId?: string;
@@ -347,7 +347,7 @@ const AdminFinanceiro: React.FC = () => {
         <Tabs
           defaultValue="metricas"
           value={activeTab}
-          onValueChange={setActiveTab}
+          onValueChange={(value: "metricas" | "entrada") => setActiveTab(value)}
           className="w-full"
         >
           <TabsList className="grid w-full grid-cols-2">

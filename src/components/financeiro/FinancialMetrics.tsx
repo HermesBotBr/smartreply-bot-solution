@@ -1,11 +1,9 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartBar, Package, DollarSign, TrendingDown, CreditCard, AlertCircle, ArrowDown, WalletCards, Package2 } from "lucide-react";
 import { RepassesPopup } from "@/components/financeiro/RepassesPopup";
 import { ReleasePopup } from "@/components/financeiro/ReleasePopup";
-import { ReleaseOperation } from "@/types/ReleaseOperation"; // (se preferir, declare no mesmo lugar por ora)
-
+import { ReleaseOperation } from "@/types/ReleaseOperation";
 
 interface FinancialMetricsProps {
   grossSales: number;
@@ -22,10 +20,8 @@ interface FinancialMetricsProps {
   totalShippingCashback: number;
   settlementTransactions: any[]; // 👈 Adiciona isso aqui (melhor tipar depois com SettlementTransaction[])
   releaseOperationsWithOrder: ReleaseOperation[];
-releaseOtherOperations: ReleaseOperation[];
-
+  releaseOtherOperations: ReleaseOperation[];
 }
-
 
 export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ 
   grossSales, 

@@ -1,18 +1,9 @@
-
 // src/components/financeiro/ReleasePopup.tsx
 
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-
-interface ReleaseOperation {
-  orderId?: string;
-  itemId?: string;
-  title?: string;
-  amount: number;
-  description?: string;
-  sourceId?: string; // Adicionado sourceId para agrupar operações
-}
+import { ReleaseOperation } from "@/types/ReleaseOperation";
 
 interface ReleasePopupProps {
   open: boolean;
