@@ -1,43 +1,41 @@
+
 // src/components/financeiro/ReleasePopup.tsx
 
 import React, { useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ReleaseOperation } from "@/types/ReleaseOperation";
+import { SettlementTransaction } from "@/hooks/useSettlementData";
+import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/ui/table";
 
 interface ReleasePopupProps {
   open: boolean;
   onClose: () => void;
   operationsWithOrder: ReleaseOperation[];
   otherOperations: ReleaseOperation[];
+  settlementTransactions?: SettlementTransaction[]; // Adicionar transações de vendas
 }
 
 export const ReleasePopup: React.FC<ReleasePopupProps> = ({
   open,
   onClose,
   operationsWithOrder,
-  otherOperations
+  otherOperations,
+  settlementTransactions = [], // Valor padrão de array vazio
 }) => {
-  // Debug logs to help troubleshoot
   useEffect(() => {
     if (open) {
-      console.log("ReleasePopup opened with data:", { 
+      console.log("ReleasePopup aberto com dados:", { 
         operationsWithOrder, 
-        otherOperations,
-        operationsCount: operationsWithOrder.length,
-        otherCount: otherOperations.length
+        otherOperations, 
+        settlementTransactions,
+        pendingOperations: getPendingOperations()
       });
     }
-  }, [open, operationsWithOrder, otherOperations]);
+  }, [open]);
 
   // Função para agrupar operações pelo orderId
   const groupOperationsByOrderId = (operations: ReleaseOperation[]): ReleaseOperation[] => {
-    if (!operations || operations.length === 0) {
-      console.log("No operations with order to group");
-      return [];
-    }
-    
-    console.log("Grouping operations by orderId:", operations);
     const groupedMap = new Map<string, ReleaseOperation>();
     
     operations.forEach(op => {
@@ -57,12 +55,6 @@ export const ReleasePopup: React.FC<ReleasePopupProps> = ({
 
   // Função para agrupar operações pelo tipo de descrição
   const groupOperationsByDescription = (operations: ReleaseOperation[]): ReleaseOperation[] => {
-    if (!operations || operations.length === 0) {
-      console.log("No other operations to group");
-      return [];
-    }
-    
-    console.log("Grouping operations by description:", operations);
     const groupedMap = new Map<string, ReleaseOperation>();
     
     operations.forEach(op => {
@@ -78,69 +70,40 @@ export const ReleasePopup: React.FC<ReleasePopupProps> = ({
     return Array.from(groupedMap.values());
   };
 
-  // Função para agrupar operações pelo sourceId (nova funcionalidade)
-  const groupOperationsBySourceId = (operations: ReleaseOperation[]): ReleaseOperation[] => {
-    if (!operations || operations.length === 0) {
-      console.log("No operations to group by sourceId");
+  // Função para identificar operações pendentes (presentes em settlement mas não em operações liberadas)
+  const getPendingOperations = (): ReleaseOperation[] => {
+    if (!settlementTransactions || settlementTransactions.length === 0) {
       return [];
     }
+
+    // Extrair todos os orderIds das operações já liberadas
+    const liberatedOrderIds = new Set(operationsWithOrder.map(op => op.orderId));
     
-    console.log("Grouping operations by sourceId:", operations);
-    const groupedMap = new Map<string, ReleaseOperation>();
-    
-    operations.forEach(op => {
-      // Skip operations without sourceId
-      if (!op.sourceId) {
-        console.log("Operation without sourceId:", op);
-        return;
-      }
-      
-      const key = op.sourceId;
-      if (groupedMap.has(key)) {
-        const existing = groupedMap.get(key)!;
-        existing.amount += op.amount;
-        // Keep the most informative description
-        if (op.description && (!existing.description || existing.description.length < op.description.length)) {
-          existing.description = op.description;
-        }
-        // Keep order info if available
-        if (op.orderId && !existing.orderId) {
-          existing.orderId = op.orderId;
-        }
-        if (op.itemId && !existing.itemId) {
-          existing.itemId = op.itemId;
-        }
-        if (op.title && !existing.title) {
-          existing.title = op.title;
-        }
-      } else {
-        groupedMap.set(key, {...op});
-      }
-    });
-    
-    return Array.from(groupedMap.values());
+    // Filtrar as transações de settlement que não estão nas operações liberadas
+    const pendingOps = settlementTransactions
+      .filter(transaction => 
+        transaction.orderId && 
+        !liberatedOrderIds.has(transaction.orderId))
+      .map(transaction => ({
+        orderId: transaction.orderId,
+        itemId: transaction.itemId || '',
+        title: transaction.title || '',
+        amount: transaction.netValue || 0,
+        description: 'Venda aguardando liberação'
+      }));
+
+    return pendingOps;
   };
+
+  // Agrupe as operações
+  const groupedOperationsWithOrder = groupOperationsByOrderId(operationsWithOrder);
+  const groupedOtherOperations = groupOperationsByDescription(otherOperations);
+  const pendingOperations = getPendingOperations();
   
-  // Use the sourceId grouping logic for both types of operations
-  const allOperations = [...operationsWithOrder, ...otherOperations];
-  console.log("All operations before grouping:", allOperations);
-  
-  // Group all operations by sourceId
-  const groupedBySourceId = groupOperationsBySourceId(allOperations);
-  console.log("Operations grouped by sourceId:", groupedBySourceId);
-  
-  // Now separate them into operations with order and other operations
-  const groupedOperationsWithOrder = groupedBySourceId.filter(op => op.orderId);
-  const groupedOtherOperations = groupedBySourceId.filter(op => !op.orderId);
-  
-  console.log("Final grouped operations:", {
-    groupedOperationsWithOrder,
-    groupedOtherOperations
-  });
-  
-  // Calculate totals based on the grouped operations
+  // Calcule os totais
   const totalOperationsWithOrder = groupedOperationsWithOrder.reduce((sum, op) => sum + op.amount, 0);
   const totalOtherOperations = groupedOtherOperations.reduce((sum, op) => sum + op.amount, 0);
+  const totalPendingOperations = pendingOperations.reduce((sum, op) => sum + op.amount, 0);
   const grandTotal = totalOperationsWithOrder + totalOtherOperations;
 
   return (
@@ -163,20 +126,14 @@ export const ReleasePopup: React.FC<ReleasePopupProps> = ({
                 </tr>
               </thead>
               <tbody>
-                {groupedOperationsWithOrder.length > 0 ? (
-                  groupedOperationsWithOrder.map((op, idx) => (
-                    <tr key={idx} className="hover:bg-gray-50">
-                      <td className="p-2 border">{op.orderId || '-'}</td>
-                      <td className="p-2 border">{op.itemId || '-'}</td>
-                      <td className="p-2 border">{op.title || '-'}</td>
-                      <td className="p-2 border">R$ {op.amount.toFixed(2)}</td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={4} className="p-2 border text-center">Nenhuma operação com ORDER_ID encontrada</td>
+                {groupedOperationsWithOrder.map((op, idx) => (
+                  <tr key={idx} className="hover:bg-gray-50">
+                    <td className="p-2 border">{op.orderId || '-'}</td>
+                    <td className="p-2 border">{op.itemId || '-'}</td>
+                    <td className="p-2 border">{op.title || '-'}</td>
+                    <td className="p-2 border">R$ {op.amount.toFixed(2)}</td>
                   </tr>
-                )}
+                ))}
                 <tr className="font-semibold bg-gray-50">
                   <td colSpan={3} className="p-2 border text-right">Total:</td>
                   <td className="p-2 border">R$ {totalOperationsWithOrder.toFixed(2)}</td>
@@ -193,18 +150,12 @@ export const ReleasePopup: React.FC<ReleasePopupProps> = ({
                 </tr>
               </thead>
               <tbody>
-                {groupedOtherOperations.length > 0 ? (
-                  groupedOtherOperations.map((op, idx) => (
-                    <tr key={idx} className="hover:bg-gray-50">
-                      <td className="p-2 border">{op.description || '-'}</td>
-                      <td className="p-2 border">R$ {op.amount.toFixed(2)}</td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={2} className="p-2 border text-center">Nenhuma operação sem ORDER_ID encontrada</td>
+                {groupedOtherOperations.map((op, idx) => (
+                  <tr key={idx} className="hover:bg-gray-50">
+                    <td className="p-2 border">{op.description || '-'}</td>
+                    <td className="p-2 border">R$ {op.amount.toFixed(2)}</td>
                   </tr>
-                )}
+                ))}
                 <tr className="font-semibold bg-gray-50">
                   <td className="p-2 border text-right">Total:</td>
                   <td className="p-2 border">R$ {totalOtherOperations.toFixed(2)}</td>
@@ -212,8 +163,41 @@ export const ReleasePopup: React.FC<ReleasePopupProps> = ({
               </tbody>
             </table>
             
+            {pendingOperations.length > 0 && (
+              <>
+                <h4 className="font-semibold text-base mt-6 mb-2">Operações com ORDER_ID ainda não liberadas</h4>
+                <table className="w-full border text-sm mb-4">
+                  <thead>
+                    <tr className="bg-gray-100 text-left">
+                      <th className="p-2 border">ORDER_ID</th>
+                      <th className="p-2 border">ID do Anúncio</th>
+                      <th className="p-2 border">Título do Anúncio</th>
+                      <th className="p-2 border">Valor Pendente</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pendingOperations.map((op, idx) => (
+                      <tr key={idx} className="hover:bg-gray-50">
+                        <td className="p-2 border">{op.orderId || '-'}</td>
+                        <td className="p-2 border">{op.itemId || '-'}</td>
+                        <td className="p-2 border">{op.title || '-'}</td>
+                        <td className="p-2 border">R$ {op.amount.toFixed(2)}</td>
+                      </tr>
+                    ))}
+                    <tr className="font-semibold bg-gray-50">
+                      <td colSpan={3} className="p-2 border text-right">Total Pendente:</td>
+                      <td className="p-2 border">R$ {totalPendingOperations.toFixed(2)}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </>
+            )}
+            
             <div className="mt-4 p-2 bg-gray-100 rounded border">
               <p className="font-bold text-right">Valor Total Liberado: R$ {grandTotal.toFixed(2)}</p>
+              {pendingOperations.length > 0 && (
+                <p className="font-bold text-right text-amber-600">Valor Total Pendente: R$ {totalPendingOperations.toFixed(2)}</p>
+              )}
             </div>
           </ScrollArea>
         </div>

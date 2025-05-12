@@ -13,6 +13,7 @@ interface MetricCardProps {
   textColor?: string;
   change?: string;
   changeType?: 'positive' | 'negative' | 'neutral';
+  onClick?: () => void;
 }
 
 export function MetricCard({
@@ -23,9 +24,10 @@ export function MetricCard({
   isLoading = false,
   color = 'bg-white',
   className = '',
-  textColor = 'text-white',
+  textColor = 'text-gray-800', // Changed default from 'text-white' to 'text-gray-800'
   change,
-  changeType = 'neutral'
+  changeType = 'neutral',
+  onClick
 }: MetricCardProps) {
   const getChangeColor = () => {
     if (changeType === 'positive') return 'bg-green-500 text-white';
@@ -34,7 +36,11 @@ export function MetricCard({
   };
 
   return (
-    <div className={`${className} rounded-xl shadow-lg overflow-hidden ${color}`}>
+    <div 
+      className={`${className} rounded-xl shadow-lg overflow-hidden ${color}`}
+      onClick={onClick}
+      style={{ cursor: onClick ? 'pointer' : 'default' }}
+    >
       <div className="p-6 flex flex-col h-full">
         <div className="flex items-start justify-between mb-4">
           <h3 className={`text-sm font-medium opacity-90 ${textColor}`}>
