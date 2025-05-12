@@ -5,19 +5,30 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { formatCurrency } from "@/utils/formatters";
 import { FileBarChart } from "lucide-react";
 
+interface TransferDescription {
+  description: string;
+  value: number;
+}
+
 interface Transaction {
   date: string;
   sourceId: string;
   descriptions: string[];
   group: string;
   value: number;
+  totalDeclared?: number;
+  manualDescriptions?: TransferDescription[];
 }
 
 interface TransactionsListProps {
   transactions: Transaction[];
+  renderActions?: (transaction: Transaction) => React.ReactNode;
 }
 
-export const TransactionsList: React.FC<TransactionsListProps> = ({ transactions }) => {
+export const TransactionsList: React.FC<TransactionsListProps> = ({ 
+  transactions,
+  renderActions 
+}) => {
   // Function to format the date to a readable format
   const formatDate = (dateString: string): string => {
     try {
@@ -53,6 +64,8 @@ export const TransactionsList: React.FC<TransactionsListProps> = ({ transactions
                   <TableHead>Descrições</TableHead>
                   <TableHead>Grupo</TableHead>
                   <TableHead className="text-right">Valor</TableHead>
+                  <TableHead className="text-right">Total Declarado</TableHead>
+                  {renderActions && <TableHead className="text-right">Ações</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -65,6 +78,14 @@ export const TransactionsList: React.FC<TransactionsListProps> = ({ transactions
                     <TableCell className={`text-right ${transaction.value < 0 ? 'text-red-500' : 'text-green-500'}`}>
                       {formatCurrency(transaction.value)}
                     </TableCell>
+                    <TableCell className={`text-right ${(transaction.totalDeclared || 0) < 0 ? 'text-red-500' : 'text-green-500'}`}>
+                      {formatCurrency(transaction.totalDeclared || 0)}
+                    </TableCell>
+                    {renderActions && (
+                      <TableCell className="text-right">
+                        {renderActions(transaction)}
+                      </TableCell>
+                    )}
                   </TableRow>
                 ))}
               </TableBody>
