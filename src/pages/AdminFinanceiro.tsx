@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -95,7 +94,6 @@ const AdminFinanceiro: React.FC = () => {
 
   const handleReleaseDataChange = (data: string) => {
     setReleaseData(data);
-    console.log("Parsing release data:", data);
     const parsed = parseReleaseData(data, startDate, endDate);
     setMetrics((prev) => ({
       ...prev,
@@ -106,10 +104,6 @@ const AdminFinanceiro: React.FC = () => {
       totalCreditCard: parsed.totalCreditCard,
       totalShippingCashback: parsed.totalShippingCashback,
     }));
-    console.log("Setting release operations:", {
-      withOrder: parsed.operationsWithOrder,
-      other: parsed.otherOperations
-    });
     setReleaseOperationsWithOrder(parsed.operationsWithOrder);
     setReleaseOtherOperations(parsed.otherOperations);
   };
@@ -144,7 +138,6 @@ const AdminFinanceiro: React.FC = () => {
     try {
       const lines = data.split('\n').filter((l) => l.trim());
       if (lines.length < 3) {
-        console.log("Not enough lines in release data");
         return {
           totalReleased: 0,
           totalClaims: 0,
@@ -164,8 +157,6 @@ const AdminFinanceiro: React.FC = () => {
         if (cols[4]?.includes('initial_available_balance')) return false;
         return isDateInRange(cols[0], start, end);
       });
-
-      console.log(`Found ${filtered.length} filtered lines in release data`);
 
       let totalReleased = 0,
         totalClaims = 0,
@@ -264,26 +255,13 @@ const AdminFinanceiro: React.FC = () => {
       const operationsWithOrder: ReleaseOperation[] = [];
       const otherOperations: ReleaseOperation[] = [];
 
-      console.log("Processing operations by sourceId, total:", Object.keys(operationsBySourceId).length);
-
       Object.entries(operationsBySourceId).forEach(([sourceId, op]) => {
         const net = op.creditAmount - op.debitAmount;
-        if (net === 0) {
-          console.log("Skipping zero net operation:", sourceId);
-          return;
-        }
-        
-        // Find a representative line for this sourceId to extract additional info
-        const line = filtered.find((l) => l.split(',')[1] === sourceId);
-        if (!line) {
-          console.log("No line found for sourceId:", sourceId);
-          return;
-        }
-        
+        const line = filtered.find((l) => l.split(',')[1] === sourceId)!;
         const cols = line.split(',');
-        const ref = cols[2],  // ORDER_ID
-              itm = cols[7],  // ITEM_ID 
-              ttl = cols[8]?.replace(/"/g, '') || '';  // TITLE
+        const ref = cols[2],
+          itm = cols[7],
+          ttl = cols[8]?.replace(/"/g, '') || '';
         const desc = op.predominantDescription;
 
         if (desc === 'payment' && net > 0 && ref && itm) {
@@ -294,7 +272,6 @@ const AdminFinanceiro: React.FC = () => {
             amount: net,
             sourceId, // Incluir sourceId para rastreamento
           });
-          console.log("Added operation with order:", {ref, itm, net, sourceId});
         } else if (net !== 0) {
           const key = desc || 'Sem descrição';
           otherOperations.push({ 
@@ -302,13 +279,7 @@ const AdminFinanceiro: React.FC = () => {
             amount: net,
             sourceId, // Incluir sourceId para rastreamento
           });
-          console.log("Added other operation:", {key, net, sourceId});
         }
-      });
-
-      console.log("Final operations counts:", {
-        withOrder: operationsWithOrder.length,
-        other: otherOperations.length
       });
 
       return {
@@ -367,7 +338,7 @@ const AdminFinanceiro: React.FC = () => {
         <Tabs
           defaultValue="metricas"
           value={activeTab}
-          onValueChange={(value) => setActiveTab(value as 'metricas' | 'entrada')}
+          onValueChange={(value: "metricas" | "entrada") => setActiveTab(value)}
           className="w-full"
         >
           <TabsList className="grid w-full grid-cols-2">
