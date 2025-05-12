@@ -3,6 +3,8 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartBar, Package, DollarSign, TrendingDown, CreditCard, AlertCircle, ArrowDown, WalletCards, Package2 } from "lucide-react";
 import { RepassesPopup } from "@/components/financeiro/RepassesPopup";
+import { ReleasePopup } from "@/components/financeiro/ReleasePopup";
+import { ReleaseOperation } from "@/types/ReleaseOperation"; // (se preferir, declare no mesmo lugar por ora)
 
 
 interface FinancialMetricsProps {
@@ -19,6 +21,9 @@ interface FinancialMetricsProps {
   totalCreditCard: number;
   totalShippingCashback: number;
   settlementTransactions: any[]; // 👈 Adiciona isso aqui (melhor tipar depois com SettlementTransaction[])
+  releaseOperationsWithOrder: ReleaseOperation[];
+releaseOtherOperations: ReleaseOperation[];
+
 }
 
 
@@ -36,6 +41,8 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
   totalShippingCashback,
   settlementTransactions // ✅ adiciona aqui
 }) => {
+  const [releasePopupOpen, setReleasePopupOpen] = React.useState(false);
+
   const [popupOpen, setPopupOpen] = React.useState(false); // ✅ move para dentro do componente
 
   // Format numbers with Brazilian currency and number format
@@ -131,18 +138,26 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
 
 
       {/* Release data metrics */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Valor Liberado na Conta</CardTitle>
-          <DollarSign className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{formatCurrency(totalReleased)}</div>
-          <p className="text-xs text-muted-foreground">
-            Total de pagamentos liberados
-          </p>
-        </CardContent>
-      </Card>
+<Card onClick={() => setReleasePopupOpen(true)} className="cursor-pointer hover:shadow-lg transition">
+  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+    <CardTitle className="text-sm font-medium">Valor Liberado na Conta</CardTitle>
+    <DollarSign className="h-4 w-4 text-muted-foreground" />
+  </CardHeader>
+  <CardContent>
+    <div className="text-2xl font-bold">{formatCurrency(totalReleased)}</div>
+    <p className="text-xs text-muted-foreground">
+      Total de pagamentos liberados
+    </p>
+  </CardContent>
+</Card>
+
+<ReleasePopup
+  open={releasePopupOpen}
+  onClose={() => setReleasePopupOpen(false)}
+  operationsWithOrder={releaseOperationsWithOrder}
+  otherOperations={releaseOtherOperations}
+/>
+
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
