@@ -323,18 +323,35 @@ Object.entries(operationsBySourceId).forEach(([sourceId, operation]) => {
   }
 
   if (predominantDescription === 'payment' && netAmount > 0 && externalRef && itemId) {
-  operationsWithOrder.push({
-    orderId: externalRef,
-    itemId,
-    title: title || description || 'Descrição indisponível',
-    amount: netAmount
-  });
+  const existingIndex = operationsWithOrder.findIndex(op => op.orderId === externalRef);
+
+  if (existingIndex !== -1) {
+    // Já existe uma operação com esse orderId, somamos o valor
+    operationsWithOrder[existingIndex].amount += netAmount;
+  } else {
+    // Nova operação com esse orderId
+    operationsWithOrder.push({
+      orderId: externalRef,
+      itemId,
+      title: title || description || 'Descrição indisponível',
+      amount: netAmount
+    });
+  }
 } else if (netAmount !== 0) {
-  otherOperations.push({
-    description: description || 'Sem descrição',
-    amount: netAmount
-  });
+  const key = description || 'Sem descrição';
+  const existingIndex = otherOperations.findIndex(op => op.description === key);
+
+  if (existingIndex !== -1) {
+    // Já existe essa descrição, somamos
+    otherOperations[existingIndex].amount += netAmount;
+  } else {
+    otherOperations.push({
+      description: key,
+      amount: netAmount
+    });
+  }
 }
+
 
 });
 
