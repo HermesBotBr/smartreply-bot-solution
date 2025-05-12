@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -16,6 +17,7 @@ interface ReleaseOperation {
   title?: string;
   amount: number;
   description?: string;
+  sourceId?: string; // Adicionado sourceId para agrupar operações
 }
 
 const AdminFinanceiro: React.FC = () => {
@@ -180,6 +182,7 @@ const AdminFinanceiro: React.FC = () => {
           { creditCount: number; debitCount: number }
         >;
         predominantDescription: string;
+        sourceId: string; // Incluir sourceId para rastreamento
       }
 
       const operationsBySourceId: Record<string, BySource> = {};
@@ -187,20 +190,21 @@ const AdminFinanceiro: React.FC = () => {
       /* agrupar */
       filtered.forEach((line) => {
         const cols = line.split(',');
-        const src = cols[1];
+        const sourceId = cols[1];
         const desc = cols[4];
         const credit = parseFloat(cols[5]) || 0;
         const debit = parseFloat(cols[6]) || 0;
 
-        if (!operationsBySourceId[src]) {
-          operationsBySourceId[src] = {
+        if (!operationsBySourceId[sourceId]) {
+          operationsBySourceId[sourceId] = {
             creditAmount: 0,
             debitAmount: 0,
             descriptions: {},
             predominantDescription: '',
+            sourceId,  // Armazenar o sourceId
           };
         }
-        const op = operationsBySourceId[src];
+        const op = operationsBySourceId[sourceId];
         op.creditAmount += credit;
         op.debitAmount += debit;
 
@@ -256,36 +260,34 @@ const AdminFinanceiro: React.FC = () => {
         }
       });
 
-      /* listas para popup */
+      /* listas para popup - usando lógica atualizada para considerar o agrupamento por sourceId */
       const operationsWithOrder: ReleaseOperation[] = [];
       const otherOperations: ReleaseOperation[] = [];
 
-      Object.entries(operationsBySourceId).forEach(([src, op]) => {
+      Object.entries(operationsBySourceId).forEach(([sourceId, op]) => {
         const net = op.creditAmount - op.debitAmount;
-        const line = filtered.find((l) => l.split(',')[1] === src)!;
+        const line = filtered.find((l) => l.split(',')[1] === sourceId)!;
         const cols = line.split(',');
         const ref = cols[2],
           itm = cols[7],
-          ttl = cols[8].replace(/"/g, '');
+          ttl = cols[8]?.replace(/"/g, '') || '';
         const desc = op.predominantDescription;
 
         if (desc === 'payment' && net > 0 && ref && itm) {
-          const idx = operationsWithOrder.findIndex((o) => o.orderId === ref);
-          if (idx >= 0) operationsWithOrder[idx].amount += net;
-          else
-            operationsWithOrder.push({
-              orderId: ref,
-              itemId: itm,
-              title: ttl || ref,
-              amount: net,
-            });
+          operationsWithOrder.push({
+            orderId: ref,
+            itemId: itm,
+            title: ttl || ref,
+            amount: net,
+            sourceId, // Incluir sourceId para rastreamento
+          });
         } else if (net !== 0) {
           const key = desc || 'Sem descrição';
-          const idx = otherOperations.findIndex(
-            (o) => o.description === key,
-          );
-          if (idx >= 0) otherOperations[idx].amount += net;
-          else otherOperations.push({ description: key, amount: net });
+          otherOperations.push({ 
+            description: key, 
+            amount: net,
+            sourceId, // Incluir sourceId para rastreamento
+          });
         }
       });
 
