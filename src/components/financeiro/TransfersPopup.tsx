@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
@@ -14,8 +13,6 @@ import { Trash } from 'lucide-react';
 import axios from 'axios';
 import { toast } from 'sonner';
 import { useMlToken } from '@/hooks/useMlToken';
-import { formatDateTime } from '@/utils/formatters';
-import { formatDate } from '@/utils/dateFormatters';
 
 interface TransfersPopupProps {
   open: boolean;
@@ -30,7 +27,6 @@ interface TransferDescription {
 
 interface TransferWithDescriptions extends ReleaseOperation {
   manualDescriptions: TransferDescription[];
-  date?: string; // Add optional date field
 }
 
 interface ApiDescription {
@@ -68,44 +64,20 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
   
   // Atualizar a lista de transferências quando as transferências mudam
   useEffect(() => {
-    // Obter a data atual formatada como fallback
-    const currentDate = new Date().toISOString();
-    
     setTransfersWithDescriptions(
       transfers.map(transfer => ({
         ...transfer,
-        manualDescriptions: [],
-        date: currentDate // Usar data atual como fallback
+        manualDescriptions: []
       }))
     );
   }, [transfers]);
 
-  // Buscar descrições e datas da API
+  // Buscar descrições da API
   const fetchDescriptions = async () => {
     try {
       setIsLoading(true);
-      
-      // Obter descrições
       const response = await axios.get(`https://projetohermes-dda7e0c8d836.herokuapp.com/trans_desc?seller_id=${sellerId}`);
       const apiDescriptions: ApiDescription[] = response.data;
-      
-      // Buscar datas das operações (simulado aqui com uma chamada à API de liberações)
-      // Vamos usar os dados de liberação para tentar encontrar datas para nossas transferências
-      const releaseDatesResponse = await axios.get(
-        `https://projetohermes-dda7e0c8d836.herokuapp.com/vendas_adm?seller_id=${sellerId}`
-      );
-      
-      // Map para armazenar sourceId -> date
-      const sourceIdToDateMap: Record<string, string> = {};
-      
-      // Popule o mapa com datas do sistema (assumindo que existem operações com datas no sistema)
-      if (releaseDatesResponse.data && releaseDatesResponse.data.operations) {
-        releaseDatesResponse.data.operations.forEach((op: any) => {
-          if (op.sourceId && op.date) {
-            sourceIdToDateMap[op.sourceId] = op.date;
-          }
-        });
-      }
       
       // Mapear as descrições da API para o formato usado no componente
       setTransfersWithDescriptions(prevTransfers => 
@@ -118,13 +90,9 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
               value: parseFloat(desc.valor)
             }));
           
-          // Tente encontrar uma data para este sourceId
-          const date = sourceIdToDateMap[sourceId] || transfer.date || new Date().toISOString();
-          
           return {
             ...transfer,
-            manualDescriptions: matchingDescriptions,
-            date // Atualizar a data
+            manualDescriptions: matchingDescriptions
           };
         })
       );
@@ -256,7 +224,7 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
     const totalDeclared = getDeclaredTotal(transfer);
     
     return {
-      date: transfer.date || new Date().toISOString(), // Use the date we found or current date as fallback
+      date: '',
       sourceId: transfer.sourceId || '',
       descriptions: allDescriptions,
       group: 'Transferência',
