@@ -169,7 +169,8 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
                   className="bg-indigo-50 hover:bg-indigo-100 transition-colors"
                   textColor="text-indigo-800"
                   onClick={() => setTransfersPopupOpen(true)}
-                  icon={hasUnbalancedTransfers ? <AlertCircle className="h-4 w-4 text-amber-500 ml-2" /> : undefined}
+                  // Fix here: Instead of passing JSX directly, we use a custom property to indicate alert status
+                  alertStatus={hasUnbalancedTransfers}
                 />
               </div>
             </TabsContent>

@@ -1,77 +1,46 @@
 
 import React from 'react';
-import { LucideIcon } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { AlertCircle } from 'lucide-react';
 
 interface MetricCardProps {
   title: string;
-  value: string | number;
-  icon?: LucideIcon;
+  value: string;
   description?: string;
-  isLoading?: boolean;
-  color?: string;
+  icon?: React.ReactNode;
   className?: string;
   textColor?: string;
-  change?: string;
-  changeType?: 'positive' | 'negative' | 'neutral';
   onClick?: () => void;
+  alertStatus?: boolean;
 }
 
-export function MetricCard({
+export const MetricCard: React.FC<MetricCardProps> = ({
   title,
   value,
-  icon: Icon,
   description,
-  isLoading = false,
-  color = 'bg-white',
+  icon,
   className = '',
-  textColor = 'text-gray-800', // Changed default from 'text-white' to 'text-gray-800'
-  change,
-  changeType = 'neutral',
-  onClick
-}: MetricCardProps) {
-  const getChangeColor = () => {
-    if (changeType === 'positive') return 'bg-green-500 text-white';
-    if (changeType === 'negative') return 'bg-red-500 text-white';
-    return 'bg-gray-200 text-gray-700';
-  };
-
+  textColor = 'text-gray-800',
+  onClick,
+  alertStatus,
+}) => {
   return (
-    <div 
-      className={`${className} rounded-xl shadow-lg overflow-hidden ${color}`}
+    <Card 
+      className={`overflow-hidden transition-shadow hover:shadow-lg duration-300 ${className}`}
       onClick={onClick}
       style={{ cursor: onClick ? 'pointer' : 'default' }}
     >
-      <div className="p-6 flex flex-col h-full">
-        <div className="flex items-start justify-between mb-4">
-          <h3 className={`text-sm font-medium opacity-90 ${textColor}`}>
-            {title}
-          </h3>
-          {Icon && <Icon className={`h-5 w-5 ${textColor} opacity-75`} />}
+      <CardContent className="p-6">
+        <div className="flex justify-between items-start">
+          <h3 className={`font-medium mb-2 ${textColor}`}>{title}</h3>
+          {icon && <div className="text-gray-500">{icon}</div>}
+          {alertStatus && <AlertCircle className="h-4 w-4 text-amber-500 ml-2" />}
         </div>
-        
-        {isLoading ? (
-          <div className="space-y-3">
-            <div className="h-8 bg-gray-200/20 animate-pulse rounded" />
-            <div className="h-4 w-3/4 bg-gray-200/20 animate-pulse rounded" />
-          </div>
-        ) : (
-          <div className="flex flex-col flex-1 justify-between">
-            <div className="mb-2">
-              <p className={`text-3xl font-bold ${textColor}`}>{value}</p>
-              {change && (
-                <span className={`text-xs px-2 py-1 rounded mt-2 inline-flex items-center ${getChangeColor()}`}>
-                  {change}
-                </span>
-              )}
-            </div>
-            {description && (
-              <p className={`text-sm mt-2 ${textColor} opacity-75`}>
-                {description}
-              </p>
-            )}
-          </div>
+        <p className={`text-2xl font-bold mb-1 ${textColor}`}>{value}</p>
+        {description && (
+          <p className="text-sm text-gray-500">{description}</p>
         )}
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
-}
+};
