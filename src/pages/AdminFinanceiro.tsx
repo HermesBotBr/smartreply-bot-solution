@@ -322,26 +322,25 @@ Object.entries(operationsBySourceId).forEach(([sourceId, operation]) => {
     description = columns[4]?.trim() || '';
   }
 
-  // Garantir que o agrupamento se refira ao tipo "payment" de forma segura
-if (matchingLine && description === 'payment' && netAmount > 0 && externalRef && itemId) {
-  const existingIndex = operationsWithOrder.findIndex(op => op.orderId === externalRef);
-
-  if (existingIndex !== -1) {
-    operationsWithOrder[existingIndex].amount += netAmount;
+// Agrupa pagamentos (predominantDescription) e soma múltiplas linhas com o mesmo SOURCE_ID
+if (predominantDescription === 'payment' && netAmount > 0 && externalRef && itemId) {
+  const idx = operationsWithOrder.findIndex(op => op.orderId === externalRef);
+  if (idx !== -1) {
+    operationsWithOrder[idx].amount += netAmount;
   } else {
     operationsWithOrder.push({
       orderId: externalRef,
       itemId,
-      title: title || description || 'Descrição indisponível',
+      title: title || predominantDescription || 'Descrição indisponível',
       amount: netAmount
     });
   }
 } else if (netAmount !== 0) {
-  const key = description || 'Sem descrição';
-  const existingIndex = otherOperations.findIndex(op => op.description === key);
-
-  if (existingIndex !== -1) {
-    otherOperations[existingIndex].amount += netAmount;
+  // Qualquer outra operação
+  const key = predominantDescription || 'Sem descrição';
+  const idx = otherOperations.findIndex(op => op.description === key);
+  if (idx !== -1) {
+    otherOperations[idx].amount += netAmount;
   } else {
     otherOperations.push({
       description: key,
@@ -349,6 +348,7 @@ if (matchingLine && description === 'payment' && netAmount > 0 && externalRef &&
     });
   }
 }
+
 
 
 
