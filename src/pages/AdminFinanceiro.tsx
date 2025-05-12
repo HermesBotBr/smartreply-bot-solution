@@ -303,45 +303,41 @@ const otherOperations: ReleaseOperation[] = [];
 
 Object.entries(operationsBySourceId).forEach(([sourceId, operation]) => {
   const netAmount = operation.creditAmount - operation.debitAmount;
+  
+  // Tentar encontrar uma linha correspondente no CSV para obter detalhes
+  const matchingLine = filteredDataLines.find(line => {
+    const columns = line.split(',');
+    return columns[1]?.trim() === sourceId;
+  });
+
   let externalRef = '';
   let itemId = '';
   let title = '';
   let description = '';
 
-  for (const line of filteredDataLines) {
-    const columns = line.split(',');
-    const currentSourceId = columns[1]?.trim();
-    if (currentSourceId !== sourceId) continue;
-
-    const ref = columns[2]?.trim();
-    const item = columns[7]?.trim();
-    const ttl = columns[8]?.trim().replace(/"/g, '');
-    const desc = columns[4]?.trim();
-
-    if (ref) externalRef = ref;
-    if (item) itemId = item;
-    if (ttl) title = ttl;
-    if (desc) description = desc;
-
-    // Assim que pegarmos info válida, saímos
-    if (externalRef && itemId && title) break;
+  if (matchingLine) {
+    const columns = matchingLine.split(',');
+    externalRef = columns[2]?.trim() || '';
+    itemId = columns[7]?.trim() || '';
+    title = columns[8]?.trim().replace(/"/g, '') || '';
+    description = columns[4]?.trim() || '';
   }
 
   if (externalRef || itemId || title) {
-  operationsWithOrder.push({
-    orderId: externalRef || sourceId, // fallback pro ID da operação
-    itemId: itemId || '-',
-    title: title || description || 'Descrição indisponível',
-    amount: netAmount
-  });
-} else {
-  otherOperations.push({
-    description: description || 'Sem descrição',
-    amount: netAmount
-  });
-}
-
+    operationsWithOrder.push({
+      orderId: externalRef || sourceId,
+      itemId: itemId || '-',
+      title: title || description || 'Descrição indisponível',
+      amount: netAmount
+    });
+  } else {
+    otherOperations.push({
+      description: description || 'Sem descrição',
+      amount: netAmount
+    });
+  }
 });
+
 
 
 return {
