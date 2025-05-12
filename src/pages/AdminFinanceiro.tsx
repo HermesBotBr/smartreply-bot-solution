@@ -11,15 +11,6 @@ import { useSettlementData } from '@/hooks/useSettlementData';
 import { toast } from 'sonner';
 import { ReleaseOperation } from '@/types/ReleaseOperation';
 
-interface ReleaseOperation {
-  orderId?: string;
-  itemId?: string;
-  title?: string;
-  amount: number;
-  description?: string;
-  sourceId?: string; // Adicionado sourceId para agrupar operações
-}
-
 const AdminFinanceiro: React.FC = () => {
   /* ------------------------------------------------------------------ */
   /* state                                                               */
