@@ -292,30 +292,47 @@ setReleaseOtherOperations(parsedData.otherOperations || []);
       const operationsWithOrder: ReleaseOperation[] = [];
 const otherOperations: ReleaseOperation[] = [];
 
-filteredDataLines.forEach(line => {
-  const columns = line.split(',');
-  const externalRef = columns[2]?.trim();
-  const description = columns[4]?.trim();
-  const itemId = columns[7]?.trim();
-  const title = columns[8]?.trim().replace(/"/g, '');
-  const credit = parseFloat(columns[5]?.trim().replace(/"/g, '') || '0');
-  const debit = parseFloat(columns[6]?.trim().replace(/"/g, '') || '0');
-  const net = credit - debit;
+Object.entries(operationsBySourceId).forEach(([sourceId, operation]) => {
+  const netAmount = operation.creditAmount - operation.debitAmount;
+  let externalRef = '';
+  let itemId = '';
+  let title = '';
+  let description = '';
 
-  if (itemId && externalRef) {
+  for (const line of filteredDataLines) {
+    const columns = line.split(',');
+    const currentSourceId = columns[1]?.trim();
+    if (currentSourceId !== sourceId) continue;
+
+    const ref = columns[2]?.trim();
+    const item = columns[7]?.trim();
+    const ttl = columns[8]?.trim().replace(/"/g, '');
+    const desc = columns[4]?.trim();
+
+    if (ref) externalRef = ref;
+    if (item) itemId = item;
+    if (ttl) title = ttl;
+    if (desc) description = desc;
+
+    // Assim que pegarmos info válida, saímos
+    if (externalRef && itemId && title) break;
+  }
+
+  if (externalRef && itemId) {
     operationsWithOrder.push({
       orderId: externalRef,
       itemId,
       title,
-      amount: net
+      amount: netAmount
     });
   } else {
     otherOperations.push({
       description,
-      amount: net
+      amount: netAmount
     });
   }
 });
+
 
 return {
   totalReleased,
