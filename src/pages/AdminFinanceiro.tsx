@@ -9,6 +9,7 @@ import { useNavigate } from 'react-router-dom';
 import { useMlToken } from '@/hooks/useMlToken';
 import { useSettlementData } from '@/hooks/useSettlementData';
 import { toast } from 'sonner';
+
 interface ReleaseOperation {
   orderId?: string;
   itemId?: string;
@@ -17,13 +18,9 @@ interface ReleaseOperation {
   description?: string;
 }
 
-
-
-
 const AdminFinanceiro = () => {
   const [releaseOperationsWithOrder, setReleaseOperationsWithOrder] = useState<ReleaseOperation[]>([]);
-const [releaseOtherOperations, setReleaseOtherOperations] = useState<ReleaseOperation[]>([]);
-
+  const [releaseOtherOperations, setReleaseOtherOperations] = useState<ReleaseOperation[]>([]);
 
   const navigate = useNavigate();
   const [startDate, setStartDate] = useState<Date | undefined>(new Date());
@@ -44,427 +41,246 @@ const [releaseOtherOperations, setReleaseOtherOperations] = useState<ReleaseOper
     totalShippingCashback: 0
   });
   const [activeTab, setActiveTab] = useState('metricas');
-  
-  // Get seller_id from mlToken or use hardcoded value for testing
+
   const mlToken = useMlToken();
-  // Hardcoded seller ID for testing
   let sellerId = "681274853";
-  
-  // If mlToken is available, use it instead of the hardcoded value
-  if (mlToken !== null && typeof mlToken === 'object' && 'seller_id' in mlToken) {
+  if (mlToken && typeof mlToken === 'object' && 'seller_id' in mlToken) {
     sellerId = (mlToken as { seller_id: string }).seller_id;
   }
 
-  console.log("Using seller ID:", sellerId);
-
-  // Use our hook to fetch settlement data
   const { 
     settlementTransactions,
-    totalGrossSales, 
-    totalNetSales, 
-    totalUnits, 
+    totalGrossSales,
+    totalNetSales,
+    totalUnits,
     isLoading: settlementLoading,
     refetch: refetchSettlement
   } = useSettlementData(sellerId, startDate, endDate, true);
 
   const handleFilter = () => {
-    // Apply the date filter to both settlement and release data
     if (startDate && endDate) {
-      console.log("Filter button clicked, refetching data for:", startDate, endDate);
-      
-      // Refetch settlement data from API
       refetchSettlement();
-      
-      // Re-parse release data with the new date filters
       if (releaseData) {
-        const parsedData = parseReleaseData(releaseData, startDate, endDate);
-        setMetrics(prevMetrics => ({
-          ...prevMetrics,
-          totalReleased: parsedData.totalReleased,
-          totalClaims: parsedData.totalClaims,
-          totalDebts: parsedData.totalDebts,
-          totalTransfers: parsedData.totalTransfers,
-          totalCreditCard: parsedData.totalCreditCard,
-          totalShippingCashback: parsedData.totalShippingCashback
+        const parsed = parseReleaseData(releaseData, startDate, endDate);
+        setMetrics(prev => ({ ...prev,
+          totalReleased: parsed.totalReleased,
+          totalClaims: parsed.totalClaims,
+          totalDebts: parsed.totalDebts,
+          totalTransfers: parsed.totalTransfers,
+          totalCreditCard: parsed.totalCreditCard,
+          totalShippingCashback: parsed.totalShippingCashback
         }));
       }
-      
-      toast.info(`Filtrando dados para o período de ${startDate.toLocaleDateString()} até ${endDate.toLocaleDateString()}`);
+      toast.info(`Filtrando de ${startDate.toLocaleDateString()} até ${endDate.toLocaleDateString()}`);
     } else {
-      toast.error("Selecione um período válido para filtrar os dados");
+      toast.error("Selecione um período válido");
     }
-  };
-
-  const handleSettlementDataChange = (data: string) => {
-    setSettlementData(data);
-    // We don't parse settlement data anymore as it's coming from API
   };
 
   const handleReleaseDataChange = (data: string) => {
     setReleaseData(data);
-
-    // Parse release data and calculate metrics
-    const parsedData = parseReleaseData(data, startDate, endDate);
-    
-    // Update metrics while preserving settlement data metrics
-setMetrics(prevMetrics => ({
-  ...prevMetrics,
-  totalReleased: parsedData.totalReleased,
-  totalClaims: parsedData.totalClaims,
-  totalDebts: parsedData.totalDebts,
-  totalTransfers: parsedData.totalTransfers,
-  totalCreditCard: parsedData.totalCreditCard,
-  totalShippingCashback: parsedData.totalShippingCashback
-}));
-
-setReleaseOperationsWithOrder(parsedData.operationsWithOrder || []);
-setReleaseOtherOperations(parsedData.otherOperations || []);
-
+    const parsed = parseReleaseData(data, startDate, endDate);
+    setMetrics(prev => ({ ...prev,
+      totalReleased: parsed.totalReleased,
+      totalClaims: parsed.totalClaims,
+      totalDebts: parsed.totalDebts,
+      totalTransfers: parsed.totalTransfers,
+      totalCreditCard: parsed.totalCreditCard,
+      totalShippingCashback: parsed.totalShippingCashback
+    }));
+    setReleaseOperationsWithOrder(parsed.operationsWithOrder);
+    setReleaseOtherOperations(parsed.otherOperations);
   };
 
-  // Helper function to check if a date string is within the filter range
-  const isDateInRange = (dateStr: string, startDate?: Date, endDate?: Date): boolean => {
-    if (!startDate || !endDate || !dateStr) return true;
-    
-    try {
-      const date = new Date(dateStr);
-      // Set time to 00:00:00 for startDate and 23:59:59 for endDate for proper range comparison
-      const start = new Date(startDate);
-      start.setHours(0, 0, 0, 0);
-      
-      const end = new Date(endDate);
-      end.setHours(23, 59, 59, 999);
-      
-      return date >= start && date <= end;
-    } catch (e) {
-      console.error('Invalid date format:', dateStr);
-      return false;
-    }
+  const isDateInRange = (dateStr: string, start?: Date, end?: Date): boolean => {
+    if (!start || !end) return true;
+    const d = new Date(dateStr);
+    const s = new Date(start); s.setHours(0,0,0,0);
+    const e = new Date(end); e.setHours(23,59,59,999);
+    return d >= s && d <= e;
   };
-
-  // We don't need this function anymore as we're fetching from API
-  // const parseSettlementData = (data: string, startDate?: Date, endDate?: Date): {} => {...}
 
   const parseReleaseData = (
     data: string,
-    startDate?: Date,
-    endDate?: Date
-): {
-  totalReleased: number;
-  totalClaims: number;
-  totalDebts: number;
-  totalTransfers: number;
-  totalCreditCard: number;
-  totalShippingCashback: number;
-  operationsWithOrder: ReleaseOperation[];
-  otherOperations: ReleaseOperation[];
-} => {
+    start?: Date,
+    end?: Date
+  ) => {
+    const lines = data.split('\n').filter(l => l.trim());
+    if (lines.length < 3) return {
+      totalReleased:0,totalClaims:0,totalDebts:0,totalTransfers:0,
+      totalCreditCard:0,totalShippingCashback:0,
+      operationsWithOrder:[],otherOperations:[]
+    };
 
-    try {
-      // Skip the first two lines (title and headers)
-      const lines = data.split('\n').filter(line => line.trim() !== '');
-      
-      if (lines.length < 3) {
-        return {
-          totalReleased: 0,
-          totalClaims: 0,
-          totalDebts: 0,
-          totalTransfers: 0,
-          totalCreditCard: 0,
-          totalShippingCashback: 0
-        };
+    const dataLines = lines.slice(2).filter(l => !l.startsWith(',,,total'));
+    const filtered = dataLines.filter(l => {
+      const cols = l.split(',');
+      if (cols[4]?.includes('initial_available_balance')) return false;
+      return isDateInRange(cols[0], start, end);
+    });
+
+    let totalReleased=0, totalClaims=0, totalDebts=0, totalTransfers=0, totalCreditCard=0, totalShippingCashback=0;
+
+    // passo 1: agrupar
+    const operationsBySourceId: Record<string,{
+      creditAmount:number;
+      debitAmount:number;
+      descriptions: Record<string,{ creditCount:number; debitCount:number }>;
+      predominantDescription:string;
+    }> = {};
+
+    filtered.forEach(line => {
+      const cols = line.split(',');
+      const src=cols[1];
+      const desc=cols[4];
+      const credit=parseFloat(cols[5])||0;
+      const debit=parseFloat(cols[6])||0;
+      if (!operationsBySourceId[src]) {
+        operationsBySourceId[src] = { creditAmount:0, debitAmount:0, descriptions:{}, predominantDescription:'' };
       }
-
-      // Skip the first two lines (release: and headers) and the last line (total)
-      const dataLines = lines.slice(2).filter(line => !line.startsWith(',,,total'));
-      
-      // Filter data by date if startDate and endDate are provided
-      const filteredDataLines = dataLines.filter(line => {
-        if (!line.trim()) return false;
-        
-        const columns = line.split(',');
-        if (columns.length < 2) return false;
-        
-        // DATE is the 1st column (index 0)
-        const dateStr = columns[0].trim();
-        
-        // Skip initial_available_balance line
-        if (columns.length >= 5 && columns[4].includes('initial_available_balance')) return false;
-        
-        return isDateInRange(dateStr, startDate, endDate);
-      });
-      
-      let totalReleased = 0;
-      let totalClaims = 0;
-      let totalDebts = 0;
-      let totalTransfers = 0;
-      let totalCreditCard = 0;
-      let totalShippingCashback = 0;
-      
-      // Group operations by SOURCE_ID to process them together
-      const operationsBySourceId: Record<string, {
-        creditAmount: number;
-        debitAmount: number;
-        descriptions: Record<string, { creditCount: number; debitCount: number; }>;
-      }> = {};
-      
-      filteredDataLines.forEach(line => {
-        if (!line.trim()) return;
-        
-        const columns = line.split(',');
-        if (columns.length < 7) return;
-        
-        // Skip initial_available_balance line
-        if (columns[4].includes('initial_available_balance')) return;
-        
-        // SOURCE_ID is the 2nd column (index 1)
-        const sourceId = columns[1].trim();
-        // DESCRIPTION is the 5th column (index 4)
-        const description = columns[4].trim();
-        // NET_CREDIT_AMOUNT is the 6th column (index 5)
-        const creditAmount = parseFloat(columns[5].trim().replace(/"/g, '') || '0');
-        // NET_DEBIT_AMOUNT is the 7th column (index 6)
-        const debitAmount = parseFloat(columns[6].trim().replace(/"/g, '') || '0');
-        
-        if (!sourceId) return;
-        
-        if (!operationsBySourceId[sourceId]) {
-          operationsBySourceId[sourceId] = {
-            creditAmount: 0,
-            debitAmount: 0,
-            descriptions: {}
-          };
-        }
-        
-        operationsBySourceId[sourceId].creditAmount += isNaN(creditAmount) ? 0 : creditAmount;
-        operationsBySourceId[sourceId].debitAmount += isNaN(debitAmount) ? 0 : debitAmount;
-        
-        if (!operationsBySourceId[sourceId].descriptions[description]) {
-          operationsBySourceId[sourceId].descriptions[description] = {
-            creditCount: 0,
-            debitCount: 0
-          };
-        }
-        
-        if (creditAmount > 0) {
-          operationsBySourceId[sourceId].descriptions[description].creditCount++;
-        }
-        
-        if (debitAmount > 0) {
-          operationsBySourceId[sourceId].descriptions[description].debitCount++;
-        }
-      });
-      
-      // Process each operation group
-      Object.entries(operationsBySourceId).forEach(([sourceId, operation]) => {
-        const netAmount = operation.creditAmount - operation.debitAmount;
-        
-        // Determine the predominant description for this operation
-        let predominantDescription = '';
-        let maxCount = 0;
-        
-        // If net amount is positive, look for predominant credit description
-        // If net amount is negative, look for predominant debit description
-        const descriptionEntries = Object.entries(operation.descriptions);
-        
-        if (netAmount >= 0) {
-          descriptionEntries.forEach(([description, counts]) => {
-            if (counts.creditCount > maxCount) {
-              maxCount = counts.creditCount;
-              predominantDescription = description;
-            }
-          });
-        } else {
-          descriptionEntries.forEach(([description, counts]) => {
-            if (counts.debitCount > maxCount) {
-              maxCount = counts.debitCount;
-              predominantDescription = description;
-            }
-          });
-        }
-        
-        // Categorize the operation based on the predominant description
-        if (predominantDescription === 'payment') {
-          totalReleased += netAmount;
-        } else if (['reserve_for_dispute', 'reserve_for_bpp_shipping_return', 'refund', 'reserve_for_refund', 'mediation'].includes(predominantDescription)) {
-          totalClaims += netAmount;
-        } else if (predominantDescription === 'reserve_for_debt_payment') {
-          totalDebts += netAmount;
-        } else if (['payout', 'reserve_for_payout'].includes(predominantDescription)) {
-          totalTransfers += netAmount;
-        } else if (predominantDescription === 'credit_payment') {
-          totalCreditCard += netAmount;
-        } else if (['shipping', 'cashback'].includes(predominantDescription)) {
-          totalShippingCashback += netAmount;
-        }
-      });
-      const operationsWithOrder: ReleaseOperation[] = [];
-const otherOperations: ReleaseOperation[] = [];
-
-Object.entries(operationsBySourceId).forEach(([sourceId, operation]) => {
-  const netAmount = operation.creditAmount - operation.debitAmount;
-
-  const matchingLine = filteredDataLines.find(line => {
-    const columns = line.split(',');
-    return columns[1]?.trim() === sourceId;
-  });
-
-  let externalRef = '';
-  let itemId = '';
-  let title = '';
-  let description = '';
-
-  if (matchingLine) {
-    const columns = matchingLine.split(',');
-    externalRef = columns[2]?.trim() || '';
-    itemId = columns[7]?.trim() || '';
-    title = columns[8]?.trim().replace(/"/g, '') || '';
-    description = columns[4]?.trim() || '';
-  }
-
-// Agrupa pagamentos (predominantDescription) e soma múltiplas linhas com o mesmo SOURCE_ID
-if (predominantDescription === 'payment' && netAmount > 0 && externalRef && itemId) {
-  const idx = operationsWithOrder.findIndex(op => op.orderId === externalRef);
-  if (idx !== -1) {
-    operationsWithOrder[idx].amount += netAmount;
-  } else {
-    operationsWithOrder.push({
-      orderId: externalRef,
-      itemId,
-      title: title || predominantDescription || 'Descrição indisponível',
-      amount: netAmount
+      const op = operationsBySourceId[src];
+      op.creditAmount += credit;
+      op.debitAmount += debit;
+      if (!op.descriptions[desc]) op.descriptions[desc]={ creditCount:0, debitCount:0 };
+      if (credit>0) op.descriptions[desc].creditCount++;
+      if (debit>0) op.descriptions[desc].debitCount++;
     });
-  }
-} else if (netAmount !== 0) {
-  // Qualquer outra operação
-  const key = predominantDescription || 'Sem descrição';
-  const idx = otherOperations.findIndex(op => op.description === key);
-  if (idx !== -1) {
-    otherOperations[idx].amount += netAmount;
-  } else {
-    otherOperations.push({
-      description: key,
-      amount: netAmount
+
+    // passo 2: calcular predominantDescription
+    Object.entries(operationsBySourceId).forEach(([src,op]) => {
+      const net = op.creditAmount - op.debitAmount;
+      let best='', max=0;
+      Object.entries(op.descriptions).forEach(([d,c]) => {
+        const cnt = net>=0?c.creditCount:c.debitCount;
+        if (cnt>max) { max=cnt; best=d; }
+      });
+      op.predominantDescription = best;
     });
+
+    // passo 3: somar totais
+    Object.values(operationsBySourceId).forEach(op=>{
+      const net = op.creditAmount - op.debitAmount;
+      switch(op.predominantDescription) {
+        case 'payment': totalReleased += net; break;
+        case 'reserve_for_debt_payment': totalDebts += net; break;
+        case 'credit_payment': totalCreditCard += net; break;
+        case 'reserve_for_dispute':
+        case 'refund':
+        case 'mediation':
+        case 'reserve_for_bpp_shipping_return': totalClaims += net; break;
+        case 'payout':
+        case 'reserve_for_payout': totalTransfers += net; break;
+        case 'shipping':
+        case 'cashback': totalShippingCashback += net; break;
+      }
+    });
+
+    // passo 4: montar listas para popup
+    const operationsWithOrder: ReleaseOperation[] = [];
+    const otherOperations: ReleaseOperation[] = [];
+
+    Object.entries(operationsBySourceId).forEach(([src,op]) => {
+      const net = op.creditAmount - op.debitAmount;
+      const line = filtered.find(l=>l.split(',')[1]===src)!
+      const cols = line.split(',');
+      const ref=cols[2], itm=cols[7], ttl=cols[8].replace(/"/g,'');
+      const desc=op.predominantDescription;
+      if (desc==='payment' && net>0 && ref && itm) {
+        const idx = operationsWithOrder.findIndex(o=>o.orderId===ref);
+        if(idx>=0) operationsWithOrder[idx].amount += net;
+        else operationsWithOrder.push({orderId:ref, itemId:itm, title:ttl||ref, amount:net});
+      } else if (net!==0) {
+        const key = desc||'Sem descrição';
+        const idx = otherOperations.findIndex(o=>o.description===key);
+        if(idx>=0) otherOperations[idx].amount += net;
+        else otherOperations.push({description:key, amount:net});
+      }
+    });
+
+    return {
+      totalReleased,
+      totalClaims,
+      totalDebts,
+      totalTransfers,
+      totalCreditCard,
+      totalShippingCashback,
+      operationsWithOrder,
+      otherOperations
+    };
+  } catch {
+    return { totalReleased:0,totalClaims:0,totalDebts:0,totalTransfers:0,totalCreditCard:0,totalShippingCashback:0,operationsWithOrder:[],otherOperations:[] };
   }
-}
-
-
-
-
-});
-
-// ✅ Agora sim, fora do forEach:
-return {
-  totalReleased,
-  totalClaims,
-  totalDebts,
-  totalTransfers,
-  totalCreditCard,
-  totalShippingCashback,
-  operationsWithOrder,
-  otherOperations
 };
 
+React.useEffect(() => {
+  setMetrics(prev => ({
+    ...prev,
+    grossSales: totalGrossSales,
+    totalAmount: totalGrossSales,
+    unitsSold: totalUnits,
+    totalMLRepasses: totalNetSales,
+    totalMLFees: totalGrossSales - totalNetSales
+  }));
+}, [totalGrossSales, totalNetSales, totalUnits]);
 
-
-    } catch (error) {
-      console.error('Error parsing release data:', error);
-      return {
-        totalReleased: 0,
-        totalClaims: 0,
-        totalDebts: 0,
-        totalTransfers: 0,
-        totalCreditCard: 0,
-        totalShippingCashback: 0
-      };
-    }
-  };
-
-  // Update metrics with data from the settlement API
-  React.useEffect(() => {
-    console.log("Updating metrics with settlement data:", { totalGrossSales, totalNetSales, totalUnits });
-    setMetrics(prevMetrics => ({
-      ...prevMetrics,
-      grossSales: totalGrossSales,
-      totalAmount: totalGrossSales,
-      unitsSold: totalUnits,
-      totalMLRepasses: totalNetSales,
-      totalMLFees: totalGrossSales - totalNetSales
-    }));
-  }, [totalGrossSales, totalNetSales, totalUnits]);
-
-  return (
-    <div className="min-h-screen bg-gray-100">
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex items-center mb-6">
-          <Button 
-            variant="ghost" 
-            onClick={() => navigate('/')}
-            className="mr-2"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Voltar
-          </Button>
-          <h1 className="text-3xl font-bold">Administração Financeira</h1>
-        </div>
-
-        <Tabs 
-          defaultValue="metricas" 
-          value={activeTab}
-          onValueChange={setActiveTab}
-          className="w-full"
-        >
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="metricas">Métricas</TabsTrigger>
-            <TabsTrigger value="entrada">Entrada de Dados</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="metricas" className="space-y-4 mt-4">
-            <DateRangeFilterSection
-              startDate={startDate}
-              endDate={endDate}
-              onStartDateChange={setStartDate}
-              onEndDateChange={setEndDate}
-              onFilter={handleFilter}
-            />
-            
-            <FinancialMetrics 
-  grossSales={metrics.grossSales}
-  totalAmount={metrics.totalAmount}
-  unitsSold={metrics.unitsSold}
-  totalMLRepasses={metrics.totalMLRepasses}
-  totalMLFees={metrics.totalMLFees}
-  totalReleased={metrics.totalReleased}
-  totalClaims={metrics.totalClaims}
-  totalDebts={metrics.totalDebts}
-  totalTransfers={metrics.totalTransfers}
-  totalCreditCard={metrics.totalCreditCard}
-  totalShippingCashback={metrics.totalShippingCashback}
-  settlementTransactions={settlementTransactions}
-  releaseOperationsWithOrder={releaseOperationsWithOrder}
-  releaseOtherOperations={releaseOtherOperations}
-/>
-
-
-          </TabsContent>
-          
-          <TabsContent value="entrada" className="mt-4">
-            <DataInput 
-              settlementData={settlementData}
-              releaseData={releaseData}
-              onSettlementDataChange={setSettlementData}
-              onReleaseDataChange={handleReleaseDataChange}
-              startDate={startDate}
-              endDate={endDate}
-              settlementTransactions={settlementTransactions}
-              settlementLoading={settlementLoading}
-            />
-          </TabsContent>
-        </Tabs>
+return (
+  <div className="min-h-screen bg-gray-100">
+    <div className="container mx-auto px-4 py-8">
+      <div className="flex items-center mb-6">
+        <Button variant="ghost" onClick={() => navigate('/')} className="mr-2">
+          <ArrowLeft className="h-4 w-4 mr-2" />Voltar
+        </Button>
+        <h1 className="text-3xl font-bold">Administração Financeira</h1>
       </div>
+
+      <Tabs defaultValue="metricas" value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="metricas">Métricas</TabsTrigger>
+          <TabsTrigger value="entrada">Entrada</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="metricas" className="space-y-4 mt-4">
+          <DateRangeFilterSection
+            startDate={startDate}
+            endDate={endDate}
+            onStartDateChange={setStartDate}
+            onEndDateChange={setEndDate}
+            onFilter={handleFilter}
+          />
+          <FinancialMetrics
+            grossSales={metrics.grossSales}
+            totalAmount={metrics.totalAmount}
+            unitsSold={metrics.unitsSold}
+            totalMLRepasses={metrics.totalMLRepasses}
+            totalMLFees={metrics.totalMLFees}
+            totalReleased={metrics.totalReleased}
+            totalClaims={metrics.totalClaims}
+            totalDebts={metrics.totalDebts}
+            totalTransfers={metrics.totalTransfers}
+            totalCreditCard={metrics.totalCreditCard}
+            totalShippingCashback={metrics.totalShippingCashback}
+            settlementTransactions={settlementTransactions}
+            releaseOperationsWithOrder={releaseOperationsWithOrder}
+            releaseOtherOperations={releaseOtherOperations}
+          />
+        </TabsContent>
+
+        <TabsContent value="entrada" className="mt-4">
+          <DataInput
+            settlementData={settlementData}
+            releaseData={releaseData}
+            onSettlementDataChange={setSettlementData}
+            onReleaseDataChange={handleReleaseDataChange}
+            startDate={startDate}
+            endDate={endDate}
+            settlementTransactions={settlementTransactions}
+            settlementLoading={settlementLoading}
+          />
+        </TabsContent>
+      </Tabs>
     </div>
-  );
+  </div>
+);
 };
 
 export default AdminFinanceiro;
