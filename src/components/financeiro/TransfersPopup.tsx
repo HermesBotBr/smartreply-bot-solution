@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { formatCurrency } from '@/utils/formatters';
 import { ReleaseOperation } from '@/types/ReleaseOperation';
 import { TransactionsList } from './TransactionsList';
@@ -235,6 +234,25 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
     };
   });
 
+  // Calculate summary values
+  const calculateSummaryValues = () => {
+    let totalValue = 0;
+    let totalDeclared = 0;
+
+    transfersWithDescriptions.forEach(transfer => {
+      totalValue += transfer.amount;
+      totalDeclared += getDeclaredTotal(transfer);
+    });
+
+    return {
+      totalValue,
+      totalDeclared,
+      difference: totalValue + totalDeclared  // should be 0 if balanced
+    };
+  };
+
+  const summary = calculateSummaryValues();
+
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -285,6 +303,7 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
                   Adicionar Descrição
                 </Button>
               )}
+              showFooterTotals={true}
             />
           </div>
         </div>

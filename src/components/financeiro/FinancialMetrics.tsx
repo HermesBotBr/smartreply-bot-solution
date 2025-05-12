@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MetricCard } from '@/components/dashboard/metrics/MetricCard';
 import { SettlementTransaction } from '@/hooks/useSettlementData';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -7,6 +7,7 @@ import { RepassesPopup } from './RepassesPopup';
 import { ReleasePopup } from './ReleasePopup';
 import { TransfersPopup } from './TransfersPopup';
 import { ReleaseOperation } from '@/types/ReleaseOperation';
+import { AlertCircle } from 'lucide-react';
 
 interface FinancialMetricsProps {
   grossSales: number;
@@ -44,12 +45,61 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
   const [repassesPopupOpen, setRepassesPopupOpen] = useState(false);
   const [releasePopupOpen, setReleasePopupOpen] = useState(false);
   const [transfersPopupOpen, setTransfersPopupOpen] = useState(false);
+  const [hasUnbalancedTransfers, setHasUnbalancedTransfers] = useState(false);
 
   // Filter transfers from other operations
   const transferOperations = releaseOtherOperations.filter(op => 
     op.description?.toLowerCase().includes('payout') || 
     op.description?.toLowerCase().includes('transfer')
   );
+
+  // Check if transfers are balanced when the component mounts or when transferOperations changes
+  useEffect(() => {
+    const checkTransferBalance = async () => {
+      if (transferOperations.length === 0) {
+        setHasUnbalancedTransfers(false);
+        return;
+      }
+
+      try {
+        // Get the seller_id from the mlToken hook
+        const mlToken = JSON.parse(localStorage.getItem('ml_token') || '{}');
+        const sellerId = mlToken.seller_id || '681274853';
+
+        // Fetch descriptions from API
+        const response = await fetch(`https://projetohermes-dda7e0c8d836.herokuapp.com/trans_desc?seller_id=${sellerId}`);
+        const apiDescriptions = await response.json();
+
+        // Calculate if transfers are balanced
+        let totalTransfersValue = 0;
+        let totalDeclaredValue = 0;
+
+        transferOperations.forEach(transfer => {
+          totalTransfersValue += transfer.amount;
+          
+          // Find descriptions for this transfer
+          const transferDescriptions = apiDescriptions.filter(
+            (desc: any) => desc.source_id === transfer.sourceId
+          );
+          
+          // Sum up declared values
+          const declaredSum = transferDescriptions.reduce(
+            (sum: number, desc: any) => sum + parseFloat(desc.valor), 0
+          );
+          
+          totalDeclaredValue += declaredSum;
+        });
+
+        // Check if balanced (allow for small floating point errors)
+        const difference = totalTransfersValue + totalDeclaredValue;
+        setHasUnbalancedTransfers(Math.abs(difference) > 0.01);
+      } catch (error) {
+        console.error('Error checking transfer balance:', error);
+      }
+    };
+
+    checkTransferBalance();
+  }, [transferOperations]);
 
   return (
     <div>
@@ -119,6 +169,7 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
                   className="bg-indigo-50 hover:bg-indigo-100 transition-colors"
                   textColor="text-indigo-800"
                   onClick={() => setTransfersPopupOpen(true)}
+                  icon={hasUnbalancedTransfers ? <AlertCircle className="h-4 w-4 text-amber-500 ml-2" /> : undefined}
                 />
               </div>
             </TabsContent>
