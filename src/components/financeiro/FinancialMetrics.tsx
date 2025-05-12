@@ -51,12 +51,14 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
           value={`R$ ${grossSales.toFixed(2)}`}
           description={`Unidades vendidas: ${unitsSold}`}
           className="bg-gray-50 hover:bg-gray-100 transition-colors"
+          textColor="text-gray-800"
         />
         <MetricCard
           title="Repasse Total (ML)"
           value={`R$ ${totalMLRepasses.toFixed(2)}`}
           description={`Clique para detalhar`}
-          className="bg-blue-50 hover:bg-blue-100 transition-colors cursor-pointer"
+          className="bg-blue-50 hover:bg-blue-100 transition-colors"
+          textColor="text-blue-800"
           onClick={() => setRepassesPopupOpen(true)}
         />
         <MetricCard
@@ -64,12 +66,14 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
           value={`R$ ${totalMLFees.toFixed(2)}`}
           description={`${((totalMLFees / (grossSales || 1)) * 100).toFixed(1)}% do valor bruto`}
           className="bg-red-50 hover:bg-red-100 transition-colors"
+          textColor="text-red-800"
         />
         <MetricCard
           title="Liberado"
           value={`R$ ${totalReleased.toFixed(2)}`}
           description={`Clique para detalhar`}
-          className="bg-green-50 hover:bg-green-100 transition-colors cursor-pointer"
+          className="bg-green-50 hover:bg-green-100 transition-colors"
+          textColor="text-green-800"
           onClick={() => setReleasePopupOpen(true)}
         />
       </div>
@@ -89,6 +93,7 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
                   value={`R$ ${Math.abs(totalClaims).toFixed(2)}`}
                   description={`${((Math.abs(totalClaims) / (grossSales || 1)) * 100).toFixed(1)}% do valor bruto`}
                   className="bg-amber-50 hover:bg-amber-100 transition-colors"
+                  textColor="text-amber-800"
                 />
                 
                 <MetricCard
@@ -96,6 +101,7 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
                   value={`R$ ${Math.abs(totalDebts).toFixed(2)}`}
                   description={`${((Math.abs(totalDebts) / (grossSales || 1)) * 100).toFixed(1)}% do valor bruto`}
                   className="bg-purple-50 hover:bg-purple-100 transition-colors"
+                  textColor="text-purple-800"
                 />
                 
                 <MetricCard
@@ -103,6 +109,7 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
                   value={`R$ ${Math.abs(totalTransfers).toFixed(2)}`}
                   description={`${((Math.abs(totalTransfers) / (grossSales || 1)) * 100).toFixed(1)}% do valor bruto`}
                   className="bg-indigo-50 hover:bg-indigo-100 transition-colors"
+                  textColor="text-indigo-800"
                 />
               </div>
             </TabsContent>
@@ -114,6 +121,7 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
                   value={`R$ ${Math.abs(totalCreditCard).toFixed(2)}`}
                   description={`${((Math.abs(totalCreditCard) / (grossSales || 1)) * 100).toFixed(1)}% do valor bruto`}
                   className="bg-lime-50 hover:bg-lime-100 transition-colors"
+                  textColor="text-lime-800"
                 />
                 
                 <MetricCard
@@ -121,6 +129,7 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
                   value={`R$ ${Math.abs(totalShippingCashback).toFixed(2)}`}
                   description={`${((Math.abs(totalShippingCashback) / (grossSales || 1)) * 100).toFixed(1)}% do valor bruto`}
                   className="bg-sky-50 hover:bg-sky-100 transition-colors"
+                  textColor="text-sky-800"
                 />
               </div>
             </TabsContent>
