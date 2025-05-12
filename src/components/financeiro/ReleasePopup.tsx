@@ -1,6 +1,6 @@
 // src/components/financeiro/ReleasePopup.tsx
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ReleaseOperation } from "@/types/ReleaseOperation";
@@ -18,8 +18,26 @@ export const ReleasePopup: React.FC<ReleasePopupProps> = ({
   operationsWithOrder,
   otherOperations
 }) => {
+  // Debug logs to help troubleshoot
+  useEffect(() => {
+    if (open) {
+      console.log("ReleasePopup opened with data:", { 
+        operationsWithOrder, 
+        otherOperations,
+        operationsCount: operationsWithOrder.length,
+        otherCount: otherOperations.length
+      });
+    }
+  }, [open, operationsWithOrder, otherOperations]);
+
   // Função para agrupar operações pelo orderId
   const groupOperationsByOrderId = (operations: ReleaseOperation[]): ReleaseOperation[] => {
+    if (!operations || operations.length === 0) {
+      console.log("No operations with order to group");
+      return [];
+    }
+    
+    console.log("Grouping operations by orderId:", operations);
     const groupedMap = new Map<string, ReleaseOperation>();
     
     operations.forEach(op => {
@@ -39,6 +57,12 @@ export const ReleasePopup: React.FC<ReleasePopupProps> = ({
 
   // Função para agrupar operações pelo tipo de descrição
   const groupOperationsByDescription = (operations: ReleaseOperation[]): ReleaseOperation[] => {
+    if (!operations || operations.length === 0) {
+      console.log("No other operations to group");
+      return [];
+    }
+    
+    console.log("Grouping operations by description:", operations);
     const groupedMap = new Map<string, ReleaseOperation>();
     
     operations.forEach(op => {
@@ -53,12 +77,68 @@ export const ReleasePopup: React.FC<ReleasePopupProps> = ({
     
     return Array.from(groupedMap.values());
   };
+
+  // Função para agrupar operações pelo sourceId (nova funcionalidade)
+  const groupOperationsBySourceId = (operations: ReleaseOperation[]): ReleaseOperation[] => {
+    if (!operations || operations.length === 0) {
+      console.log("No operations to group by sourceId");
+      return [];
+    }
+    
+    console.log("Grouping operations by sourceId:", operations);
+    const groupedMap = new Map<string, ReleaseOperation>();
+    
+    operations.forEach(op => {
+      // Skip operations without sourceId
+      if (!op.sourceId) {
+        console.log("Operation without sourceId:", op);
+        return;
+      }
+      
+      const key = op.sourceId;
+      if (groupedMap.has(key)) {
+        const existing = groupedMap.get(key)!;
+        existing.amount += op.amount;
+        // Keep the most informative description
+        if (op.description && (!existing.description || existing.description.length < op.description.length)) {
+          existing.description = op.description;
+        }
+        // Keep order info if available
+        if (op.orderId && !existing.orderId) {
+          existing.orderId = op.orderId;
+        }
+        if (op.itemId && !existing.itemId) {
+          existing.itemId = op.itemId;
+        }
+        if (op.title && !existing.title) {
+          existing.title = op.title;
+        }
+      } else {
+        groupedMap.set(key, {...op});
+      }
+    });
+    
+    return Array.from(groupedMap.values());
+  };
   
-  // Agrupe as operações
-  const groupedOperationsWithOrder = groupOperationsByOrderId(operationsWithOrder);
-  const groupedOtherOperations = groupOperationsByDescription(otherOperations);
+  // Use the sourceId grouping logic for both types of operations
+  const allOperations = [...operationsWithOrder, ...otherOperations];
+  console.log("All operations before grouping:", allOperations);
   
-  // Calcule os totais
+  // Group all operations by sourceId
+  const groupedBySourceId = groupOperationsBySourceId(allOperations);
+  console.log("Operations grouped by sourceId:", groupedBySourceId);
+  
+  // Now separate them into operations with order and other operations
+  const groupedOperationsWithOrder = groupedBySourceId.filter(op => op.orderId);
+  const groupedOtherOperations = groupedBySourceId.filter(op => !op.orderId);
+  
+  console.log("Final grouped operations:", {
+    groupedOperationsWithOrder,
+    groupedOtherOperations
+  });
+  
+  // Calculate totals based on the grouped operations
   const totalOperationsWithOrder = groupedOperationsWithOrder.reduce((sum, op) => sum + op.amount, 0);
   const totalOtherOperations = groupedOtherOperations.reduce((sum, op) => sum + op.amount, 0);
   const grandTotal = totalOperationsWithOrder + totalOtherOperations;
@@ -83,14 +163,20 @@ export const ReleasePopup: React.FC<ReleasePopupProps> = ({
                 </tr>
               </thead>
               <tbody>
-                {groupedOperationsWithOrder.map((op, idx) => (
-                  <tr key={idx} className="hover:bg-gray-50">
-                    <td className="p-2 border">{op.orderId || '-'}</td>
-                    <td className="p-2 border">{op.itemId || '-'}</td>
-                    <td className="p-2 border">{op.title || '-'}</td>
-                    <td className="p-2 border">R$ {op.amount.toFixed(2)}</td>
+                {groupedOperationsWithOrder.length > 0 ? (
+                  groupedOperationsWithOrder.map((op, idx) => (
+                    <tr key={idx} className="hover:bg-gray-50">
+                      <td className="p-2 border">{op.orderId || '-'}</td>
+                      <td className="p-2 border">{op.itemId || '-'}</td>
+                      <td className="p-2 border">{op.title || '-'}</td>
+                      <td className="p-2 border">R$ {op.amount.toFixed(2)}</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={4} className="p-2 border text-center">Nenhuma operação com ORDER_ID encontrada</td>
                   </tr>
-                ))}
+                )}
                 <tr className="font-semibold bg-gray-50">
                   <td colSpan={3} className="p-2 border text-right">Total:</td>
                   <td className="p-2 border">R$ {totalOperationsWithOrder.toFixed(2)}</td>
@@ -107,12 +193,18 @@ export const ReleasePopup: React.FC<ReleasePopupProps> = ({
                 </tr>
               </thead>
               <tbody>
-                {groupedOtherOperations.map((op, idx) => (
-                  <tr key={idx} className="hover:bg-gray-50">
-                    <td className="p-2 border">{op.description || '-'}</td>
-                    <td className="p-2 border">R$ {op.amount.toFixed(2)}</td>
+                {groupedOtherOperations.length > 0 ? (
+                  groupedOtherOperations.map((op, idx) => (
+                    <tr key={idx} className="hover:bg-gray-50">
+                      <td className="p-2 border">{op.description || '-'}</td>
+                      <td className="p-2 border">R$ {op.amount.toFixed(2)}</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={2} className="p-2 border text-center">Nenhuma operação sem ORDER_ID encontrada</td>
                   </tr>
-                ))}
+                )}
                 <tr className="font-semibold bg-gray-50">
                   <td className="p-2 border text-right">Total:</td>
                   <td className="p-2 border">R$ {totalOtherOperations.toFixed(2)}</td>
