@@ -11,6 +11,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogAction, AlertDialogCancel } from '@/components/ui/alert-dialog';
 import { Trash } from 'lucide-react';
+import axios from 'axios';
+import { toast } from 'sonner';
+import { useMlToken } from '@/hooks/useMlToken';
 
 interface TransfersPopupProps {
   open: boolean;
@@ -27,60 +30,180 @@ interface TransferWithDescriptions extends ReleaseOperation {
   manualDescriptions: TransferDescription[];
 }
 
-const LOCAL_STORAGE_KEY = 'transferDescriptions';
+interface ApiDescription {
+  id: number;
+  seller_id: string;
+  source_id: string;
+  descricao: string;
+  valor: string;
+}
 
 export const TransfersPopup: React.FC<TransfersPopupProps> = ({
   open,
   onClose,
   transfers
 }) => {
-  const [transfersWithDescriptions, setTransfersWithDescriptions] = useState<TransferWithDescriptions[]>(() => {
-    // Try to load saved descriptions from localStorage
-    const savedDescriptions = localStorage.getItem(LOCAL_STORAGE_KEY);
-    const parsedDescriptions = savedDescriptions ? JSON.parse(savedDescriptions) : {};
-    
-    return transfers.map(transfer => {
-      const sourceId = transfer.sourceId || '';
-      return {
-        ...transfer,
-        manualDescriptions: parsedDescriptions[sourceId] || []
-      };
-    });
-  });
-  
+  const [transfersWithDescriptions, setTransfersWithDescriptions] = useState<TransferWithDescriptions[]>([]);
   const [activeTransferId, setActiveTransferId] = useState<string | null>(null);
   const [newDescription, setNewDescription] = useState("");
   const [newValue, setNewValue] = useState("");
   const [descriptionDialogOpen, setDescriptionDialogOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   
-  // Update the transfers state when the transfers prop changes
+  // Obter o seller_id do usuário logado
+  const mlToken = useMlToken();
+  const sellerId = mlToken && typeof mlToken === 'object' && 'seller_id' in mlToken
+    ? (mlToken as { seller_id: string }).seller_id
+    : '681274853'; // ID padrão caso não encontre
+  
+  // Carregar descrições do endpoint quando o popup é aberto
   useEffect(() => {
-    const savedDescriptions = localStorage.getItem(LOCAL_STORAGE_KEY);
-    const parsedDescriptions = savedDescriptions ? JSON.parse(savedDescriptions) : {};
-
+    if (open) {
+      fetchDescriptions();
+    }
+  }, [open]);
+  
+  // Atualizar a lista de transferências quando as transferências mudam
+  useEffect(() => {
     setTransfersWithDescriptions(
-      transfers.map(transfer => {
-        const sourceId = transfer.sourceId || '';
-        return {
-          ...transfer,
-          manualDescriptions: parsedDescriptions[sourceId] || []
-        };
-      })
+      transfers.map(transfer => ({
+        ...transfer,
+        manualDescriptions: []
+      }))
     );
   }, [transfers]);
 
-  // Save descriptions to localStorage whenever they change
-  useEffect(() => {
-    const descriptionsMap: Record<string, TransferDescription[]> = {};
+  // Buscar descrições da API
+  const fetchDescriptions = async () => {
+    try {
+      setIsLoading(true);
+      const response = await axios.get(`https://projetohermes-dda7e0c8d836.herokuapp.com/trans_desc?seller_id=${sellerId}`);
+      const apiDescriptions: ApiDescription[] = response.data;
+      
+      // Mapear as descrições da API para o formato usado no componente
+      setTransfersWithDescriptions(prevTransfers => 
+        prevTransfers.map(transfer => {
+          const sourceId = transfer.sourceId || '';
+          const matchingDescriptions = apiDescriptions
+            .filter(desc => desc.source_id === sourceId)
+            .map(desc => ({
+              description: desc.descricao,
+              value: parseFloat(desc.valor)
+            }));
+          
+          return {
+            ...transfer,
+            manualDescriptions: matchingDescriptions
+          };
+        })
+      );
+      
+      setIsLoading(false);
+    } catch (error) {
+      console.error('Erro ao buscar descrições:', error);
+      toast.error('Erro ao carregar descrições');
+      setIsLoading(false);
+    }
+  };
+
+  // Adicionar nova descrição
+  const handleAddDescription = async () => {
+    if (!activeTransferId || !newDescription.trim() || !newValue.trim()) return;
     
-    transfersWithDescriptions.forEach(transfer => {
-      if (transfer.sourceId && transfer.manualDescriptions.length > 0) {
-        descriptionsMap[transfer.sourceId] = transfer.manualDescriptions;
-      }
-    });
+    const numericValue = parseFloat(newValue.replace(',', '.'));
+    if (isNaN(numericValue)) return;
     
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(descriptionsMap));
-  }, [transfersWithDescriptions]);
+    try {
+      setIsLoading(true);
+      
+      // Enviar descrição para a API
+      await axios.post('https://projetohermes-dda7e0c8d836.herokuapp.com/trans_desc', {
+        seller_id: sellerId,
+        source_id: activeTransferId,
+        descricao: newDescription,
+        valor: numericValue.toString()
+      });
+      
+      // Atualizar estado local após o sucesso da API
+      setTransfersWithDescriptions(prevTransfers => 
+        prevTransfers.map(transfer => {
+          if (transfer.sourceId === activeTransferId) {
+            return {
+              ...transfer,
+              manualDescriptions: [
+                ...transfer.manualDescriptions,
+                {
+                  description: newDescription,
+                  value: numericValue
+                }
+              ]
+            };
+          }
+          return transfer;
+        })
+      );
+      
+      setNewDescription("");
+      setNewValue("");
+      setDescriptionDialogOpen(false);
+      toast.success('Descrição adicionada com sucesso');
+      setIsLoading(false);
+    } catch (error) {
+      console.error('Erro ao salvar descrição:', error);
+      toast.error('Erro ao salvar descrição');
+      setIsLoading(false);
+    }
+  };
+
+  // Remover descrição
+  const handleRemoveDescription = async (transferId: string, descriptionIndex: number) => {
+    try {
+      const transfer = transfersWithDescriptions.find(t => t.sourceId === transferId);
+      if (!transfer) return;
+      
+      const descriptionToRemove = transfer.manualDescriptions[descriptionIndex];
+      
+      setIsLoading(true);
+      
+      // Remover descrição da API
+      await axios.delete('https://projetohermes-dda7e0c8d836.herokuapp.com/trans_desc', {
+        data: {
+          seller_id: sellerId,
+          source_id: transferId,
+          descricao: descriptionToRemove.description,
+          valor: descriptionToRemove.value.toString()
+        }
+      });
+      
+      // Atualizar estado local após o sucesso da API
+      setTransfersWithDescriptions(prevTransfers => 
+        prevTransfers.map(transfer => {
+          if (transfer.sourceId === transferId) {
+            const updatedDescriptions = [...transfer.manualDescriptions];
+            updatedDescriptions.splice(descriptionIndex, 1);
+            
+            return {
+              ...transfer,
+              manualDescriptions: updatedDescriptions
+            };
+          }
+          return transfer;
+        })
+      );
+      
+      toast.success('Descrição removida com sucesso');
+      setIsLoading(false);
+    } catch (error) {
+      console.error('Erro ao remover descrição:', error);
+      toast.error('Erro ao remover descrição');
+      setIsLoading(false);
+    }
+  };
+
+  // Calculate declared total for a transfer
+  const getDeclaredTotal = (transfer: TransferWithDescriptions) => {
+    return transfer.manualDescriptions.reduce((sum, desc) => sum + desc.value, 0);
+  };
 
   // Group transfers by description for summary
   const transfersByDescription = transfersWithDescriptions.reduce((acc: Record<string, number>, transfer) => {
@@ -89,57 +212,6 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
     acc[description] += transfer.amount;
     return acc;
   }, {});
-
-  const handleAddDescription = () => {
-    if (!activeTransferId || !newDescription.trim() || !newValue.trim()) return;
-    
-    const numericValue = parseFloat(newValue.replace(',', '.'));
-    if (isNaN(numericValue)) return;
-    
-    setTransfersWithDescriptions(prevTransfers => 
-      prevTransfers.map(transfer => {
-        if (transfer.sourceId === activeTransferId) {
-          return {
-            ...transfer,
-            manualDescriptions: [
-              ...transfer.manualDescriptions,
-              {
-                description: newDescription,
-                value: numericValue
-              }
-            ]
-          };
-        }
-        return transfer;
-      })
-    );
-    
-    setNewDescription("");
-    setNewValue("");
-    setDescriptionDialogOpen(false);
-  };
-
-  const handleRemoveDescription = (transferId: string, descriptionIndex: number) => {
-    setTransfersWithDescriptions(prevTransfers => 
-      prevTransfers.map(transfer => {
-        if (transfer.sourceId === transferId) {
-          const updatedDescriptions = [...transfer.manualDescriptions];
-          updatedDescriptions.splice(descriptionIndex, 1);
-          
-          return {
-            ...transfer,
-            manualDescriptions: updatedDescriptions
-          };
-        }
-        return transfer;
-      })
-    );
-  };
-
-  // Calculate declared total for a transfer
-  const getDeclaredTotal = (transfer: TransferWithDescriptions) => {
-    return transfer.manualDescriptions.reduce((sum, desc) => sum + desc.value, 0);
-  };
 
   // Convert to transactions for the TransactionsList component
   const transferTransactions = transfersWithDescriptions.map(transfer => {
@@ -239,6 +311,7 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
                   value={newDescription}
                   onChange={(e) => setNewDescription(e.target.value)}
                   className="min-h-[80px]"
+                  disabled={isLoading}
                 />
               </div>
               
@@ -249,6 +322,7 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
                   placeholder="Valor"
                   value={newValue}
                   onChange={(e) => setNewValue(e.target.value)}
+                  disabled={isLoading}
                 />
               </div>
               
@@ -272,6 +346,7 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
                             size="icon"
                             onClick={() => handleRemoveDescription(activeTransferId, idx)}
                             className="h-8 w-8"
+                            disabled={isLoading}
                           >
                             <Trash className="h-4 w-4 text-destructive" />
                             <span className="sr-only">Remover</span>
@@ -287,11 +362,16 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
               <AlertDialogCancel onClick={() => {
                 setNewDescription("");
                 setNewValue("");
-              }}>
+              }}
+              disabled={isLoading}
+              >
                 Cancelar
               </AlertDialogCancel>
-              <AlertDialogAction onClick={handleAddDescription}>
-                Salvar
+              <AlertDialogAction 
+                onClick={handleAddDescription}
+                disabled={isLoading}
+              >
+                {isLoading ? 'Salvando...' : 'Salvar'}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
