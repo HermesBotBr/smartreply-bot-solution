@@ -5,6 +5,7 @@ import { SettlementTransaction } from '@/hooks/useSettlementData';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RepassesPopup } from './RepassesPopup';
 import { ReleasePopup } from './ReleasePopup';
+import { TransfersPopup } from './TransfersPopup';
 import { ReleaseOperation } from '@/types/ReleaseOperation';
 
 interface FinancialMetricsProps {
@@ -42,6 +43,13 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
 }) => {
   const [repassesPopupOpen, setRepassesPopupOpen] = useState(false);
   const [releasePopupOpen, setReleasePopupOpen] = useState(false);
+  const [transfersPopupOpen, setTransfersPopupOpen] = useState(false);
+
+  // Filter transfers from other operations
+  const transferOperations = releaseOtherOperations.filter(op => 
+    op.description?.toLowerCase().includes('payout') || 
+    op.description?.toLowerCase().includes('transfer')
+  );
 
   return (
     <div>
@@ -110,6 +118,7 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
                   description={`${((Math.abs(totalTransfers) / (grossSales || 1)) * 100).toFixed(1)}% do valor bruto`}
                   className="bg-indigo-50 hover:bg-indigo-100 transition-colors"
                   textColor="text-indigo-800"
+                  onClick={() => setTransfersPopupOpen(true)}
                 />
               </div>
             </TabsContent>
@@ -149,6 +158,12 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
         settlementTransactions={settlementTransactions}
         open={releasePopupOpen}
         onClose={() => setReleasePopupOpen(false)}
+      />
+      
+      <TransfersPopup
+        transfers={transferOperations}
+        open={transfersPopupOpen}
+        onClose={() => setTransfersPopupOpen(false)}
       />
     </div>
   );
