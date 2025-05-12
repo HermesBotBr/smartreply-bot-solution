@@ -65,17 +65,22 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
   }));
 
   // Group transfers by sourceId to calculate total and described values
-  const transfersBySourceId = transfers.reduce((acc: Record<string, {total: number, described: number}>, transfer) => {
+  const transfersBySourceId = transfers.reduce((acc: Record<string, {total: number, described: number, hasManualDescription: boolean}>, transfer) => {
     const sourceId = transfer.sourceId || '';
     if (!acc[sourceId]) {
-      acc[sourceId] = { total: 0, described: 0 };
+      acc[sourceId] = { 
+        total: 0, 
+        described: 0,
+        hasManualDescription: false
+      };
     }
     acc[sourceId].total += transfer.amount;
     
     // Only count as described if it has a non-default description
-    // IMPORTANT FIX: Só considerar como descrito se tiver uma descrição que não seja a padrão
+    // And mark that this transfer has a manual description
     if (transfer.description && transfer.description !== 'Transferência') {
       acc[sourceId].described += transfer.amount;
+      acc[sourceId].hasManualDescription = true;
     }
     
     return acc;
@@ -85,8 +90,6 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
     // Calculate remaining value
     const transferGroup = transfersBySourceId[sourceId];
     
-    // IMPORTANT FIX: Use the total value as remaining value if no descriptions exist
-    // or subtract only the described amount from the total
     // For negative values, we need the absolute values for remaining calculation
     const totalAbs = Math.abs(totalValue);
     const describedAbs = transferGroup ? Math.abs(transferGroup.described) : 0;
@@ -98,7 +101,7 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
       remainingValue
     });
     
-    // IMPORTANT FIX: Initialize the form with the actual remaining value
+    // Initialize the form with the actual remaining value
     form.setValue('value', remainingValue);
     
     setIsDescriptionModalOpen(true);
@@ -128,9 +131,9 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
   };
 
   // Check if there are any undescribed transfers
-  // IMPORTANT FIX: Considerar uma transferência "descrita" apenas se o valor da descrição for igual ao valor total (em módulo)
+  // CRITICAL FIX: Consider transfers properly described ONLY if they have a manual description
   const hasUndescribedTransfers = Object.values(transfersBySourceId).some(
-    transfer => Math.abs(transfer.described) < Math.abs(transfer.total)
+    transfer => !transfer.hasManualDescription
   );
 
   return (
@@ -189,9 +192,10 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {Object.entries(transfersBySourceId).map(([sourceId, { total, described }]) => {
-                      // IMPORTANT FIX: Use absolute values for completion check
-                      const isFullyDescribed = Math.abs(described) >= Math.abs(total);
+                    {Object.entries(transfersBySourceId).map(([sourceId, { total, described, hasManualDescription }]) => {
+                      // CRITICAL FIX: A transfer is fully described ONLY if it has at least one manual description
+                      // AND the absolute described amount matches the absolute total amount
+                      const isFullyDescribed = hasManualDescription && Math.abs(described) >= Math.abs(total);
                       const transaction = transferTransactions.find(t => t.sourceId === sourceId);
                       
                       if (!transaction) return null;
@@ -224,7 +228,9 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
                               </Badge>
                             ) : (
                               <Badge variant="destructive">
-                                {described !== 0 ? `${Math.round((Math.abs(described)/Math.abs(total))*100)}%` : 'Pendente'}
+                                {hasManualDescription ? 
+                                  `${Math.round((Math.abs(described)/Math.abs(total))*100)}%` : 
+                                  'Sem descrição'}
                               </Badge>
                             )}
                           </TableCell>
@@ -309,4 +315,3 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
     </>
   );
 };
-
