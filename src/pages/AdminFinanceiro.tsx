@@ -10,7 +10,12 @@ import { useMlToken } from '@/hooks/useMlToken';
 import { useSettlementData } from '@/hooks/useSettlementData';
 import { toast } from 'sonner';
 
+
 const AdminFinanceiro = () => {
+  const [releaseOperationsWithOrder, setReleaseOperationsWithOrder] = useState<ReleaseOperation[]>([]);
+const [releaseOtherOperations, setReleaseOtherOperations] = useState<ReleaseOperation[]>([]);
+
+
   const navigate = useNavigate();
   const [startDate, setStartDate] = useState<Date | undefined>(new Date());
   const [endDate, setEndDate] = useState<Date | undefined>(new Date());
@@ -93,15 +98,19 @@ const AdminFinanceiro = () => {
     const parsedData = parseReleaseData(data, startDate, endDate);
     
     // Update metrics while preserving settlement data metrics
-    setMetrics(prevMetrics => ({
-      ...prevMetrics,
-      totalReleased: parsedData.totalReleased,
-      totalClaims: parsedData.totalClaims,
-      totalDebts: parsedData.totalDebts,
-      totalTransfers: parsedData.totalTransfers,
-      totalCreditCard: parsedData.totalCreditCard,
-      totalShippingCashback: parsedData.totalShippingCashback
-    }));
+setMetrics(prevMetrics => ({
+  ...prevMetrics,
+  totalReleased: parsedData.totalReleased,
+  totalClaims: parsedData.totalClaims,
+  totalDebts: parsedData.totalDebts,
+  totalTransfers: parsedData.totalTransfers,
+  totalCreditCard: parsedData.totalCreditCard,
+  totalShippingCashback: parsedData.totalShippingCashback
+}));
+
+setReleaseOperationsWithOrder(parsedData.operationsWithOrder || []);
+setReleaseOtherOperations(parsedData.otherOperations || []);
+
   };
 
   // Helper function to check if a date string is within the filter range
@@ -131,14 +140,17 @@ const AdminFinanceiro = () => {
     data: string,
     startDate?: Date,
     endDate?: Date
-  ): {
-    totalReleased: number;
-    totalClaims: number;
-    totalDebts: number;
-    totalTransfers: number;
-    totalCreditCard: number;
-    totalShippingCashback: number;
-  } => {
+): {
+  totalReleased: number;
+  totalClaims: number;
+  totalDebts: number;
+  totalTransfers: number;
+  totalCreditCard: number;
+  totalShippingCashback: number;
+  operationsWithOrder: ReleaseOperation[];
+  otherOperations: ReleaseOperation[];
+} => {
+
     try {
       // Skip the first two lines (title and headers)
       const lines = data.split('\n').filter(line => line.trim() !== '');
@@ -277,15 +289,46 @@ const AdminFinanceiro = () => {
           totalShippingCashback += netAmount;
         }
       });
-      
-      return {
-        totalReleased,
-        totalClaims,
-        totalDebts,
-        totalTransfers,
-        totalCreditCard,
-        totalShippingCashback
-      };
+      const operationsWithOrder: ReleaseOperation[] = [];
+const otherOperations: ReleaseOperation[] = [];
+
+filteredDataLines.forEach(line => {
+  const columns = line.split(',');
+  const externalRef = columns[2]?.trim();
+  const description = columns[4]?.trim();
+  const itemId = columns[7]?.trim();
+  const title = columns[8]?.trim().replace(/"/g, '');
+  const credit = parseFloat(columns[5]?.trim().replace(/"/g, '') || '0');
+  const debit = parseFloat(columns[6]?.trim().replace(/"/g, '') || '0');
+  const net = credit - debit;
+
+  if (itemId && externalRef) {
+    operationsWithOrder.push({
+      orderId: externalRef,
+      itemId,
+      title,
+      amount: net
+    });
+  } else {
+    otherOperations.push({
+      description,
+      amount: net
+    });
+  }
+});
+
+return {
+  totalReleased,
+  totalClaims,
+  totalDebts,
+  totalTransfers,
+  totalCreditCard,
+  totalShippingCashback,
+  operationsWithOrder,
+  otherOperations
+};
+
+
     } catch (error) {
       console.error('Error parsing release data:', error);
       return {
@@ -360,7 +403,10 @@ const AdminFinanceiro = () => {
   totalCreditCard={metrics.totalCreditCard}
   totalShippingCashback={metrics.totalShippingCashback}
   settlementTransactions={settlementTransactions}
+  releaseOperationsWithOrder={releaseOperationsWithOrder}
+  releaseOtherOperations={releaseOtherOperations}
 />
+
 
           </TabsContent>
           
