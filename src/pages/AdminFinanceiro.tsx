@@ -9,7 +9,14 @@ import { useNavigate } from 'react-router-dom';
 import { useMlToken } from '@/hooks/useMlToken';
 import { useSettlementData } from '@/hooks/useSettlementData';
 import { toast } from 'sonner';
-import { ReleaseOperation } from "@/types/ReleaseOperation";
+interface ReleaseOperation {
+  orderId?: string;
+  itemId?: string;
+  title?: string;
+  amount: number;
+  description?: string;
+}
+
 
 
 
