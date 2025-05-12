@@ -327,19 +327,20 @@ Object.entries(operationsBySourceId).forEach(([sourceId, operation]) => {
     if (externalRef && itemId && title) break;
   }
 
-  if (externalRef && itemId) {
-    operationsWithOrder.push({
-      orderId: externalRef,
-      itemId,
-      title,
-      amount: netAmount
-    });
-  } else {
-    otherOperations.push({
-      description,
-      amount: netAmount
-    });
-  }
+  if (externalRef || itemId || title) {
+  operationsWithOrder.push({
+    orderId: externalRef || sourceId, // fallback pro ID da operação
+    itemId: itemId || '-',
+    title: title || description || 'Descrição indisponível',
+    amount: netAmount
+  });
+} else {
+  otherOperations.push({
+    description: description || 'Sem descrição',
+    amount: netAmount
+  });
+}
+
 });
 
 
