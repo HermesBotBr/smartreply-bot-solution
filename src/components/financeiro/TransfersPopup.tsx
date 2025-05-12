@@ -73,6 +73,7 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
     acc[sourceId].total += transfer.amount;
     
     // Only count as described if it has a non-default description
+    // IMPORTANT FIX: Só considerar como descrito se tiver uma descrição que não seja a padrão
     if (transfer.description && transfer.description !== 'Transferência') {
       acc[sourceId].described += transfer.amount;
     }
@@ -86,7 +87,10 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
     
     // IMPORTANT FIX: Use the total value as remaining value if no descriptions exist
     // or subtract only the described amount from the total
-    const remainingValue = transferGroup ? (transferGroup.total - transferGroup.described) : totalValue;
+    // For negative values, we need the absolute values for remaining calculation
+    const totalAbs = Math.abs(totalValue);
+    const describedAbs = transferGroup ? Math.abs(transferGroup.described) : 0;
+    const remainingValue = transferGroup ? (totalAbs - describedAbs) : totalAbs;
     
     setSelectedTransfer({
       sourceId,
@@ -124,8 +128,9 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
   };
 
   // Check if there are any undescribed transfers
+  // IMPORTANT FIX: Considerar uma transferência "descrita" apenas se o valor da descrição for igual ao valor total (em módulo)
   const hasUndescribedTransfers = Object.values(transfersBySourceId).some(
-    transfer => transfer.described < transfer.total
+    transfer => Math.abs(transfer.described) < Math.abs(transfer.total)
   );
 
   return (
@@ -185,7 +190,8 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
                   </TableHeader>
                   <TableBody>
                     {Object.entries(transfersBySourceId).map(([sourceId, { total, described }]) => {
-                      const isFullyDescribed = described >= total;
+                      // IMPORTANT FIX: Use absolute values for completion check
+                      const isFullyDescribed = Math.abs(described) >= Math.abs(total);
                       const transaction = transferTransactions.find(t => t.sourceId === sourceId);
                       
                       if (!transaction) return null;
@@ -218,7 +224,7 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
                               </Badge>
                             ) : (
                               <Badge variant="destructive">
-                                {described > 0 ? `${Math.round((described/total)*100)}%` : 'Pendente'}
+                                {described !== 0 ? `${Math.round((Math.abs(described)/Math.abs(total))*100)}%` : 'Pendente'}
                               </Badge>
                             )}
                           </TableCell>
@@ -303,3 +309,4 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
     </>
   );
 };
+
