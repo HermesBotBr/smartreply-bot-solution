@@ -322,19 +322,20 @@ Object.entries(operationsBySourceId).forEach(([sourceId, operation]) => {
     description = columns[4]?.trim() || '';
   }
 
-  if (externalRef && itemId) {
-    operationsWithOrder.push({
-      orderId: externalRef,
-      itemId,
-      title: title || description || 'Descrição indisponível',
-      amount: netAmount
-    });
-  } else {
-    otherOperations.push({
-      description: description || 'Sem descrição',
-      amount: netAmount
-    });
-  }
+  if (predominantDescription === 'payment' && netAmount > 0 && externalRef && itemId) {
+  operationsWithOrder.push({
+    orderId: externalRef,
+    itemId,
+    title: title || description || 'Descrição indisponível',
+    amount: netAmount
+  });
+} else if (netAmount !== 0) {
+  otherOperations.push({
+    description: description || 'Sem descrição',
+    amount: netAmount
+  });
+}
+
 });
 
 // ✅ Agora sim, fora do forEach:
