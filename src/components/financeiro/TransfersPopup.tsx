@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
@@ -38,6 +37,17 @@ interface ApiDescription {
   source_id: string;
   descricao: string;
   valor: string;
+}
+
+// Define a transaction interface that matches what we're creating
+interface TransferTransaction {
+  date: string;
+  sourceId: string;
+  descriptions: string[];
+  group: string;
+  value: number;
+  totalDeclared: number;
+  manualDescriptions: TransferDescription[];
 }
 
 export const TransfersPopup: React.FC<TransfersPopupProps> = ({
@@ -209,6 +219,11 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
     return transfer.manualDescriptions.reduce((sum, desc) => sum + desc.value, 0);
   };
 
+  // Calculate declared total for a transaction
+  const getTransactionDeclaredTotal = (transaction: TransferTransaction) => {
+    return transaction.manualDescriptions?.reduce((sum, desc) => sum + desc.value, 0) || 0;
+  };
+
   // Group transfers by description for summary
   const transfersByDescription = transfersWithDescriptions.reduce((acc: Record<string, number>, transfer) => {
     const description = transfer.description || 'Sem descrição';
@@ -218,7 +233,7 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
   }, {});
 
   // Convert to transactions for the TransactionsList component
-  const transferTransactions = transfersWithDescriptions.map(transfer => {
+  const transferTransactions: TransferTransaction[] = transfersWithDescriptions.map(transfer => {
     // Collect all descriptions
     const allDescriptions = [transfer.description || 'Transferência'];
     transfer.manualDescriptions.forEach(desc => {
@@ -270,7 +285,7 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
 
     filteredTransactions.forEach(transaction => {
       totalValue += transaction.value;
-      totalDeclared += getDeclaredTotal(transaction as TransferWithDescriptions);
+      totalDeclared += getTransactionDeclaredTotal(transaction);
     });
 
     return {
