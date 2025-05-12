@@ -13,6 +13,7 @@ interface MetricCardProps {
   textColor?: string;
   change?: string;
   changeType?: 'positive' | 'negative' | 'neutral';
+  onClick?: () => void;  // Add onClick handler property
 }
 
 export function MetricCard({
@@ -25,7 +26,8 @@ export function MetricCard({
   className = '',
   textColor = 'text-white',
   change,
-  changeType = 'neutral'
+  changeType = 'neutral',
+  onClick  // Add onClick to the function parameters
 }: MetricCardProps) {
   const getChangeColor = () => {
     if (changeType === 'positive') return 'bg-green-500 text-white';
@@ -34,7 +36,11 @@ export function MetricCard({
   };
 
   return (
-    <div className={`${className} rounded-xl shadow-lg overflow-hidden ${color}`}>
+    <div 
+      className={`${className} rounded-xl shadow-lg overflow-hidden ${color}`}
+      onClick={onClick} // Add onClick handler to the div
+      style={{ cursor: onClick ? 'pointer' : 'default' }} // Add cursor style when onClick is provided
+    >
       <div className="p-6 flex flex-col h-full">
         <div className="flex items-start justify-between mb-4">
           <h3 className={`text-sm font-medium opacity-90 ${textColor}`}>
