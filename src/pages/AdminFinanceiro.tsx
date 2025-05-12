@@ -322,14 +322,13 @@ Object.entries(operationsBySourceId).forEach(([sourceId, operation]) => {
     description = columns[4]?.trim() || '';
   }
 
-  if (predominantDescription === 'payment' && netAmount > 0 && externalRef && itemId) {
+  // Garantir que o agrupamento se refira ao tipo "payment" de forma segura
+if (matchingLine && description === 'payment' && netAmount > 0 && externalRef && itemId) {
   const existingIndex = operationsWithOrder.findIndex(op => op.orderId === externalRef);
 
   if (existingIndex !== -1) {
-    // Já existe uma operação com esse orderId, somamos o valor
     operationsWithOrder[existingIndex].amount += netAmount;
   } else {
-    // Nova operação com esse orderId
     operationsWithOrder.push({
       orderId: externalRef,
       itemId,
@@ -342,7 +341,6 @@ Object.entries(operationsBySourceId).forEach(([sourceId, operation]) => {
   const existingIndex = otherOperations.findIndex(op => op.description === key);
 
   if (existingIndex !== -1) {
-    // Já existe essa descrição, somamos
     otherOperations[existingIndex].amount += netAmount;
   } else {
     otherOperations.push({
@@ -351,6 +349,7 @@ Object.entries(operationsBySourceId).forEach(([sourceId, operation]) => {
     });
   }
 }
+
 
 
 });
