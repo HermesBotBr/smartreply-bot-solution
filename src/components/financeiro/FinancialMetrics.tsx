@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MetricCard } from '@/components/dashboard/metrics/MetricCard';
 import { SettlementTransaction } from '@/hooks/useSettlementData';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -44,12 +44,92 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
   const [repassesPopupOpen, setRepassesPopupOpen] = useState(false);
   const [releasePopupOpen, setReleasePopupOpen] = useState(false);
   const [transfersPopupOpen, setTransfersPopupOpen] = useState(false);
+  const [transferOperations, setTransferOperations] = useState<ReleaseOperation[]>([]);
+  const [hasUndescribedTransfers, setHasUndescribedTransfers] = useState(false);
 
   // Filter transfers from other operations
-  const transferOperations = releaseOtherOperations.filter(op => 
-    op.description?.toLowerCase().includes('payout') || 
-    op.description?.toLowerCase().includes('transfer')
-  );
+  useEffect(() => {
+    const operations = releaseOtherOperations.filter(op => 
+      op.description?.toLowerCase().includes('payout') || 
+      op.description?.toLowerCase().includes('transfer')
+    );
+
+    setTransferOperations(operations);
+
+    // Check if any transfers lack proper descriptions
+    const transfersBySourceId = operations.reduce((acc: Record<string, {total: number, described: number}>, transfer) => {
+      const sourceId = transfer.sourceId || '';
+      if (!acc[sourceId]) {
+        acc[sourceId] = { total: 0, described: 0 };
+      }
+      acc[sourceId].total += transfer.amount;
+      
+      // If it has a description that is not the default, it's been described
+      if (transfer.description && transfer.description !== 'Transferência') {
+        acc[sourceId].described += transfer.amount;
+      }
+      
+      return acc;
+    }, {});
+
+    // Check if there are any undescribed transfers
+    const hasUndescribed = Object.values(transfersBySourceId).some(
+      transfer => transfer.described < transfer.total
+    );
+    
+    setHasUndescribedTransfers(hasUndescribed);
+  }, [releaseOtherOperations]);
+
+  // Handle updating transfer descriptions
+  const handleUpdateTransferDescription = (sourceId: string, description: string, value: number) => {
+    // Create a new transfer operation with the provided description
+    const newTransferOperation: ReleaseOperation = {
+      sourceId,
+      description,
+      amount: value
+    };
+
+    // Find the matching transfer to adjust its amount
+    const updatedOperations = transferOperations.map(op => {
+      if (op.sourceId === sourceId && (!op.description || op.description === 'Transferência')) {
+        // Reduce the amount of the original operation
+        return {
+          ...op,
+          amount: op.amount - value
+        };
+      }
+      return op;
+    });
+
+    // Add the new operation with description
+    const finalOperations = [...updatedOperations, newTransferOperation];
+    
+    // Filter out any operations with zero amount
+    const filteredOperations = finalOperations.filter(op => op.amount !== 0);
+    
+    setTransferOperations(filteredOperations);
+    
+    // Re-check if there are still undescribed transfers
+    const transfersBySourceId = filteredOperations.reduce((acc: Record<string, {total: number, described: number}>, transfer) => {
+      const sourceId = transfer.sourceId || '';
+      if (!acc[sourceId]) {
+        acc[sourceId] = { total: 0, described: 0 };
+      }
+      acc[sourceId].total += transfer.amount;
+      
+      if (transfer.description && transfer.description !== 'Transferência') {
+        acc[sourceId].described += transfer.amount;
+      }
+      
+      return acc;
+    }, {});
+
+    const stillHasUndescribed = Object.values(transfersBySourceId).some(
+      transfer => transfer.described < transfer.total
+    );
+    
+    setHasUndescribedTransfers(stillHasUndescribed);
+  };
 
   return (
     <div>
@@ -113,10 +193,10 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
                 />
                 
                 <MetricCard
-                  title="Transferências"
+                  title={hasUndescribedTransfers ? "Transferências ●" : "Transferências"}
                   value={`R$ ${Math.abs(totalTransfers).toFixed(2)}`}
                   description={`${((Math.abs(totalTransfers) / (grossSales || 1)) * 100).toFixed(1)}% do valor bruto`}
-                  className="bg-indigo-50 hover:bg-indigo-100 transition-colors"
+                  className={`${hasUndescribedTransfers ? "border-2 border-indigo-300" : ""} bg-indigo-50 hover:bg-indigo-100 transition-colors`}
                   textColor="text-indigo-800"
                   onClick={() => setTransfersPopupOpen(true)}
                 />
@@ -164,6 +244,7 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
         transfers={transferOperations}
         open={transfersPopupOpen}
         onClose={() => setTransfersPopupOpen(false)}
+        onUpdateTransferDescription={handleUpdateTransferDescription}
       />
     </div>
   );
