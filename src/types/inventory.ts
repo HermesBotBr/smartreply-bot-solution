@@ -5,7 +5,6 @@ export interface TransDesc {
   source_id: string;
   descricao: string;
   valor: string;
-  date?: string; // Adding date field
 }
 
 export interface InventoryItem {
@@ -17,7 +16,6 @@ export interface InventoryItem {
     unitCost: number;
     totalCost: number;
     sourceId: string;
-    date?: string; // Adding date field for purchases
   }[];
 }
 

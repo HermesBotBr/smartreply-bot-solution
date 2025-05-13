@@ -17,17 +17,6 @@ export function InventoryItemCard({ item }: InventoryItemCardProps) {
   // Calculate total inventory value
   const totalInventoryValue = item.totalQuantity * weightedAverageCost;
 
-  // Format date helper function
-  const formatDate = (dateString?: string): string => {
-    if (!dateString) return '-';
-    try {
-      const date = new Date(dateString);
-      return date.toLocaleDateString('pt-BR');
-    } catch (e) {
-      return dateString || '-';
-    }
-  };
-
   return (
     <Card className="h-full">
       <CardHeader className="pb-2">
@@ -63,7 +52,6 @@ export function InventoryItemCard({ item }: InventoryItemCardProps) {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Data</TableHead>
                 <TableHead>Qtd.</TableHead>
                 <TableHead>Valor Unit.</TableHead>
                 <TableHead>Total</TableHead>
@@ -72,7 +60,6 @@ export function InventoryItemCard({ item }: InventoryItemCardProps) {
             <TableBody>
               {item.purchases.map((purchase, index) => (
                 <TableRow key={`${purchase.sourceId}-${index}`}>
-                  <TableCell>{formatDate(purchase.date)}</TableCell>
                   <TableCell>{purchase.quantity}</TableCell>
                   <TableCell>R$ {purchase.unitCost.toFixed(2)}</TableCell>
                   <TableCell>R$ {purchase.totalCost.toFixed(2)}</TableCell>
