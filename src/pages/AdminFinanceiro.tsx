@@ -393,7 +393,7 @@ const AdminFinanceiro: React.FC = () => {
               onReleaseDataChange={handleReleaseDataChange}
               startDate={startDate}
               endDate={endDate}
-              settlementTransactions={settlementTransactions}
+              settlementTransactions={Array.isArray(settlementTransactions) ? settlementTransactions : []}
               settlementLoading={settlementLoading}
             />
           </TabsContent>
@@ -410,7 +410,7 @@ const AdminFinanceiro: React.FC = () => {
             </div>
             
             <InventoryList 
-              products={products}
+              products={Array.isArray(products) ? products : []}
               isLoading={inventoryLoading} 
               summary={inventorySummary}
             />

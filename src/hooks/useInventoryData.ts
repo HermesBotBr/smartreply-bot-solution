@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { NGROK_BASE_URL } from '@/config/api';
@@ -90,10 +91,11 @@ export function useInventoryData(
         params: { seller_id: sellerId }
       });
       
-      setProducts(response.data);
+      setProducts(Array.isArray(response.data) ? response.data : []);
     } catch (err) {
       console.error('Erro ao buscar produtos:', err);
       setError('Falha ao carregar dados de produtos');
+      setProducts([]);
     } finally {
       setIsLoadingProducts(false);
     }
@@ -112,27 +114,30 @@ export function useInventoryData(
       });
       
       // Processar transações para extrair informações de compra
-      const processedTransactions = response.data.map((transaction: PurchaseTransaction) => {
-        if (transaction.descricao.startsWith('Compra de mercadoria:')) {
-          const extractedInfo = extractProductInfo(transaction.descricao);
-          if (extractedInfo) {
-            const unitCost = parseFloat(transaction.valor) / extractedInfo.quantity;
-            return {
-              ...transaction,
-              parsed: {
-                ...extractedInfo,
-                unitCost: parseFloat(unitCost.toFixed(2))
+      const processedTransactions = Array.isArray(response.data) 
+        ? response.data.map((transaction: PurchaseTransaction) => {
+            if (transaction.descricao.startsWith('Compra de mercadoria:')) {
+              const extractedInfo = extractProductInfo(transaction.descricao);
+              if (extractedInfo) {
+                const unitCost = parseFloat(transaction.valor) / extractedInfo.quantity;
+                return {
+                  ...transaction,
+                  parsed: {
+                    ...extractedInfo,
+                    unitCost: parseFloat(unitCost.toFixed(2))
+                  }
+                };
               }
-            };
-          }
-        }
-        return transaction;
-      });
+            }
+            return transaction;
+          })
+        : [];
       
       setTransactions(processedTransactions);
     } catch (err) {
       console.error('Erro ao buscar transações:', err);
       setError('Falha ao carregar dados de transações');
+      setTransactions([]);
     } finally {
       setIsLoadingTransactions(false);
     }
@@ -140,7 +145,14 @@ export function useInventoryData(
 
   // Calcular informações de estoque quando os produtos e transações estiverem disponíveis
   useEffect(() => {
-    if (products.length === 0 || transactions.length === 0) return;
+    if (!Array.isArray(products) || !Array.isArray(transactions) || products.length === 0 || transactions.length === 0) {
+      setSummary({
+        totalProducts: 0,
+        totalUnits: 0,
+        totalValue: 0
+      });
+      return;
+    }
 
     const productMap = new Map<string, ProductItem>();
     let totalUnits = 0;
@@ -197,9 +209,10 @@ export function useInventoryData(
     setProducts(updatedProducts);
     
     // Calcular resumo
-    const productCount = updatedProducts.filter(p => p.inventory && p.inventory.totalQuantity > 0).length;
-    totalUnits = updatedProducts.reduce((sum, p) => sum + (p.inventory?.totalQuantity || 0), 0);
-    totalValue = updatedProducts.reduce((sum, p) => sum + (p.inventory?.totalValue || 0), 0);
+    const productsWithInventory = updatedProducts.filter(p => p.inventory && p.inventory.totalQuantity > 0);
+    const productCount = productsWithInventory.length;
+    totalUnits = productsWithInventory.reduce((sum, p) => sum + (p.inventory?.totalQuantity || 0), 0);
+    totalValue = productsWithInventory.reduce((sum, p) => sum + (p.inventory?.totalValue || 0), 0);
     
     setSummary({
       totalProducts: productCount,
@@ -218,8 +231,10 @@ export function useInventoryData(
   }, [sellerId]);
 
   return {
-    products: products.filter(p => p.inventory && p.inventory.totalQuantity > 0),
-    transactions,
+    products: Array.isArray(products) 
+      ? products.filter(p => p.inventory && p.inventory.totalQuantity > 0) 
+      : [],
+    transactions: Array.isArray(transactions) ? transactions : [],
     isLoading: isLoadingProducts || isLoadingTransactions,
     error,
     summary,
