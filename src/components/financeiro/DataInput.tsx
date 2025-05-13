@@ -9,7 +9,7 @@ import { useSettlementData } from '@/hooks/useSettlementData';
 import { useMlToken } from '@/hooks/useMlToken';
 import { Button } from "@/components/ui/button";
 import { format } from 'date-fns';
-import { toast } from 'sonner';
+import { toast } from '@/components/ui/use-toast';
 import { useReleaseData } from '@/hooks/useReleaseData';
 
 interface Transaction {
@@ -39,6 +39,7 @@ interface DataInputProps {
   endDate?: Date;
   settlementTransactions: SettlementTransaction[];
   settlementLoading: boolean;
+  lastUpdate: string | null; // Add this line to include the lastUpdate prop
 }
 
 export const DataInput: React.FC<DataInputProps> = ({ 
@@ -49,7 +50,8 @@ export const DataInput: React.FC<DataInputProps> = ({
   startDate,
   endDate,
   settlementTransactions,
-  settlementLoading
+  settlementLoading,
+  lastUpdate // Add this prop to the destructuring
 }) => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   
