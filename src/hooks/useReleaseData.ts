@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
+import { getNgrokUrl } from '@/config/api';
 import axios from 'axios';
-import { getLocalApiUrl } from '@/config/api';
 
 interface ReleaseDataResponse {
   rows: {
@@ -27,44 +27,26 @@ export function useReleaseData(sellerId: string | null) {
       try {
         setIsLoading(true);
         
-        // Use our proxy endpoint instead of directly calling the external URL
-        const response = await axios.get(
-          getLocalApiUrl('/proxy-releases'),
-          { responseType: 'text' }
+        // Fetch release data from the database
+        const response = await axios.get<ReleaseDataResponse>(
+          `${getNgrokUrl('/api/db/rows/releases')}`
         );
         
         if (response.status !== 200) {
           throw new Error('Failed to fetch release data');
         }
         
-        const textData = response.data;
+        // Find the record for the current seller
+        const sellerData = response.data.rows.find(
+          row => row.seller_id === sellerId
+        );
         
-        // Parse the text data to extract seller_id, last_update, and the releases content
-        const sellerIdMatch = textData.match(/SELLER_ID: (\d+)/);
-        const lastUpdateMatch = textData.match(/LAST_UPDATE: ([\d-]+ [\d:]+)/);
-        
-        // Extract only the CSV portion of the data (skip the header lines)
-        const lines = textData.split('\n');
-        let startIndex = 0;
-        for (let i = 0; i < lines.length; i++) {
-          if (lines[i].startsWith('DATE,SOURCE_ID')) {
-            startIndex = i;
-            break;
-          }
-        }
-        
-        const releasesText = lines.slice(startIndex).join('\n');
-        
-        // If the current seller ID matches the one in the data, use it
-        if (sellerIdMatch && sellerIdMatch[1] === sellerId) {
+        if (sellerData) {
           // Save the release data to localStorage for inventory lookup
-          localStorage.setItem('releaseData', releasesText);
+          localStorage.setItem('releaseData', sellerData.releases);
           
-          setReleaseData(releasesText);
-          
-          if (lastUpdateMatch) {
-            setLastUpdate(lastUpdateMatch[1]);
-          }
+          setReleaseData(sellerData.releases);
+          setLastUpdate(sellerData.last_update);
         } else {
           setReleaseData('');
           setLastUpdate(null);
@@ -90,55 +72,6 @@ export function useReleaseData(sellerId: string | null) {
     setReleaseData: (data: string) => {
       setReleaseData(data);
       localStorage.setItem('releaseData', data);
-    },
-    refetch: async () => {
-      const fetchAgain = async () => {
-        setIsLoading(true);
-        try {
-          // Use our proxy endpoint for refetching as well
-          const response = await axios.get(
-            getLocalApiUrl('/proxy-releases'),
-            { responseType: 'text' }
-          );
-          
-          if (response.status !== 200) {
-            throw new Error('Failed to fetch release data');
-          }
-          
-          const textData = response.data;
-          
-          const sellerIdMatch = textData.match(/SELLER_ID: (\d+)/);
-          const lastUpdateMatch = textData.match(/LAST_UPDATE: ([\d-]+ [\d:]+)/);
-          
-          const lines = textData.split('\n');
-          let startIndex = 0;
-          for (let i = 0; i < lines.length; i++) {
-            if (lines[i].startsWith('DATE,SOURCE_ID')) {
-              startIndex = i;
-              break;
-            }
-          }
-          
-          const releasesText = lines.slice(startIndex).join('\n');
-          
-          if (sellerIdMatch && sellerIdMatch[1] === sellerId) {
-            localStorage.setItem('releaseData', releasesText);
-            setReleaseData(releasesText);
-            
-            if (lastUpdateMatch) {
-              setLastUpdate(lastUpdateMatch[1]);
-            }
-          }
-          
-          setIsLoading(false);
-        } catch (err) {
-          console.error('Error re-fetching release data:', err);
-          setError(err instanceof Error ? err : new Error('Unknown error occurred'));
-          setIsLoading(false);
-        }
-      };
-      
-      await fetchAgain();
     }
   };
 }

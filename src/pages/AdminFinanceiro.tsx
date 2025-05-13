@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -73,12 +74,7 @@ const AdminFinanceiro: React.FC = () => {
     refetch: refetchReleaseLines,
   } = useReleaseLineData(sellerId, startDate, endDate);
 
-  const { 
-    releaseData, 
-    isLoading: releaseLoading, 
-    lastUpdate,
-    refetch: refetchReleaseData
-  } = useReleaseData(sellerId);
+  const { releaseData, isLoading: releaseLoading, lastUpdate } = useReleaseData(sellerId);
 
   const { 
     items: inventoryItems, 
@@ -439,7 +435,6 @@ const AdminFinanceiro: React.FC = () => {
 
     refetchSettlement();
     refetchReleaseLines();
-    refetchReleaseData();
     processReleaseData();
 
     toast({
@@ -470,7 +465,9 @@ const AdminFinanceiro: React.FC = () => {
   }, [releaseData, releaseLineTransactions, startDate, endDate, parseReleaseData, processReleaseLineData]);
 
   const handleReleaseDataChange = (data: string) => {
-    // This function was already simplified in the previous code
+    // Esta função não precisa mais fazer a análise dos dados, 
+    // pois isso agora é feito na função processReleaseData
+    // que é chamada sempre que os dados ou filtros mudam
   };
 
   /* ------------------------------------------------------------------ */
