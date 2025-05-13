@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { format } from 'date-fns';
 import { toast } from '@/components/ui/use-toast';
 import { useReleaseData } from '@/hooks/useReleaseData';
+import { useReleaseLineData } from '@/hooks/useReleaseLineData';
 
 interface Transaction {
   date: string;
@@ -55,6 +56,7 @@ export const DataInput: React.FC<DataInputProps> = ({
   lastUpdate 
 }) => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [displaySettlementTransactions, setDisplaySettlementTransactions] = useState<SettlementTransaction[]>([]);
   
   // Get ML token to extract seller_id
   const mlToken = useMlToken();
@@ -63,7 +65,15 @@ export const DataInput: React.FC<DataInputProps> = ({
     sellerId = (mlToken as { seller_id: string }).seller_id;
   }
   
-  // Use the new hook to get release data
+  // Use the new hook to get release line data for settlement
+  const { 
+    releaseLineTransactions, 
+    isLoading: releaseLineLoading, 
+    error: releaseLineError,
+    lastUpdate: releaseLineLastUpdate 
+  } = useReleaseLineData(sellerId, startDate, endDate);
+  
+  // Use the existing hook to get release data
   const { 
     releaseData: fetchedReleaseData, 
     isLoading: releaseLoading, 
@@ -78,6 +88,18 @@ export const DataInput: React.FC<DataInputProps> = ({
       onReleaseDataChange(fetchedReleaseData);
     }
   }, [fetchedReleaseData, onReleaseDataChange, releaseData]);
+  
+  // Effect to set the settlement transactions from release line data
+  useEffect(() => {
+    if (releaseLineTransactions.length > 0) {
+      setDisplaySettlementTransactions(releaseLineTransactions);
+    } else if (settlementTransactions.length > 0) {
+      // Fallback to the old settlement data if new one is empty
+      setDisplaySettlementTransactions(settlementTransactions);
+    } else {
+      setDisplaySettlementTransactions([]);
+    }
+  }, [releaseLineTransactions, settlementTransactions]);
 
   const handleSettlementChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     onSettlementDataChange(e.target.value);
@@ -305,6 +327,17 @@ export const DataInput: React.FC<DataInputProps> = ({
       });
     }
   }, [releaseError]);
+  
+  // Show error toast if there's a release line data error
+  useEffect(() => {
+    if (releaseLineError) {
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: `Erro ao carregar dados de linhas de liberação: ${releaseLineError.message}`,
+      });
+    }
+  }, [releaseLineError]);
 
   return (
     <Tabs defaultValue="settlement" className="w-full">
@@ -322,17 +355,22 @@ export const DataInput: React.FC<DataInputProps> = ({
             </div>
             <CardDescription>
               Os dados de liquidação são carregados automaticamente do período selecionado
+              {releaseLineLastUpdate && (
+                <span className="block text-xs mt-1">
+                  Última atualização: {format(new Date(releaseLineLastUpdate), 'dd/MM/yyyy HH:mm')}
+                </span>
+              )}
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {settlementLoading ? (
+            {releaseLineLoading || settlementLoading ? (
               <div className="text-center py-4 text-muted-foreground">
                 Carregando dados do período selecionado...
               </div>
             ) : (
               <div className="text-center py-4 text-muted-foreground">
-                {settlementTransactions.length > 0 ? 
-                  `${settlementTransactions.length} transações encontradas para o período selecionado` : 
+                {displaySettlementTransactions.length > 0 ? 
+                  `${displaySettlementTransactions.length} transações encontradas para o período selecionado` : 
                   "Nenhuma transação encontrada. Selecione um período válido para consultar."
                 }
               </div>
@@ -341,7 +379,7 @@ export const DataInput: React.FC<DataInputProps> = ({
         </Card>
 
         {/* Display settlement transactions list */}
-        <SettlementTransactionsList transactions={settlementTransactions} />
+        <SettlementTransactionsList transactions={displaySettlementTransactions} />
       </TabsContent>
       
       <TabsContent value="release">

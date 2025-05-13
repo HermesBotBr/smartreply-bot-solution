@@ -12,6 +12,7 @@ import { useMlToken } from '@/hooks/useMlToken';
 import { useSettlementData } from '@/hooks/useSettlementData';
 import { useInventoryData } from '@/hooks/useInventoryData';
 import { useReleaseData } from '@/hooks/useReleaseData';
+import { useReleaseLineData } from '@/hooks/useReleaseLineData';
 import { toast } from '@/components/ui/use-toast';
 import { ReleaseOperation } from '@/types/ReleaseOperation';
 
@@ -64,6 +65,14 @@ const AdminFinanceiro: React.FC = () => {
     isLoading: settlementLoading,
     refetch: refetchSettlement,
   } = useSettlementData(sellerId, startDate, endDate, true);
+  
+  // Use the new hook to get release line data
+  const {
+    releaseLineTransactions,
+    isLoading: releaseLineLoading,
+    lastUpdate: releaseLineLastUpdate,
+    refetch: refetchReleaseLines,
+  } = useReleaseLineData(sellerId, startDate, endDate);
 
   const { releaseData, isLoading: releaseLoading, lastUpdate } = useReleaseData(sellerId);
 
@@ -281,6 +290,129 @@ const AdminFinanceiro: React.FC = () => {
     []
   );
 
+  // New function to process release line data directly
+  const processReleaseLineData = useCallback(() => {
+    if (releaseLineTransactions && releaseLineTransactions.length > 0) {
+      let totalReleased = 0;
+      let totalClaims = 0;
+      let totalDebts = 0;
+      let totalTransfers = 0;
+      let totalCreditCard = 0;
+      let totalShippingCashback = 0;
+      
+      const operationsWithOrder: ReleaseOperation[] = [];
+      const otherOperations: ReleaseOperation[] = [];
+      
+      releaseLineTransactions.forEach(transaction => {
+        const amount = transaction.netValue;
+        
+        // Categorize based on the group
+        switch (transaction.group) {
+          case 'Venda':
+            totalReleased += amount;
+            if (transaction.orderId) {
+              operationsWithOrder.push({
+                orderId: transaction.orderId,
+                itemId: transaction.itemId || '',
+                title: transaction.title || transaction.orderId,
+                amount,
+                sourceId: transaction.sourceId,
+                date: transaction.date
+              });
+            }
+            break;
+          case 'Reclamações':
+            totalClaims += amount;
+            otherOperations.push({ 
+              description: 'Reclamações', 
+              amount,
+              sourceId: transaction.sourceId,
+              date: transaction.date
+            });
+            break;
+          case 'Dívidas':
+            totalDebts += amount;
+            otherOperations.push({ 
+              description: 'Dívidas', 
+              amount,
+              sourceId: transaction.sourceId,
+              date: transaction.date
+            });
+            break;
+          case 'Transferências':
+            totalTransfers += amount;
+            otherOperations.push({ 
+              description: 'Transferências', 
+              amount,
+              sourceId: transaction.sourceId,
+              date: transaction.date
+            });
+            break;
+          case 'Cartão de Crédito':
+            totalCreditCard += amount;
+            otherOperations.push({ 
+              description: 'Cartão de Crédito', 
+              amount,
+              sourceId: transaction.sourceId,
+              date: transaction.date
+            });
+            break;
+          case 'Correção de Envios e Cashbacks':
+            totalShippingCashback += amount;
+            otherOperations.push({ 
+              description: 'Correção de Envios e Cashbacks', 
+              amount,
+              sourceId: transaction.sourceId,
+              date: transaction.date
+            });
+            break;
+          default:
+            otherOperations.push({ 
+              description: transaction.group || 'Outros', 
+              amount,
+              sourceId: transaction.sourceId,
+              date: transaction.date
+            });
+        }
+      });
+      
+      setMetrics(prev => ({
+        ...prev,
+        totalReleased,
+        totalClaims,
+        totalDebts,
+        totalTransfers,
+        totalCreditCard,
+        totalShippingCashback,
+      }));
+      
+      setReleaseOperationsWithOrder(operationsWithOrder);
+      setReleaseOtherOperations(otherOperations);
+      
+      return {
+        totalReleased,
+        totalClaims,
+        totalDebts,
+        totalTransfers,
+        totalCreditCard,
+        totalShippingCashback,
+        operationsWithOrder,
+        otherOperations,
+      };
+    } else {
+      return {
+        totalReleased: 0,
+        totalClaims: 0,
+        totalDebts: 0,
+        totalTransfers: 0,
+        totalCreditCard: 0,
+        totalShippingCashback: 0,
+        operationsWithOrder: [],
+        otherOperations: [],
+      };
+    }
+  }, [releaseLineTransactions]);
+
   const isDateInRange = (dateStr: string, start?: Date, end?: Date): boolean => {
     if (!start || !end || !dateStr) return true;
     const d = new Date(dateStr);
@@ -302,6 +434,7 @@ const AdminFinanceiro: React.FC = () => {
     }
 
     refetchSettlement();
+    refetchReleaseLines();
     processReleaseData();
 
     toast({
@@ -312,7 +445,10 @@ const AdminFinanceiro: React.FC = () => {
 
   // Função para processar os dados de liberação baseado no filtro de data atual
   const processReleaseData = useCallback(() => {
-    if (releaseData) {
+    if (releaseLineTransactions.length > 0) {
+      // Preferentially use release line data if available
+      processReleaseLineData();
+    } else if (releaseData) {
       const parsed = parseReleaseData(releaseData, startDate, endDate);
       setMetrics((prev) => ({
         ...prev,
@@ -326,7 +462,7 @@ const AdminFinanceiro: React.FC = () => {
       setReleaseOperationsWithOrder(parsed.operationsWithOrder);
       setReleaseOtherOperations(parsed.otherOperations);
     }
-  }, [releaseData, startDate, endDate, parseReleaseData]);
+  }, [releaseData, releaseLineTransactions, startDate, endDate, parseReleaseData, processReleaseLineData]);
 
   const handleReleaseDataChange = (data: string) => {
     // Esta função não precisa mais fazer a análise dos dados, 
@@ -337,10 +473,10 @@ const AdminFinanceiro: React.FC = () => {
   /* ------------------------------------------------------------------ */
   /* side‑effects                                                        */
   /* ------------------------------------------------------------------ */
-  // Processar os dados de liberação sempre que releaseData ou datas de filtro mudam
+  // Processar os dados de liberação sempre que releaseData, releaseLineTransactions ou datas de filtro mudam
   useEffect(() => {
     processReleaseData();
-  }, [releaseData, startDate, endDate, processReleaseData]);
+  }, [releaseData, releaseLineTransactions, startDate, endDate, processReleaseData]);
 
   useEffect(() => {
     setMetrics((prev) => ({
@@ -401,7 +537,7 @@ const AdminFinanceiro: React.FC = () => {
               totalTransfers={metrics.totalTransfers}
               totalCreditCard={metrics.totalCreditCard}
               totalShippingCashback={metrics.totalShippingCashback}
-              settlementTransactions={settlementTransactions}
+              settlementTransactions={releaseLineTransactions.length > 0 ? releaseLineTransactions : settlementTransactions}
               releaseOperationsWithOrder={releaseOperationsWithOrder}
               releaseOtherOperations={releaseOtherOperations}
             />
@@ -415,9 +551,9 @@ const AdminFinanceiro: React.FC = () => {
               onReleaseDataChange={handleReleaseDataChange}
               startDate={startDate}
               endDate={endDate}
-              settlementTransactions={settlementTransactions}
-              settlementLoading={settlementLoading}
-              lastUpdate={lastUpdate}
+              settlementTransactions={releaseLineTransactions.length > 0 ? releaseLineTransactions : settlementTransactions}
+              settlementLoading={settlementLoading || releaseLineLoading}
+              lastUpdate={releaseLineLastUpdate || lastUpdate}
             />
           </TabsContent>
 
