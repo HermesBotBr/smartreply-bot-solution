@@ -1,15 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { getNgrokUrl } from '@/config/api';
 import axios from 'axios';
-
-interface ReleaseDataResponse {
-  rows: {
-    seller_id: string;
-    releases: string;
-    last_update: string;
-  }[];
-}
 
 export function useReleaseData(sellerId: string | null) {
   const [releaseData, setReleaseData] = useState<string>('');
@@ -27,29 +18,37 @@ export function useReleaseData(sellerId: string | null) {
       try {
         setIsLoading(true);
         
-        // Fetch release data from the database
-        const response = await axios.get<ReleaseDataResponse>(
-          `${getNgrokUrl('/api/db/rows/releases')}`
+        // Fetch release data from the text file URL
+        const response = await axios.get(
+          'https://projetohermes-dda7e0c8d836.herokuapp.com/releases.txt'
         );
         
         if (response.status !== 200) {
           throw new Error('Failed to fetch release data');
         }
         
-        // Find the record for the current seller
-        const sellerData = response.data.rows.find(
-          row => row.seller_id === sellerId
-        );
+        const textData = response.data;
         
-        if (sellerData) {
+        // Extract SELLER_ID line
+        const sellerIdMatch = textData.match(/SELLER_ID: (\d+)/);
+        const fileSellerID = sellerIdMatch ? sellerIdMatch[1] : null;
+        
+        // Extract LAST_UPDATE line
+        const lastUpdateMatch = textData.match(/LAST_UPDATE: (.+)/);
+        const fileLastUpdate = lastUpdateMatch ? lastUpdateMatch[1] : null;
+        
+        // Make sure the file contains data for the current seller
+        if (fileSellerID === sellerId) {
           // Save the release data to localStorage for inventory lookup
-          localStorage.setItem('releaseData', sellerData.releases);
+          localStorage.setItem('releaseData', textData);
           
-          setReleaseData(sellerData.releases);
-          setLastUpdate(sellerData.last_update);
+          setReleaseData(textData);
+          setLastUpdate(fileLastUpdate);
         } else {
+          console.error('Release data does not match current seller ID');
           setReleaseData('');
           setLastUpdate(null);
+          setError(new Error('Release data does not match current seller ID'));
         }
         
         setIsLoading(false);
@@ -63,11 +62,60 @@ export function useReleaseData(sellerId: string | null) {
     fetchReleaseData();
   }, [sellerId]);
 
+  // Function to manually refresh data
+  const refetchReleaseData = async () => {
+    try {
+      setIsLoading(true);
+      
+      // Fetch release data from the text file URL
+      const response = await axios.get(
+        'https://projetohermes-dda7e0c8d836.herokuapp.com/releases.txt'
+      );
+      
+      if (response.status !== 200) {
+        throw new Error('Failed to fetch release data');
+      }
+      
+      const textData = response.data;
+      
+      // Extract SELLER_ID line
+      const sellerIdMatch = textData.match(/SELLER_ID: (\d+)/);
+      const fileSellerID = sellerIdMatch ? sellerIdMatch[1] : null;
+      
+      // Extract LAST_UPDATE line
+      const lastUpdateMatch = textData.match(/LAST_UPDATE: (.+)/);
+      const fileLastUpdate = lastUpdateMatch ? lastUpdateMatch[1] : null;
+      
+      // Make sure the file contains data for the current seller
+      if (fileSellerID === sellerId) {
+        // Save the release data to localStorage for inventory lookup
+        localStorage.setItem('releaseData', textData);
+        
+        setReleaseData(textData);
+        setLastUpdate(fileLastUpdate);
+      } else {
+        console.error('Release data does not match current seller ID');
+        setReleaseData('');
+        setLastUpdate(null);
+        setError(new Error('Release data does not match current seller ID'));
+      }
+      
+      setIsLoading(false);
+      return true;
+    } catch (err) {
+      console.error('Error fetching release data:', err);
+      setError(err instanceof Error ? err : new Error('Unknown error occurred'));
+      setIsLoading(false);
+      return false;
+    }
+  };
+
   return { 
     releaseData, 
     isLoading, 
     error, 
     lastUpdate,
+    refetch: refetchReleaseData,
     // This is for compatibility with existing code that expects a setter
     setReleaseData: (data: string) => {
       setReleaseData(data);

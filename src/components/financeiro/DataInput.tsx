@@ -79,7 +79,7 @@ export const DataInput: React.FC<DataInputProps> = ({
     isLoading: releaseLoading, 
     error: releaseError,
     lastUpdate: releaseLastUpdate,
-    setReleaseData: setFetchedReleaseData
+    refetch: refetchReleaseData
   } = useReleaseData(sellerId);
   
   // Effect to update parent component's releaseData when our fetched data changes
@@ -107,29 +107,29 @@ export const DataInput: React.FC<DataInputProps> = ({
 
   const handleReleaseChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     onReleaseDataChange(e.target.value);
-    setFetchedReleaseData(e.target.value);
   };
   
-  const handleRefreshReleaseData = () => {
-    // Force a refresh by re-fetching the data (in this case, just remount the component)
-    const currentSellerId = sellerId;
+  const handleRefreshReleaseData = async () => {
+    // Show loading toast
     toast({
       title: "Atualizando dados",
-      description: "Atualizando dados de liberações...",
+      description: "Buscando dados de liberações do arquivo externo...",
     });
     
-    // This will trigger a re-fetch in the useReleaseData hook
-    setFetchedReleaseData('');
+    const success = await refetchReleaseData();
     
-    // Delay to ensure the component re-renders
-    setTimeout(() => {
-      if (fetchedReleaseData) {
-        toast({
-          title: "Dados atualizados",
-          description: "Dados de liberações atualizados com sucesso!",
-        });
-      }
-    }, 1000);
+    if (success) {
+      toast({
+        title: "Dados atualizados",
+        description: "Dados de liberações atualizados com sucesso!",
+      });
+    } else {
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Não foi possível atualizar os dados de liberações",
+      });
+    }
   };
 
   // Helper function to check if a date string is within the filter range
@@ -396,15 +396,15 @@ export const DataInput: React.FC<DataInputProps> = ({
                 onClick={handleRefreshReleaseData}
                 disabled={releaseLoading}
               >
-                <RotateCw className="h-4 w-4 mr-2" />
+                <RotateCw className={`h-4 w-4 mr-2 ${releaseLoading ? 'animate-spin' : ''}`} />
                 Atualizar
               </Button>
             </div>
             <CardDescription>
-              Os dados de liberações são carregados automaticamente do banco de dados
+              Os dados de liberações são carregados automaticamente do arquivo externo
               {releaseLastUpdate && (
                 <span className="block text-xs mt-1">
-                  Última atualização: {format(new Date(releaseLastUpdate), 'dd/MM/yyyy HH:mm')}
+                  Última atualização: {releaseLastUpdate}
                 </span>
               )}
             </CardDescription>
