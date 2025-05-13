@@ -1,15 +1,7 @@
 
 import { useState, useEffect } from 'react';
-import { getNgrokUrl } from '@/config/api';
+import { getLocalApiUrl } from '@/config/api';
 import axios from 'axios';
-
-interface ReleaseDataResponse {
-  rows: {
-    seller_id: string;
-    releases: string;
-    last_update: string;
-  }[];
-}
 
 export function useReleaseData(sellerId: string | null) {
   const [releaseData, setReleaseData] = useState<string>('');
@@ -27,35 +19,30 @@ export function useReleaseData(sellerId: string | null) {
       try {
         setIsLoading(true);
         
-        // Fetch release data from the database
-        const response = await axios.get<ReleaseDataResponse>(
-          `${getNgrokUrl('/api/db/rows/releases')}`
-        );
+        // Buscar dados do arquivo releases.txt através do proxy
+        const response = await axios.get(getLocalApiUrl('/messages/proxy-releases'));
         
         if (response.status !== 200) {
-          throw new Error('Failed to fetch release data');
+          throw new Error('Falha ao buscar dados de liberações');
         }
         
-        // Find the record for the current seller
-        const sellerData = response.data.rows.find(
-          row => row.seller_id === sellerId
-        );
+        const data = response.data;
         
-        if (sellerData) {
-          // Save the release data to localStorage for inventory lookup
-          localStorage.setItem('releaseData', sellerData.releases);
-          
-          setReleaseData(sellerData.releases);
-          setLastUpdate(sellerData.last_update);
-        } else {
-          setReleaseData('');
-          setLastUpdate(null);
+        // Extrair a data de última atualização do conteúdo
+        const lastUpdateMatch = data.match(/LAST_UPDATE:\s*(.*)/);
+        if (lastUpdateMatch && lastUpdateMatch[1]) {
+          setLastUpdate(lastUpdateMatch[1]);
         }
         
+        // Salvar os dados no localStorage para uso no inventário
+        localStorage.setItem('releaseData', data);
+        
+        // Definir os dados de liberação
+        setReleaseData(data);
         setIsLoading(false);
       } catch (err) {
-        console.error('Error fetching release data:', err);
-        setError(err instanceof Error ? err : new Error('Unknown error occurred'));
+        console.error('Erro ao buscar dados de liberações:', err);
+        setError(err instanceof Error ? err : new Error('Erro desconhecido'));
         setIsLoading(false);
       }
     };
@@ -68,7 +55,7 @@ export function useReleaseData(sellerId: string | null) {
     isLoading, 
     error, 
     lastUpdate,
-    // This is for compatibility with existing code that expects a setter
+    // Isso é para compatibilidade com código existente que espera um setter
     setReleaseData: (data: string) => {
       setReleaseData(data);
       localStorage.setItem('releaseData', data);

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -74,7 +73,12 @@ const AdminFinanceiro: React.FC = () => {
     refetch: refetchReleaseLines,
   } = useReleaseLineData(sellerId, startDate, endDate);
 
-  const { releaseData, isLoading: releaseLoading, lastUpdate } = useReleaseData(sellerId);
+  // Use the updated hook to get release data directly from the file
+  const { 
+    releaseData, 
+    isLoading: releaseLoading, 
+    lastUpdate 
+  } = useReleaseData(sellerId);
 
   const { 
     items: inventoryItems, 
