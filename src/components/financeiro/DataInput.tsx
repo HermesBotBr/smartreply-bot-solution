@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -39,7 +40,7 @@ interface DataInputProps {
   endDate?: Date;
   settlementTransactions: SettlementTransaction[];
   settlementLoading: boolean;
-  lastUpdate: string | null; // Add this line to include the lastUpdate prop
+  lastUpdate: string | null; 
 }
 
 export const DataInput: React.FC<DataInputProps> = ({ 
@@ -51,7 +52,7 @@ export const DataInput: React.FC<DataInputProps> = ({
   endDate,
   settlementTransactions,
   settlementLoading,
-  lastUpdate // Add this prop to the destructuring
+  lastUpdate 
 }) => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   
@@ -90,7 +91,10 @@ export const DataInput: React.FC<DataInputProps> = ({
   const handleRefreshReleaseData = () => {
     // Force a refresh by re-fetching the data (in this case, just remount the component)
     const currentSellerId = sellerId;
-    toast.info("Atualizando dados de liberações...");
+    toast({
+      title: "Atualizando dados",
+      description: "Atualizando dados de liberações...",
+    });
     
     // This will trigger a re-fetch in the useReleaseData hook
     setFetchedReleaseData('');
@@ -98,7 +102,10 @@ export const DataInput: React.FC<DataInputProps> = ({
     // Delay to ensure the component re-renders
     setTimeout(() => {
       if (fetchedReleaseData) {
-        toast.success("Dados de liberações atualizados com sucesso!");
+        toast({
+          title: "Dados atualizados",
+          description: "Dados de liberações atualizados com sucesso!",
+        });
       }
     }, 1000);
   };
@@ -291,7 +298,11 @@ export const DataInput: React.FC<DataInputProps> = ({
   // Show error toast if there's a release data error
   useEffect(() => {
     if (releaseError) {
-      toast.error(`Erro ao carregar dados de liberações: ${releaseError.message}`);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: `Erro ao carregar dados de liberações: ${releaseError.message}`,
+      });
     }
   }, [releaseError]);
 
