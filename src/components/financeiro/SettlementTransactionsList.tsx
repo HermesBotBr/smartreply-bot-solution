@@ -17,21 +17,9 @@ interface SettlementTransaction {
 
 interface SettlementTransactionsListProps {
   transactions: SettlementTransaction[];
-  isLoading?: boolean;
-  error?: string;
-  startDate?: Date;
-  endDate?: Date;
-  sellerId?: string;
 }
 
-export const SettlementTransactionsList: React.FC<SettlementTransactionsListProps> = ({ 
-  transactions,
-  isLoading,
-  error,
-  startDate,
-  endDate,
-  sellerId 
-}) => {
+export const SettlementTransactionsList: React.FC<SettlementTransactionsListProps> = ({ transactions }) => {
   // Function to format the date to a readable format
   const formatDate = (dateString: string): string => {
     try {
@@ -49,26 +37,6 @@ export const SettlementTransactionsList: React.FC<SettlementTransactionsListProp
   const totalUnits = transactions.reduce((sum, transaction) => sum + (transaction.units || 1), 0);
   const totalGrossValue = transactions.reduce((sum, transaction) => sum + transaction.grossValue, 0);
   const totalNetValue = transactions.reduce((sum, transaction) => sum + transaction.netValue, 0);
-
-  if (isLoading) {
-    return (
-      <Card className="w-full mt-6">
-        <CardContent className="py-8">
-          <div className="text-center">Carregando dados de transações...</div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (error) {
-    return (
-      <Card className="w-full mt-6">
-        <CardContent className="py-8">
-          <div className="text-center text-red-500">Erro ao carregar dados: {error}</div>
-        </CardContent>
-      </Card>
-    );
-  }
 
   return (
     <Card className="w-full mt-6">
