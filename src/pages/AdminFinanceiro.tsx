@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -110,8 +109,7 @@ const AdminFinanceiro: React.FC = () => {
 
   const handleReleaseDataChange = (data: string) => {
     setReleaseData(data);
-    // Save release data to localStorage for date lookups in inventory
-    localStorage.setItem('releaseData', data);
+    // Note: We don't need to save to localStorage here as it's now handled in the useReleaseData hook
     
     const parsed = parseReleaseData(data, startDate, endDate);
     setMetrics((prev) => ({
