@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
@@ -11,8 +12,10 @@ import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogAction, AlertDialogCancel } from '@/components/ui/alert-dialog';
 import { Trash } from 'lucide-react';
 import axios from 'axios';
-import { toast } from 'sonner';
+import { toast } from '@/hooks/use-toast';
 import { useMlToken } from '@/hooks/useMlToken';
+import { ProductListingPopup } from './ProductListingPopup';
+import { getNgrokUrl } from '@/config/api';
 
 interface TransfersPopupProps {
   open: boolean;
@@ -50,6 +53,13 @@ interface TransferTransaction {
   manualDescriptions: TransferDescription[];
 }
 
+interface Product {
+  mlb: string;
+  title: string;
+  image: string;
+  active: boolean;
+}
+
 export const TransfersPopup: React.FC<TransfersPopupProps> = ({
   open,
   onClose,
@@ -62,6 +72,7 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
   const [newDescription, setNewDescription] = useState("");
   const [newValue, setNewValue] = useState("");
   const [descriptionDialogOpen, setDescriptionDialogOpen] = useState(false);
+  const [productListingOpen, setProductListingOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   
   // Obter o seller_id do usuário logado
@@ -91,7 +102,11 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
   const fetchDescriptions = async () => {
     try {
       setIsLoading(true);
-      const response = await axios.get(`https://projetohermes-dda7e0c8d836.herokuapp.com/trans_desc?seller_id=${sellerId}`);
+      const response = await axios.get(`${getNgrokUrl('/trans_desc')}`, {
+        params: {
+          seller_id: sellerId
+        }
+      });
       const apiDescriptions: ApiDescription[] = response.data;
       
       // Mapear as descrições da API para o formato usado no componente
@@ -115,9 +130,20 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
       setIsLoading(false);
     } catch (error) {
       console.error('Erro ao buscar descrições:', error);
-      toast.error('Erro ao carregar descrições');
+      toast({
+        title: "Erro",
+        description: "Erro ao carregar descrições",
+        variant: "destructive"
+      });
       setIsLoading(false);
     }
+  };
+
+  // Lidar com seleção de produto
+  const handleProductSelect = (product: Product, quantity: number) => {
+    const productDescription = `Compra de mercadoria: ${quantity}x ${product.title} (${product.mlb})`;
+    setNewDescription(productDescription);
+    setProductListingOpen(false);
   };
 
   // Adicionar nova descrição
@@ -131,7 +157,7 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
       setIsLoading(true);
       
       // Enviar descrição para a API
-      await axios.post('https://projetohermes-dda7e0c8d836.herokuapp.com/trans_desc', {
+      await axios.post(getNgrokUrl('/trans_desc'), {
         seller_id: sellerId,
         source_id: activeTransferId,
         descricao: newDescription,
@@ -160,11 +186,18 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
       setNewDescription("");
       setNewValue("");
       setDescriptionDialogOpen(false);
-      toast.success('Descrição adicionada com sucesso');
+      toast({
+        title: "Sucesso",
+        description: "Descrição adicionada com sucesso",
+      });
       setIsLoading(false);
     } catch (error) {
       console.error('Erro ao salvar descrição:', error);
-      toast.error('Erro ao salvar descrição');
+      toast({
+        title: "Erro",
+        description: "Erro ao salvar descrição",
+        variant: "destructive"
+      });
       setIsLoading(false);
     }
   };
@@ -180,7 +213,7 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
       setIsLoading(true);
       
       // Remover descrição da API
-      await axios.delete('https://projetohermes-dda7e0c8d836.herokuapp.com/trans_desc', {
+      await axios.delete(getNgrokUrl('/trans_desc'), {
         data: {
           seller_id: sellerId,
           source_id: transferId,
@@ -205,11 +238,18 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
         })
       );
       
-      toast.success('Descrição removida com sucesso');
+      toast({
+        title: "Sucesso",
+        description: "Descrição removida com sucesso",
+      });
       setIsLoading(false);
     } catch (error) {
       console.error('Erro ao remover descrição:', error);
-      toast.error('Erro ao remover descrição');
+      toast({
+        title: "Erro",
+        description: "Erro ao remover descrição",
+        variant: "destructive"
+      });
       setIsLoading(false);
     }
   };
@@ -373,7 +413,17 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
             
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium">Descrição:</label>
+                <div className="flex justify-between items-center">
+                  <label className="text-sm font-medium">Descrição:</label>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => setProductListingOpen(true)}
+                    className="ml-2"
+                  >
+                    Compra de mercadoria
+                  </Button>
+                </div>
                 <Textarea
                   placeholder="Descrição"
                   value={newDescription}
@@ -444,6 +494,14 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* Product Listing Dialog */}
+        <ProductListingPopup 
+          open={productListingOpen}
+          onClose={() => setProductListingOpen(false)}
+          sellerId={sellerId}
+          onSelectProduct={handleProductSelect}
+        />
       </DialogContent>
     </Dialog>
   );
