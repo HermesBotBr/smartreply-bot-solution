@@ -15,7 +15,10 @@ interface InventoryListProps {
 export const InventoryList: React.FC<InventoryListProps> = ({ products, isLoading, summary }) => {
   const [searchTerm, setSearchTerm] = useState("");
   
-  const filteredProducts = products.filter(product => 
+  // Ensure products is always an array before filtering
+  const safeProducts = Array.isArray(products) ? products : [];
+  
+  const filteredProducts = safeProducts.filter(product => 
     product.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
     product.id.toLowerCase().includes(searchTerm.toLowerCase())
   );
