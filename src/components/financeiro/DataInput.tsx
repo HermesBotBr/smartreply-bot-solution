@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { FileSpreadsheet, RotateCw } from "lucide-react";
@@ -60,10 +59,40 @@ export const DataInput: React.FC<DataInputProps> = ({
   
   // Get ML token to extract seller_id
   const mlToken = useMlToken();
-  let sellerId = '681274853';
-  if (mlToken && typeof mlToken === 'object' && 'seller_id' in mlToken) {
-    sellerId = (mlToken as { seller_id: string }).seller_id;
-  }
+  // Extract seller ID from mlToken and provide fallback
+  const sellerId = React.useMemo(() => {
+    if (!mlToken) return '681274853'; // Default ID if mlToken is null
+    
+    console.log('ML Token in DataInput:', mlToken);
+    
+    try {
+      // Handle different shapes of mlToken
+      if (typeof mlToken === 'object') {
+        if ('seller_id' in mlToken) {
+          return String(mlToken.seller_id).trim();
+        } else if ('id' in mlToken) {
+          return String(mlToken.id).trim();
+        }
+      } else if (typeof mlToken === 'string' && mlToken.includes('seller_id')) {
+        // Try to parse if it's a JSON string
+        try {
+          const parsed = JSON.parse(mlToken);
+          if (parsed && parsed.seller_id) {
+            return String(parsed.seller_id).trim();
+          }
+        } catch (e) {
+          console.error('Failed to parse mlToken string:', e);
+        }
+      }
+    } catch (e) {
+      console.error('Error extracting seller_id:', e);
+    }
+    
+    // Default fallback ID if extraction fails
+    return '681274853';
+  }, [mlToken]);
+  
+  console.log('DataInput using seller ID:', sellerId);
   
   // Use the new hook to get release line data for settlement
   const { 

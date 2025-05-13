@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { getLocalApiUrl } from '@/config/api';
+import { toast } from '@/components/ui/use-toast';
 
 export function useReleaseData(sellerId: string | null) {
   const [releaseData, setReleaseData] = useState<string>('');
@@ -31,31 +32,71 @@ export function useReleaseData(sellerId: string | null) {
         const textData = response.data;
         
         // Extract SELLER_ID line
-        const sellerIdMatch = textData.match(/SELLER_ID: (\d+)/);
-        const fileSellerID = sellerIdMatch ? sellerIdMatch[1] : null;
+        const sellerIdMatch = textData.match(/SELLER_ID:\s*(\d+)/);
+        const fileSellerID = sellerIdMatch ? sellerIdMatch[1].trim() : null;
         
         // Extract LAST_UPDATE line
-        const lastUpdateMatch = textData.match(/LAST_UPDATE: (.+)/);
-        const fileLastUpdate = lastUpdateMatch ? lastUpdateMatch[1] : null;
+        const lastUpdateMatch = textData.match(/LAST_UPDATE:\s*(.+)/);
+        const fileLastUpdate = lastUpdateMatch ? lastUpdateMatch[1].trim() : null;
+        
+        // Log for debugging
+        console.log('File Seller ID:', fileSellerID);
+        console.log('Current Seller ID:', sellerId);
+        
+        // Convert both to strings and trim for comparison
+        const normalizedFileSellerId = fileSellerID ? String(fileSellerID).trim() : '';
+        const normalizedSellerId = sellerId ? String(sellerId).trim() : '';
         
         // Make sure the file contains data for the current seller
-        if (fileSellerID === sellerId) {
+        if (normalizedFileSellerId === normalizedSellerId) {
           // Save the release data to localStorage for inventory lookup
           localStorage.setItem('releaseData', textData);
           
           setReleaseData(textData);
           setLastUpdate(fileLastUpdate);
+          setError(null);
         } else {
-          console.error('Release data does not match current seller ID');
-          setReleaseData('');
-          setLastUpdate(null);
-          setError(new Error('Release data does not match current seller ID'));
+          console.error(`Release data mismatch. File: "${normalizedFileSellerId}" Current: "${normalizedSellerId}"`);
+          // Instead of showing error, try to use cached data if available
+          const cachedData = localStorage.getItem('releaseData');
+          if (cachedData) {
+            console.log('Using cached release data from localStorage');
+            setReleaseData(cachedData);
+            
+            // Try to extract last update from cached data
+            const cachedLastUpdateMatch = cachedData.match(/LAST_UPDATE:\s*(.+)/);
+            const cachedLastUpdate = cachedLastUpdateMatch ? cachedLastUpdateMatch[1].trim() : null;
+            setLastUpdate(cachedLastUpdate);
+            
+            // Set a warning instead of an error
+            setError(new Error('Using cached release data. Refresh to attempt new download.'));
+          } else {
+            setReleaseData('');
+            setLastUpdate(null);
+            setError(new Error(`ID do vendedor não corresponde ao arquivo de liberações. Esperado: ${normalizedSellerId}, Encontrado: ${normalizedFileSellerId}`));
+          }
         }
         
         setIsLoading(false);
       } catch (err) {
         console.error('Error fetching release data:', err);
-        setError(err instanceof Error ? err : new Error('Unknown error occurred'));
+        
+        // Try to use cached data on error
+        const cachedData = localStorage.getItem('releaseData');
+        if (cachedData) {
+          console.log('Using cached release data on error');
+          setReleaseData(cachedData);
+          
+          // Try to extract last update from cached data
+          const cachedLastUpdateMatch = cachedData.match(/LAST_UPDATE:\s*(.+)/);
+          const cachedLastUpdate = cachedLastUpdateMatch ? cachedLastUpdateMatch[1].trim() : null;
+          setLastUpdate(cachedLastUpdate);
+          
+          setError(new Error('Usando dados em cache. Erro ao atualizar: ' + (err instanceof Error ? err.message : 'Erro desconhecido')));
+        } else {
+          setError(err instanceof Error ? err : new Error('Unknown error occurred'));
+        }
+        
         setIsLoading(false);
       }
     };
@@ -80,32 +121,62 @@ export function useReleaseData(sellerId: string | null) {
       const textData = response.data;
       
       // Extract SELLER_ID line
-      const sellerIdMatch = textData.match(/SELLER_ID: (\d+)/);
-      const fileSellerID = sellerIdMatch ? sellerIdMatch[1] : null;
+      const sellerIdMatch = textData.match(/SELLER_ID:\s*(\d+)/);
+      const fileSellerID = sellerIdMatch ? sellerIdMatch[1].trim() : null;
       
       // Extract LAST_UPDATE line
-      const lastUpdateMatch = textData.match(/LAST_UPDATE: (.+)/);
-      const fileLastUpdate = lastUpdateMatch ? lastUpdateMatch[1] : null;
+      const lastUpdateMatch = textData.match(/LAST_UPDATE:\s*(.+)/);
+      const fileLastUpdate = lastUpdateMatch ? lastUpdateMatch[1].trim() : null;
+      
+      // Log for debugging
+      console.log('Refresh - File Seller ID:', fileSellerID);
+      console.log('Refresh - Current Seller ID:', sellerId);
+      
+      // Convert both to strings and trim for comparison
+      const normalizedFileSellerId = fileSellerID ? String(fileSellerID).trim() : '';
+      const normalizedSellerId = sellerId ? String(sellerId).trim() : '';
       
       // Make sure the file contains data for the current seller
-      if (fileSellerID === sellerId) {
+      if (normalizedFileSellerId === normalizedSellerId) {
         // Save the release data to localStorage for inventory lookup
         localStorage.setItem('releaseData', textData);
         
         setReleaseData(textData);
         setLastUpdate(fileLastUpdate);
+        setError(null);
+        
+        toast({
+          title: "Dados atualizados com sucesso",
+          description: `Última atualização: ${fileLastUpdate}`,
+        });
+        
+        setIsLoading(false);
+        return true;
       } else {
-        console.error('Release data does not match current seller ID');
+        console.error(`Refresh - Release data mismatch. File: "${normalizedFileSellerId}" Current: "${normalizedSellerId}"`);
         setReleaseData('');
         setLastUpdate(null);
-        setError(new Error('Release data does not match current seller ID'));
+        setError(new Error(`ID do vendedor não corresponde ao arquivo de liberações. Esperado: ${normalizedSellerId}, Encontrado: ${normalizedFileSellerId}`));
+        
+        toast({
+          variant: "destructive",
+          title: "Erro na atualização",
+          description: `ID do vendedor não corresponde ao arquivo de liberações. Esperado: ${normalizedSellerId}, Encontrado: ${normalizedFileSellerId}`,
+        });
+        
+        setIsLoading(false);
+        return false;
       }
-      
-      setIsLoading(false);
-      return true;
     } catch (err) {
-      console.error('Error fetching release data:', err);
+      console.error('Error refreshing release data:', err);
       setError(err instanceof Error ? err : new Error('Unknown error occurred'));
+      
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: `Erro ao atualizar dados: ${err instanceof Error ? err.message : 'Erro desconhecido'}`,
+      });
+      
       setIsLoading(false);
       return false;
     }

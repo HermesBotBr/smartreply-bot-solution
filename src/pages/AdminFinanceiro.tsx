@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -51,11 +50,42 @@ const AdminFinanceiro: React.FC = () => {
   /* ------------------------------------------------------------------ */
   const navigate = useNavigate();
 
+  // Get ML token and extract seller_id safely
   const mlToken = useMlToken();
-  let sellerId = '681274853';
-  if (mlToken && typeof mlToken === 'object' && 'seller_id' in mlToken) {
-    sellerId = (mlToken as { seller_id: string }).seller_id;
-  }
+  const sellerId = React.useMemo(() => {
+    if (!mlToken) return '681274853'; // Default ID if mlToken is null
+    
+    // Log mlToken for debugging
+    console.log('ML Token:', mlToken);
+    
+    try {
+      // Handle different shapes of mlToken
+      if (typeof mlToken === 'object') {
+        if ('seller_id' in mlToken) {
+          return String(mlToken.seller_id).trim();
+        } else if ('id' in mlToken) {
+          return String(mlToken.id).trim();
+        }
+      } else if (typeof mlToken === 'string' && mlToken.includes('seller_id')) {
+        // Try to parse if it's a JSON string
+        try {
+          const parsed = JSON.parse(mlToken);
+          if (parsed && parsed.seller_id) {
+            return String(parsed.seller_id).trim();
+          }
+        } catch (e) {
+          console.error('Failed to parse mlToken string:', e);
+        }
+      }
+    } catch (e) {
+      console.error('Error extracting seller_id:', e);
+    }
+    
+    // Default fallback ID if extraction fails
+    return '681274853';
+  }, [mlToken]);
+  
+  console.log('Using seller ID:', sellerId);
 
   const {
     settlementTransactions,
