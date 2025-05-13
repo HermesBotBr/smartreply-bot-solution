@@ -16,6 +16,7 @@ export interface InventoryItem {
     unitCost: number;
     totalCost: number;
     sourceId: string;
+    date?: string;  // Added date field for each purchase
   }[];
 }
 

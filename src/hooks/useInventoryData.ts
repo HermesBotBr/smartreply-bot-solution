@@ -7,6 +7,7 @@ export function useInventoryData(sellerId: string | null) {
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
+  const [releaseDates, setReleaseDates] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const fetchInventoryData = async () => {
@@ -28,6 +29,43 @@ export function useInventoryData(sellerId: string | null) {
         }
         
         const transDescData: TransDesc[] = await transDescResponse.json();
+        
+        // Fetch release data to get dates for source_ids
+        // Note: This assumes release data is available in localStorage or from an API
+        let releaseData = localStorage.getItem('releaseData');
+        
+        // Create a map of source_id to dates from release data
+        const sourceIdToDateMap: Record<string, string> = {};
+        
+        if (releaseData) {
+          const lines = releaseData.split('\n').filter(line => line.trim() !== '');
+          
+          // Skip headers and process data lines
+          if (lines.length > 2) {
+            lines.slice(1).forEach(line => {
+              if (!line.startsWith(',,,total')) {
+                const cols = line.split(',');
+                if (cols.length >= 2) {
+                  const dateStr = cols[0].trim();
+                  const sourceId = cols[1].trim();
+                  
+                  if (dateStr && sourceId) {
+                    try {
+                      // Format date as DD/MM/YYYY
+                      const date = new Date(dateStr);
+                      const formattedDate = `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
+                      sourceIdToDateMap[sourceId] = formattedDate;
+                    } catch (err) {
+                      // Skip invalid dates
+                    }
+                  }
+                }
+              }
+            });
+          }
+        }
+        
+        setReleaseDates(sourceIdToDateMap);
         
         // Process the transaction data to extract inventory items
         const inventoryMap = new Map<string, InventoryItem>();
@@ -62,12 +100,13 @@ export function useInventoryData(sellerId: string | null) {
               // Update total quantity
               item.totalQuantity += quantity;
               
-              // Add this purchase
+              // Add this purchase with date if available
               item.purchases.push({
                 quantity,
                 unitCost,
                 totalCost,
-                sourceId: source_id
+                sourceId: source_id,
+                date: sourceIdToDateMap[source_id] || undefined
               });
             }
           }

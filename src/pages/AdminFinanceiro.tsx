@@ -110,6 +110,9 @@ const AdminFinanceiro: React.FC = () => {
 
   const handleReleaseDataChange = (data: string) => {
     setReleaseData(data);
+    // Save release data to localStorage for date lookups in inventory
+    localStorage.setItem('releaseData', data);
+    
     const parsed = parseReleaseData(data, startDate, endDate);
     setMetrics((prev) => ({
       ...prev,
