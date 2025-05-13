@@ -8,7 +8,7 @@ import { FinancialMetrics } from '@/components/financeiro/FinancialMetrics';
 import { DataInput } from '@/components/financeiro/DataInput';
 import { InventoryList } from '@/components/financeiro/InventoryList';
 import { useNavigate } from 'react-router-dom';
-import { useMlToken } from '@/hooks/useMlToken';
+import { useMlToken, MlTokenType } from '@/hooks/useMlToken';
 import { useSettlementData } from '@/hooks/useSettlementData';
 import { useInventoryData } from '@/hooks/useInventoryData';
 import { useReleaseData } from '@/hooks/useReleaseData';
@@ -51,7 +51,7 @@ const AdminFinanceiro: React.FC = () => {
   /* ------------------------------------------------------------------ */
   const navigate = useNavigate();
 
-  // Get ML token and extract seller_id safely
+  // Get ML token and extract seller_id safely with proper type checking
   const mlToken = useMlToken();
   const sellerId = React.useMemo(() => {
     if (!mlToken) return '681274853'; // Default ID if mlToken is null
@@ -60,11 +60,11 @@ const AdminFinanceiro: React.FC = () => {
     console.log('ML Token:', mlToken);
     
     try {
-      // Handle different shapes of mlToken
+      // Handle different shapes of mlToken with proper type guards
       if (typeof mlToken === 'object' && mlToken !== null) {
         if ('seller_id' in mlToken) {
           return String(mlToken.seller_id).trim();
-        } else if ('id' in mlToken) {
+        } else if ('id' in mlToken && mlToken.id) {
           return String(mlToken.id).trim();
         }
       } else if (typeof mlToken === 'string' && mlToken.includes('seller_id')) {

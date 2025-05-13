@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -6,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TransactionsList } from './TransactionsList';
 import { SettlementTransactionsList } from './SettlementTransactionsList';
 import { useSettlementData } from '@/hooks/useSettlementData';
-import { useMlToken } from '@/hooks/useMlToken';
+import { useMlToken, MlTokenType } from '@/hooks/useMlToken';
 import { Button } from "@/components/ui/button";
 import { format } from 'date-fns';
 import { toast } from '@/components/ui/use-toast';
@@ -59,18 +60,19 @@ export const DataInput: React.FC<DataInputProps> = ({
   
   // Get ML token to extract seller_id
   const mlToken = useMlToken();
-  // Extract seller ID from mlToken and provide fallback
+  
+  // Extract seller ID from mlToken with proper type checking
   const sellerId = React.useMemo(() => {
     if (!mlToken) return '681274853'; // Default ID if mlToken is null
     
     console.log('ML Token in DataInput:', mlToken);
     
     try {
-      // Handle different shapes of mlToken
+      // Handle different shapes of mlToken with proper type guards
       if (typeof mlToken === 'object' && mlToken !== null) {
         if ('seller_id' in mlToken) {
           return String(mlToken.seller_id).trim();
-        } else if ('id' in mlToken) {
+        } else if ('id' in mlToken && mlToken.id) {
           return String(mlToken.id).trim();
         }
       } else if (typeof mlToken === 'string' && mlToken.includes('seller_id')) {
