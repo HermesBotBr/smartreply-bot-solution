@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -464,9 +465,9 @@ const AdminFinanceiro: React.FC = () => {
   }, [releaseData, releaseLineTransactions, startDate, endDate, parseReleaseData, processReleaseLineData]);
 
   const handleReleaseDataChange = (data: string) => {
-    // This is a placeholder for handling manual changes to release data
-    // Since the fetched release data is now coming from useReleaseData hook,
-    // we don't need to reprocess it here
+    // Esta função não precisa mais fazer a análise dos dados, 
+    // pois isso agora é feito na função processReleaseData
+    // que é chamada sempre que os dados ou filtros mudam
   };
 
   /* ------------------------------------------------------------------ */

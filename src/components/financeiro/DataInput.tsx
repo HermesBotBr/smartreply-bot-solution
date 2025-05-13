@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -110,7 +111,8 @@ export const DataInput: React.FC<DataInputProps> = ({
   };
   
   const handleRefreshReleaseData = () => {
-    // Force a refresh by re-fetching the data
+    // Force a refresh by re-fetching the data (in this case, just remount the component)
+    const currentSellerId = sellerId;
     toast({
       title: "Atualizando dados",
       description: "Atualizando dados de liberações...",
@@ -399,10 +401,10 @@ export const DataInput: React.FC<DataInputProps> = ({
               </Button>
             </div>
             <CardDescription>
-              Os dados de liberações são carregados automaticamente do arquivo externo
+              Os dados de liberações são carregados automaticamente do banco de dados
               {releaseLastUpdate && (
                 <span className="block text-xs mt-1">
-                  Última atualização: {releaseLastUpdate}
+                  Última atualização: {format(new Date(releaseLastUpdate), 'dd/MM/yyyy HH:mm')}
                 </span>
               )}
             </CardDescription>
