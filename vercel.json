@@ -11,6 +11,10 @@
       "destination": "/api/uploads/:path*"
     },
     {
+      "source": "/api/refresh-releases",
+      "destination": "/api/messages/refresh-messages"
+    },
+    {
       "source": "/api/messages/refresh-messages",
       "destination": "/api/messages/refresh-messages"
     },
@@ -51,6 +55,18 @@
         { "key": "Content-Type", "value": "application/json" },
         { "key": "Access-Control-Allow-Origin", "value": "*" },
         { "key": "Access-Control-Allow-Methods", "value": "GET, POST, PUT, DELETE, OPTIONS" },
+        { "key": "Access-Control-Allow-Headers", "value": "Content-Type, Authorization, Accept, X-Requested-With" },
+        { "key": "Cache-Control", "value": "no-store, no-cache, must-revalidate, proxy-revalidate" },
+        { "key": "Pragma", "value": "no-cache" },
+        { "key": "Expires", "value": "0" }
+      ]
+    },
+    {
+      "source": "/api/refresh-releases",
+      "headers": [
+        { "key": "Content-Type", "value": "text/plain" },
+        { "key": "Access-Control-Allow-Origin", "value": "*" },
+        { "key": "Access-Control-Allow-Methods", "value": "GET, OPTIONS" },
         { "key": "Access-Control-Allow-Headers", "value": "Content-Type, Authorization, Accept, X-Requested-With" },
         { "key": "Cache-Control", "value": "no-store, no-cache, must-revalidate, proxy-revalidate" },
         { "key": "Pragma", "value": "no-cache" },

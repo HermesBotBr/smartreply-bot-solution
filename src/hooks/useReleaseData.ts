@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { getLocalApiUrl } from '@/config/api';
 
 export function useReleaseData(sellerId: string | null) {
   const [releaseData, setReleaseData] = useState<string>('');
@@ -18,9 +19,9 @@ export function useReleaseData(sellerId: string | null) {
       try {
         setIsLoading(true);
         
-        // Fetch release data from the text file URL
+        // Fetch release data from our proxy endpoint
         const response = await axios.get(
-          'https://projetohermes-dda7e0c8d836.herokuapp.com/releases.txt'
+          getLocalApiUrl('/refresh-releases')
         );
         
         if (response.status !== 200) {
@@ -67,9 +68,9 @@ export function useReleaseData(sellerId: string | null) {
     try {
       setIsLoading(true);
       
-      // Fetch release data from the text file URL
+      // Fetch release data from our proxy endpoint
       const response = await axios.get(
-        'https://projetohermes-dda7e0c8d836.herokuapp.com/releases.txt'
+        getLocalApiUrl('/refresh-releases')
       );
       
       if (response.status !== 200) {
