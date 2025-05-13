@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -60,7 +61,7 @@ const AdminFinanceiro: React.FC = () => {
     
     try {
       // Handle different shapes of mlToken
-      if (typeof mlToken === 'object') {
+      if (typeof mlToken === 'object' && mlToken !== null) {
         if ('seller_id' in mlToken) {
           return String(mlToken.seller_id).trim();
         } else if ('id' in mlToken) {

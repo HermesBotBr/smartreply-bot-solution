@@ -67,7 +67,7 @@ export const DataInput: React.FC<DataInputProps> = ({
     
     try {
       // Handle different shapes of mlToken
-      if (typeof mlToken === 'object') {
+      if (typeof mlToken === 'object' && mlToken !== null) {
         if ('seller_id' in mlToken) {
           return String(mlToken.seller_id).trim();
         } else if ('id' in mlToken) {
