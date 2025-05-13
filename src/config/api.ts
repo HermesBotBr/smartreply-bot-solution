@@ -23,4 +23,3 @@ export const getLocalApiUrl = (path: string): string => {
   const baseUrl = window.location.origin;
   return `${baseUrl}/api${path.startsWith('/') ? path : `/${path}`}`;
 };
-

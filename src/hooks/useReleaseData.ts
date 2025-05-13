@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { getLocalApiUrl } from '@/config/api';
 
 interface ReleaseDataResponse {
   rows: {
@@ -26,9 +27,9 @@ export function useReleaseData(sellerId: string | null) {
       try {
         setIsLoading(true);
         
-        // Fetch release data from the public URL instead of the database
+        // Use our proxy endpoint instead of directly calling the external URL
         const response = await axios.get(
-          'https://projetohermes-dda7e0c8d836.herokuapp.com/releases.txt',
+          getLocalApiUrl('/proxy-releases'),
           { responseType: 'text' }
         );
         
@@ -94,8 +95,9 @@ export function useReleaseData(sellerId: string | null) {
       const fetchAgain = async () => {
         setIsLoading(true);
         try {
+          // Use our proxy endpoint for refetching as well
           const response = await axios.get(
-            'https://projetohermes-dda7e0c8d836.herokuapp.com/releases.txt',
+            getLocalApiUrl('/proxy-releases'),
             { responseType: 'text' }
           );
           
