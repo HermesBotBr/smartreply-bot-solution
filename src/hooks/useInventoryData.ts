@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { NGROK_BASE_URL } from '@/config/api';
@@ -14,7 +13,6 @@ export interface ProductItem {
   listing_type_id: string;
   stop_time: string;
   condition: string;
-  permalink: string;
   inventory?: InventoryInfo;
 }
 
