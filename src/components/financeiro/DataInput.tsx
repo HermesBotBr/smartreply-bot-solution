@@ -1,15 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { FileSpreadsheet, RotateCw } from "lucide-react";
+import { FileSpreadsheet } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TransactionsList } from './TransactionsList';
 import { SettlementTransactionsList } from './SettlementTransactionsList';
 import { useSettlementData } from '@/hooks/useSettlementData';
 import { useMlToken } from '@/hooks/useMlToken';
-import { Button } from "@/components/ui/button";
 import { format } from 'date-fns';
-import { toast } from '@/components/ui/use-toast';
 import { useReleaseData } from '@/hooks/useReleaseData';
 import { useReleaseLineData } from '@/hooks/useReleaseLineData';
 
@@ -64,29 +62,13 @@ export const DataInput: React.FC<DataInputProps> = ({
     sellerId = (mlToken as { seller_id: string }).seller_id;
   }
   
-  // Use the new hook to get release line data for settlement
+  // Use the hook to get release line data for settlement
   const { 
     releaseLineTransactions, 
     isLoading: releaseLineLoading, 
     error: releaseLineError,
     lastUpdate: releaseLineLastUpdate 
   } = useReleaseLineData(sellerId, startDate, endDate);
-  
-  // Use the existing hook to get release data
-  const { 
-    releaseData: fetchedReleaseData, 
-    isLoading: releaseLoading, 
-    error: releaseError,
-    lastUpdate: releaseLastUpdate,
-    setReleaseData: setFetchedReleaseData
-  } = useReleaseData(sellerId);
-  
-  // Effect to update parent component's releaseData when our fetched data changes
-  useEffect(() => {
-    if (fetchedReleaseData && fetchedReleaseData !== releaseData) {
-      onReleaseDataChange(fetchedReleaseData);
-    }
-  }, [fetchedReleaseData, onReleaseDataChange, releaseData]);
   
   // Effect to set the settlement transactions from release line data
   useEffect(() => {
@@ -106,28 +88,6 @@ export const DataInput: React.FC<DataInputProps> = ({
 
   const handleReleaseChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     onReleaseDataChange(e.target.value);
-    setFetchedReleaseData(e.target.value);
-  };
-  
-  const handleRefreshReleaseData = () => {
-    // Force a refresh by re-fetching the data (in this case, just remount the component)
-    toast({
-      title: "Atualizando dados",
-      description: "Atualizando dados de liberações...",
-    });
-    
-    // This will trigger a re-fetch in the useReleaseData hook
-    setFetchedReleaseData('');
-    
-    // Delay to ensure the component re-renders
-    setTimeout(() => {
-      if (fetchedReleaseData) {
-        toast({
-          title: "Dados atualizados",
-          description: "Dados de liberações atualizados com sucesso!",
-        });
-      }
-    }, 1000);
   };
 
   // Helper function to check if a date string is within the filter range
@@ -315,28 +275,6 @@ export const DataInput: React.FC<DataInputProps> = ({
     }
   };
 
-  // Show error toast if there's a release data error
-  useEffect(() => {
-    if (releaseError) {
-      toast({
-        variant: "destructive",
-        title: "Erro",
-        description: `Erro ao carregar dados de liberações: ${releaseError.message}`,
-      });
-    }
-  }, [releaseError]);
-  
-  // Show error toast if there's a release line data error
-  useEffect(() => {
-    if (releaseLineError) {
-      toast({
-        variant: "destructive",
-        title: "Erro",
-        description: `Erro ao carregar dados de linhas de liberação: ${releaseLineError.message}`,
-      });
-    }
-  }, [releaseLineError]);
-
   return (
     <Tabs defaultValue="settlement" className="w-full">
       <TabsList className="mb-6">
@@ -388,38 +326,23 @@ export const DataInput: React.FC<DataInputProps> = ({
                 <FileSpreadsheet className="h-5 w-5" />
                 <CardTitle>Entrada de Dados de Liberações (Release)</CardTitle>
               </div>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={handleRefreshReleaseData}
-                disabled={releaseLoading}
-              >
-                <RotateCw className="h-4 w-4 mr-2" />
-                Atualizar
-              </Button>
             </div>
             <CardDescription>
-              Os dados de liberações são carregados automaticamente do arquivo
-              {releaseLastUpdate && (
+              Insira os dados de liberações manualmente no formato CSV
+              {lastUpdate && (
                 <span className="block text-xs mt-1">
-                  Última atualização: {releaseLastUpdate}
+                  Última atualização: {lastUpdate}
                 </span>
               )}
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {releaseLoading ? (
-              <div className="flex justify-center items-center py-4">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-              </div>
-            ) : (
-              <Textarea 
-                value={releaseData}
-                onChange={handleReleaseChange}
-                placeholder="Carregando dados de liberações..."
-                className="min-h-[400px] font-mono text-sm"
-              />
-            )}
+            <Textarea 
+              value={releaseData}
+              onChange={handleReleaseChange}
+              placeholder="Cole aqui os dados de liberações no formato CSV..."
+              className="min-h-[400px] font-mono text-sm"
+            />
           </CardContent>
           <CardFooter className="flex justify-between items-center">
             <div className="text-sm text-muted-foreground">

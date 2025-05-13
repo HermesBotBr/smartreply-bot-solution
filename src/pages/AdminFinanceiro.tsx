@@ -73,11 +73,12 @@ const AdminFinanceiro: React.FC = () => {
     refetch: refetchReleaseLines,
   } = useReleaseLineData(sellerId, startDate, endDate);
 
-  // Use the updated hook to get release data directly from the file
+  // Use the updated hook para entrada manual de dados
   const { 
     releaseData, 
     isLoading: releaseLoading, 
-    lastUpdate 
+    lastUpdate,
+    setReleaseData: setReleaseDataManually
   } = useReleaseData(sellerId);
 
   const { 
@@ -469,9 +470,20 @@ const AdminFinanceiro: React.FC = () => {
   }, [releaseData, releaseLineTransactions, startDate, endDate, parseReleaseData, processReleaseLineData]);
 
   const handleReleaseDataChange = (data: string) => {
-    // Esta função não precisa mais fazer a análise dos dados, 
-    // pois isso agora é feito na função processReleaseData
-    // que é chamada sempre que os dados ou filtros mudam
+    setReleaseDataManually(data);
+    // Processar os dados após a inserção manual
+    const parsed = parseReleaseData(data, startDate, endDate);
+    setMetrics((prev) => ({
+      ...prev,
+      totalReleased: parsed.totalReleased,
+      totalClaims: parsed.totalClaims,
+      totalDebts: parsed.totalDebts,
+      totalTransfers: parsed.totalTransfers,
+      totalCreditCard: parsed.totalCreditCard,
+      totalShippingCashback: parsed.totalShippingCashback,
+    }));
+    setReleaseOperationsWithOrder(parsed.operationsWithOrder);
+    setReleaseOtherOperations(parsed.otherOperations);
   };
 
   /* ------------------------------------------------------------------ */
