@@ -8,14 +8,6 @@ import { SettlementTransactionsList } from './SettlementTransactionsList';
 import { useSettlementData } from '@/hooks/useSettlementData';
 import { useMlToken } from '@/hooks/useMlToken';
 
-interface Transaction {
-  date: string;
-  sourceId: string;
-  descriptions: string[];
-  group: string;
-  value: number;
-}
-
 interface SettlementTransaction {
   date: string;
   sourceId: string;

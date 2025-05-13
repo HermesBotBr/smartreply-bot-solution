@@ -15,6 +15,8 @@ const AdminFinanceiro = () => {
   );
   const [endDate, setEndDate] = useState<Date | undefined>(new Date());
   const [showInput, setShowInput] = useState<boolean>(false);
+  const [settlementData, setSettlementData] = useState<string>("");
+  const [releaseData, setReleaseData] = useState<string>("");
 
   const {
     settlementTransactions,
@@ -46,12 +48,14 @@ const AdminFinanceiro = () => {
       </div>
 
       <DataInput
-        open={showInput}
-        onOpenChange={setShowInput}
-        sellerId={sellerId}
+        settlementData={settlementData}
+        releaseData={releaseData}
+        onSettlementDataChange={setSettlementData}
+        onReleaseDataChange={setReleaseData}
         startDate={startDate}
         endDate={endDate}
-        onSave={handleSaveData}
+        settlementTransactions={settlementTransactions}
+        settlementLoading={isLoading}
       />
 
       <Tabs defaultValue="metricas" className="space-y-4">
@@ -63,25 +67,26 @@ const AdminFinanceiro = () => {
         
         <TabsContent value="metricas">
           <FinancialMetrics 
+            grossSales={totalGrossSales}
+            totalAmount={totalNetSales}
+            unitsSold={totalUnits}
+            totalMLRepasses={totalNetSales}
+            totalMLFees={totalGrossSales - totalNetSales}
+            totalReleased={0}
+            totalClaims={0}
+            totalDebts={0}
+            totalTransfers={0}
+            totalCreditCard={0}
+            totalShippingCashback={0}
             settlementTransactions={settlementTransactions}
-            totalGrossSales={totalGrossSales}
-            totalNetSales={totalNetSales}
-            totalUnits={totalUnits}
-            startDate={startDate}
-            endDate={endDate}
-            isLoading={isLoading}
-            error={error}
+            releaseOperationsWithOrder={[]}
+            releaseOtherOperations={[]}
           />
         </TabsContent>
         
         <TabsContent value="entradas">
           <SettlementTransactionsList 
-            transactions={settlementTransactions} 
-            isLoading={isLoading}
-            error={error}
-            startDate={startDate}
-            endDate={endDate}
-            sellerId={sellerId}
+            transactions={settlementTransactions}
           />
         </TabsContent>
         
