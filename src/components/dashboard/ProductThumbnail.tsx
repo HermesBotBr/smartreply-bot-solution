@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { User } from 'lucide-react';
-import { useMlToken, MlTokenType } from '@/hooks/useMlToken';
+import { useMlToken } from '@/hooks/useMlToken';
 
 interface ProductThumbnailProps {
   itemId: string;
@@ -36,35 +35,18 @@ const ProductThumbnail: React.FC<ProductThumbnailProps> = ({ itemId, sellerId })
     
     async function fetchThumbnail() {
       try {
-        // Extract token value based on mlToken type with proper type checking
-        let tokenValue = '';
-        
-        if (typeof mlToken === 'object' && mlToken !== null) {
-          if ('seller_id' in mlToken) {
-            tokenValue = `seller_id=${mlToken.seller_id}`;
-          } else if ('id' in mlToken) {
-            tokenValue = `seller_id=${mlToken.id}`;
-          }
-        } else if (typeof mlToken === 'string') {
-          tokenValue = mlToken;
-        }
-        
+        const tokenValue = typeof mlToken === 'string' ? mlToken : (mlToken?.seller_id ? `seller_id=${mlToken.seller_id}` : '');
         console.log("Fetching thumbnail for itemId:", itemId, "with token type:", typeof mlToken);
         
         if (!isMountedRef.current) return;
         
         // Adjust URL based on token type
         let apiUrl = `https://api.mercadolibre.com/items/${itemId}`;
-        
         if (typeof mlToken === 'string') {
           apiUrl += `?access_token=${mlToken}`;
-        } else if (mlToken !== null) {
-          // For object type tokens, use extracted seller_id or id
-          if ('seller_id' in mlToken) {
-            apiUrl += `?seller_id=${mlToken.seller_id}`;
-          } else if ('id' in mlToken) {
-            apiUrl += `?seller_id=${mlToken.id}`;
-          }
+        } else if (mlToken?.seller_id) {
+          // For object type tokens, use a different approach or endpoint if needed
+          apiUrl += `?seller_id=${mlToken.seller_id}`;
         }
         
         const response = await fetch(apiUrl);

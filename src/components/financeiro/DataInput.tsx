@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { FileSpreadsheet, RotateCw } from "lucide-react";
@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TransactionsList } from './TransactionsList';
 import { SettlementTransactionsList } from './SettlementTransactionsList';
 import { useSettlementData } from '@/hooks/useSettlementData';
-import { useMlToken, MlTokenType } from '@/hooks/useMlToken';
+import { useMlToken } from '@/hooks/useMlToken';
 import { Button } from "@/components/ui/button";
 import { format } from 'date-fns';
 import { toast } from '@/components/ui/use-toast';
@@ -60,41 +60,10 @@ export const DataInput: React.FC<DataInputProps> = ({
   
   // Get ML token to extract seller_id
   const mlToken = useMlToken();
-  
-  // Extract seller ID from mlToken with proper type checking
-  const sellerId = React.useMemo(() => {
-    if (!mlToken) return '681274853'; // Default ID if mlToken is null
-    
-    console.log('ML Token in DataInput:', mlToken);
-    
-    try {
-      // Handle different shapes of mlToken with proper type guards
-      if (typeof mlToken === 'object' && mlToken !== null) {
-        if ('seller_id' in mlToken) {
-          return String(mlToken.seller_id).trim();
-        } else if ('id' in mlToken && mlToken.id) {
-          return String(mlToken.id).trim();
-        }
-      } else if (typeof mlToken === 'string' && mlToken.includes('seller_id')) {
-        // Try to parse if it's a JSON string
-        try {
-          const parsed = JSON.parse(mlToken);
-          if (parsed && parsed.seller_id) {
-            return String(parsed.seller_id).trim();
-          }
-        } catch (e) {
-          console.error('Failed to parse mlToken string:', e);
-        }
-      }
-    } catch (e) {
-      console.error('Error extracting seller_id:', e);
-    }
-    
-    // Default fallback ID if extraction fails
-    return '681274853';
-  }, [mlToken]);
-  
-  console.log('DataInput using seller ID:', sellerId);
+  let sellerId = '681274853';
+  if (mlToken && typeof mlToken === 'object' && 'seller_id' in mlToken) {
+    sellerId = (mlToken as { seller_id: string }).seller_id;
+  }
   
   // Use the new hook to get release line data for settlement
   const { 
@@ -110,7 +79,7 @@ export const DataInput: React.FC<DataInputProps> = ({
     isLoading: releaseLoading, 
     error: releaseError,
     lastUpdate: releaseLastUpdate,
-    refetch: refetchReleaseData
+    setReleaseData: setFetchedReleaseData
   } = useReleaseData(sellerId);
   
   // Effect to update parent component's releaseData when our fetched data changes
@@ -138,29 +107,29 @@ export const DataInput: React.FC<DataInputProps> = ({
 
   const handleReleaseChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     onReleaseDataChange(e.target.value);
+    setFetchedReleaseData(e.target.value);
   };
   
-  const handleRefreshReleaseData = async () => {
-    // Show loading toast
+  const handleRefreshReleaseData = () => {
+    // Force a refresh by re-fetching the data (in this case, just remount the component)
+    const currentSellerId = sellerId;
     toast({
       title: "Atualizando dados",
-      description: "Buscando dados de liberações do arquivo externo...",
+      description: "Atualizando dados de liberações...",
     });
     
-    const success = await refetchReleaseData();
+    // This will trigger a re-fetch in the useReleaseData hook
+    setFetchedReleaseData('');
     
-    if (success) {
-      toast({
-        title: "Dados atualizados",
-        description: "Dados de liberações atualizados com sucesso!",
-      });
-    } else {
-      toast({
-        variant: "destructive",
-        title: "Erro",
-        description: "Não foi possível atualizar os dados de liberações",
-      });
-    }
+    // Delay to ensure the component re-renders
+    setTimeout(() => {
+      if (fetchedReleaseData) {
+        toast({
+          title: "Dados atualizados",
+          description: "Dados de liberações atualizados com sucesso!",
+        });
+      }
+    }, 1000);
   };
 
   // Helper function to check if a date string is within the filter range
@@ -427,15 +396,15 @@ export const DataInput: React.FC<DataInputProps> = ({
                 onClick={handleRefreshReleaseData}
                 disabled={releaseLoading}
               >
-                <RotateCw className={`h-4 w-4 mr-2 ${releaseLoading ? 'animate-spin' : ''}`} />
+                <RotateCw className="h-4 w-4 mr-2" />
                 Atualizar
               </Button>
             </div>
             <CardDescription>
-              Os dados de liberações são carregados automaticamente do arquivo externo
+              Os dados de liberações são carregados automaticamente do banco de dados
               {releaseLastUpdate && (
                 <span className="block text-xs mt-1">
-                  Última atualização: {releaseLastUpdate}
+                  Última atualização: {format(new Date(releaseLastUpdate), 'dd/MM/yyyy HH:mm')}
                 </span>
               )}
             </CardDescription>
@@ -444,19 +413,6 @@ export const DataInput: React.FC<DataInputProps> = ({
             {releaseLoading ? (
               <div className="flex justify-center items-center py-4">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-              </div>
-            ) : releaseError ? (
-              <div className="text-center py-4 text-destructive">
-                {releaseError.message}
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={handleRefreshReleaseData}
-                  className="mt-2"
-                >
-                  <RotateCw className="h-4 w-4 mr-2" />
-                  Tentar novamente
-                </Button>
               </div>
             ) : (
               <Textarea 
