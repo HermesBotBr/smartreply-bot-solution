@@ -20,7 +20,9 @@ export function useReleaseData(sellerId: string | null) {
         setIsLoading(true);
         
         // Buscar dados do arquivo releases.txt através do proxy
-        const response = await axios.get(getLocalApiUrl('/messages/proxy-releases'));
+        const response = await axios.get(getLocalApiUrl('/messages/proxy-releases'), {
+          responseType: 'text'
+        });
         
         if (response.status !== 200) {
           throw new Error('Falha ao buscar dados de liberações');
