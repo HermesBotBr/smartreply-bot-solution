@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { getNgrokUrl } from '@/config/api';
 import { TransDesc, InventoryItem } from '@/types/inventory';
@@ -31,17 +30,18 @@ export function useInventoryData(sellerId: string | null) {
         const transDescData: TransDesc[] = await transDescResponse.json();
         
         // Fetch release data to get dates for source_ids
-        // Note: This assumes release data is available in localStorage or from an API
+        // The release data format might have changed, so we need to adapt our parsing
         let releaseData = localStorage.getItem('releaseData');
         
         // Create a map of source_id to dates from release data
         const sourceIdToDateMap: Record<string, string> = {};
         
         if (releaseData) {
+          // The format of the stored releaseData has now changed
+          // It now contains only the CSV part, starting with the header line
           const lines = releaseData.split('\n').filter(line => line.trim() !== '');
           
-          // Skip headers and process data lines
-          if (lines.length > 2) {
+          if (lines.length > 1) { // Skip the header line
             lines.slice(1).forEach(line => {
               if (!line.startsWith(',,,total')) {
                 const cols = line.split(',');
@@ -51,7 +51,8 @@ export function useInventoryData(sellerId: string | null) {
                   
                   if (dateStr && sourceId) {
                     try {
-                      // Format date as DD/MM/YYYY
+                      // The date format is now ISO format, we need to parse it differently
+                      // Format: 2025-03-07T01:09:15.000-03:00
                       const date = new Date(dateStr);
                       const formattedDate = `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
                       sourceIdToDateMap[sourceId] = formattedDate;

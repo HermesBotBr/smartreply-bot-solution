@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -73,13 +72,14 @@ export const DataInput: React.FC<DataInputProps> = ({
     lastUpdate: releaseLineLastUpdate 
   } = useReleaseLineData(sellerId, startDate, endDate);
   
-  // Use the existing hook to get release data
+  // Use the updated hook to get release data
   const { 
     releaseData: fetchedReleaseData, 
     isLoading: releaseLoading, 
     error: releaseError,
     lastUpdate: releaseLastUpdate,
-    setReleaseData: setFetchedReleaseData
+    setReleaseData: setFetchedReleaseData,
+    refetch: refetchReleaseData
   } = useReleaseData(sellerId);
   
   // Effect to update parent component's releaseData when our fetched data changes
@@ -111,25 +111,24 @@ export const DataInput: React.FC<DataInputProps> = ({
   };
   
   const handleRefreshReleaseData = () => {
-    // Force a refresh by re-fetching the data (in this case, just remount the component)
-    const currentSellerId = sellerId;
     toast({
       title: "Atualizando dados",
       description: "Atualizando dados de liberações...",
     });
     
-    // This will trigger a re-fetch in the useReleaseData hook
-    setFetchedReleaseData('');
-    
-    // Delay to ensure the component re-renders
-    setTimeout(() => {
-      if (fetchedReleaseData) {
-        toast({
-          title: "Dados atualizados",
-          description: "Dados de liberações atualizados com sucesso!",
-        });
-      }
-    }, 1000);
+    // Use the new refetch method to fetch data from the URL
+    refetchReleaseData().then(() => {
+      toast({
+        title: "Dados atualizados",
+        description: "Dados de liberações atualizados com sucesso!",
+      });
+    }).catch(err => {
+      toast({
+        title: "Erro",
+        description: `Erro ao atualizar dados: ${err.message}`,
+        variant: "destructive",
+      });
+    });
   };
 
   // Helper function to check if a date string is within the filter range
