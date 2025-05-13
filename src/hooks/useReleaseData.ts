@@ -1,14 +1,9 @@
 
 import { useState, useEffect } from 'react';
-import { getNgrokUrl } from '@/config/api';
 import axios from 'axios';
 
 interface ReleaseDataResponse {
-  rows: {
-    seller_id: string;
-    releases: string;
-    last_update: string;
-  }[];
+  text: string;
 }
 
 export function useReleaseData(sellerId: string | null) {
@@ -19,39 +14,27 @@ export function useReleaseData(sellerId: string | null) {
 
   useEffect(() => {
     const fetchReleaseData = async () => {
-      if (!sellerId) {
-        setIsLoading(false);
-        return;
-      }
-
       try {
         setIsLoading(true);
         
-        // Fetch release data from the database
-        const response = await axios.get<ReleaseDataResponse>(
-          `${getNgrokUrl('/api/db/rows/releases')}`
-        );
+        // Fetch release data from our proxy API
+        const response = await axios.get<string>('/api/proxy-releases');
         
         if (response.status !== 200) {
           throw new Error('Failed to fetch release data');
         }
         
-        // Find the record for the current seller
-        const sellerData = response.data.rows.find(
-          row => row.seller_id === sellerId
-        );
+        const data = response.data;
         
-        if (sellerData) {
-          // Save the release data to localStorage for inventory lookup
-          localStorage.setItem('releaseData', sellerData.releases);
-          
-          setReleaseData(sellerData.releases);
-          setLastUpdate(sellerData.last_update);
-        } else {
-          setReleaseData('');
-          setLastUpdate(null);
+        // Extract the last update date from the data
+        const lastUpdateMatch = data.match(/LAST_UPDATE: (.*)/);
+        if (lastUpdateMatch && lastUpdateMatch[1]) {
+          setLastUpdate(lastUpdateMatch[1]);
         }
         
+        // Save the release data
+        localStorage.setItem('releaseData', data);
+        setReleaseData(data);
         setIsLoading(false);
       } catch (err) {
         console.error('Error fetching release data:', err);
