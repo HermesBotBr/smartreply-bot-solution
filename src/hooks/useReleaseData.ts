@@ -27,27 +27,33 @@ export function useReleaseData(sellerId: string | null) {
       try {
         setIsLoading(true);
         
-        // Fetch release data from the database
-        const response = await axios.get<ReleaseDataResponse>(
-          `${getNgrokUrl('/api/db/rows/releases')}`
+        // Fetch release data directly from the URL instead of the database
+        const response = await axios.get(
+          `${getNgrokUrl('/releases.txt')}`,
+          { responseType: 'text' }
         );
         
         if (response.status !== 200) {
           throw new Error('Failed to fetch release data');
         }
         
-        // Find the record for the current seller
-        const sellerData = response.data.rows.find(
-          row => row.seller_id === sellerId
-        );
+        const textData = response.data;
         
-        if (sellerData) {
+        // Extract SELLER_ID and LAST_UPDATE from the text
+        const sellerIdMatch = textData.match(/SELLER_ID: (\d+)/);
+        const lastUpdateMatch = textData.match(/LAST_UPDATE: ([\d-]+ [\d:]+)/);
+        
+        if (sellerIdMatch && sellerIdMatch[1] === sellerId) {
           // Save the release data to localStorage for inventory lookup
-          localStorage.setItem('releaseData', sellerData.releases);
+          localStorage.setItem('releaseData', textData);
           
-          setReleaseData(sellerData.releases);
-          setLastUpdate(sellerData.last_update);
+          setReleaseData(textData);
+          
+          if (lastUpdateMatch && lastUpdateMatch[1]) {
+            setLastUpdate(lastUpdateMatch[1]);
+          }
         } else {
+          console.warn('Data for this seller not found or seller ID mismatch');
           setReleaseData('');
           setLastUpdate(null);
         }
