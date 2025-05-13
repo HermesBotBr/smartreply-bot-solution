@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 
@@ -110,55 +109,55 @@ export function useSettlementData(
           // Initialize order transaction
           const firstItem = order.order_items?.[0]?.item;
 
-          transactionsMap.set(orderId, {
-            date: '',
-            sourceId: '',
-            orderId: orderId.toString(),
-            group: 'Venda',
-            units,
-            grossValue: 0,
-            netValue: 0,
-            itemId: firstItem?.id || '',
-            title: firstItem?.title || ''
-          });
+transactionsMap.set(orderId, {
+  date: '',
+  sourceId: '',
+  orderId: orderId.toString(),
+  group: 'Venda',
+  units,
+  grossValue: 0,
+  netValue: 0,
+  itemId: firstItem?.id || '',
+  title: firstItem?.title || ''
+});
 
           
           // Process payments for this order
           if (order.payments && order.payments.length > 0) {
             // Somar todos os pagamentos da venda
-            const transaction = transactionsMap.get(orderId)!;
+const transaction = transactionsMap.get(orderId)!;
 
-            let totalAmount = 0;
-            let mainPayment: Payment | null = null;
+let totalAmount = 0;
+let mainPayment: Payment | null = null;
 
-            order.payments
-              .filter(p => 
-                (p.transaction_amount || 0) > 0 &&
-                p.status !== 'cancelled' &&
-                p.status !== 'rejected'
-              )
-              .forEach((payment) => {
-                const amount = payment.transaction_amount || 0;
-                totalAmount += amount;
+order.payments
+  .filter(p => 
+    (p.transaction_amount || 0) > 0 &&
+    p.status !== 'cancelled' &&
+    p.status !== 'rejected'
+  )
+  .forEach((payment) => {
+    const amount = payment.transaction_amount || 0;
+    totalAmount += amount;
 
-                if (!mainPayment || amount > (mainPayment.transaction_amount || 0)) {
-                  mainPayment = payment;
-                }
-              });
-
-
+    if (!mainPayment || amount > (mainPayment.transaction_amount || 0)) {
+      mainPayment = payment;
+    }
+  });
 
 
-            if (mainPayment) {
-              transaction.date = mainPayment.date_approved || mainPayment.date_created || new Date().toISOString();
-              transaction.sourceId = mainPayment.id.toString();
-            }
 
-            transaction.grossValue = totalAmount;
-            transaction.netValue = totalAmount * 0.7;
 
-            grossTotal += totalAmount;
-            netTotal += totalAmount * 0.7;
+if (mainPayment) {
+  transaction.date = mainPayment.date_approved || mainPayment.date_created || new Date().toISOString();
+  transaction.sourceId = mainPayment.id.toString();
+}
+
+transaction.grossValue = totalAmount;
+transaction.netValue = totalAmount * 0.7;
+
+grossTotal += totalAmount;
+netTotal += totalAmount * 0.7;
 
 
           }
@@ -173,19 +172,15 @@ export function useSettlementData(
       // Include ALL transactions, not just ones with gross value > 0
       const transactions = Array.from(transactionsMap.values());
       
-      console.log("Transações finais:", transactions);
+console.log("Transações finais:", transactions);
 
-      // Make sure to always set an array, even if empty
-      setSettlementTransactions(transactions || []);
+      setSettlementTransactions(transactions);
       setTotalGrossSales(grossTotal);
       setTotalNetSales(netTotal);
       setTotalUnits(unitsTotal);
     } catch (err) {
       console.error('Error fetching settlement data from API:', err);
       setError('Falha ao carregar dados de vendas');
-      
-      // Ensure we set empty arrays on error
-      setSettlementTransactions([]);
     } finally {
       setIsLoading(false);
     }
@@ -199,7 +194,7 @@ export function useSettlementData(
   }, [sellerId, startDate, endDate, shouldFetch]);
 
   return {
-    settlementTransactions: Array.isArray(settlementTransactions) ? settlementTransactions : [],
+    settlementTransactions,
     totalGrossSales,
     totalNetSales,
     totalUnits,

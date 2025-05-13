@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -6,11 +5,9 @@ import { ArrowLeft } from 'lucide-react';
 import { DateRangeFilterSection } from '@/components/dashboard/metrics/DateRangeFilterSection';
 import { FinancialMetrics } from '@/components/financeiro/FinancialMetrics';
 import { DataInput } from '@/components/financeiro/DataInput';
-import { InventoryList } from '@/components/financeiro/InventoryList';
 import { useNavigate } from 'react-router-dom';
 import { useMlToken } from '@/hooks/useMlToken';
 import { useSettlementData } from '@/hooks/useSettlementData';
-import { useInventoryData } from '@/hooks/useInventoryData';
 import { toast } from 'sonner';
 import { ReleaseOperation } from '@/types/ReleaseOperation';
 
@@ -44,7 +41,7 @@ const AdminFinanceiro: React.FC = () => {
     totalShippingCashback: 0,
   });
 
-  const [activeTab, setActiveTab] = useState<'metricas' | 'entrada' | 'estoque'>('metricas');
+  const [activeTab, setActiveTab] = useState<'metricas' | 'entrada'>('metricas');
 
   /* ------------------------------------------------------------------ */
   /* hooks / data                                                        */
@@ -66,13 +63,6 @@ const AdminFinanceiro: React.FC = () => {
     refetch: refetchSettlement,
   } = useSettlementData(sellerId, startDate, endDate, true);
 
-  const {
-    products,
-    isLoading: inventoryLoading,
-    summary: inventorySummary,
-    refetch: refetchInventory
-  } = useInventoryData(sellerId);
-
   /* ------------------------------------------------------------------ */
   /* handlers                                                            */
   /* ------------------------------------------------------------------ */
@@ -83,7 +73,6 @@ const AdminFinanceiro: React.FC = () => {
     }
 
     refetchSettlement();
-    refetchInventory();
 
     if (releaseData) {
       const parsed = parseReleaseData(releaseData, startDate, endDate);
@@ -349,13 +338,12 @@ const AdminFinanceiro: React.FC = () => {
         <Tabs
           defaultValue="metricas"
           value={activeTab}
-          onValueChange={(value: "metricas" | "entrada" | "estoque") => setActiveTab(value)}
+          onValueChange={(value: "metricas" | "entrada") => setActiveTab(value)}
           className="w-full"
         >
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="metricas">Métricas</TabsTrigger>
             <TabsTrigger value="entrada">Entrada</TabsTrigger>
-            <TabsTrigger value="estoque">Estoque</TabsTrigger>
           </TabsList>
 
           <TabsContent value="metricas" className="space-y-4 mt-4">
@@ -393,26 +381,8 @@ const AdminFinanceiro: React.FC = () => {
               onReleaseDataChange={handleReleaseDataChange}
               startDate={startDate}
               endDate={endDate}
-              settlementTransactions={Array.isArray(settlementTransactions) ? settlementTransactions : []}
+              settlementTransactions={settlementTransactions}
               settlementLoading={settlementLoading}
-            />
-          </TabsContent>
-
-          <TabsContent value="estoque" className="mt-4">
-            <div className="mb-4">
-              <DateRangeFilterSection
-                startDate={startDate}
-                endDate={endDate}
-                onStartDateChange={setStartDate}
-                onEndDateChange={setEndDate}
-                onFilter={handleFilter}
-              />
-            </div>
-            
-            <InventoryList 
-              products={Array.isArray(products) ? products : []}
-              isLoading={inventoryLoading} 
-              summary={inventorySummary}
             />
           </TabsContent>
         </Tabs>
