@@ -1,0 +1,26 @@
+
+export interface TransDesc {
+  id: number;
+  seller_id: string;
+  source_id: string;
+  descricao: string;
+  valor: string;
+}
+
+export interface InventoryItem {
+  itemId: string;
+  title: string;
+  totalQuantity: number;
+  purchases: {
+    quantity: number;
+    unitCost: number;
+    totalCost: number;
+    sourceId: string;
+  }[];
+}
+
+export interface InventoryData {
+  items: InventoryItem[];
+  isLoading: boolean;
+  error: Error | null;
+}

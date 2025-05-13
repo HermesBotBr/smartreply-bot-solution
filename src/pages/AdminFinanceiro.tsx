@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -5,9 +6,11 @@ import { ArrowLeft } from 'lucide-react';
 import { DateRangeFilterSection } from '@/components/dashboard/metrics/DateRangeFilterSection';
 import { FinancialMetrics } from '@/components/financeiro/FinancialMetrics';
 import { DataInput } from '@/components/financeiro/DataInput';
+import { InventoryList } from '@/components/financeiro/InventoryList';
 import { useNavigate } from 'react-router-dom';
 import { useMlToken } from '@/hooks/useMlToken';
 import { useSettlementData } from '@/hooks/useSettlementData';
+import { useInventoryData } from '@/hooks/useInventoryData';
 import { toast } from 'sonner';
 import { ReleaseOperation } from '@/types/ReleaseOperation';
 
@@ -41,7 +44,7 @@ const AdminFinanceiro: React.FC = () => {
     totalShippingCashback: 0,
   });
 
-  const [activeTab, setActiveTab] = useState<'metricas' | 'entrada'>('metricas');
+  const [activeTab, setActiveTab] = useState<'metricas' | 'entrada' | 'estoque'>('metricas');
 
   /* ------------------------------------------------------------------ */
   /* hooks / data                                                        */
@@ -62,6 +65,19 @@ const AdminFinanceiro: React.FC = () => {
     isLoading: settlementLoading,
     refetch: refetchSettlement,
   } = useSettlementData(sellerId, startDate, endDate, true);
+
+  const { 
+    items: inventoryItems, 
+    isLoading: inventoryLoading, 
+    error: inventoryError 
+  } = useInventoryData(sellerId);
+
+  // Show toast if there's an inventory error
+  useEffect(() => {
+    if (inventoryError) {
+      toast.error(`Erro ao carregar dados de estoque: ${inventoryError.message}`);
+    }
+  }, [inventoryError]);
 
   /* ------------------------------------------------------------------ */
   /* handlers                                                            */
@@ -338,12 +354,13 @@ const AdminFinanceiro: React.FC = () => {
         <Tabs
           defaultValue="metricas"
           value={activeTab}
-          onValueChange={(value: "metricas" | "entrada") => setActiveTab(value)}
+          onValueChange={(value: "metricas" | "entrada" | "estoque") => setActiveTab(value)}
           className="w-full"
         >
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="metricas">Métricas</TabsTrigger>
             <TabsTrigger value="entrada">Entrada</TabsTrigger>
+            <TabsTrigger value="estoque">Estoque</TabsTrigger>
           </TabsList>
 
           <TabsContent value="metricas" className="space-y-4 mt-4">
@@ -383,6 +400,13 @@ const AdminFinanceiro: React.FC = () => {
               endDate={endDate}
               settlementTransactions={settlementTransactions}
               settlementLoading={settlementLoading}
+            />
+          </TabsContent>
+
+          <TabsContent value="estoque" className="mt-4">
+            <InventoryList 
+              inventoryItems={inventoryItems || []} 
+              isLoading={inventoryLoading} 
             />
           </TabsContent>
         </Tabs>
