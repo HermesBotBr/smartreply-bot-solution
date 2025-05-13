@@ -29,9 +29,11 @@ export function useInventoryData(sellerId: string | null) {
         
         const transDescData: TransDesc[] = await transDescResponse.json();
         
-        // Fetch transactions to get dates based on source_id
+        // For dates, we need to fetch transactions from the existing transactions endpoint
+        // instead of using the /transacoes endpoint which was incorrect
+        // We'll get dates from the release data that's shown in Lista de Transações
         const transResponse = await fetch(
-          `${getNgrokUrl(`/transacoes?seller_id=${sellerId}`)}`
+          `${getNgrokUrl(`/release?seller_id=${sellerId}`)}`
         );
         
         let transData: any[] = [];
@@ -57,7 +59,7 @@ export function useInventoryData(sellerId: string | null) {
             const { descricao, valor, source_id } = transaction;
             
             // Check if this is a merchandise purchase
-            if (descricao.startsWith('Compra de mercadoria:')) {
+            if (descricao && descricao.startsWith('Compra de mercadoria:')) {
               // Extract item information using regex
               const match = descricao.match(/(\d+)x\s(.+)\s\(([A-Z0-9]+)\)/);
               
