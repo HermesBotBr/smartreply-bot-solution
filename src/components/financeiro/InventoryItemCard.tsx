@@ -55,6 +55,7 @@ export function InventoryItemCard({ item }: InventoryItemCardProps) {
                 <TableHead>Qtd.</TableHead>
                 <TableHead>Valor Unit.</TableHead>
                 <TableHead>Total</TableHead>
+                <TableHead>Source_id</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -63,6 +64,7 @@ export function InventoryItemCard({ item }: InventoryItemCardProps) {
                   <TableCell>{purchase.quantity}</TableCell>
                   <TableCell>R$ {purchase.unitCost.toFixed(2)}</TableCell>
                   <TableCell>R$ {purchase.totalCost.toFixed(2)}</TableCell>
+                  <TableCell>{purchase.sourceId}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
