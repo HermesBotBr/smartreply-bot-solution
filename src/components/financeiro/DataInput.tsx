@@ -414,6 +414,19 @@ export const DataInput: React.FC<DataInputProps> = ({
               <div className="flex justify-center items-center py-4">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
               </div>
+            ) : releaseError ? (
+              <div className="text-center py-4 text-destructive">
+                {releaseError.message}
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleRefreshReleaseData}
+                  className="mt-2"
+                >
+                  <RotateCw className="h-4 w-4 mr-2" />
+                  Tentar novamente
+                </Button>
+              </div>
             ) : (
               <Textarea 
                 value={releaseData}
