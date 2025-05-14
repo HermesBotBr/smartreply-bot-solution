@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { InventoryItemCard } from './InventoryItemCard';
 import { InventoryItem } from '@/types/inventory';
-import { Package } from 'lucide-react';
+import { Package, CalendarDays } from 'lucide-react';
 
 interface InventoryListProps {
   inventoryItems: InventoryItem[];
@@ -50,6 +50,19 @@ export function InventoryList({ inventoryItems, isLoading }: InventoryListProps)
     return acc + (item.totalQuantity * weightedAverageCost);
   }, 0);
 
+  // Find the earliest purchase date across all inventory items
+  let earliestPurchaseDate: string | null = null;
+  
+  inventoryItems.forEach(item => {
+    item.purchases.forEach(purchase => {
+      if (purchase.date) {
+        if (!earliestPurchaseDate || purchase.date < earliestPurchaseDate) {
+          earliestPurchaseDate = purchase.date;
+        }
+      }
+    });
+  });
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4">
@@ -61,7 +74,7 @@ export function InventoryList({ inventoryItems, isLoading }: InventoryListProps)
           className="max-w-md"
         />
         
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           <div className="bg-primary/10 p-4 rounded-lg">
             <p className="text-sm text-muted-foreground">Total de Produtos</p>
             <p className="text-2xl font-bold">{totalItems}</p>
@@ -73,6 +86,15 @@ export function InventoryList({ inventoryItems, isLoading }: InventoryListProps)
           <div className="bg-primary/10 p-4 rounded-lg">
             <p className="text-sm text-muted-foreground">Valor Total do Estoque</p>
             <p className="text-2xl font-bold">R$ {totalValue.toFixed(2)}</p>
+          </div>
+          <div className="bg-primary/10 p-4 rounded-lg flex flex-col">
+            <div className="flex items-center gap-1">
+              <p className="text-sm text-muted-foreground">Primeira Reposição</p>
+              <CalendarDays className="h-4 w-4 text-muted-foreground" />
+            </div>
+            <p className="text-2xl font-bold">
+              {earliestPurchaseDate ? earliestPurchaseDate : 'N/A'}
+            </p>
           </div>
         </div>
       </div>
