@@ -8,6 +8,7 @@ import { ReleasePopup } from './ReleasePopup';
 import { TransfersPopup } from './TransfersPopup';
 import { ReleaseOperation } from '@/types/ReleaseOperation';
 import { AlertCircle } from 'lucide-react';
+import { SalesBoxComponent } from './SalesBoxComponent';
 
 interface FinancialMetricsProps {
   grossSales: number;
@@ -201,6 +202,16 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
           </Tabs>
         </div>
       </div>
+      
+      {/* Add the new Sales Box Component here */}
+      <SalesBoxComponent 
+        settlementTransactions={settlementTransactions}
+        releaseOperationsWithOrder={releaseOperationsWithOrder}
+        totalMLRepasses={totalMLRepasses}
+        totalMLFees={totalMLFees}
+        startDate={startDate}
+        endDate={endDate}
+      />
       
       <RepassesPopup 
         transactions={settlementTransactions}
