@@ -1,3 +1,4 @@
+
 // src/components/financeiro/RepassesPopup.tsx
 
 import React, { useState } from 'react';
@@ -11,9 +12,17 @@ interface RepassesPopupProps {
   transactions: SettlementTransaction[];
   open: boolean;
   onClose: () => void;
+  startDate?: Date; // Add startDate prop
+  endDate?: Date;   // Add endDate prop
 }
 
-export const RepassesPopup: React.FC<RepassesPopupProps> = ({ transactions, open, onClose }) => {
+export const RepassesPopup: React.FC<RepassesPopupProps> = ({ 
+  transactions, 
+  open, 
+  onClose,
+  startDate,
+  endDate 
+}) => {
   const [groupedView, setGroupedView] = useState(false);
 
   const groupedData = transactions.reduce((acc, item) => {
@@ -38,6 +47,11 @@ export const RepassesPopup: React.FC<RepassesPopupProps> = ({ transactions, open
       <DialogContent className="max-w-5xl w-full">
         <DialogHeader>
           <DialogTitle>Detalhamento de Repasses</DialogTitle>
+          {startDate && endDate && (
+            <p className="text-sm text-muted-foreground mt-1">
+              Período: {startDate.toLocaleDateString('pt-BR')} até {endDate.toLocaleDateString('pt-BR')}
+            </p>
+          )}
         </DialogHeader>
 
         <div className="flex items-center gap-2 mb-4">
