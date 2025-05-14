@@ -31,7 +31,6 @@ export function useInventoryData(sellerId: string | null) {
         const transDescData: TransDesc[] = await transDescResponse.json();
         
         // Fetch release data to get dates for source_ids
-        // Note: This assumes release data is available in localStorage or from an API
         let releaseData = localStorage.getItem('releaseData');
         
         // Create a map of source_id to dates from release data
@@ -42,7 +41,7 @@ export function useInventoryData(sellerId: string | null) {
           
           // Skip headers and process data lines
           if (lines.length > 2) {
-            lines.slice(1).forEach(line => {
+            lines.slice(2).forEach(line => {
               if (!line.startsWith(',,,total')) {
                 const cols = line.split(',');
                 if (cols.length >= 2) {
