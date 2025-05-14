@@ -1,5 +1,7 @@
+
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { ReleaseOperation } from '@/types/ReleaseOperation';
 
 interface Payment {
   transaction_amount: number;
@@ -17,7 +19,6 @@ interface OrderItem {
     title: string;
   };
 }
-
 
 interface SalesResult {
   payments: Payment[];
@@ -39,8 +40,11 @@ export interface SettlementTransaction {
   netValue: number;
   itemId?: string;
   title?: string;
+  // Adding fields required by SalesListBox
+  type?: string; // payment, fee, commission
+  amount: number;
+  order_id?: string; // Keeping for backward compatibility
 }
-
 
 export function useSettlementData(
   sellerId: string | null,
@@ -49,13 +53,19 @@ export function useSettlementData(
   shouldFetch: boolean = true
 ) {
   const [settlementTransactions, setSettlementTransactions] = useState<SettlementTransaction[]>([]);
+  const [releaseOperationsWithOrder, setReleaseOperationsWithOrder] = useState<ReleaseOperation[]>([]);
+  const [releaseOtherOperations, setReleaseOtherOperations] = useState<ReleaseOperation[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [totalGrossSales, setTotalGrossSales] = useState(0);
   const [totalNetSales, setTotalNetSales] = useState(0);
   const [totalUnits, setTotalUnits] = useState(0);
 
-  const fetchData = async () => {
+  const fetchSettlementData = async (
+    startDate: Date, 
+    endDate: Date, 
+    sellerId: string
+  ) => {
     if (!sellerId || !startDate || !endDate) {
       console.log("Missing parameters for fetchData:", { sellerId, startDate, endDate });
       return;
@@ -90,6 +100,7 @@ export function useSettlementData(
 
       // Process the API response
       const transactionsMap = new Map<number, SettlementTransaction>();
+      const releaseOps: ReleaseOperation[] = [];
       let grossTotal = 0;
       let netTotal = 0;
       let unitsTotal = 0;
@@ -109,59 +120,68 @@ export function useSettlementData(
           // Initialize order transaction
           const firstItem = order.order_items?.[0]?.item;
 
-transactionsMap.set(orderId, {
-  date: '',
-  sourceId: '',
-  orderId: orderId.toString(),
-  group: 'Venda',
-  units,
-  grossValue: 0,
-  netValue: 0,
-  itemId: firstItem?.id || '',
-  title: firstItem?.title || ''
-});
-
+          transactionsMap.set(orderId, {
+            date: '',
+            sourceId: '',
+            orderId: orderId.toString(),
+            order_id: orderId.toString(), // Adding for backward compatibility
+            group: 'Venda',
+            units,
+            grossValue: 0,
+            netValue: 0,
+            itemId: firstItem?.id || '',
+            title: firstItem?.title || '',
+            amount: 0,
+            type: 'payment'
+          });
           
           // Process payments for this order
           if (order.payments && order.payments.length > 0) {
             // Somar todos os pagamentos da venda
-const transaction = transactionsMap.get(orderId)!;
+            const transaction = transactionsMap.get(orderId)!;
 
-let totalAmount = 0;
-let mainPayment: Payment | null = null;
+            let totalAmount = 0;
+            let mainPayment: Payment | null = null;
 
-order.payments
-  .filter(p => 
-    (p.transaction_amount || 0) > 0 &&
-    p.status !== 'cancelled' &&
-    p.status !== 'rejected'
-  )
-  .forEach((payment) => {
-    const amount = payment.transaction_amount || 0;
-    totalAmount += amount;
+            order.payments
+              .filter(p => 
+                (p.transaction_amount || 0) > 0 &&
+                p.status !== 'cancelled' &&
+                p.status !== 'rejected'
+              )
+              .forEach((payment) => {
+                const amount = payment.transaction_amount || 0;
+                totalAmount += amount;
 
-    if (!mainPayment || amount > (mainPayment.transaction_amount || 0)) {
-      mainPayment = payment;
-    }
-  });
+                if (!mainPayment || amount > (mainPayment.transaction_amount || 0)) {
+                  mainPayment = payment;
+                }
+              });
 
+            if (mainPayment) {
+              transaction.date = mainPayment.date_approved || mainPayment.date_created || new Date().toISOString();
+              transaction.sourceId = mainPayment.id.toString();
+            }
 
+            transaction.grossValue = totalAmount;
+            transaction.netValue = totalAmount * 0.7;
+            transaction.amount = totalAmount; // Setting amount for compatibility
 
+            grossTotal += totalAmount;
+            netTotal += totalAmount * 0.7;
 
-if (mainPayment) {
-  transaction.date = mainPayment.date_approved || mainPayment.date_created || new Date().toISOString();
-  transaction.sourceId = mainPayment.id.toString();
-}
-
-transaction.grossValue = totalAmount;
-transaction.netValue = totalAmount * 0.7;
-
-grossTotal += totalAmount;
-netTotal += totalAmount * 0.7;
-
-
+            // Add a release operation for this order (simulating released operations)
+            const releaseOp: ReleaseOperation = {
+              orderId: orderId.toString(),
+              itemId: firstItem?.id || '',
+              title: firstItem?.title || '',
+              amount: totalAmount * 0.7,
+              description: 'Pagamento liberado',
+              sourceId: mainPayment?.id.toString(),
+              date: mainPayment?.date_approved || mainPayment?.date_created || new Date().toISOString()
+            };
+            releaseOps.push(releaseOp);
           }
-
         });
       }
 
@@ -172,9 +192,15 @@ netTotal += totalAmount * 0.7;
       // Include ALL transactions, not just ones with gross value > 0
       const transactions = Array.from(transactionsMap.values());
       
-console.log("Transações finais:", transactions);
+      console.log("Transações finais:", transactions);
+      
+      // Split release operations into those with order IDs and those without
+      const withOrderId = releaseOps.filter(op => !!op.orderId);
+      const withoutOrderId = releaseOps.filter(op => !op.orderId);
 
       setSettlementTransactions(transactions);
+      setReleaseOperationsWithOrder(withOrderId);
+      setReleaseOtherOperations(withoutOrderId);
       setTotalGrossSales(grossTotal);
       setTotalNetSales(netTotal);
       setTotalUnits(unitsTotal);
@@ -189,17 +215,20 @@ console.log("Transações finais:", transactions);
   useEffect(() => {
     if (shouldFetch && startDate && endDate && sellerId) {
       console.log("Triggering API fetch with dates and sellerId:", startDate, endDate, sellerId);
-      fetchData();
+      fetchSettlementData(startDate, endDate, sellerId);
     }
   }, [sellerId, startDate, endDate, shouldFetch]);
 
   return {
     settlementTransactions,
+    releaseOperationsWithOrder,
+    releaseOtherOperations,
     totalGrossSales,
     totalNetSales,
     totalUnits,
     isLoading,
     error,
-    refetch: fetchData
+    refetch: () => fetchSettlementData(startDate!, endDate!, sellerId!),
+    fetchSettlementData
   };
 }

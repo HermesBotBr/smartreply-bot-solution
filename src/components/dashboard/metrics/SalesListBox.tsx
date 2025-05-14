@@ -19,17 +19,32 @@ interface SalesListBoxProps {
   isLoading: boolean;
 }
 
+// Update SalesOrder interface to match the actual structure in the data
+interface ExtendedSalesOrder {
+  order_id: number;
+  pack_id: string | null;
+  date_created: string;
+  items: {
+    item: {
+      id: string;
+      title: string;
+    };
+    quantity: number;
+    unit_price: number;
+  }[];
+}
+
 export function SalesListBox({
   salesData,
   settlementTransactions,
   releaseOperationsWithOrder,
   isLoading
 }: SalesListBoxProps) {
-  // Processar dados para exibir por anúncio
+  // Process data to display by item
   const salesByItem = useMemo(() => {
     if (!salesData || salesData.length === 0) return [];
     
-    // Agrupar vendas por item_id
+    // Group sales by item_id
     const items: Record<string, {
       itemId: string;
       title: string;
@@ -43,15 +58,23 @@ export function SalesListBox({
       notReleasedCount: number;
     }> = {};
     
-    // Processar todas as vendas
+    // Process all sales
     salesData.forEach(sale => {
-      sale.orders.forEach(order => {
+      // TypeScript doesn't know about the structure of orders.items, so we need to cast
+      const extendedOrders = sale.orders as unknown as ExtendedSalesOrder[];
+      
+      extendedOrders.forEach(order => {
+        if (!order.items) {
+          console.warn('Order without items:', order);
+          return;
+        }
+        
         order.items.forEach(item => {
           const itemId = item.item.id;
           const title = item.item.title || 'Produto sem título';
           const orderValue = item.unit_price * item.quantity;
           
-          // Inicializar ou atualizar o item
+          // Initialize or update the item
           if (!items[itemId]) {
             items[itemId] = {
               itemId,
@@ -67,17 +90,17 @@ export function SalesListBox({
             };
           }
           
-          // Adicionar valor da venda
+          // Add sale value
           items[itemId].totalSales += orderValue;
           items[itemId].salesCount += item.quantity;
           
-          // Calcular repasses do ML para este item
+          // Calculate ML repasses for this item
           const orderTransactions = settlementTransactions.filter(
-            trans => trans.order_id === order.order_id.toString()
+            trans => trans.orderId === order.order_id.toString()
           );
           
           orderTransactions.forEach(trans => {
-            // Proporcionar o valor da transação baseado na proporção do item na ordem
+            // Proportion the transaction value based on the item's proportion in the order
             const totalOrderValue = order.items.reduce((sum, i) => sum + (i.unit_price * i.quantity), 0);
             const itemProportion = orderValue / totalOrderValue;
             
@@ -89,13 +112,13 @@ export function SalesListBox({
             }
           });
           
-          // Verificar operações liberadas e não liberadas
+          // Check released and unreleased operations
           const orderReleaseOps = releaseOperationsWithOrder.filter(
             op => op.orderId === order.order_id.toString()
           );
           
           if (orderReleaseOps.length > 0) {
-            // Proporcionar o valor liberado baseado na proporção do item na ordem
+            // Proportion the released value based on the item's proportion in the order
             const totalOrderValue = order.items.reduce((sum, i) => sum + (i.unit_price * i.quantity), 0);
             const itemProportion = orderValue / totalOrderValue;
             
@@ -103,7 +126,7 @@ export function SalesListBox({
             items[itemId].releasedAmount += totalReleased * itemProportion;
             items[itemId].releasedCount += 1;
           } else {
-            // Se não tem operações liberadas, considerar como não liberada
+            // If no released operations, consider as unreleased
             items[itemId].notReleasedAmount += orderValue;
             items[itemId].notReleasedCount += 1;
           }
@@ -111,7 +134,7 @@ export function SalesListBox({
       });
     });
     
-    // Converter para array e ordenar por total de vendas (decrescente)
+    // Convert to array and sort by total sales (descending)
     return Object.values(items).sort((a, b) => b.totalSales - a.totalSales);
   }, [salesData, settlementTransactions, releaseOperationsWithOrder]);
   

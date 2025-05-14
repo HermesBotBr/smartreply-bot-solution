@@ -39,7 +39,8 @@ export function NewMetricsDashboard({ sellerId }: NewMetricsDashboardProps) {
     releaseOtherOperations, 
     isLoading: settlementLoading,
     fetchSettlementData,
-  } = useSettlementData();
+    refetch: refetchSettlement
+  } = useSettlementData(sellerId, startDate, endDate);
   
   // Derived state
   const [totalSales, setTotalSales] = useState<number>(0);
@@ -127,12 +128,9 @@ export function NewMetricsDashboard({ sellerId }: NewMetricsDashboardProps) {
         refetchComplaints(),
         refetchImpactedComplaints(),
         refetchTags(),
+        refetchSettlement()
       ]);
       
-      // Buscar dados de liquidação quando o filtro é aplicado
-      if (sellerId) {
-        fetchSettlementData(startDate, endDate, sellerId);
-      }
     } catch (error) {
       toast.error("Erro ao buscar os dados. Tente novamente.");
     }
