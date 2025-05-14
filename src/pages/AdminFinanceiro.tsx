@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -90,11 +91,7 @@ const AdminFinanceiro: React.FC = () => {
     refetchSettlement();
 
     if (releaseData) {
-      // Update parsed data whenever filter changes
       const parsed = parseReleaseData(releaseData, startDate, endDate);
-      setReleaseOperationsWithOrder(parsed.operationsWithOrder);
-      setReleaseOtherOperations(parsed.otherOperations);
-      
       setMetrics((prev) => ({
         ...prev,
         totalReleased: parsed.totalReleased,
@@ -135,27 +132,12 @@ const AdminFinanceiro: React.FC = () => {
   /* ------------------------------------------------------------------ */
   const isDateInRange = (dateStr: string, start?: Date, end?: Date): boolean => {
     if (!start || !end) return true;
-    
-    try {
-      const d = new Date(dateStr);
-      const s = new Date(start);
-      s.setHours(0, 0, 0, 0);
-      const e = new Date(end);
-      e.setHours(23, 59, 59, 999);
-      
-      // Debug log for date filtering
-      console.log('Date checking:', { 
-        date: d, 
-        start: s, 
-        end: e, 
-        isInRange: (d >= s && d <= e) 
-      });
-      
-      return d >= s && d <= e;
-    } catch (error) {
-      console.error('Error parsing date:', dateStr, error);
-      return false;
-    }
+    const d = new Date(dateStr);
+    const s = new Date(start);
+    s.setHours(0, 0, 0, 0);
+    const e = new Date(end);
+    e.setHours(23, 59, 59, 999);
+    return d >= s && d <= e;
   };
 
   const parseReleaseData = (
@@ -173,8 +155,6 @@ const AdminFinanceiro: React.FC = () => {
     otherOperations: ReleaseOperation[];
   } => {
     try {
-      console.log('Parsing release data with date range:', { start, end });
-      
       const lines = data.split('\n').filter((l) => l.trim());
       if (lines.length < 3) {
         return {
@@ -263,16 +243,6 @@ const AdminFinanceiro: React.FC = () => {
       /* totais */
       Object.values(operationsBySourceId).forEach((op) => {
         const net = op.creditAmount - op.debitAmount;
-        
-        // Debug log for transfers
-        if (op.predominantDescription === 'payout' || op.predominantDescription === 'reserve_for_payout') {
-          console.log('Found transfer operation:', { 
-            sourceId: op.sourceId,
-            description: op.predominantDescription,
-            net: net
-          });
-        }
-        
         switch (op.predominantDescription) {
           case 'payment':
             totalReleased += net;
@@ -370,26 +340,6 @@ const AdminFinanceiro: React.FC = () => {
     }));
   }, [totalGrossSales, totalNetSales, totalUnits]);
 
-  // Add an effect to update filtered data when date range changes
-  useEffect(() => {
-    if (releaseData && startDate && endDate) {
-      console.log('Date range changed, re-parsing release data');
-      const parsed = parseReleaseData(releaseData, startDate, endDate);
-      setReleaseOperationsWithOrder(parsed.operationsWithOrder);
-      setReleaseOtherOperations(parsed.otherOperations);
-      
-      setMetrics((prev) => ({
-        ...prev,
-        totalReleased: parsed.totalReleased,
-        totalClaims: parsed.totalClaims,
-        totalDebts: parsed.totalDebts,
-        totalTransfers: parsed.totalTransfers,
-        totalCreditCard: parsed.totalCreditCard,
-        totalShippingCashback: parsed.totalShippingCashback,
-      }));
-    }
-  }, [startDate, endDate]);
-
   /* ------------------------------------------------------------------ */
   /* render                                                              */
   /* ------------------------------------------------------------------ */
@@ -440,8 +390,6 @@ const AdminFinanceiro: React.FC = () => {
               settlementTransactions={settlementTransactions}
               releaseOperationsWithOrder={releaseOperationsWithOrder}
               releaseOtherOperations={releaseOtherOperations}
-              startDate={startDate}
-              endDate={endDate}
             />
           </TabsContent>
 

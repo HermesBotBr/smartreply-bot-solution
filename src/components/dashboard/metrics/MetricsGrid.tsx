@@ -60,9 +60,6 @@ export function MetricsGrid({
     ? `De ${startDate.toLocaleDateString('pt-BR')} até ${endDate.toLocaleDateString('pt-BR')}`
     : 'Período não selecionado';
 
-  // Log date range for debugging
-  console.log('MetricsGrid date range:', { startDate, endDate, dateRangeText });
-
   const metrics = [
     {
       key: 'reputation',
