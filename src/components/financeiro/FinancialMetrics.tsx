@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { MetricCard } from '@/components/dashboard/metrics/MetricCard';
 import { SettlementTransaction } from '@/hooks/useSettlementData';
@@ -243,6 +242,7 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
         totalMLFees={totalMLFees}
         startDate={startDate}
         endDate={endDate}
+        filterBySettlement={filterBySettlement}
       />
       
       <RepassesPopup 

@@ -13,6 +13,7 @@ interface SalesBoxComponentProps {
   totalMLFees: number;
   startDate?: Date;
   endDate?: Date;
+  filterBySettlement?: boolean;  // New prop for filtering by settlement
 }
 
 export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
@@ -22,9 +23,15 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
   totalMLFees,
   startDate,
   endDate,
+  filterBySettlement = false,  // Default to false
 }) => {
   const salesByItem = useMemo(() => {
     if (!settlementTransactions.length) return [];
+
+    // Create set of order IDs from settlement for quick lookup when filtering
+    const settlementOrderIds = new Set(
+      settlementTransactions.map(transaction => transaction.orderId)
+    );
 
     // Group transactions by item ID
     const itemGroups = new Map<string, {
@@ -81,6 +88,10 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
       
       // Skip if we've already processed this order
       if (processedOrderIds.has(operation.orderId)) return;
+      
+      // If filtering by settlement is enabled, only process orders that exist in settlement transactions
+      if (filterBySettlement && !settlementOrderIds.has(operation.orderId)) return;
+      
       processedOrderIds.add(operation.orderId);
 
       const item = itemGroups.get(operation.itemId);
@@ -111,7 +122,7 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
     // Convert to array and sort by total sales (descending)
     return Array.from(itemGroups.values())
       .sort((a, b) => b.totalSales - a.totalSales);
-  }, [settlementTransactions, releaseOperationsWithOrder]);
+  }, [settlementTransactions, releaseOperationsWithOrder, filterBySettlement]);
 
   // Format currency values
   const formatCurrency = (value: number) => {
@@ -163,9 +174,11 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
                     </TableCell>
                     <TableCell className="text-right">
                       {formatCurrency(item.released.amount)} <span className="text-xs text-gray-500">({item.released.count} un.)</span>
+                      {filterBySettlement && <span className="text-xs text-blue-500 ml-1">(filtrado)</span>}
                     </TableCell>
                     <TableCell className="text-right">
                       {formatCurrency(item.unreleased.amount)} <span className="text-xs text-gray-500">({item.unreleased.count} un.)</span>
+                      {filterBySettlement && <span className="text-xs text-blue-500 ml-1">(filtrado)</span>}
                     </TableCell>
                   </TableRow>
                 ))}
