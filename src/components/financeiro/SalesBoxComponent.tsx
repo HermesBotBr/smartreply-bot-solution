@@ -106,16 +106,18 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
       const totalOrderValue = item.totalRepasse; // Use repasse value as this is what gets released
       const releasedAmount = item.released.amount;
       
-      // If released amount is less than total value, some orders are unreleased
+      // Calculate unreleased amount (exact calculation)
       if (releasedAmount < totalOrderValue) {
         const unreleasedAmount = totalOrderValue - releasedAmount;
         
-        // Estimate the number of unreleased orders based on average order value
-        const avgOrderValue = totalOrderValue / item.totalUnits;
-        const estimatedUnreleasedCount = Math.round(unreleasedAmount / avgOrderValue);
-        
+        // Calculate unreleased count (exact calculation)
+        // Instead of estimating, we directly subtract released count from total units
         item.unreleased.amount = unreleasedAmount;
-        item.unreleased.count = estimatedUnreleasedCount;
+        item.unreleased.count = item.totalUnits - item.released.count;
+      } else {
+        // If everything is released, set unreleased to 0
+        item.unreleased.amount = 0;
+        item.unreleased.count = 0;
       }
     });
 
