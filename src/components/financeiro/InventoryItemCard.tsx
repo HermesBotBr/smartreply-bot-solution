@@ -2,14 +2,16 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Warehouse } from 'lucide-react';
+import { Warehouse, ShoppingBag } from 'lucide-react';
 import { InventoryItem } from '@/types/inventory';
 
 interface InventoryItemCardProps {
   item: InventoryItem;
+  productSales?: number;
+  isLoadingSales?: boolean;
 }
 
-export function InventoryItemCard({ item }: InventoryItemCardProps) {
+export function InventoryItemCard({ item, productSales = 0, isLoadingSales = false }: InventoryItemCardProps) {
   // Calculate weighted average cost
   const weightedAverageCost = item.purchases.reduce((total, purchase) => 
     total + (purchase.unitCost * purchase.quantity), 0) / item.totalQuantity;
@@ -42,9 +44,23 @@ export function InventoryItemCard({ item }: InventoryItemCardProps) {
           </div>
         </div>
         
-        <div className="mb-2">
+        <div className="mb-4">
           <p className="text-sm text-muted-foreground">Valor Total em Estoque</p>
           <p className="text-lg font-semibold text-primary">R$ {totalInventoryValue.toFixed(2)}</p>
+        </div>
+        
+        <div className="mb-4 bg-primary/5 p-3 rounded-lg">
+          <div className="flex items-center gap-1">
+            <p className="text-sm text-muted-foreground">Vendas no anúncio dês da primeira reposição</p>
+            <ShoppingBag className="h-4 w-4 text-muted-foreground" />
+          </div>
+          <p className="text-lg font-semibold">
+            {isLoadingSales ? (
+              <span className="text-sm font-normal">Calculando...</span>
+            ) : (
+              `${productSales} unidades`
+            )}
+          </p>
         </div>
 
         <div className="mt-4">

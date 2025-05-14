@@ -22,7 +22,7 @@ export function InventoryList({ inventoryItems, isLoading, onRefreshDates }: Inv
   const [totalUnitsSoldSinceFirstPurchase, setTotalUnitsSoldSinceFirstPurchase] = useState<number>(0);
   const [fetchingSales, setFetchingSales] = useState<boolean>(false);
   
-  const { fetchSalesData } = useAdminSalesData();
+  const { fetchSalesData, productSalesMap, isLoading: salesDataLoading } = useAdminSalesData();
   
   // Get seller ID from ML token
   const mlToken = useMlToken();
@@ -223,7 +223,12 @@ export function InventoryList({ inventoryItems, isLoading, onRefreshDates }: Inv
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {filteredItems.map((item) => (
-          <InventoryItemCard key={item.itemId} item={item} />
+          <InventoryItemCard 
+            key={item.itemId} 
+            item={item}
+            productSales={productSalesMap[item.itemId] || 0}
+            isLoadingSales={fetchingSales}
+          />
         ))}
       </div>
     </div>
