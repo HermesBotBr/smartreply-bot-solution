@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,17 +22,23 @@ import { useNavigate } from 'react-router-dom';
 import { useMlToken } from '@/hooks/useMlToken';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 
+// Define the proper date range interface
+interface DateRange {
+  from?: Date;
+  to?: Date;
+}
+
 const AdminFinanceiro = () => {
   const [isReleaseOpen, setIsReleaseOpen] = useState(false);
   const [isRepassesOpen, setIsRepassesOpen] = useState(false);
   const [isTransfersOpen, setIsTransfersOpen] = useState(false);
   const [isProductListingOpen, setIsProductListingOpen] = useState(false);
   const [date, setDate] = useState<Date | undefined>(new Date());
-  const [dateRange, setDateRange] = useState<Date | undefined>({
+  const [dateRange, setDateRange] = useState<DateRange>({
     from: new Date(new Date().setDate(new Date().getDate() - 7)),
     to: new Date(),
   });
-	const [settlementDateRange, setSettlementDateRange] = useState<Date | undefined>({
+  const [settlementDateRange, setSettlementDateRange] = useState<DateRange>({
     from: new Date(new Date().setDate(new Date().getDate() - 7)),
     to: new Date(),
   });
@@ -45,7 +52,7 @@ const AdminFinanceiro = () => {
   const mlToken = useMlToken();
   const navigate = useNavigate();
 
-  const { settlementData, isLoading: settlementLoading, error: settlementError, refetch: settlementRefetch } = useSettlementData(
+  const { settlementTransactions, isLoading: settlementLoading, error: settlementError, refetch: settlementRefetch } = useSettlementData(
     '681274853',
     settlementDateRange?.from,
     settlementDateRange?.to,
@@ -61,11 +68,11 @@ const AdminFinanceiro = () => {
     setDate(newDate);
   };
 
-  const handleDateRangeChange = (newDateRange: { from?: Date; to?: Date }) => {
+  const handleDateRangeChange = (newDateRange: DateRange) => {
     setDateRange(newDateRange);
   };
 
-	const handleSettlementDateRangeChange = (newDateRange: { from?: Date; to?: Date }) => {
+  const handleSettlementDateRangeChange = (newDateRange: DateRange) => {
     setSettlementDateRange(newDateRange);
   };
 
@@ -234,7 +241,23 @@ const AdminFinanceiro = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <FinancialMetrics />
+              {/* Passing empty props for now, update with actual values when needed */}
+              <FinancialMetrics 
+                grossSales={0}
+                totalAmount={0}
+                unitsSold={0}
+                totalMLRepasses={0}
+                totalShippingCost={0}
+                totalReleased={0}
+                totalFees={0}
+                totalTaxes={0}
+                totalProfits={0}
+                totalSpent={0}
+                averageProfitMargin={0}
+                averageDailySales={0}
+                bestSellingCategory=""
+                worstSellingCategory=""
+              />
             </CardContent>
           </Card>
         </TabsContent>
@@ -248,19 +271,29 @@ const AdminFinanceiro = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="grid gap-4">
-              <DateRangePicker date={settlementDateRange} onDateChange={handleSettlementDateRangeChange} />
-              <SettlementTransactionsList settlementData={settlementData} isLoading={settlementLoading} error={settlementError} refetch={settlementRefetch} />
+              <DateRangePicker 
+                value={settlementDateRange} 
+                onChange={handleSettlementDateRangeChange} 
+              />
+              <SettlementTransactionsList 
+                transactions={settlementTransactions} 
+                isLoading={settlementLoading} 
+                error={settlementError} 
+                refetch={settlementRefetch} 
+              />
               <DataInput
-                label="Transações de Liquidação"
-                value={settlementTransactionsData}
-                onChange={handleSettlementTransactionsDataChange}
+                title="Transações de Liquidação"
+                content={settlementTransactionsData}
+                onContentChange={handleSettlementTransactionsDataChange}
                 onSave={handleSaveSettlementTransactions}
               />
-              <TransactionsList transactionsData={transactionsData} />
+              <TransactionsList 
+                transactions={transactionsData || "[]"} 
+              />
               <DataInput
-                label="Transações"
-                value={transactionsData}
-                onChange={handleTransactionsDataChange}
+                title="Transações"
+                content={transactionsData}
+                onContentChange={handleTransactionsDataChange}
                 onSave={handleSaveTransactions}
               />
             </CardContent>
@@ -294,32 +327,32 @@ const AdminFinanceiro = () => {
       </Tabs>
       
       <ReleasePopup
-        isOpen={isReleaseOpen}
-        onClose={() => setIsReleaseOpen(false)}
+        open={isReleaseOpen}
+        onOpenChange={() => setIsReleaseOpen(false)}
         releaseData={releaseData}
         onDataChange={handleReleaseDataChange}
         onSave={handleSaveRelease}
       />
       
       <RepassesPopup
-        isOpen={isRepassesOpen}
-        onClose={() => setIsRepassesOpen(false)}
+        open={isRepassesOpen}
+        onOpenChange={() => setIsRepassesOpen(false)}
         repassesData={repassesData}
         onDataChange={handleRepassesDataChange}
         onSave={handleSaveRepasses}
       />
       
       <TransfersPopup
-        isOpen={isTransfersOpen}
-        onClose={() => setIsTransfersOpen(false)}
+        open={isTransfersOpen}
+        onOpenChange={() => setIsTransfersOpen(false)}
         transfersData={transfersData}
         onDataChange={handleTransfersDataChange}
         onSave={handleSaveTransfers}
       />
       
       <ProductListingPopup
-        isOpen={isProductListingOpen}
-        onClose={() => setIsProductListingOpen(false)}
+        open={isProductListingOpen}
+        onOpenChange={() => setIsProductListingOpen(false)}
         productListingData={productListingData}
         onDataChange={handleProductListingDataChange}
         onSave={handleSaveProductListing}

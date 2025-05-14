@@ -60,12 +60,12 @@ export function useSalesForInventory(sellerId: string | null, inventoryItems: In
           throw new Error('Failed to fetch sales data');
         }
         
-        const salesData: SalesResponse = await response.json();
+        const salesData = await response.json();
         
         // Process sales data to count sales by product ID
         const salesCount: SalesByItemId = {};
         
-        if (salesData.results) {
+        if (salesData?.results) {
           salesData.results.forEach(sale => {
             sale.order_items?.forEach(orderItem => {
               const itemId = orderItem.item.seller_sku?.split('_')?.[0] || orderItem.item.id;
