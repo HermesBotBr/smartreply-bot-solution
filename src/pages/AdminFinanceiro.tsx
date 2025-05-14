@@ -13,6 +13,8 @@ import { useSettlementData } from '@/hooks/useSettlementData';
 import { useInventoryData } from '@/hooks/useInventoryData';
 import { toast } from 'sonner';
 import { ReleaseOperation } from '@/types/ReleaseOperation';
+import { SalesListBox } from '@/components/dashboard/metrics/SalesListBox';
+import { useSalesData } from '@/hooks/useSalesData';
 
 const AdminFinanceiro: React.FC = () => {
   /* ------------------------------------------------------------------ */
@@ -66,6 +68,13 @@ const AdminFinanceiro: React.FC = () => {
     refetch: refetchSettlement,
   } = useSettlementData(sellerId, startDate, endDate, true);
 
+  // Adicionar o hook useSalesData para obter os dados de vendas
+  const { 
+    salesData, 
+    isLoading: salesLoading, 
+    refetch: refetchSales 
+  } = useSalesData(sellerId, startDate, endDate, true);
+
   const { 
     items: inventoryItems, 
     isLoading: inventoryLoading, 
@@ -109,6 +118,7 @@ const AdminFinanceiro: React.FC = () => {
     }
 
     refetchSettlement();
+    refetchSales(); // Atualizar os dados de vendas quando o filtro for aplicado
 
     if (releaseData) {
       const parsed = parseReleaseData(releaseData, startDate, endDate);
@@ -423,6 +433,23 @@ const AdminFinanceiro: React.FC = () => {
               startDate={startDate}
               endDate={endDate}
             />
+
+            {/* Adicionar o box de vendas na aba de métricas */}
+            <div className="bg-white p-6 rounded-lg shadow-md mt-8">
+              <h3 className="text-xl font-semibold mb-4">Vendas por Anúncio</h3>
+              {salesLoading ? (
+                <div className="py-8 text-center">Carregando dados de vendas...</div>
+              ) : (!salesData?.sales || salesData.sales.length === 0) ? (
+                <div className="py-8 text-center">Nenhum dado de venda disponível para o período selecionado</div>
+              ) : (
+                <SalesListBox 
+                  salesData={salesData?.sales}
+                  settlementTransactions={settlementTransactions}
+                  releaseOperationsWithOrder={releaseOperationsWithOrder}
+                  isLoading={salesLoading || settlementLoading}
+                />
+              )}
+            </div>
           </TabsContent>
 
           <TabsContent value="entrada" className="mt-4">
