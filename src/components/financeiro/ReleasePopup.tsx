@@ -16,6 +16,7 @@ interface ReleasePopupProps {
   settlementTransactions?: SettlementTransaction[]; // Adicionar transações de vendas
   startDate?: Date; // Data inicial do filtro
   endDate?: Date; // Data final do filtro
+  filterBySettlement?: boolean; // Add filter toggle prop
 }
 
 export const ReleasePopup: React.FC<ReleasePopupProps> = ({
@@ -25,7 +26,8 @@ export const ReleasePopup: React.FC<ReleasePopupProps> = ({
   otherOperations,
   settlementTransactions = [], // Valor padrão de array vazio
   startDate,
-  endDate
+  endDate,
+  filterBySettlement = false
 }) => {
   useEffect(() => {
     if (open) {
@@ -35,7 +37,8 @@ export const ReleasePopup: React.FC<ReleasePopupProps> = ({
         settlementTransactions,
         pendingOperations: getPendingOperations(),
         startDate,
-        endDate
+        endDate,
+        filterBySettlement
       });
     }
   }, [open]);
@@ -115,6 +118,12 @@ export const ReleasePopup: React.FC<ReleasePopupProps> = ({
         description: 'Venda aguardando liberação'
       }));
 
+    // If filter is active, ensure pending operations are only from our settlement transactions
+    if (filterBySettlement) {
+      const settlementOrderIds = new Set(settlementTransactions.map(t => t.orderId));
+      return pendingOps.filter(op => op.orderId && settlementOrderIds.has(op.orderId));
+    }
+
     return pendingOps;
   };
 
@@ -137,6 +146,7 @@ export const ReleasePopup: React.FC<ReleasePopupProps> = ({
           {startDate && endDate && (
             <p className="text-sm text-muted-foreground mt-1">
               Período: {startDate.toLocaleDateString('pt-BR')} até {endDate.toLocaleDateString('pt-BR')}
+              {filterBySettlement && <span className="ml-1 text-blue-500 font-medium">(Filtrado pelo período)</span>}
             </p>
           )}
         </DialogHeader>

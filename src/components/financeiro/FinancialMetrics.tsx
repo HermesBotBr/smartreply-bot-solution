@@ -27,6 +27,7 @@ interface FinancialMetricsProps {
   releaseOtherOperations: ReleaseOperation[];
   startDate?: Date;
   endDate?: Date;
+  filterBySettlement?: boolean;
 }
 
 export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
@@ -45,12 +46,15 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
   releaseOperationsWithOrder,
   releaseOtherOperations,
   startDate,
-  endDate
+  endDate,
+  filterBySettlement = false
 }) => {
   const [repassesPopupOpen, setRepassesPopupOpen] = useState(false);
   const [releasePopupOpen, setReleasePopupOpen] = useState(false);
   const [transfersPopupOpen, setTransfersPopupOpen] = useState(false);
   const [hasUnbalancedTransfers, setHasUnbalancedTransfers] = useState(false);
+  const [filteredTotalReleased, setFilteredTotalReleased] = useState(totalReleased);
+  const [filteredOperationsWithOrder, setFilteredOperationsWithOrder] = useState(releaseOperationsWithOrder);
 
   // Filter transfers from other operations
   const transferOperations = releaseOtherOperations.filter(op => 
@@ -106,6 +110,35 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
     checkTransferBalance();
   }, [transferOperations]);
 
+  // Effect for filtering operations and recalculating totals based on the toggle
+  useEffect(() => {
+    if (filterBySettlement && settlementTransactions.length > 0) {
+      // Create a set of order IDs from settlement transactions for quick lookup
+      const settlementOrderIds = new Set(
+        settlementTransactions.map(transaction => transaction.orderId)
+      );
+
+      // Filter release operations by checking if their orderId exists in settlement
+      const filtered = releaseOperationsWithOrder.filter(operation => 
+        operation.orderId && settlementOrderIds.has(operation.orderId)
+      );
+
+      // Calculate the filtered total released amount
+      const filteredTotal = filtered.reduce((sum, op) => sum + op.amount, 0);
+      
+      // Update state with filtered values
+      setFilteredTotalReleased(filteredTotal);
+      setFilteredOperationsWithOrder(filtered);
+    } else {
+      // Reset to original values when filter is off
+      setFilteredTotalReleased(totalReleased);
+      setFilteredOperationsWithOrder(releaseOperationsWithOrder);
+    }
+  }, [filterBySettlement, settlementTransactions, releaseOperationsWithOrder, totalReleased]);
+
+  // Display value to show in the "Liberado" card
+  const displayTotalReleased = filterBySettlement ? filteredTotalReleased : totalReleased;
+
   return (
     <div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
@@ -133,8 +166,8 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
         />
         <MetricCard
           title="Liberado"
-          value={`R$ ${totalReleased.toFixed(2)}`}
-          description={`Clique para detalhar`}
+          value={`R$ ${displayTotalReleased.toFixed(2)}`}
+          description={`Clique para detalhar${filterBySettlement ? ' (filtrado)' : ''}`}
           className="bg-green-50 hover:bg-green-100 transition-colors"
           textColor="text-green-800"
           onClick={() => setReleasePopupOpen(true)}
@@ -174,7 +207,6 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
                   className="bg-indigo-50 hover:bg-indigo-100 transition-colors"
                   textColor="text-indigo-800"
                   onClick={() => setTransfersPopupOpen(true)}
-                  // Fix here: Instead of passing JSX directly, we use a custom property to indicate alert status
                   alertStatus={hasUnbalancedTransfers}
                 />
               </div>
@@ -203,7 +235,7 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
         </div>
       </div>
       
-      {/* Add the new Sales Box Component here */}
+      {/* Sales Box Component */}
       <SalesBoxComponent 
         settlementTransactions={settlementTransactions}
         releaseOperationsWithOrder={releaseOperationsWithOrder}
@@ -222,13 +254,14 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
       />
       
       <ReleasePopup
-        operationsWithOrder={releaseOperationsWithOrder}
+        operationsWithOrder={filteredOperationsWithOrder}
         otherOperations={releaseOtherOperations}
         settlementTransactions={settlementTransactions}
         open={releasePopupOpen}
         onClose={() => setReleasePopupOpen(false)}
         startDate={startDate}
         endDate={endDate}
+        filterBySettlement={filterBySettlement}
       />
       
       <TransfersPopup

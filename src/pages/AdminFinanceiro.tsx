@@ -13,6 +13,8 @@ import { useSettlementData } from '@/hooks/useSettlementData';
 import { useInventoryData } from '@/hooks/useInventoryData';
 import { toast } from 'sonner';
 import { ReleaseOperation } from '@/types/ReleaseOperation';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 
 const AdminFinanceiro: React.FC = () => {
   /* ------------------------------------------------------------------ */
@@ -29,6 +31,9 @@ const AdminFinanceiro: React.FC = () => {
 
   const [settlementData, setSettlementData] = useState<string>('');
   const [releaseData, setReleaseData] = useState<string>('');
+  
+  // Add the state for the filter toggle
+  const [filterBySettlement, setFilterBySettlement] = useState<boolean>(false);
 
   const [metrics, setMetrics] = useState({
     grossSales: 0,
@@ -397,13 +402,26 @@ const AdminFinanceiro: React.FC = () => {
           </TabsList>
 
           <TabsContent value="metricas" className="space-y-4 mt-4">
-            <DateRangeFilterSection
-              startDate={startDate}
-              endDate={endDate}
-              onStartDateChange={setStartDate}
-              onEndDateChange={setEndDate}
-              onFilter={handleFilter}
-            />
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <DateRangeFilterSection
+                startDate={startDate}
+                endDate={endDate}
+                onStartDateChange={setStartDate}
+                onEndDateChange={setEndDate}
+                onFilter={handleFilter}
+                className="flex-grow"
+              />
+              <div className="flex items-center space-x-2 mt-2 md:mt-0 md:ml-4">
+                <Switch
+                  id="filter-by-settlement"
+                  checked={filterBySettlement}
+                  onCheckedChange={setFilterBySettlement}
+                />
+                <Label htmlFor="filter-by-settlement" className="text-sm font-medium">
+                  Limitar liberações ao período
+                </Label>
+              </div>
+            </div>
 
             <FinancialMetrics
               grossSales={metrics.grossSales}
@@ -422,6 +440,7 @@ const AdminFinanceiro: React.FC = () => {
               releaseOtherOperations={releaseOtherOperations}
               startDate={startDate}
               endDate={endDate}
+              filterBySettlement={filterBySettlement}
             />
           </TabsContent>
 
