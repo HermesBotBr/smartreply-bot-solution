@@ -4,11 +4,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { DateRangeFilterSection } from './DateRangeFilterSection';
 import { MetricsGrid } from './MetricsTabsGrid';
+import { SalesListBox } from './SalesListBox';
 import HermesChat from './HermesChat';
 import { useReputationData } from '@/hooks/useReputationData';
 import { useSalesData } from '@/hooks/useSalesData';
 import { useComplaintsData } from '@/hooks/useComplaintsData';
 import { useTagsData } from '@/hooks/useTagsData';
+import { useSettlementData } from '@/hooks/useSettlementData';
 import { SalesItem, FilteredTag } from '@/types/metrics';
 
 interface NewMetricsDashboardProps {
@@ -31,7 +33,14 @@ export function NewMetricsDashboard({ sellerId }: NewMetricsDashboardProps) {
   const { complaintsData: impactedComplaintsData, isLoading: impactedComplaintsLoading, refetch: refetchImpactedComplaints } = 
     useComplaintsData(sellerId, startDate, endDate, true);
   const { filteredTags, isLoading: tagsLoading, refetch: refetchTags } = useTagsData(sellerId);
-
+  const { 
+    settlementTransactions, 
+    releaseOperationsWithOrder, 
+    releaseOtherOperations, 
+    isLoading: settlementLoading,
+    fetchSettlementData,
+  } = useSettlementData();
+  
   // Derived state
   const [totalSales, setTotalSales] = useState<number>(0);
   const [totalComplaints, setTotalComplaints] = useState<number>(0);
@@ -99,6 +108,13 @@ export function NewMetricsDashboard({ sellerId }: NewMetricsDashboardProps) {
     }
   }, [complaintsData, filteredTags]);
   
+  // Fetch settlement data when dates or seller ID changes
+  useEffect(() => {
+    if (startDate && endDate && sellerId) {
+      fetchSettlementData(startDate, endDate, sellerId);
+    }
+  }, [startDate, endDate, sellerId, fetchSettlementData]);
+  
   const handleFilter = async () => {
     if (!startDate || !endDate) {
       toast.error("Por favor, selecione um período válido");
@@ -112,6 +128,11 @@ export function NewMetricsDashboard({ sellerId }: NewMetricsDashboardProps) {
         refetchImpactedComplaints(),
         refetchTags(),
       ]);
+      
+      // Buscar dados de liquidação quando o filtro é aplicado
+      if (sellerId) {
+        fetchSettlementData(startDate, endDate, sellerId);
+      }
     } catch (error) {
       toast.error("Erro ao buscar os dados. Tente novamente.");
     }
@@ -154,6 +175,15 @@ export function NewMetricsDashboard({ sellerId }: NewMetricsDashboardProps) {
             startDate={startDate}
             endDate={endDate}
           />
+          
+          <div className="mt-8">
+            <SalesListBox 
+              salesData={salesData?.sales}
+              settlementTransactions={settlementTransactions}
+              releaseOperationsWithOrder={releaseOperationsWithOrder}
+              isLoading={salesLoading || settlementLoading}
+            />
+          </div>
         </TabsContent>
         
         <TabsContent value="hermes">
