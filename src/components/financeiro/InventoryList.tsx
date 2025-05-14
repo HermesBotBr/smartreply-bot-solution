@@ -19,7 +19,7 @@ export function InventoryList({ inventoryItems, isLoading, onRefreshDates }: Inv
   const [searchQuery, setSearchQuery] = useState('');
   const [refreshing, setRefreshing] = useState(false);
   const [firstPurchaseDate, setFirstPurchaseDate] = useState<string | null>(null);
-  const [totalSalesSinceFirstPurchase, setTotalSalesSinceFirstPurchase] = useState<number>(0);
+  const [totalUnitsSoldSinceFirstPurchase, setTotalUnitsSoldSinceFirstPurchase] = useState<number>(0);
   const [fetchingSales, setFetchingSales] = useState<boolean>(false);
   
   const { fetchSalesData } = useAdminSalesData();
@@ -61,8 +61,8 @@ export function InventoryList({ inventoryItems, isLoading, onRefreshDates }: Inv
     
     try {
       const today = getTodayFormatted();
-      const total = await fetchSalesData(sellerId, firstPurchaseDate, today);
-      setTotalSalesSinceFirstPurchase(total);
+      const totalUnits = await fetchSalesData(sellerId, firstPurchaseDate, today);
+      setTotalUnitsSoldSinceFirstPurchase(totalUnits);
       
       toast({
         title: "Vendas calculadas",
@@ -214,7 +214,7 @@ export function InventoryList({ inventoryItems, isLoading, onRefreshDates }: Inv
               {fetchingSales ? (
                 <span className="text-lg">Calculando...</span>
               ) : (
-                `R$ ${totalSalesSinceFirstPurchase.toFixed(2)}`
+                `${totalUnitsSoldSinceFirstPurchase} unidades`
               )}
             </p>
           </div>

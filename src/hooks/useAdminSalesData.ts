@@ -6,6 +6,9 @@ import axios from 'axios';
 interface AdminSalesItem {
   total_amount: number;
   paid_amount: number;
+  order_items: {
+    quantity: number;
+  }[];
 }
 
 interface AdminSalesResponse {
@@ -17,7 +20,7 @@ export function useAdminSalesData() {
   const [salesData, setSalesData] = useState<AdminSalesResponse | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<Error | null>(null);
-  const [totalSales, setTotalSales] = useState<number>(0);
+  const [totalUnitsSold, setTotalUnitsSold] = useState<number>(0);
   
   const fetchSalesData = useCallback(async (sellerId: string, startDate: string, endDate: string) => {
     if (!sellerId || !startDate || !endDate) {
@@ -40,14 +43,19 @@ export function useAdminSalesData() {
       
       setSalesData(response.data);
       
-      // Calculate total sales
-      const total = response.data?.results?.reduce((sum, item) => {
-        return sum + (item.paid_amount || 0);
+      // Calculate total units sold
+      const totalUnits = response.data?.results?.reduce((sum, item) => {
+        // Sum up quantities from each order_item
+        const orderItemsQuantity = item.order_items?.reduce((itemSum, orderItem) => {
+          return itemSum + (orderItem.quantity || 0);
+        }, 0) || 0;
+        
+        return sum + orderItemsQuantity;
       }, 0) || 0;
       
-      setTotalSales(total);
+      setTotalUnitsSold(totalUnits);
       setIsLoading(false);
-      return total;
+      return totalUnits;
       
     } catch (err) {
       console.error('Error fetching admin sales data:', err);
@@ -57,5 +65,5 @@ export function useAdminSalesData() {
     }
   }, []);
   
-  return { salesData, isLoading, error, totalSales, fetchSalesData };
+  return { salesData, isLoading, error, totalUnitsSold, fetchSalesData };
 }
