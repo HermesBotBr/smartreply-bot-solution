@@ -1,9 +1,9 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Input } from '@/components/ui/input';
 import { InventoryItemCard } from './InventoryItemCard';
 import { InventoryItem } from '@/types/inventory';
-import { Package } from 'lucide-react';
+import { Package, Calendar } from 'lucide-react';
 
 interface InventoryListProps {
   inventoryItems: InventoryItem[];
@@ -18,6 +18,31 @@ export function InventoryList({ inventoryItems, isLoading }: InventoryListProps)
     item.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
     item.itemId.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  // Find the earliest purchase date across all inventory items
+  const firstReplenishmentDate = useMemo(() => {
+    if (!Array.isArray(inventoryItems) || inventoryItems.length === 0) {
+      return null;
+    }
+
+    let earliestDate: string | null = null;
+
+    // Check all items and their purchases
+    inventoryItems.forEach(item => {
+      if (Array.isArray(item.purchases)) {
+        item.purchases.forEach(purchase => {
+          if (purchase.date) {
+            // Compare with current earliest date
+            if (!earliestDate || purchase.date < earliestDate) {
+              earliestDate = purchase.date;
+            }
+          }
+        });
+      }
+    });
+
+    return earliestDate;
+  }, [inventoryItems]);
 
   if (isLoading) {
     return (
@@ -61,7 +86,7 @@ export function InventoryList({ inventoryItems, isLoading }: InventoryListProps)
           className="max-w-md"
         />
         
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           <div className="bg-primary/10 p-4 rounded-lg">
             <p className="text-sm text-muted-foreground">Total de Produtos</p>
             <p className="text-2xl font-bold">{totalItems}</p>
@@ -73,6 +98,15 @@ export function InventoryList({ inventoryItems, isLoading }: InventoryListProps)
           <div className="bg-primary/10 p-4 rounded-lg">
             <p className="text-sm text-muted-foreground">Valor Total do Estoque</p>
             <p className="text-2xl font-bold">R$ {totalValue.toFixed(2)}</p>
+          </div>
+          <div className="bg-primary/10 p-4 rounded-lg flex">
+            <div>
+              <p className="text-sm text-muted-foreground">Primeira Reposição</p>
+              <p className="text-2xl font-bold">{firstReplenishmentDate || "N/A"}</p>
+            </div>
+            <div className="ml-auto self-start">
+              <Calendar className="h-5 w-5 text-primary" />
+            </div>
           </div>
         </div>
       </div>
