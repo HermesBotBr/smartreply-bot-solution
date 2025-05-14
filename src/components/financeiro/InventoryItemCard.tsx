@@ -7,10 +7,9 @@ import { InventoryItem } from '@/types/inventory';
 
 interface InventoryItemCardProps {
   item: InventoryItem;
-  salesCount?: number;
 }
 
-export function InventoryItemCard({ item, salesCount = 0 }: InventoryItemCardProps) {
+export function InventoryItemCard({ item }: InventoryItemCardProps) {
   // Calculate weighted average cost
   const weightedAverageCost = item.purchases.reduce((total, purchase) => 
     total + (purchase.unitCost * purchase.quantity), 0) / item.totalQuantity;
@@ -41,14 +40,11 @@ export function InventoryItemCard({ item, salesCount = 0 }: InventoryItemCardPro
             <p className="text-sm text-muted-foreground">Custo Médio</p>
             <p className="text-xl font-semibold">R$ {weightedAverageCost.toFixed(2)}</p>
           </div>
-          <div>
-            <p className="text-sm text-muted-foreground">Valor Total em Estoque</p>
-            <p className="text-xl font-semibold">R$ {totalInventoryValue.toFixed(2)}</p>
-          </div>
-          <div>
-            <p className="text-sm text-muted-foreground">Vendas desde última reposição</p>
-            <p className="text-xl font-semibold">{salesCount} unidades</p>
-          </div>
+        </div>
+        
+        <div className="mb-2">
+          <p className="text-sm text-muted-foreground">Valor Total em Estoque</p>
+          <p className="text-lg font-semibold text-primary">R$ {totalInventoryValue.toFixed(2)}</p>
         </div>
 
         <div className="mt-4">

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 
@@ -110,17 +109,17 @@ export function useSettlementData(
           // Initialize order transaction
           const firstItem = order.order_items?.[0]?.item;
 
-          transactionsMap.set(orderId, {
-            date: '',
-            sourceId: '',
-            orderId: orderId.toString(),
-            group: 'Venda',
-            units,
-            grossValue: 0,
-            netValue: 0,
-            itemId: firstItem?.id || '',
-            title: firstItem?.title || ''
-          });
+transactionsMap.set(orderId, {
+  date: '',
+  sourceId: '',
+  orderId: orderId.toString(),
+  group: 'Venda',
+  units,
+  grossValue: 0,
+  netValue: 0,
+  itemId: firstItem?.id || '',
+  title: firstItem?.title || ''
+});
 
           
           // Process payments for this order
@@ -173,7 +172,7 @@ netTotal += totalAmount * 0.7;
       // Include ALL transactions, not just ones with gross value > 0
       const transactions = Array.from(transactionsMap.values());
       
-      console.log("Transações finais:", transactions);
+console.log("Transações finais:", transactions);
 
       setSettlementTransactions(transactions);
       setTotalGrossSales(grossTotal);
