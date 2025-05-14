@@ -2,103 +2,79 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { formatCurrency } from "@/utils/formatters";
-import { FileBarChart } from "lucide-react";
+import { SettlementTransaction } from '@/hooks/useSettlementData';
 
-interface SettlementTransaction {
-  date: string;
-  sourceId: string;
-  orderId: string;
-  group: string;
-  units?: number;
-  grossValue: number;
-  netValue: number;
-}
-
-interface SettlementTransactionsListProps {
+export interface SettlementTransactionsListProps {
   transactions: SettlementTransaction[];
+  startDate?: Date;
+  endDate?: Date;
 }
 
-export const SettlementTransactionsList: React.FC<SettlementTransactionsListProps> = ({ transactions }) => {
-  // Function to format the date to a readable format
-  const formatDate = (dateString: string): string => {
-    try {
-      if (!dateString) return 'Data não disponível';
-      return new Date(dateString).toLocaleString('pt-BR', { 
-        dateStyle: 'short', 
-        timeStyle: 'short' 
-      });
-    } catch (e) {
-      return dateString || 'Data não disponível';
+export const SettlementTransactionsList: React.FC<SettlementTransactionsListProps> = ({ 
+  transactions,
+  startDate,
+  endDate
+}) => {
+  // Group transactions by date
+  const groupedByDate = transactions.reduce((acc, transaction) => {
+    const date = new Date(transaction.date).toLocaleDateString();
+    if (!acc[date]) {
+      acc[date] = [];
     }
-  };
-
-  // Calculate totals for display at the bottom
-  const totalUnits = transactions.reduce((sum, transaction) => sum + (transaction.units || 1), 0);
-  const totalGrossValue = transactions.reduce((sum, transaction) => sum + transaction.grossValue, 0);
-  const totalNetValue = transactions.reduce((sum, transaction) => sum + transaction.netValue, 0);
+    acc[date].push(transaction);
+    return acc;
+  }, {} as Record<string, SettlementTransaction[]>);
 
   return (
-    <Card className="w-full mt-6">
+    <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <FileBarChart className="h-5 w-5" />
-            <CardTitle>Lista de Transações de Liquidação</CardTitle>
-          </div>
-          <div className="text-sm text-muted-foreground">
-            Total: {transactions.length} transações
-          </div>
-        </div>
+        <CardTitle className="text-xl">
+          Pagamentos Recebidos
+          {startDate && endDate && (
+            <span className="text-sm font-normal ml-2">
+              {startDate.toLocaleDateString()} - {endDate.toLocaleDateString()}
+            </span>
+          )}
+        </CardTitle>
       </CardHeader>
       <CardContent>
-        {transactions.length === 0 ? (
-          <div className="text-center py-4 text-muted-foreground">
-            Nenhuma transação encontrada. Insira um período de análise válido para visualizar.
-          </div>
+        {Object.keys(groupedByDate).length === 0 ? (
+          <p className="text-muted-foreground">Nenhum pagamento encontrado no período selecionado.</p>
         ) : (
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Data e hora</TableHead>
-                  <TableHead>SOURCE_ID</TableHead>
-                  <TableHead>ORDER_ID</TableHead>
-                  <TableHead>Grupo</TableHead>
-                  <TableHead>Unidades</TableHead>
-                  <TableHead className="text-right">Valor Bruto</TableHead>
-                  <TableHead className="text-right">Valor Repasse</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {transactions.map((transaction, index) => (
-                  <TableRow 
-                    key={`${transaction.orderId}-${index}`}
-                    className={transaction.grossValue <= 0 ? "bg-gray-50 text-gray-500" : ""}
-                  >
-                    <TableCell>{formatDate(transaction.date)}</TableCell>
-                    <TableCell>{transaction.sourceId || 'N/A'}</TableCell>
-                    <TableCell>{transaction.orderId}</TableCell>
-                    <TableCell>{transaction.group}</TableCell>
-                    <TableCell>{transaction.units || 1}</TableCell>
-                    <TableCell className="text-right">
-                      {formatCurrency(transaction.grossValue)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {formatCurrency(transaction.netValue)}
-                    </TableCell>
-                  </TableRow>
-                ))}
-                
-                {/* Footer row with totals */}
-                <TableRow className="font-bold bg-gray-100">
-                  <TableCell colSpan={4} className="text-right">Totais:</TableCell>
-                  <TableCell>{totalUnits}</TableCell>
-                  <TableCell className="text-right">{formatCurrency(totalGrossValue)}</TableCell>
-                  <TableCell className="text-right">{formatCurrency(totalNetValue)}</TableCell>
-                </TableRow>
-              </TableBody>
-            </Table>
+          <div className="space-y-8">
+            {Object.entries(groupedByDate).map(([date, dateTransactions]) => (
+              <div key={date}>
+                <h3 className="text-lg font-semibold mb-2">{date}</h3>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>ID da Ordem</TableHead>
+                        <TableHead>Produto</TableHead>
+                        <TableHead>Quantidade</TableHead>
+                        <TableHead className="text-right">Valor Bruto</TableHead>
+                        <TableHead className="text-right">Valor Líquido</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {dateTransactions.map((transaction, index) => (
+                        <TableRow key={`${transaction.orderId}-${index}`}>
+                          <TableCell>{transaction.orderId}</TableCell>
+                          <TableCell>{transaction.title || 'N/A'}</TableCell>
+                          <TableCell>{transaction.units}</TableCell>
+                          <TableCell className="text-right">
+                            {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(transaction.grossValue)}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(transaction.netValue)}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </CardContent>

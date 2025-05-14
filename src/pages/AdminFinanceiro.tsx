@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { InventoryList } from '@/components/financeiro/InventoryList';
@@ -14,6 +15,13 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Textarea } from "@/components/ui/textarea";
+import { useNavigate } from "react-router-dom";
+import { ReleaseOperation } from "@/types/ReleaseOperation";
+import { DateRangeFilterSection } from "@/components/dashboard/metrics/DateRangeFilterSection";
+import { toast } from "@/components/ui/use-toast";
+import { SettlementTransaction, useSettlementData } from "@/hooks/useSettlementData";
+import { useMlToken } from "@/hooks/useMlToken";
 
 const AdminFinanceiro = () => {
   /* ------------------------------------------------------------------ */
@@ -27,6 +35,11 @@ const AdminFinanceiro = () => {
 
   const [startDate, setStartDate] = useState<Date | undefined>(new Date());
   const [endDate, setEndDate] = useState<Date | undefined>(new Date());
+  
+  const [date, setDate] = useState<DateRange | undefined>({
+    from: startDate,
+    to: endDate
+  });
 
   const [settlementData, setSettlementData] = useState<string>('');
   const [releaseData, setReleaseData] = useState<string>('');
@@ -51,6 +64,7 @@ const AdminFinanceiro = () => {
   /* hooks / data                                                        */
   /* ------------------------------------------------------------------ */
   const navigate = useNavigate();
+  const isMobile = useMediaQuery("(max-width: 640px)");
 
   const mlToken = useMlToken();
   let sellerId = '681274853';
@@ -76,7 +90,11 @@ const AdminFinanceiro = () => {
   // Show toast if there's an inventory error
   useEffect(() => {
     if (inventoryError) {
-      toast.error(`Erro ao carregar dados de estoque: ${inventoryError.message}`);
+      toast({ 
+        variant: "destructive",
+        title: "Erro",
+        description: `Erro ao carregar dados de estoque: ${inventoryError.message}`
+      });
     }
   }, [inventoryError]);
 
@@ -104,7 +122,11 @@ const AdminFinanceiro = () => {
   /* ------------------------------------------------------------------ */
   const handleFilter = () => {
     if (!startDate || !endDate) {
-      toast.error('Selecione um período válido');
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Selecione um período válido"
+      });
       return;
     }
 
@@ -123,9 +145,10 @@ const AdminFinanceiro = () => {
       }));
     }
 
-    toast.info(
-      `Filtrando de ${startDate.toLocaleDateString()} até ${endDate.toLocaleDateString()}`,
-    );
+    toast({
+      title: "Filtro aplicado",
+      description: `Filtrando de ${startDate.toLocaleDateString()} até ${endDate.toLocaleDateString()}`
+    });
   };
 
   const handleReleaseDataChange = (data: string) => {
@@ -422,7 +445,7 @@ const AdminFinanceiro = () => {
                 </PopoverContent>
               </Popover>
               
-              <TextArea
+              <Textarea
                 className="w-full md:w-auto"
                 placeholder="Digite o período de análise"
                 value={date?.from?.toISOString() || date?.to?.toISOString() || ''}
@@ -436,7 +459,7 @@ const AdminFinanceiro = () => {
                       setDate({ from: new Date(from) });
                     }
                   } else {
-                    setDate(null);
+                    setDate(undefined);
                   }
                 }}
               />
@@ -491,7 +514,7 @@ const AdminFinanceiro = () => {
         
         <TabsContent value="transacoes">
           <TransactionsList
-            settlementTransactions={settlementTransactions}
+            transactions={settlementTransactions}
             startDate={startDate}
             endDate={endDate}
           />
@@ -499,7 +522,7 @@ const AdminFinanceiro = () => {
         
         <TabsContent value="repasses">
           <SettlementTransactionsList
-            settlementTransactions={settlementTransactions}
+            transactions={settlementTransactions}
             startDate={startDate}
             endDate={endDate}
           />
