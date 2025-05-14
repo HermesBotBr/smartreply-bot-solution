@@ -90,6 +90,7 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
   
   // Atualizar a lista de transferências quando as transferências mudam
   useEffect(() => {
+    console.log('Transfers received in TransfersPopup:', transfers);
     setTransfersWithDescriptions(
       transfers.map(transfer => ({
         ...transfer,

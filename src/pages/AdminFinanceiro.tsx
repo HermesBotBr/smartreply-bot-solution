@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -208,6 +209,15 @@ const AdminFinanceiro: React.FC = () => {
         /* totais */
         Object.values(operationsBySourceId).forEach((op) => {
           const net = op.creditAmount - op.debitAmount;
+          
+          // Log the operation for debugging
+          console.log('Processing operation:', {
+            predominantDescription: op.predominantDescription,
+            net: net,
+            sourceId: op.sourceId,
+            date: op.date
+          });
+          
           switch (op.predominantDescription) {
             case 'payment':
               totalReleased += net;
@@ -222,10 +232,13 @@ const AdminFinanceiro: React.FC = () => {
             case 'refund':
             case 'mediation':
             case 'reserve_for_bpp_shipping_return':
+            case 'reserve_for_refund':
               totalClaims += net;
               break;
             case 'payout':
             case 'reserve_for_payout':
+              // Make sure transfers are being correctly counted
+              console.log('Found transfer operation:', net);
               totalTransfers += net;
               break;
             case 'shipping':
@@ -233,6 +246,16 @@ const AdminFinanceiro: React.FC = () => {
               totalShippingCashback += net;
               break;
           }
+        });
+        
+        // Log totals for debugging
+        console.log('Release data totals:', {
+          totalReleased,
+          totalClaims,
+          totalDebts,
+          totalTransfers,
+          totalCreditCard,
+          totalShippingCashback
         });
 
         /* listas para popup - usando lógica atualizada para considerar o agrupamento por sourceId */
