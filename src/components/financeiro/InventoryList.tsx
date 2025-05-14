@@ -4,14 +4,22 @@ import { Input } from '@/components/ui/input';
 import { InventoryItemCard } from './InventoryItemCard';
 import { InventoryItem } from '@/types/inventory';
 import { Package } from 'lucide-react';
+import { useSalesDataForInventory } from '@/hooks/useSalesDataForInventory';
 
 interface InventoryListProps {
   inventoryItems: InventoryItem[];
   isLoading: boolean;
+  sellerId?: string | null;
 }
 
-export function InventoryList({ inventoryItems, isLoading }: InventoryListProps) {
+export function InventoryList({ inventoryItems, isLoading, sellerId = null }: InventoryListProps) {
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // Get sales data for inventory
+  const { salesByProduct, isLoading: salesLoading } = useSalesDataForInventory(
+    sellerId,
+    inventoryItems
+  );
 
   // Filter items based on search query
   const filteredItems = inventoryItems.filter(item => 
@@ -79,7 +87,11 @@ export function InventoryList({ inventoryItems, isLoading }: InventoryListProps)
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {filteredItems.map((item) => (
-          <InventoryItemCard key={item.itemId} item={item} />
+          <InventoryItemCard 
+            key={item.itemId} 
+            item={item} 
+            salesCount={salesByProduct[item.itemId] || 0}
+          />
         ))}
       </div>
     </div>

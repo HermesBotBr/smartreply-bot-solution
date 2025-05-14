@@ -1,20 +1,21 @@
-
 import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft } from 'lucide-react';
-import { DateRangeFilterSection } from '@/components/dashboard/metrics/DateRangeFilterSection';
-import { FinancialMetrics } from '@/components/financeiro/FinancialMetrics';
-import { DataInput } from '@/components/financeiro/DataInput';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { InventoryList } from '@/components/financeiro/InventoryList';
-import { useNavigate } from 'react-router-dom';
-import { useMlToken } from '@/hooks/useMlToken';
-import { useSettlementData } from '@/hooks/useSettlementData';
 import { useInventoryData } from '@/hooks/useInventoryData';
-import { toast } from 'sonner';
-import { ReleaseOperation } from '@/types/ReleaseOperation';
+import { useMediaQuery } from "@/hooks/useMediaQuery";
+import { format } from "date-fns";
+import { DateRange } from "react-day-picker";
+import { TransactionsList } from '@/components/financeiro/TransactionsList';
+import { FinancialMetrics } from '@/components/financeiro/FinancialMetrics';
+import { SettlementTransactionsList } from '@/components/financeiro/SettlementTransactionsList';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CalendarIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
-const AdminFinanceiro: React.FC = () => {
+const AdminFinanceiro = () => {
   /* ------------------------------------------------------------------ */
   /* state                                                               */
   /* ------------------------------------------------------------------ */
@@ -373,78 +374,145 @@ const AdminFinanceiro: React.FC = () => {
   /* render                                                              */
   /* ------------------------------------------------------------------ */
   return (
-    <div className="min-h-screen bg-gray-100">
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex items-center mb-6">
-          <Button variant="ghost" onClick={() => navigate('/')} className="mr-2">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Voltar
-          </Button>
-          <h1 className="text-3xl font-bold">Administração Financeira</h1>
-        </div>
-
-        <Tabs
-          defaultValue="metricas"
-          value={activeTab}
-          onValueChange={(value: "metricas" | "entrada" | "estoque") => setActiveTab(value)}
-          className="w-full"
-        >
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="metricas">Métricas</TabsTrigger>
-            <TabsTrigger value="entrada">Entrada</TabsTrigger>
-            <TabsTrigger value="estoque">Estoque</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="metricas" className="space-y-4 mt-4">
-            <DateRangeFilterSection
-              startDate={startDate}
-              endDate={endDate}
-              onStartDateChange={setStartDate}
-              onEndDateChange={setEndDate}
-              onFilter={handleFilter}
-            />
-
-            <FinancialMetrics
-              grossSales={metrics.grossSales}
-              totalAmount={metrics.totalAmount}
-              unitsSold={metrics.unitsSold}
-              totalMLRepasses={metrics.totalMLRepasses}
-              totalMLFees={metrics.totalMLFees}
-              totalReleased={metrics.totalReleased}
-              totalClaims={metrics.totalClaims}
-              totalDebts={metrics.totalDebts}
-              totalTransfers={metrics.totalTransfers}
-              totalCreditCard={metrics.totalCreditCard}
-              totalShippingCashback={metrics.totalShippingCashback}
-              settlementTransactions={settlementTransactions}
-              releaseOperationsWithOrder={releaseOperationsWithOrder}
-              releaseOtherOperations={releaseOtherOperations}
-              startDate={startDate}
-              endDate={endDate}
-            />
-          </TabsContent>
-
-          <TabsContent value="entrada" className="mt-4">
-            <DataInput
-              settlementData={settlementData}
-              releaseData={releaseData}
-              onSettlementDataChange={setSettlementData}
-              onReleaseDataChange={handleReleaseDataChange}
-              startDate={startDate}
-              endDate={endDate}
-              settlementTransactions={settlementTransactions}
-              settlementLoading={settlementLoading}
-            />
-          </TabsContent>
-
-          <TabsContent value="estoque" className="mt-4">
-            <InventoryList 
-              inventoryItems={inventoryItems || []} 
-              isLoading={inventoryLoading} 
-            />
-          </TabsContent>
-        </Tabs>
+    <div className="container mx-auto py-8 px-4">
+      <h1 className="text-3xl font-bold mb-8">Administração Financeira</h1>
+      
+      {/* Date Range Picker */}
+      <div className="mb-8">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-xl">Período de análise</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col md:flex-row gap-4">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    id="date"
+                    variant="outline"
+                    className={cn(
+                      "w-full md:w-auto justify-start text-left font-normal",
+                      !date && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {date?.from ? (
+                      date.to ? (
+                        <>
+                          {format(date.from, "dd/MM/yyyy")} -{" "}
+                          {format(date.to, "dd/MM/yyyy")}
+                        </>
+                      ) : (
+                        format(date.from, "dd/MM/yyyy")
+                      )
+                    ) : (
+                      <span>Selecione um período</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    initialFocus
+                    mode="range"
+                    defaultMonth={date?.from}
+                    selected={date}
+                    onSelect={setDate}
+                    numberOfMonths={isMobile ? 1 : 2}
+                  />
+                </PopoverContent>
+              </Popover>
+              
+              <TextArea
+                className="w-full md:w-auto"
+                placeholder="Digite o período de análise"
+                value={date?.from?.toISOString() || date?.to?.toISOString() || ''}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (value) {
+                    const [from, to] = value.split(' - ');
+                    if (from) {
+                      setDate({ from: new Date(from), to: new Date(to) });
+                    } else {
+                      setDate({ from: new Date(from) });
+                    }
+                  } else {
+                    setDate(null);
+                  }
+                }}
+              />
+              
+              <Button
+                className="w-full md:w-auto"
+                onClick={handleFilter}
+              >
+                Filtrar
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
+
+      <Tabs defaultValue="metricas">
+        <TabsList className="grid grid-cols-4 mb-8">
+          <TabsTrigger value="metricas">Métricas</TabsTrigger>
+          <TabsTrigger value="transacoes">Transações</TabsTrigger>
+          <TabsTrigger value="repasses">Pagamentos</TabsTrigger>
+          <TabsTrigger value="estoque">Estoque</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="metricas">
+          <DateRangeFilterSection
+            startDate={startDate}
+            endDate={endDate}
+            onStartDateChange={setStartDate}
+            onEndDateChange={setEndDate}
+            onFilter={handleFilter}
+          />
+
+          <FinancialMetrics
+            grossSales={metrics.grossSales}
+            totalAmount={metrics.totalAmount}
+            unitsSold={metrics.unitsSold}
+            totalMLRepasses={metrics.totalMLRepasses}
+            totalMLFees={metrics.totalMLFees}
+            totalReleased={metrics.totalReleased}
+            totalClaims={metrics.totalClaims}
+            totalDebts={metrics.totalDebts}
+            totalTransfers={metrics.totalTransfers}
+            totalCreditCard={metrics.totalCreditCard}
+            totalShippingCashback={metrics.totalShippingCashback}
+            settlementTransactions={settlementTransactions}
+            releaseOperationsWithOrder={releaseOperationsWithOrder}
+            releaseOtherOperations={releaseOtherOperations}
+            startDate={startDate}
+            endDate={endDate}
+          />
+        </TabsContent>
+        
+        <TabsContent value="transacoes">
+          <TransactionsList
+            settlementTransactions={settlementTransactions}
+            startDate={startDate}
+            endDate={endDate}
+          />
+        </TabsContent>
+        
+        <TabsContent value="repasses">
+          <SettlementTransactionsList
+            settlementTransactions={settlementTransactions}
+            startDate={startDate}
+            endDate={endDate}
+          />
+        </TabsContent>
+        
+        <TabsContent value="estoque">
+          <InventoryList 
+            inventoryItems={inventoryItems} 
+            isLoading={inventoryLoading}
+            sellerId={sellerId} 
+          />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
