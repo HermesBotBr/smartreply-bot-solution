@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -8,7 +9,7 @@ import { SettlementTransactionsList } from './SettlementTransactionsList';
 import { useSettlementData, SettlementTransaction } from '@/hooks/useSettlementData';
 import { useMlToken } from '@/hooks/useMlToken';
 
-interface Transaction implements SettlementTransaction {
+interface Transaction extends SettlementTransaction {
   date: string;
   sourceId: string;
   orderId: string;

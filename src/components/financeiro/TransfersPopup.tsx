@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
@@ -43,8 +42,8 @@ interface ApiDescription {
   valor: string;
 }
 
-// Updated to implement SettlementTransaction
-interface TransferTransaction implements SettlementTransaction {
+// Updated to be compatible with SettlementTransaction
+interface TransferTransaction extends SettlementTransaction {
   date: string;
   sourceId: string;
   orderId: string;
