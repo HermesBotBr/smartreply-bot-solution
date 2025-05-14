@@ -279,25 +279,32 @@ const AdminFinanceiro = () => {
             </CardHeader>
             <CardContent className="grid gap-4">
               <DateRangePicker 
-                date={settlementDateRange}
-                onSelect={handleSettlementDateRangeChange}
+                startDate={settlementDateRange.from}
+                endDate={settlementDateRange.to}
+                onStartDateChange={(date) => 
+                  setSettlementDateRange(prev => ({ ...prev, from: date }))
+                }
+                onEndDateChange={(date) => 
+                  setSettlementDateRange(prev => ({ ...prev, to: date }))
+                }
+                onFilter={settlementRefetch}
               />
               <SettlementTransactionsList 
                 transactions={settlementTransactions || []}
               />
               <DataInput
-                label="Transações de Liquidação"
-                value={settlementTransactionsData}
-                onChange={handleSettlementTransactionsDataChange}
+                title="Transações de Liquidação"
+                content={settlementTransactionsData}
+                onContentChange={handleSettlementTransactionsDataChange}
                 onSave={handleSaveSettlementTransactions}
               />
               <TransactionsList 
-                transactions={JSON.parse(transactionsData || '[]')} 
+                transactions={transactionsData ? JSON.parse(transactionsData) : []} 
               />
               <DataInput
-                label="Transações"
-                value={transactionsData}
-                onChange={handleTransactionsDataChange}
+                title="Transações"
+                content={transactionsData}
+                onContentChange={handleTransactionsDataChange}
                 onSave={handleSaveTransactions}
               />
             </CardContent>
@@ -333,7 +340,7 @@ const AdminFinanceiro = () => {
       <ReleasePopup
         open={isReleaseOpen}
         onClose={() => setIsReleaseOpen(false)}
-        releaseData={releaseData}
+        data={releaseData}
         onDataChange={handleReleaseDataChange}
         onSave={handleSaveRelease}
       />
@@ -341,7 +348,7 @@ const AdminFinanceiro = () => {
       <RepassesPopup
         open={isRepassesOpen}
         onClose={() => setIsRepassesOpen(false)}
-        repassesData={repassesData}
+        data={repassesData}
         onDataChange={handleRepassesDataChange}
         onSave={handleSaveRepasses}
       />
@@ -349,7 +356,7 @@ const AdminFinanceiro = () => {
       <TransfersPopup
         open={isTransfersOpen}
         onClose={() => setIsTransfersOpen(false)}
-        transfersData={transfersData}
+        data={transfersData}
         onDataChange={handleTransfersDataChange}
         onSave={handleSaveTransfers}
       />
@@ -357,7 +364,7 @@ const AdminFinanceiro = () => {
       <ProductListingPopup
         open={isProductListingOpen}
         onClose={() => setIsProductListingOpen(false)}
-        productListingData={productListingData}
+        data={productListingData}
         onDataChange={handleProductListingDataChange}
         onSave={handleSaveProductListing}
       />

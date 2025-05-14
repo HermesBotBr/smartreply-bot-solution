@@ -4,17 +4,18 @@ import { Input } from '@/components/ui/input';
 import { InventoryItemCard } from './InventoryItemCard';
 import { InventoryItem } from '@/types/inventory';
 import { Package } from 'lucide-react';
-import { useSalesForInventory } from '@/hooks/useSalesForInventory';
+import { SalesByItemId } from '@/hooks/useSalesForInventory';
 
 interface InventoryListProps {
   inventoryItems: InventoryItem[];
   isLoading: boolean;
   sellerId: string | null;
+  salesByItemId: SalesByItemId;
+  salesLoading: boolean;
 }
 
-export function InventoryList({ inventoryItems, isLoading, sellerId }: InventoryListProps) {
+export function InventoryList({ inventoryItems, isLoading, sellerId, salesByItemId, salesLoading }: InventoryListProps) {
   const [searchQuery, setSearchQuery] = useState('');
-  const { salesByItemId, isLoading: salesLoading } = useSalesForInventory(sellerId, inventoryItems);
 
   // Filter items based on search query
   const filteredItems = inventoryItems.filter(item => 
