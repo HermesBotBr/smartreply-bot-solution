@@ -8,6 +8,7 @@ import { Package, CalendarDays, RefreshCw, ShoppingBag } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useAdminSalesData } from '@/hooks/useAdminSalesData';
 import { useMlToken } from '@/hooks/useMlToken';
+import { SalesDetailPopup } from './SalesDetailPopup';
 
 interface InventoryListProps {
   inventoryItems: InventoryItem[];
@@ -21,6 +22,7 @@ export function InventoryList({ inventoryItems, isLoading, onRefreshDates }: Inv
   const [firstPurchaseDate, setFirstPurchaseDate] = useState<string | null>(null);
   const [totalUnitsSoldSinceFirstPurchase, setTotalUnitsSoldSinceFirstPurchase] = useState<number>(0);
   const [fetchingSales, setFetchingSales] = useState<boolean>(false);
+  const [salesPopupOpen, setSalesPopupOpen] = useState<boolean>(false);
   
   const { fetchSalesData, salesByItemId, detailedSales } = useAdminSalesData();
   
@@ -91,7 +93,7 @@ export function InventoryList({ inventoryItems, isLoading, onRefreshDates }: Inv
       setFetchingSales(false);
     }
   };
-  
+
   // Find the earliest purchase date when inventory items change
   useEffect(() => {
     let earliest: string | null = null;
@@ -139,6 +141,10 @@ export function InventoryList({ inventoryItems, isLoading, onRefreshDates }: Inv
         });
       }, 1000);
     }
+  };
+
+  const handleSalesCardClick = () => {
+    setSalesPopupOpen(true);
   };
 
   if (isLoading) {
@@ -217,7 +223,10 @@ export function InventoryList({ inventoryItems, isLoading, onRefreshDates }: Inv
               {firstPurchaseDate ? firstPurchaseDate : 'N/A'}
             </p>
           </div>
-          <div className="bg-primary/10 p-4 rounded-lg flex flex-col">
+          <div 
+            className="bg-primary/10 p-4 rounded-lg flex flex-col cursor-pointer hover:bg-primary/20 transition-colors"
+            onClick={handleSalesCardClick}
+          >
             <div className="flex items-center gap-1">
               <p className="text-sm text-muted-foreground">Vendas dês da primeira reposição</p>
               <ShoppingBag className="h-4 w-4 text-muted-foreground" />
@@ -242,6 +251,14 @@ export function InventoryList({ inventoryItems, isLoading, onRefreshDates }: Inv
           />
         ))}
       </div>
+
+      <SalesDetailPopup
+        open={salesPopupOpen}
+        onClose={() => setSalesPopupOpen(false)}
+        salesByItemId={salesByItemId}
+        detailedSales={detailedSales}
+        totalUnitsSold={totalUnitsSoldSinceFirstPurchase}
+      />
     </div>
   );
 }
