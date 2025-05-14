@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
@@ -254,6 +253,26 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
     }
   };
 
+  // Função para verificar se uma data está dentro do intervalo selecionado
+  const isDateInRange = (dateStr?: string): boolean => {
+    if (!dateStr || !startDate || !endDate) return true;
+    
+    try {
+      const date = new Date(dateStr);
+      if (isNaN(date.getTime())) return true; // Se a data for inválida, mostre a transferência
+      
+      const start = new Date(startDate);
+      start.setHours(0, 0, 0, 0);
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
+      
+      return date >= start && date <= end;
+    } catch (error) {
+      console.error("Erro ao verificar intervalo de data:", error);
+      return true; // Em caso de erro, inclua a transferência
+    }
+  };
+
   // Calculate declared total for a transfer
   const getDeclaredTotal = (transfer: TransferWithDescriptions) => {
     return transfer.manualDescriptions.reduce((sum, desc) => sum + desc.value, 0);
@@ -283,12 +302,12 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
     // Calculate the total declared amount
     const totalDeclared = getDeclaredTotal(transfer);
     
-    // Create a date object for the current day - simulate a date for the transfer
-    // This ensures we have a valid date for the transaction list
-    const currentDate = new Date().toISOString();
+    // Use the transfer's date if available, otherwise use current date
+    // This ensures we have a valid date for date filtering
+    const transferDate = transfer.date || new Date().toISOString();
     
     return {
-      date: currentDate,  // Use a valid date string instead of empty string
+      date: transferDate,
       sourceId: transfer.sourceId || '',
       descriptions: allDescriptions,
       group: 'Transferência',
@@ -299,24 +318,9 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
   });
 
   // Filtrar transações com base nas datas de início e fim
-  const filteredTransactions = transferTransactions.filter(transaction => {
-    // Se as datas não foram fornecidas, mostrar todas as transações
-    if (!startDate || !endDate) return true;
-    
-    // Converter a string de data da transação para um objeto Date
-    const transactionDate = new Date(transaction.date);
-    
-    // Definir hora, minuto, segundo e milissegundo para 0 para a data de início
-    const startOfDay = new Date(startDate);
-    startOfDay.setHours(0, 0, 0, 0);
-    
-    // Definir hora, minuto, segundo e milissegundo para o final do dia para a data de fim
-    const endOfDay = new Date(endDate);
-    endOfDay.setHours(23, 59, 59, 999);
-    
-    // Verificar se a data da transação está dentro do intervalo
-    return transactionDate >= startOfDay && transactionDate <= endOfDay;
-  });
+  const filteredTransactions = transferTransactions.filter(transaction => 
+    isDateInRange(transaction.date)
+  );
 
   // Calculate summary values
   const calculateSummaryValues = () => {
