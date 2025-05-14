@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { MetricCard } from '@/components/dashboard/metrics/MetricCard';
 import { SettlementTransaction } from '@/hooks/useSettlementData';
@@ -49,18 +50,8 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
   // Filter transfers from other operations
   const transferOperations = releaseOtherOperations.filter(op => 
     op.description?.toLowerCase().includes('payout') || 
-    op.description?.toLowerCase().includes('transfer') ||
-    op.description?.toLowerCase() === 'transferências'
+    op.description?.toLowerCase().includes('transfer')
   );
-  
-  // Log for debugging
-  useEffect(() => {
-    console.log('FinancialMetrics received values:', {
-      totalTransfers,
-      transferOperations,
-      releaseOtherOperations
-    });
-  }, [totalTransfers, transferOperations, releaseOtherOperations]);
 
   // Check if transfers are balanced when the component mounts or when transferOperations changes
   useEffect(() => {
@@ -177,10 +168,8 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
                   description={`${((Math.abs(totalTransfers) / (grossSales || 1)) * 100).toFixed(1)}% do valor bruto`}
                   className="bg-indigo-50 hover:bg-indigo-100 transition-colors"
                   textColor="text-indigo-800"
-                  onClick={() => {
-                    console.log('Opening transfers popup with:', transferOperations);
-                    setTransfersPopupOpen(true);
-                  }}
+                  onClick={() => setTransfersPopupOpen(true)}
+                  // Fix here: Instead of passing JSX directly, we use a custom property to indicate alert status
                   alertStatus={hasUnbalancedTransfers}
                 />
               </div>

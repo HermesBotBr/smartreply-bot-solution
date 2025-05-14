@@ -7,9 +7,6 @@ import { TransactionsList } from './TransactionsList';
 import { SettlementTransactionsList } from './SettlementTransactionsList';
 import { useSettlementData } from '@/hooks/useSettlementData';
 import { useMlToken } from '@/hooks/useMlToken';
-import { format } from 'date-fns';
-import { useReleaseData } from '@/hooks/useReleaseData';
-import { useReleaseLineData } from '@/hooks/useReleaseLineData';
 
 interface Transaction {
   date: string;
@@ -38,7 +35,6 @@ interface DataInputProps {
   endDate?: Date;
   settlementTransactions: SettlementTransaction[];
   settlementLoading: boolean;
-  lastUpdate: string | null; 
 }
 
 export const DataInput: React.FC<DataInputProps> = ({ 
@@ -49,38 +45,9 @@ export const DataInput: React.FC<DataInputProps> = ({
   startDate,
   endDate,
   settlementTransactions,
-  settlementLoading,
-  lastUpdate 
+  settlementLoading
 }) => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [displaySettlementTransactions, setDisplaySettlementTransactions] = useState<SettlementTransaction[]>([]);
-  
-  // Get ML token to extract seller_id
-  const mlToken = useMlToken();
-  let sellerId = '681274853';
-  if (mlToken && typeof mlToken === 'object' && 'seller_id' in mlToken) {
-    sellerId = (mlToken as { seller_id: string }).seller_id;
-  }
-  
-  // Use the hook to get release line data for settlement
-  const { 
-    releaseLineTransactions, 
-    isLoading: releaseLineLoading, 
-    error: releaseLineError,
-    lastUpdate: releaseLineLastUpdate 
-  } = useReleaseLineData(sellerId, startDate, endDate);
-  
-  // Effect to set the settlement transactions from release line data
-  useEffect(() => {
-    if (releaseLineTransactions.length > 0) {
-      setDisplaySettlementTransactions(releaseLineTransactions);
-    } else if (settlementTransactions.length > 0) {
-      // Fallback to the old settlement data if new one is empty
-      setDisplaySettlementTransactions(settlementTransactions);
-    } else {
-      setDisplaySettlementTransactions([]);
-    }
-  }, [releaseLineTransactions, settlementTransactions]);
 
   const handleSettlementChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     onSettlementDataChange(e.target.value);
@@ -291,22 +258,17 @@ export const DataInput: React.FC<DataInputProps> = ({
             </div>
             <CardDescription>
               Os dados de liquidação são carregados automaticamente do período selecionado
-              {releaseLineLastUpdate && (
-                <span className="block text-xs mt-1">
-                  Última atualização: {format(new Date(releaseLineLastUpdate), 'dd/MM/yyyy HH:mm')}
-                </span>
-              )}
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {releaseLineLoading || settlementLoading ? (
+            {settlementLoading ? (
               <div className="text-center py-4 text-muted-foreground">
                 Carregando dados do período selecionado...
               </div>
             ) : (
               <div className="text-center py-4 text-muted-foreground">
-                {displaySettlementTransactions.length > 0 ? 
-                  `${displaySettlementTransactions.length} transações encontradas para o período selecionado` : 
+                {settlementTransactions.length > 0 ? 
+                  `${settlementTransactions.length} transações encontradas para o período selecionado` : 
                   "Nenhuma transação encontrada. Selecione um período válido para consultar."
                 }
               </div>
@@ -315,32 +277,27 @@ export const DataInput: React.FC<DataInputProps> = ({
         </Card>
 
         {/* Display settlement transactions list */}
-        <SettlementTransactionsList transactions={displaySettlementTransactions} />
+        <SettlementTransactionsList transactions={settlementTransactions} />
       </TabsContent>
       
       <TabsContent value="release">
         <Card className="w-full">
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <FileSpreadsheet className="h-5 w-5" />
-                <CardTitle>Entrada de Dados de Liberações (Release)</CardTitle>
-              </div>
+            <div className="flex items-center gap-2">
+              <FileSpreadsheet className="h-5 w-5" />
+              <CardTitle>Entrada de Dados de Liberações (Release)</CardTitle>
             </div>
             <CardDescription>
-              Insira os dados de liberações manualmente no formato CSV
-              {lastUpdate && (
-                <span className="block text-xs mt-1">
-                  Última atualização: {lastUpdate}
-                </span>
-              )}
+              Cole os dados do relatório de release no formato CSV abaixo
             </CardDescription>
           </CardHeader>
           <CardContent>
             <Textarea 
               value={releaseData}
               onChange={handleReleaseChange}
-              placeholder="Cole aqui os dados de liberações no formato CSV..."
+              placeholder="release:
+DATE,SOURCE_ID,EXTERNAL_REFERENCE,RECORD_TYPE,DESCRIPTION,NET_CREDIT_AMOUNT,NET_DEBIT_AMOUNT,ITEM_ID,SALE_DETAIL
+..."
               className="min-h-[400px] font-mono text-sm"
             />
           </CardContent>
