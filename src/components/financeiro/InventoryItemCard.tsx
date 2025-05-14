@@ -2,14 +2,15 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Warehouse } from 'lucide-react';
+import { Warehouse, ShoppingBag } from 'lucide-react';
 import { InventoryItem } from '@/types/inventory';
 
 interface InventoryItemCardProps {
   item: InventoryItem;
+  salesCount?: number;
 }
 
-export function InventoryItemCard({ item }: InventoryItemCardProps) {
+export function InventoryItemCard({ item, salesCount = 0 }: InventoryItemCardProps) {
   // Calculate weighted average cost
   const weightedAverageCost = item.purchases.reduce((total, purchase) => 
     total + (purchase.unitCost * purchase.quantity), 0) / item.totalQuantity;
@@ -45,6 +46,12 @@ export function InventoryItemCard({ item }: InventoryItemCardProps) {
         <div className="mb-2">
           <p className="text-sm text-muted-foreground">Valor Total em Estoque</p>
           <p className="text-lg font-semibold text-primary">R$ {totalInventoryValue.toFixed(2)}</p>
+        </div>
+        
+        <div className="mb-4 flex items-center gap-1">
+          <ShoppingBag className="h-4 w-4 text-muted-foreground" />
+          <p className="text-sm text-muted-foreground">Vendas no anúncio dês da primeira reposição</p>
+          <p className="text-lg font-semibold ml-auto">{salesCount} unidades</p>
         </div>
 
         <div className="mt-4">
