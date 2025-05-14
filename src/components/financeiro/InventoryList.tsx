@@ -1,11 +1,13 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { InventoryItemCard } from './InventoryItemCard';
 import { InventoryItem } from '@/types/inventory';
-import { Package, CalendarDays, RefreshCw } from 'lucide-react';
+import { Package, CalendarDays, RefreshCw, ShoppingBag } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { useAdminSalesData } from '@/hooks/useAdminSalesData';
+import { useMlToken } from '@/hooks/useMlToken';
 
 interface InventoryListProps {
   inventoryItems: InventoryItem[];
@@ -16,13 +18,95 @@ interface InventoryListProps {
 export function InventoryList({ inventoryItems, isLoading, onRefreshDates }: InventoryListProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [refreshing, setRefreshing] = useState(false);
-
+  const [firstPurchaseDate, setFirstPurchaseDate] = useState<string | null>(null);
+  const [totalSalesSinceFirstPurchase, setTotalSalesSinceFirstPurchase] = useState<number>(0);
+  const [fetchingSales, setFetchingSales] = useState<boolean>(false);
+  
+  const { fetchSalesData } = useAdminSalesData();
+  
+  // Get seller ID from ML token
+  const mlToken = useMlToken();
+  const sellerId = typeof mlToken === 'object' && mlToken !== null && 'seller_id' in mlToken 
+    ? mlToken.seller_id 
+    : '681274853'; // Default seller ID
+  
   // Filter items based on search query
   const filteredItems = inventoryItems.filter(item => 
     item.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
     item.itemId.toLowerCase().includes(searchQuery.toLowerCase())
   );
-
+  
+  // Function to format date for API call (DD/MM/YYYY to YYYY-MM-DD)
+  const formatDateForApi = (dateStr: string): string => {
+    if (!dateStr) return '';
+    const [day, month, year] = dateStr.split('/');
+    return `${year}-${month}-${day}`;
+  };
+  
+  // Function to get today's date in DD/MM/YYYY format
+  const getTodayFormatted = (): string => {
+    const today = new Date();
+    return `${today.getDate().toString().padStart(2, '0')}/${(today.getMonth() + 1).toString().padStart(2, '0')}/${today.getFullYear()}`;
+  };
+  
+  // Function to fetch sales data since first purchase
+  const fetchSalesSinceFirstPurchase = async () => {
+    if (!firstPurchaseDate) return;
+    
+    setFetchingSales(true);
+    toast({
+      title: "Buscando vendas",
+      description: "Calculando vendas desde a primeira reposição..."
+    });
+    
+    try {
+      const today = getTodayFormatted();
+      const total = await fetchSalesData(sellerId, firstPurchaseDate, today);
+      setTotalSalesSinceFirstPurchase(total);
+      
+      toast({
+        title: "Vendas calculadas",
+        description: "Dados de vendas atualizados com sucesso."
+      });
+    } catch (error) {
+      console.error("Error fetching sales data:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível buscar os dados de vendas.",
+        variant: "destructive"
+      });
+    } finally {
+      setFetchingSales(false);
+    }
+  };
+  
+  // Find the earliest purchase date when inventory items change
+  useEffect(() => {
+    let earliest: string | null = null;
+    
+    inventoryItems.forEach(item => {
+      item.purchases.forEach(purchase => {
+        if (purchase.date) {
+          if (!earliest || purchase.date < earliest) {
+            earliest = purchase.date;
+          }
+        }
+      });
+    });
+    
+    // Only update if it's actually changed
+    if (earliest !== firstPurchaseDate) {
+      setFirstPurchaseDate(earliest);
+    }
+  }, [inventoryItems]);
+  
+  // Fetch sales data whenever the first purchase date changes
+  useEffect(() => {
+    if (firstPurchaseDate) {
+      fetchSalesSinceFirstPurchase();
+    }
+  }, [firstPurchaseDate]);
+  
   const handleRefresh = () => {
     if (onRefreshDates) {
       setRefreshing(true);
@@ -76,19 +160,6 @@ export function InventoryList({ inventoryItems, isLoading, onRefreshDates }: Inv
     return acc + (item.totalQuantity * weightedAverageCost);
   }, 0);
 
-  // Find the earliest purchase date across all inventory items
-  let earliestPurchaseDate: string | null = null;
-  
-  inventoryItems.forEach(item => {
-    item.purchases.forEach(purchase => {
-      if (purchase.date) {
-        if (!earliestPurchaseDate || purchase.date < earliestPurchaseDate) {
-          earliestPurchaseDate = purchase.date;
-        }
-      }
-    });
-  });
-
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4">
@@ -131,7 +202,20 @@ export function InventoryList({ inventoryItems, isLoading, onRefreshDates }: Inv
               <CalendarDays className="h-4 w-4 text-muted-foreground" />
             </div>
             <p className="text-2xl font-bold">
-              {earliestPurchaseDate ? earliestPurchaseDate : 'N/A'}
+              {firstPurchaseDate ? firstPurchaseDate : 'N/A'}
+            </p>
+          </div>
+          <div className="bg-primary/10 p-4 rounded-lg flex flex-col">
+            <div className="flex items-center gap-1">
+              <p className="text-sm text-muted-foreground">Vendas dês da primeira reposição</p>
+              <ShoppingBag className="h-4 w-4 text-muted-foreground" />
+            </div>
+            <p className="text-2xl font-bold">
+              {fetchingSales ? (
+                <span className="text-lg">Calculando...</span>
+              ) : (
+                `R$ ${totalSalesSinceFirstPurchase.toFixed(2)}`
+              )}
             </p>
           </div>
         </div>
