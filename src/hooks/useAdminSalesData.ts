@@ -8,10 +8,6 @@ interface AdminSalesItem {
   paid_amount: number;
   order_items: {
     quantity: number;
-    item: {
-      id: string;
-      title: string;
-    };
   }[];
 }
 
@@ -25,7 +21,6 @@ export function useAdminSalesData() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<Error | null>(null);
   const [totalUnitsSold, setTotalUnitsSold] = useState<number>(0);
-  const [productSalesMap, setProductSalesMap] = useState<Record<string, number>>({});
   
   const fetchSalesData = useCallback(async (sellerId: string, startDate: string, endDate: string) => {
     if (!sellerId || !startDate || !endDate) {
@@ -49,27 +44,17 @@ export function useAdminSalesData() {
       setSalesData(response.data);
       
       // Calculate total units sold
-      let totalUnits = 0;
-      const productSales: Record<string, number> = {};
-      
-      response.data?.results?.forEach(item => {
-        // Process each order item
-        item.order_items?.forEach(orderItem => {
-          const quantity = orderItem.quantity || 0;
-          totalUnits += quantity;
-          
-          // Track sales by product ID
-          const productId = orderItem.item?.id;
-          if (productId) {
-            productSales[productId] = (productSales[productId] || 0) + quantity;
-          }
-        });
-      });
+      const totalUnits = response.data?.results?.reduce((sum, item) => {
+        // Sum up quantities from each order_item
+        const orderItemsQuantity = item.order_items?.reduce((itemSum, orderItem) => {
+          return itemSum + (orderItem.quantity || 0);
+        }, 0) || 0;
+        
+        return sum + orderItemsQuantity;
+      }, 0) || 0;
       
       setTotalUnitsSold(totalUnits);
-      setProductSalesMap(productSales);
       setIsLoading(false);
-      
       return totalUnits;
       
     } catch (err) {
@@ -80,12 +65,5 @@ export function useAdminSalesData() {
     }
   }, []);
   
-  return { 
-    salesData, 
-    isLoading, 
-    error, 
-    totalUnitsSold, 
-    productSalesMap, 
-    fetchSalesData 
-  };
+  return { salesData, isLoading, error, totalUnitsSold, fetchSalesData };
 }
