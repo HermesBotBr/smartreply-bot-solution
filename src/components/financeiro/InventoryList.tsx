@@ -1,23 +1,49 @@
 
 import React, { useState } from 'react';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { InventoryItemCard } from './InventoryItemCard';
 import { InventoryItem } from '@/types/inventory';
-import { Package, CalendarDays } from 'lucide-react';
+import { Package, CalendarDays, RefreshCw } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
 
 interface InventoryListProps {
   inventoryItems: InventoryItem[];
   isLoading: boolean;
+  onRefreshDates?: () => void;
 }
 
-export function InventoryList({ inventoryItems, isLoading }: InventoryListProps) {
+export function InventoryList({ inventoryItems, isLoading, onRefreshDates }: InventoryListProps) {
   const [searchQuery, setSearchQuery] = useState('');
+  const [refreshing, setRefreshing] = useState(false);
 
   // Filter items based on search query
   const filteredItems = inventoryItems.filter(item => 
     item.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
     item.itemId.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const handleRefresh = () => {
+    if (onRefreshDates) {
+      setRefreshing(true);
+      toast({
+        title: "Atualizando datas",
+        description: "Buscando datas de compra do relatório Release..."
+      });
+      
+      // Call the refresh function
+      onRefreshDates();
+      
+      // Reset refreshing state after a short delay to show animation
+      setTimeout(() => {
+        setRefreshing(false);
+        toast({
+          title: "Datas atualizadas",
+          description: "As datas de compra foram atualizadas com sucesso."
+        });
+      }, 1000);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -66,13 +92,25 @@ export function InventoryList({ inventoryItems, isLoading }: InventoryListProps)
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4">
-        <Input
-          type="text"
-          placeholder="Buscar por título ou ID do produto..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="max-w-md"
-        />
+        <div className="flex justify-between items-center">
+          <Input
+            type="text"
+            placeholder="Buscar por título ou ID do produto..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="max-w-md"
+          />
+          <Button 
+            variant="outline" 
+            size="icon"
+            onClick={handleRefresh}
+            disabled={refreshing || !onRefreshDates}
+            className="ml-2"
+          >
+            <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+            <span className="sr-only">Atualizar datas</span>
+          </Button>
+        </div>
         
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           <div className="bg-primary/10 p-4 rounded-lg">

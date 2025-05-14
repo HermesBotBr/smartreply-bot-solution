@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -68,7 +69,8 @@ const AdminFinanceiro: React.FC = () => {
   const { 
     items: inventoryItems, 
     isLoading: inventoryLoading, 
-    error: inventoryError 
+    error: inventoryError,
+    refreshDates 
   } = useInventoryData(sellerId);
 
   // Show toast if there's an inventory error
@@ -440,6 +442,7 @@ const AdminFinanceiro: React.FC = () => {
             <InventoryList 
               inventoryItems={inventoryItems || []} 
               isLoading={inventoryLoading} 
+              onRefreshDates={refreshDates}
             />
           </TabsContent>
         </Tabs>
