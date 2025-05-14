@@ -5,6 +5,6 @@ export interface ReleaseOperation {
   title?: string;
   amount: number;
   description?: string;
-  sourceId?: string;
-  date?: string;
+  sourceId?: string; // Added sourceId for grouping operations
+  date?: string;     // Added date field
 }
