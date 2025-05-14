@@ -148,7 +148,6 @@ export function SalesListBox({
   
   return (
     <div className="bg-white p-6 rounded-lg shadow-md">
-      <h3 className="text-lg font-semibold mb-4">Vendas por Anúncio</h3>
       <div className="overflow-x-auto">
         <Table>
           <TableHeader>

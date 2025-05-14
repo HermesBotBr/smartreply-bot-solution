@@ -156,7 +156,7 @@ export function NewMetricsDashboard({ sellerId }: NewMetricsDashboardProps) {
           <TabsTrigger value="hermes">Hermes Assistente</TabsTrigger>
         </TabsList>
         
-        <TabsContent value="metrics">
+        <TabsContent value="metrics" className="space-y-8">
           <MetricsGrid 
             reputation={reputation}
             reputationLoading={reputationLoading}
@@ -175,6 +175,7 @@ export function NewMetricsDashboard({ sellerId }: NewMetricsDashboardProps) {
           />
           
           <div className="mt-8">
+            <h3 className="text-xl font-semibold mb-4">Vendas por Anúncio</h3>
             <SalesListBox 
               salesData={salesData?.sales}
               settlementTransactions={settlementTransactions}
