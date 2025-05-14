@@ -21,6 +21,7 @@ import { useSettlementData } from '@/hooks/useSettlementData';
 import { useNavigate } from 'react-router-dom';
 import { useMlToken } from '@/hooks/useMlToken';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { useSalesForInventory } from '@/hooks/useSalesForInventory';
 
 // Define the proper date range interface
 interface DateRange {
@@ -33,7 +34,7 @@ const AdminFinanceiro = () => {
   const [isRepassesOpen, setIsRepassesOpen] = useState(false);
   const [isTransfersOpen, setIsTransfersOpen] = useState(false);
   const [isProductListingOpen, setIsProductListingOpen] = useState(false);
-  const [date, setDate] = useState<Date | undefined>(new Date());
+  const [date, setDate] = useState<Date>(new Date());
   const [dateRange, setDateRange] = useState<DateRange>({
     from: new Date(new Date().setDate(new Date().getDate() - 7)),
     to: new Date(),
@@ -48,14 +49,14 @@ const AdminFinanceiro = () => {
   const [productListingData, setProductListingData] = useState('');
   const [transactionsData, setTransactionsData] = useState('');
   const [settlementTransactionsData, setSettlementTransactionsData] = useState('');
-  const [isMobile] = useMediaQuery('(max-width: 768px)');
+  const isMobile = useMediaQuery('(max-width: 768px)');
   const mlToken = useMlToken();
   const navigate = useNavigate();
 
   const { settlementTransactions, isLoading: settlementLoading, error: settlementError, refetch: settlementRefetch } = useSettlementData(
     '681274853',
-    settlementDateRange?.from,
-    settlementDateRange?.to,
+    settlementDateRange.from,
+    settlementDateRange.to,
   );
 
   useEffect(() => {
@@ -64,7 +65,7 @@ const AdminFinanceiro = () => {
     }
   }, [mlToken, navigate]);
 
-  const handleDateChange = (newDate: Date | undefined) => {
+  const handleDateChange = (newDate: Date) => {
     setDate(newDate);
   };
 
@@ -157,6 +158,9 @@ const AdminFinanceiro = () => {
   
   const { items: inventoryItems, isLoading: inventoryLoading } = useInventoryData(sellerId);
   
+  // Use the hook to get sales data for inventory
+  const { salesByItemId, isLoading: salesLoading } = useSalesForInventory(sellerId, inventoryItems || []);
+  
   // Load data from localStorage on component mount
   useEffect(() => {
     const savedReleaseData = localStorage.getItem('releaseData');
@@ -227,6 +231,8 @@ const AdminFinanceiro = () => {
                 inventoryItems={inventoryItems} 
                 isLoading={inventoryLoading} 
                 sellerId={sellerId}
+                salesByItemId={salesByItemId}
+                salesLoading={salesLoading}
               />
             </CardContent>
           </Card>
@@ -241,22 +247,23 @@ const AdminFinanceiro = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {/* Passing empty props for now, update with actual values when needed */}
               <FinancialMetrics 
                 grossSales={0}
                 totalAmount={0}
                 unitsSold={0}
                 totalMLRepasses={0}
-                totalShippingCost={0}
+                totalMLFees={0}
                 totalReleased={0}
-                totalFees={0}
-                totalTaxes={0}
-                totalProfits={0}
-                totalSpent={0}
-                averageProfitMargin={0}
-                averageDailySales={0}
-                bestSellingCategory=""
-                worstSellingCategory=""
+                totalClaims={0}
+                totalDebts={0}
+                totalTransfers={0}
+                totalCreditCard={0}
+                totalShippingCashback={0}
+                settlementTransactions={settlementTransactions || []}
+                releaseOperationsWithOrder={[]}
+                releaseOtherOperations={[]}
+                startDate={settlementDateRange.from}
+                endDate={settlementDateRange.to}
               />
             </CardContent>
           </Card>
@@ -272,28 +279,25 @@ const AdminFinanceiro = () => {
             </CardHeader>
             <CardContent className="grid gap-4">
               <DateRangePicker 
-                value={settlementDateRange} 
-                onChange={handleSettlementDateRangeChange} 
+                date={settlementDateRange}
+                onSelect={handleSettlementDateRangeChange}
               />
               <SettlementTransactionsList 
-                transactions={settlementTransactions} 
-                isLoading={settlementLoading} 
-                error={settlementError} 
-                refetch={settlementRefetch} 
+                transactions={settlementTransactions || []}
               />
               <DataInput
-                title="Transações de Liquidação"
-                content={settlementTransactionsData}
-                onContentChange={handleSettlementTransactionsDataChange}
+                label="Transações de Liquidação"
+                value={settlementTransactionsData}
+                onChange={handleSettlementTransactionsDataChange}
                 onSave={handleSaveSettlementTransactions}
               />
               <TransactionsList 
-                transactions={transactionsData || "[]"} 
+                transactions={JSON.parse(transactionsData || '[]')} 
               />
               <DataInput
-                title="Transações"
-                content={transactionsData}
-                onContentChange={handleTransactionsDataChange}
+                label="Transações"
+                value={transactionsData}
+                onChange={handleTransactionsDataChange}
                 onSave={handleSaveTransactions}
               />
             </CardContent>
@@ -328,7 +332,7 @@ const AdminFinanceiro = () => {
       
       <ReleasePopup
         open={isReleaseOpen}
-        onOpenChange={() => setIsReleaseOpen(false)}
+        onClose={() => setIsReleaseOpen(false)}
         releaseData={releaseData}
         onDataChange={handleReleaseDataChange}
         onSave={handleSaveRelease}
@@ -336,7 +340,7 @@ const AdminFinanceiro = () => {
       
       <RepassesPopup
         open={isRepassesOpen}
-        onOpenChange={() => setIsRepassesOpen(false)}
+        onClose={() => setIsRepassesOpen(false)}
         repassesData={repassesData}
         onDataChange={handleRepassesDataChange}
         onSave={handleSaveRepasses}
@@ -344,7 +348,7 @@ const AdminFinanceiro = () => {
       
       <TransfersPopup
         open={isTransfersOpen}
-        onOpenChange={() => setIsTransfersOpen(false)}
+        onClose={() => setIsTransfersOpen(false)}
         transfersData={transfersData}
         onDataChange={handleTransfersDataChange}
         onSave={handleSaveTransfers}
@@ -352,7 +356,7 @@ const AdminFinanceiro = () => {
       
       <ProductListingPopup
         open={isProductListingOpen}
-        onOpenChange={() => setIsProductListingOpen(false)}
+        onClose={() => setIsProductListingOpen(false)}
         productListingData={productListingData}
         onDataChange={handleProductListingDataChange}
         onSave={handleSaveProductListing}
