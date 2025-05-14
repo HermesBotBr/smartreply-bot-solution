@@ -24,6 +24,8 @@ interface FinancialMetricsProps {
   settlementTransactions: SettlementTransaction[];
   releaseOperationsWithOrder: ReleaseOperation[];
   releaseOtherOperations: ReleaseOperation[];
+  startDate?: Date;
+  endDate?: Date;
 }
 
 export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
@@ -41,6 +43,8 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
   settlementTransactions,
   releaseOperationsWithOrder,
   releaseOtherOperations,
+  startDate,
+  endDate
 }) => {
   const [repassesPopupOpen, setRepassesPopupOpen] = useState(false);
   const [releasePopupOpen, setReleasePopupOpen] = useState(false);
@@ -202,6 +206,8 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
         transactions={settlementTransactions}
         open={repassesPopupOpen}
         onClose={() => setRepassesPopupOpen(false)}
+        startDate={startDate}
+        endDate={endDate}
       />
       
       <ReleasePopup
@@ -210,12 +216,16 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
         settlementTransactions={settlementTransactions}
         open={releasePopupOpen}
         onClose={() => setReleasePopupOpen(false)}
+        startDate={startDate}
+        endDate={endDate}
       />
       
       <TransfersPopup
         transfers={transferOperations}
         open={transfersPopupOpen}
         onClose={() => setTransfersPopupOpen(false)}
+        startDate={startDate}
+        endDate={endDate}
       />
     </div>
   );

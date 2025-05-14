@@ -14,6 +14,8 @@ interface ReleasePopupProps {
   operationsWithOrder: ReleaseOperation[];
   otherOperations: ReleaseOperation[];
   settlementTransactions?: SettlementTransaction[]; // Adicionar transações de vendas
+  startDate?: Date; // Data inicial do filtro
+  endDate?: Date; // Data final do filtro
 }
 
 export const ReleasePopup: React.FC<ReleasePopupProps> = ({
@@ -22,6 +24,8 @@ export const ReleasePopup: React.FC<ReleasePopupProps> = ({
   operationsWithOrder,
   otherOperations,
   settlementTransactions = [], // Valor padrão de array vazio
+  startDate,
+  endDate
 }) => {
   useEffect(() => {
     if (open) {
@@ -29,10 +33,29 @@ export const ReleasePopup: React.FC<ReleasePopupProps> = ({
         operationsWithOrder, 
         otherOperations, 
         settlementTransactions,
-        pendingOperations: getPendingOperations()
+        pendingOperations: getPendingOperations(),
+        startDate,
+        endDate
       });
     }
   }, [open]);
+
+  // Função para verificar se uma data está dentro do intervalo selecionado
+  const isDateInRange = (dateStr?: string): boolean => {
+    if (!dateStr || !startDate || !endDate) return true;
+    
+    const date = new Date(dateStr);
+    const start = new Date(startDate);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(endDate);
+    end.setHours(23, 59, 59, 999);
+    
+    return date >= start && date <= end;
+  };
+
+  // Filtrar operações com base na data
+  const filteredOperationsWithOrder = operationsWithOrder.filter(op => isDateInRange(op.date));
+  const filteredOtherOperations = otherOperations.filter(op => isDateInRange(op.date));
 
   // Função para agrupar operações pelo orderId
   const groupOperationsByOrderId = (operations: ReleaseOperation[]): ReleaseOperation[] => {
@@ -96,8 +119,8 @@ export const ReleasePopup: React.FC<ReleasePopupProps> = ({
   };
 
   // Agrupe as operações
-  const groupedOperationsWithOrder = groupOperationsByOrderId(operationsWithOrder);
-  const groupedOtherOperations = groupOperationsByDescription(otherOperations);
+  const groupedOperationsWithOrder = groupOperationsByOrderId(filteredOperationsWithOrder);
+  const groupedOtherOperations = groupOperationsByDescription(filteredOtherOperations);
   const pendingOperations = getPendingOperations();
   
   // Calcule os totais
@@ -111,6 +134,11 @@ export const ReleasePopup: React.FC<ReleasePopupProps> = ({
       <DialogContent className="max-w-5xl w-full">
         <DialogHeader>
           <DialogTitle>Detalhamento de Valor Liberado na Conta</DialogTitle>
+          {startDate && endDate && (
+            <p className="text-sm text-muted-foreground mt-1">
+              Período: {startDate.toLocaleDateString('pt-BR')} até {endDate.toLocaleDateString('pt-BR')}
+            </p>
+          )}
         </DialogHeader>
 
         <div className="mt-4 max-h-[500px] overflow-auto">

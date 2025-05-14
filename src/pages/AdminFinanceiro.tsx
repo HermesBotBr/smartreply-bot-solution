@@ -79,6 +79,25 @@ const AdminFinanceiro: React.FC = () => {
     }
   }, [inventoryError]);
 
+  // Reprocessar dados de release quando as datas mudarem
+  useEffect(() => {
+    if (releaseData && startDate && endDate) {
+      console.log("Reprocessando dados de release devido à mudança de datas:", startDate, endDate);
+      const parsed = parseReleaseData(releaseData, startDate, endDate);
+      setMetrics((prev) => ({
+        ...prev,
+        totalReleased: parsed.totalReleased,
+        totalClaims: parsed.totalClaims,
+        totalDebts: parsed.totalDebts,
+        totalTransfers: parsed.totalTransfers,
+        totalCreditCard: parsed.totalCreditCard,
+        totalShippingCashback: parsed.totalShippingCashback,
+      }));
+      setReleaseOperationsWithOrder(parsed.operationsWithOrder);
+      setReleaseOtherOperations(parsed.otherOperations);
+    }
+  }, [startDate, endDate, releaseData]);
+
   /* ------------------------------------------------------------------ */
   /* handlers                                                            */
   /* ------------------------------------------------------------------ */
@@ -155,6 +174,8 @@ const AdminFinanceiro: React.FC = () => {
     otherOperations: ReleaseOperation[];
   } => {
     try {
+      console.log("Analisando dados de release com datas:", start?.toISOString(), end?.toISOString());
+      
       const lines = data.split('\n').filter((l) => l.trim());
       if (lines.length < 3) {
         return {
@@ -193,6 +214,7 @@ const AdminFinanceiro: React.FC = () => {
         >;
         predominantDescription: string;
         sourceId: string; // Incluir sourceId para rastreamento
+        date: string; // Adicionar data para filtragem
       }
 
       const operationsBySourceId: Record<string, BySource> = {};
@@ -200,6 +222,7 @@ const AdminFinanceiro: React.FC = () => {
       /* agrupar */
       filtered.forEach((line) => {
         const cols = line.split(',');
+        const date = cols[0]; // Capturar a data
         const sourceId = cols[1];
         const desc = cols[4];
         const credit = parseFloat(cols[5]) || 0;
@@ -212,6 +235,7 @@ const AdminFinanceiro: React.FC = () => {
             descriptions: {},
             predominantDescription: '',
             sourceId,  // Armazenar o sourceId
+            date,      // Armazenar a data
           };
         }
         const op = operationsBySourceId[sourceId];
@@ -282,6 +306,7 @@ const AdminFinanceiro: React.FC = () => {
           itm = cols[7],
           ttl = cols[8]?.replace(/"/g, '') || '';
         const desc = op.predominantDescription;
+        const date = op.date; // Usar a data da operação
 
         if (desc === 'payment' && net > 0 && ref && itm) {
           operationsWithOrder.push({
@@ -290,6 +315,7 @@ const AdminFinanceiro: React.FC = () => {
             title: ttl || ref,
             amount: net,
             sourceId, // Incluir sourceId para rastreamento
+            date,     // Incluir data para filtragem
           });
         } else if (net !== 0) {
           const key = desc || 'Sem descrição';
@@ -297,10 +323,13 @@ const AdminFinanceiro: React.FC = () => {
             description: key, 
             amount: net,
             sourceId, // Incluir sourceId para rastreamento
+            date,     // Incluir data para filtragem
           });
         }
       });
 
+      console.log(`Operações filtradas por data: ${operationsWithOrder.length} com orderId, ${otherOperations.length} outras`);
+      
       return {
         totalReleased,
         totalClaims,
@@ -390,6 +419,8 @@ const AdminFinanceiro: React.FC = () => {
               settlementTransactions={settlementTransactions}
               releaseOperationsWithOrder={releaseOperationsWithOrder}
               releaseOtherOperations={releaseOtherOperations}
+              startDate={startDate}
+              endDate={endDate}
             />
           </TabsContent>
 
