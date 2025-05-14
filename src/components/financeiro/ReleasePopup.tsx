@@ -14,6 +14,8 @@ interface ReleasePopupProps {
   operationsWithOrder: ReleaseOperation[];
   otherOperations: ReleaseOperation[];
   settlementTransactions?: SettlementTransaction[]; // Adicionar transações de vendas
+  startDate?: Date;  // Add start date for filtering
+  endDate?: Date;    // Add end date for filtering
 }
 
 export const ReleasePopup: React.FC<ReleasePopupProps> = ({
@@ -22,6 +24,8 @@ export const ReleasePopup: React.FC<ReleasePopupProps> = ({
   operationsWithOrder,
   otherOperations,
   settlementTransactions = [], // Valor padrão de array vazio
+  startDate,  // Use start date
+  endDate     // Use end date
 }) => {
   useEffect(() => {
     if (open) {
@@ -29,10 +33,11 @@ export const ReleasePopup: React.FC<ReleasePopupProps> = ({
         operationsWithOrder, 
         otherOperations, 
         settlementTransactions,
-        pendingOperations: getPendingOperations()
+        pendingOperations: getPendingOperations(),
+        dateRange: { startDate, endDate }
       });
     }
-  }, [open]);
+  }, [open, startDate, endDate]);
 
   // Função para agrupar operações pelo orderId
   const groupOperationsByOrderId = (operations: ReleaseOperation[]): ReleaseOperation[] => {
@@ -89,28 +94,66 @@ export const ReleasePopup: React.FC<ReleasePopupProps> = ({
         itemId: transaction.itemId || '',
         title: transaction.title || '',
         amount: transaction.netValue || 0,
-        description: 'Venda aguardando liberação'
+        description: 'Venda aguardando liberação',
+        date: transaction.date // Include the date for filtering
       }));
 
     return pendingOps;
   };
 
-  // Agrupe as operações
-  const groupedOperationsWithOrder = groupOperationsByOrderId(operationsWithOrder);
-  const groupedOtherOperations = groupOperationsByDescription(otherOperations);
-  const pendingOperations = getPendingOperations();
+  // Filter operations based on date range if provided
+  const filterByDateRange = (operations: ReleaseOperation[]): ReleaseOperation[] => {
+    if (!startDate || !endDate) return operations;
+    
+    return operations.filter(op => {
+      if (!op.date) return true; // Keep operations without a date
+      
+      try {
+        const opDate = new Date(op.date);
+        const start = new Date(startDate);
+        start.setHours(0, 0, 0, 0);
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        
+        return opDate >= start && opDate <= end;
+      } catch (error) {
+        console.error('Error filtering by date range:', error);
+        return true; // Include if there's an error parsing the date
+      }
+    });
+  };
+
+  // Agrupe as operações e filtre por data
+  const filteredOperationsWithOrder = filterByDateRange(operationsWithOrder);
+  const filteredOtherOperations = filterByDateRange(otherOperations);
+  const filteredPendingOperations = filterByDateRange(getPendingOperations());
+  
+  const groupedOperationsWithOrder = groupOperationsByOrderId(filteredOperationsWithOrder);
+  const groupedOtherOperations = groupOperationsByDescription(filteredOtherOperations);
   
   // Calcule os totais
   const totalOperationsWithOrder = groupedOperationsWithOrder.reduce((sum, op) => sum + op.amount, 0);
   const totalOtherOperations = groupedOtherOperations.reduce((sum, op) => sum + op.amount, 0);
-  const totalPendingOperations = pendingOperations.reduce((sum, op) => sum + op.amount, 0);
+  const totalPendingOperations = filteredPendingOperations.reduce((sum, op) => sum + op.amount, 0);
   const grandTotal = totalOperationsWithOrder + totalOtherOperations;
+
+  // Format date range for display
+  const dateRangeText = startDate && endDate 
+    ? `De ${startDate.toLocaleDateString('pt-BR')} até ${endDate.toLocaleDateString('pt-BR')}`
+    : 'Período completo';
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-5xl w-full">
         <DialogHeader>
-          <DialogTitle>Detalhamento de Valor Liberado na Conta</DialogTitle>
+          <DialogTitle>
+            Detalhamento de Valor Liberado na Conta
+            {startDate && endDate && (
+              <span className="block text-sm font-normal text-muted-foreground mt-1">
+                {dateRangeText}
+              </span>
+            )}
+          </DialogTitle>
         </DialogHeader>
 
         <div className="mt-4 max-h-[500px] overflow-auto">
@@ -163,7 +206,7 @@ export const ReleasePopup: React.FC<ReleasePopupProps> = ({
               </tbody>
             </table>
             
-            {pendingOperations.length > 0 && (
+            {filteredPendingOperations.length > 0 && (
               <>
                 <h4 className="font-semibold text-base mt-6 mb-2">Operações com ORDER_ID ainda não liberadas</h4>
                 <table className="w-full border text-sm mb-4">
@@ -176,7 +219,7 @@ export const ReleasePopup: React.FC<ReleasePopupProps> = ({
                     </tr>
                   </thead>
                   <tbody>
-                    {pendingOperations.map((op, idx) => (
+                    {filteredPendingOperations.map((op, idx) => (
                       <tr key={idx} className="hover:bg-gray-50">
                         <td className="p-2 border">{op.orderId || '-'}</td>
                         <td className="p-2 border">{op.itemId || '-'}</td>
@@ -195,7 +238,7 @@ export const ReleasePopup: React.FC<ReleasePopupProps> = ({
             
             <div className="mt-4 p-2 bg-gray-100 rounded border">
               <p className="font-bold text-right">Valor Total Liberado: R$ {grandTotal.toFixed(2)}</p>
-              {pendingOperations.length > 0 && (
+              {filteredPendingOperations.length > 0 && (
                 <p className="font-bold text-right text-amber-600">Valor Total Pendente: R$ {totalPendingOperations.toFixed(2)}</p>
               )}
             </div>
