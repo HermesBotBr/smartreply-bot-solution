@@ -47,12 +47,16 @@ export function useAdminSalesData() {
       setIsLoading(true);
       setError(null);
       
+      // Format dates with slashes instead of hyphens
+      const formattedStartDate = startDate.replace(/-/g, '/');
+      const formattedEndDate = endDate.replace(/-/g, '/');
+      
       const response = await axios.get<AdminSalesResponse>(
         `${getNgrokUrl(`/vendas_adm`)}`, {
           params: {
             seller_id: sellerId,
-            start_date: startDate,
-            end_date: endDate
+            start_date: formattedStartDate,
+            end_date: formattedEndDate
           }
         }
       );

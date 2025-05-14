@@ -19,8 +19,9 @@ export function useSalesData(
       return;
     }
 
-    const formattedStartDate = startDate.toISOString().split('T')[0] + 'T00:00:00Z';
-    const formattedEndDate = endDate.toISOString().split('T')[0] + 'T23:59:59Z';
+    // Format dates with DD/MM/YYYY format instead of ISO
+    const formattedStartDate = `${startDate.getDate().toString().padStart(2, '0')}/${(startDate.getMonth() + 1).toString().padStart(2, '0')}/${startDate.getFullYear()}T00:00:00Z`;
+    const formattedEndDate = `${endDate.getDate().toString().padStart(2, '0')}/${(endDate.getMonth() + 1).toString().padStart(2, '0')}/${endDate.getFullYear()}T23:59:59Z`;
 
     try {
       setIsLoading(true);

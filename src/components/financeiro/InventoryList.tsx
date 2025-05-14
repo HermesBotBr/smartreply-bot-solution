@@ -36,11 +36,11 @@ export function InventoryList({ inventoryItems, isLoading, onRefreshDates }: Inv
     item.itemId.toLowerCase().includes(searchQuery.toLowerCase())
   );
   
-  // Function to format date for API call (DD/MM/YYYY to YYYY-MM-DD)
+  // Function to format date from DD/MM/YYYY to MM/DD/YYYY for the API call
   const formatDateForApi = (dateStr: string): string => {
     if (!dateStr) return '';
     const [day, month, year] = dateStr.split('/');
-    return `${year}-${month}-${day}`;
+    return `${day}/${month}/${year}`; // Keep the slash format
   };
   
   // Function to get today's date in DD/MM/YYYY format
