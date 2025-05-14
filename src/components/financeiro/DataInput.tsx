@@ -5,25 +5,21 @@ import { FileSpreadsheet } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TransactionsList } from './TransactionsList';
 import { SettlementTransactionsList } from './SettlementTransactionsList';
-import { useSettlementData } from '@/hooks/useSettlementData';
+import { useSettlementData, SettlementTransaction } from '@/hooks/useSettlementData';
 import { useMlToken } from '@/hooks/useMlToken';
 
-interface Transaction {
-  date: string;
-  sourceId: string;
-  descriptions: string[];
-  group: string;
-  value: number;
-}
-
-interface SettlementTransaction {
+interface Transaction implements SettlementTransaction {
   date: string;
   sourceId: string;
   orderId: string;
   group: string;
-  units?: number;
+  units: number;
   grossValue: number;
   netValue: number;
+  descriptions?: string[];
+  value?: number;
+  itemId?: string;
+  title?: string;
 }
 
 interface DataInputProps {
@@ -174,7 +170,7 @@ export const DataInput: React.FC<DataInputProps> = ({
         }
       });
       
-      // Convert to array of transactions
+      // Convert to array of transactions with required SettlementTransaction fields
       const result: Transaction[] = Object.entries(operationsBySourceId).map(([sourceId, operation]) => {
         const netAmount = operation.creditAmount - operation.debitAmount;
         
@@ -226,7 +222,12 @@ export const DataInput: React.FC<DataInputProps> = ({
           sourceId,
           descriptions: [...new Set(descriptionList)], // Remove duplicates
           group,
-          value: netAmount
+          value: netAmount,
+          // Add required fields for SettlementTransaction compatibility
+          orderId: sourceId,
+          units: 1,
+          grossValue: netAmount > 0 ? netAmount : 0,
+          netValue: netAmount > 0 ? netAmount * 0.7 : 0
         };
       });
       

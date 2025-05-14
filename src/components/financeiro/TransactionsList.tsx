@@ -8,12 +8,16 @@ export interface TransactionsListProps {
   transactions: SettlementTransaction[];
   startDate?: Date;
   endDate?: Date;
+  renderActions?: (transaction: SettlementTransaction) => React.ReactNode;
+  showFooterTotals?: boolean;
 }
 
 export const TransactionsList: React.FC<TransactionsListProps> = ({ 
   transactions,
   startDate,
-  endDate
+  endDate,
+  renderActions,
+  showFooterTotals = false
 }) => {
   return (
     <Card>
@@ -41,6 +45,7 @@ export const TransactionsList: React.FC<TransactionsListProps> = ({
                   <TableHead>Quantidade</TableHead>
                   <TableHead className="text-right">Valor Bruto</TableHead>
                   <TableHead className="text-right">Valor Líquido</TableHead>
+                  {renderActions && <TableHead>Ações</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -56,9 +61,34 @@ export const TransactionsList: React.FC<TransactionsListProps> = ({
                     <TableCell className="text-right">
                       {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(transaction.netValue)}
                     </TableCell>
+                    {renderActions && (
+                      <TableCell>
+                        {renderActions(transaction)}
+                      </TableCell>
+                    )}
                   </TableRow>
                 ))}
               </TableBody>
+              {showFooterTotals && (
+                <TableFooter>
+                  <TableRow>
+                    <TableCell colSpan={3}>Totais</TableCell>
+                    <TableCell>
+                      {transactions.reduce((sum, t) => sum + (t.units || 0), 0)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
+                        transactions.reduce((sum, t) => sum + t.grossValue, 0)
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
+                        transactions.reduce((sum, t) => sum + t.netValue, 0)
+                      )}
+                    </TableCell>
+                  </TableRow>
+                </TableFooter>
+              )}
             </Table>
           </div>
         )}

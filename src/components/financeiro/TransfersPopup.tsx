@@ -16,6 +16,7 @@ import { toast } from '@/hooks/use-toast';
 import { useMlToken } from '@/hooks/useMlToken';
 import { ProductListingPopup } from './ProductListingPopup';
 import { getNgrokUrl } from '@/config/api';
+import { SettlementTransaction } from '@/hooks/useSettlementData';
 
 interface TransfersPopupProps {
   open: boolean;
@@ -42,15 +43,21 @@ interface ApiDescription {
   valor: string;
 }
 
-// Define a transaction interface that matches what we're creating
-interface TransferTransaction {
+// Updated to implement SettlementTransaction
+interface TransferTransaction implements SettlementTransaction {
   date: string;
   sourceId: string;
-  descriptions: string[];
+  orderId: string;
   group: string;
+  units: number;
+  grossValue: number;
+  netValue: number;
+  descriptions: string[];
   value: number;
   totalDeclared: number;
   manualDescriptions: TransferDescription[];
+  itemId?: string;
+  title?: string;
 }
 
 interface Product {
@@ -290,9 +297,13 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
     return {
       date: currentDate,  // Use a valid date string instead of empty string
       sourceId: transfer.sourceId || '',
+      orderId: transfer.sourceId || '', // Using sourceId as orderId for compatibility
       descriptions: allDescriptions,
       group: 'Transferência',
       value: transfer.amount,
+      units: 1, // Default to 1 unit for transfers
+      grossValue: transfer.amount,
+      netValue: transfer.amount * 0.7, // Approximation for compatibility
       totalDeclared: totalDeclared,
       manualDescriptions: transfer.manualDescriptions
     };
