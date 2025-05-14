@@ -15,8 +15,11 @@ export function InventoryItemCard({ item, salesCount = 0 }: InventoryItemCardPro
   const weightedAverageCost = item.purchases.reduce((total, purchase) => 
     total + (purchase.unitCost * purchase.quantity), 0) / item.totalQuantity;
   
-  // Calculate total inventory value
-  const totalInventoryValue = item.totalQuantity * weightedAverageCost;
+  // Calculate actual inventory after sales
+  const actualInventory = Math.max(0, item.totalQuantity - salesCount);
+  
+  // Calculate total inventory value based on actual inventory
+  const totalInventoryValue = actualInventory * weightedAverageCost;
 
   return (
     <Card className="h-full">
@@ -35,7 +38,8 @@ export function InventoryItemCard({ item, salesCount = 0 }: InventoryItemCardPro
         <div className="grid grid-cols-2 gap-4 mb-4">
           <div>
             <p className="text-sm text-muted-foreground">Estoque Total</p>
-            <p className="text-xl font-semibold">{item.totalQuantity} unidades</p>
+            <p className="text-xl font-semibold">{actualInventory} unidades</p>
+            <p className="text-xs text-muted-foreground">(Compras: {item.totalQuantity} - Vendas: {salesCount})</p>
           </div>
           <div>
             <p className="text-sm text-muted-foreground">Custo Médio</p>
