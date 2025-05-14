@@ -2,14 +2,16 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Warehouse } from 'lucide-react';
+import { Warehouse, ShoppingBag } from 'lucide-react';
 import { InventoryItem } from '@/types/inventory';
 
 interface InventoryItemCardProps {
   item: InventoryItem;
+  salesCount: number;
+  salesLoading?: boolean;
 }
 
-export function InventoryItemCard({ item }: InventoryItemCardProps) {
+export function InventoryItemCard({ item, salesCount, salesLoading = false }: InventoryItemCardProps) {
   // Calculate weighted average cost
   const weightedAverageCost = item.purchases.reduce((total, purchase) => 
     total + (purchase.unitCost * purchase.quantity), 0) / item.totalQuantity;
@@ -42,9 +44,22 @@ export function InventoryItemCard({ item }: InventoryItemCardProps) {
           </div>
         </div>
         
-        <div className="mb-2">
-          <p className="text-sm text-muted-foreground">Valor Total em Estoque</p>
-          <p className="text-lg font-semibold text-primary">R$ {totalInventoryValue.toFixed(2)}</p>
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          <div>
+            <p className="text-sm text-muted-foreground">Valor Total em Estoque</p>
+            <p className="text-lg font-semibold text-primary">R$ {totalInventoryValue.toFixed(2)}</p>
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground">Vendas dês da última reposição</p>
+            {salesLoading ? (
+              <div className="animate-pulse h-6 bg-gray-200 rounded w-16 mt-1"></div>
+            ) : (
+              <div className="flex items-center">
+                <ShoppingBag className="h-4 w-4 text-amber-500 mr-1" />
+                <p className="text-lg font-semibold text-amber-500">{salesCount} unidades</p>
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="mt-4">

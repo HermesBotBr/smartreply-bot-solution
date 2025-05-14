@@ -1,450 +1,329 @@
-
 import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft } from 'lucide-react';
-import { DateRangeFilterSection } from '@/components/dashboard/metrics/DateRangeFilterSection';
-import { FinancialMetrics } from '@/components/financeiro/FinancialMetrics';
-import { DataInput } from '@/components/financeiro/DataInput';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useInventoryData } from '@/hooks/useInventoryData';
 import { InventoryList } from '@/components/financeiro/InventoryList';
+import { FinancialMetrics } from '@/components/financeiro/FinancialMetrics';
+import { TransactionsList } from '@/components/financeiro/TransactionsList';
+import { SettlementTransactionsList } from '@/components/financeiro/SettlementTransactionsList';
+import { Button } from '@/components/ui/button';
+import { DateRangePicker } from '@/components/dashboard/metrics/DateRangePicker';
+import { format } from 'date-fns';
+import { DataInput } from '@/components/financeiro/DataInput';
+import { ShieldCheck, FileText, Store, Package } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
+import { ReleasePopup } from '@/components/financeiro/ReleasePopup';
+import { RepassesPopup } from '@/components/financeiro/RepassesPopup';
+import { TransfersPopup } from '@/components/financeiro/TransfersPopup';
+import { ProductListingPopup } from '@/components/financeiro/ProductListingPopup';
+import { useSettlementData } from '@/hooks/useSettlementData';
 import { useNavigate } from 'react-router-dom';
 import { useMlToken } from '@/hooks/useMlToken';
-import { useSettlementData } from '@/hooks/useSettlementData';
-import { useInventoryData } from '@/hooks/useInventoryData';
-import { toast } from 'sonner';
-import { ReleaseOperation } from '@/types/ReleaseOperation';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 
-const AdminFinanceiro: React.FC = () => {
-  /* ------------------------------------------------------------------ */
-  /* state                                                               */
-  /* ------------------------------------------------------------------ */
-  const [releaseOperationsWithOrder, setReleaseOperationsWithOrder] =
-    useState<ReleaseOperation[]>([]);
-  const [releaseOtherOperations, setReleaseOtherOperations] = useState<
-    ReleaseOperation[]
-  >([]);
-
-  const [startDate, setStartDate] = useState<Date | undefined>(new Date());
-  const [endDate, setEndDate] = useState<Date | undefined>(new Date());
-
-  const [settlementData, setSettlementData] = useState<string>('');
-  const [releaseData, setReleaseData] = useState<string>('');
-
-  const [metrics, setMetrics] = useState({
-    grossSales: 0,
-    totalAmount: 0,
-    unitsSold: 0,
-    totalMLRepasses: 0,
-    totalMLFees: 0,
-    totalReleased: 0,
-    totalClaims: 0,
-    totalDebts: 0,
-    totalTransfers: 0,
-    totalCreditCard: 0,
-    totalShippingCashback: 0,
+const AdminFinanceiro = () => {
+  const [isReleaseOpen, setIsReleaseOpen] = useState(false);
+  const [isRepassesOpen, setIsRepassesOpen] = useState(false);
+  const [isTransfersOpen, setIsTransfersOpen] = useState(false);
+  const [isProductListingOpen, setIsProductListingOpen] = useState(false);
+  const [date, setDate] = useState<Date | undefined>(new Date());
+  const [dateRange, setDateRange] = useState<Date | undefined>({
+    from: new Date(new Date().setDate(new Date().getDate() - 7)),
+    to: new Date(),
   });
-
-  const [activeTab, setActiveTab] = useState<'metricas' | 'entrada' | 'estoque'>('metricas');
-
-  /* ------------------------------------------------------------------ */
-  /* hooks / data                                                        */
-  /* ------------------------------------------------------------------ */
+	const [settlementDateRange, setSettlementDateRange] = useState<Date | undefined>({
+    from: new Date(new Date().setDate(new Date().getDate() - 7)),
+    to: new Date(),
+  });
+  const [releaseData, setReleaseData] = useState('');
+  const [repassesData, setRepassesData] = useState('');
+  const [transfersData, setTransfersData] = useState('');
+  const [productListingData, setProductListingData] = useState('');
+  const [transactionsData, setTransactionsData] = useState('');
+  const [settlementTransactionsData, setSettlementTransactionsData] = useState('');
+  const [isMobile] = useMediaQuery('(max-width: 768px)');
+  const mlToken = useMlToken();
   const navigate = useNavigate();
 
-  const mlToken = useMlToken();
-  let sellerId = '681274853';
-  if (mlToken && typeof mlToken === 'object' && 'seller_id' in mlToken) {
-    sellerId = (mlToken as { seller_id: string }).seller_id;
-  }
+  const { settlementData, isLoading: settlementLoading, error: settlementError, refetch: settlementRefetch } = useSettlementData(
+    '681274853',
+    settlementDateRange?.from,
+    settlementDateRange?.to,
+  );
 
-  const {
-    settlementTransactions,
-    totalGrossSales,
-    totalNetSales,
-    totalUnits,
-    isLoading: settlementLoading,
-    refetch: refetchSettlement,
-  } = useSettlementData(sellerId, startDate, endDate, true);
-
-  const { 
-    items: inventoryItems, 
-    isLoading: inventoryLoading, 
-    error: inventoryError 
-  } = useInventoryData(sellerId);
-
-  // Show toast if there's an inventory error
   useEffect(() => {
-    if (inventoryError) {
-      toast.error(`Erro ao carregar dados de estoque: ${inventoryError.message}`);
+    if (!mlToken) {
+      navigate('/');
     }
-  }, [inventoryError]);
+  }, [mlToken, navigate]);
 
-  // Reprocessar dados de release quando as datas mudarem
-  useEffect(() => {
-    if (releaseData && startDate && endDate) {
-      console.log("Reprocessando dados de release devido à mudança de datas:", startDate, endDate);
-      const parsed = parseReleaseData(releaseData, startDate, endDate);
-      setMetrics((prev) => ({
-        ...prev,
-        totalReleased: parsed.totalReleased,
-        totalClaims: parsed.totalClaims,
-        totalDebts: parsed.totalDebts,
-        totalTransfers: parsed.totalTransfers,
-        totalCreditCard: parsed.totalCreditCard,
-        totalShippingCashback: parsed.totalShippingCashback,
-      }));
-      setReleaseOperationsWithOrder(parsed.operationsWithOrder);
-      setReleaseOtherOperations(parsed.otherOperations);
-    }
-  }, [startDate, endDate, releaseData]);
+  const handleDateChange = (newDate: Date | undefined) => {
+    setDate(newDate);
+  };
 
-  /* ------------------------------------------------------------------ */
-  /* handlers                                                            */
-  /* ------------------------------------------------------------------ */
-  const handleFilter = () => {
-    if (!startDate || !endDate) {
-      toast.error('Selecione um período válido');
-      return;
-    }
+  const handleDateRangeChange = (newDateRange: { from?: Date; to?: Date }) => {
+    setDateRange(newDateRange);
+  };
 
-    refetchSettlement();
-
-    if (releaseData) {
-      const parsed = parseReleaseData(releaseData, startDate, endDate);
-      setMetrics((prev) => ({
-        ...prev,
-        totalReleased: parsed.totalReleased,
-        totalClaims: parsed.totalClaims,
-        totalDebts: parsed.totalDebts,
-        totalTransfers: parsed.totalTransfers,
-        totalCreditCard: parsed.totalCreditCard,
-        totalShippingCashback: parsed.totalShippingCashback,
-      }));
-    }
-
-    toast.info(
-      `Filtrando de ${startDate.toLocaleDateString()} até ${endDate.toLocaleDateString()}`,
-    );
+	const handleSettlementDateRangeChange = (newDateRange: { from?: Date; to?: Date }) => {
+    setSettlementDateRange(newDateRange);
   };
 
   const handleReleaseDataChange = (data: string) => {
     setReleaseData(data);
-    // Save release data to localStorage for date lookups in inventory
-    localStorage.setItem('releaseData', data);
-    
-    const parsed = parseReleaseData(data, startDate, endDate);
-    setMetrics((prev) => ({
-      ...prev,
-      totalReleased: parsed.totalReleased,
-      totalClaims: parsed.totalClaims,
-      totalDebts: parsed.totalDebts,
-      totalTransfers: parsed.totalTransfers,
-      totalCreditCard: parsed.totalCreditCard,
-      totalShippingCashback: parsed.totalShippingCashback,
-    }));
-    setReleaseOperationsWithOrder(parsed.operationsWithOrder);
-    setReleaseOtherOperations(parsed.otherOperations);
   };
 
-  /* ------------------------------------------------------------------ */
-  /* utils                                                               */
-  /* ------------------------------------------------------------------ */
-  const isDateInRange = (dateStr: string, start?: Date, end?: Date): boolean => {
-    if (!start || !end) return true;
-    const d = new Date(dateStr);
-    const s = new Date(start);
-    s.setHours(0, 0, 0, 0);
-    const e = new Date(end);
-    e.setHours(23, 59, 59, 999);
-    return d >= s && d <= e;
+  const handleRepassesDataChange = (data: string) => {
+    setRepassesData(data);
   };
 
-  const parseReleaseData = (
-    data: string,
-    start?: Date,
-    end?: Date,
-  ): {
-    totalReleased: number;
-    totalClaims: number;
-    totalDebts: number;
-    totalTransfers: number;
-    totalCreditCard: number;
-    totalShippingCashback: number;
-    operationsWithOrder: ReleaseOperation[];
-    otherOperations: ReleaseOperation[];
-  } => {
-    try {
-      console.log("Analisando dados de release com datas:", start?.toISOString(), end?.toISOString());
-      
-      const lines = data.split('\n').filter((l) => l.trim());
-      if (lines.length < 3) {
-        return {
-          totalReleased: 0,
-          totalClaims: 0,
-          totalDebts: 0,
-          totalTransfers: 0,
-          totalCreditCard: 0,
-          totalShippingCashback: 0,
-          operationsWithOrder: [],
-          otherOperations: [],
-        };
-      }
-
-      const dataLines = lines.slice(2).filter((l) => !l.startsWith(',,,total'));
-
-      const filtered = dataLines.filter((l) => {
-        const cols = l.split(',');
-        if (cols[4]?.includes('initial_available_balance')) return false;
-        return isDateInRange(cols[0], start, end);
-      });
-
-      let totalReleased = 0,
-        totalClaims = 0,
-        totalDebts = 0,
-        totalTransfers = 0,
-        totalCreditCard = 0,
-        totalShippingCashback = 0;
-
-      interface BySource {
-        creditAmount: number;
-        debitAmount: number;
-        descriptions: Record<
-          string,
-          { creditCount: number; debitCount: number }
-        >;
-        predominantDescription: string;
-        sourceId: string; // Incluir sourceId para rastreamento
-        date: string; // Adicionar data para filtragem
-      }
-
-      const operationsBySourceId: Record<string, BySource> = {};
-
-      /* agrupar */
-      filtered.forEach((line) => {
-        const cols = line.split(',');
-        const date = cols[0]; // Capturar a data
-        const sourceId = cols[1];
-        const desc = cols[4];
-        const credit = parseFloat(cols[5]) || 0;
-        const debit = parseFloat(cols[6]) || 0;
-
-        if (!operationsBySourceId[sourceId]) {
-          operationsBySourceId[sourceId] = {
-            creditAmount: 0,
-            debitAmount: 0,
-            descriptions: {},
-            predominantDescription: '',
-            sourceId,  // Armazenar o sourceId
-            date,      // Armazenar a data
-          };
-        }
-        const op = operationsBySourceId[sourceId];
-        op.creditAmount += credit;
-        op.debitAmount += debit;
-
-        if (!op.descriptions[desc]) {
-          op.descriptions[desc] = { creditCount: 0, debitCount: 0 };
-        }
-        if (credit > 0) op.descriptions[desc].creditCount++;
-        if (debit > 0) op.descriptions[desc].debitCount++;
-      });
-
-      /* predominância */
-      Object.values(operationsBySourceId).forEach((op) => {
-        const net = op.creditAmount - op.debitAmount;
-        let best = '',
-          max = 0;
-        Object.entries(op.descriptions).forEach(([d, c]) => {
-          const cnt = net >= 0 ? c.creditCount : c.debitCount;
-          if (cnt > max) {
-            max = cnt;
-            best = d;
-          }
-        });
-        op.predominantDescription = best;
-      });
-
-      /* totais */
-      Object.values(operationsBySourceId).forEach((op) => {
-        const net = op.creditAmount - op.debitAmount;
-        switch (op.predominantDescription) {
-          case 'payment':
-            totalReleased += net;
-            break;
-          case 'reserve_for_debt_payment':
-            totalDebts += net;
-            break;
-          case 'credit_payment':
-            totalCreditCard += net;
-            break;
-          case 'reserve_for_dispute':
-          case 'refund':
-          case 'mediation':
-          case 'reserve_for_bpp_shipping_return':
-            totalClaims += net;
-            break;
-          case 'payout':
-          case 'reserve_for_payout':
-            totalTransfers += net;
-            break;
-          case 'shipping':
-          case 'cashback':
-            totalShippingCashback += net;
-            break;
-        }
-      });
-
-      /* listas para popup - usando lógica atualizada para considerar o agrupamento por sourceId */
-      const operationsWithOrder: ReleaseOperation[] = [];
-      const otherOperations: ReleaseOperation[] = [];
-
-      Object.entries(operationsBySourceId).forEach(([sourceId, op]) => {
-        const net = op.creditAmount - op.debitAmount;
-        const line = filtered.find((l) => l.split(',')[1] === sourceId)!;
-        const cols = line.split(',');
-        const ref = cols[2],
-          itm = cols[7],
-          ttl = cols[8]?.replace(/"/g, '') || '';
-        const desc = op.predominantDescription;
-        const date = op.date; // Usar a data da operação
-
-        if (desc === 'payment' && net > 0 && ref && itm) {
-          operationsWithOrder.push({
-            orderId: ref,
-            itemId: itm,
-            title: ttl || ref,
-            amount: net,
-            sourceId, // Incluir sourceId para rastreamento
-            date,     // Incluir data para filtragem
-          });
-        } else if (net !== 0) {
-          const key = desc || 'Sem descrição';
-          otherOperations.push({ 
-            description: key, 
-            amount: net,
-            sourceId, // Incluir sourceId para rastreamento
-            date,     // Incluir data para filtragem
-          });
-        }
-      });
-
-      console.log(`Operações filtradas por data: ${operationsWithOrder.length} com orderId, ${otherOperations.length} outras`);
-      
-      return {
-        totalReleased,
-        totalClaims,
-        totalDebts,
-        totalTransfers,
-        totalCreditCard,
-        totalShippingCashback,
-        operationsWithOrder,
-        otherOperations,
-      };
-    } catch (error) {
-      console.error('Error parsing release data:', error);
-      return {
-        totalReleased: 0,
-        totalClaims: 0,
-        totalDebts: 0,
-        totalTransfers: 0,
-        totalCreditCard: 0,
-        totalShippingCashback: 0,
-        operationsWithOrder: [],
-        otherOperations: [],
-      };
-    }
+  const handleTransfersDataChange = (data: string) => {
+    setTransfersData(data);
   };
 
-  /* ------------------------------------------------------------------ */
-  /* side‑effects                                                        */
-  /* ------------------------------------------------------------------ */
+  const handleProductListingDataChange = (data: string) => {
+    setProductListingData(data);
+  };
+
+  const handleTransactionsDataChange = (data: string) => {
+    setTransactionsData(data);
+  };
+
+  const handleSettlementTransactionsDataChange = (data: string) => {
+    setSettlementTransactionsData(data);
+  };
+
+  const handleSaveRelease = () => {
+    localStorage.setItem('releaseData', releaseData);
+    toast({
+      title: "Dados de lançamentos salvos",
+      description: "Os dados foram armazenados com sucesso.",
+    });
+    setIsReleaseOpen(false);
+  };
+
+  const handleSaveRepasses = () => {
+    localStorage.setItem('repassesData', repassesData);
+    toast({
+      title: "Dados de repasses salvos",
+      description: "Os dados foram armazenados com sucesso.",
+    });
+    setIsRepassesOpen(false);
+  };
+
+  const handleSaveTransfers = () => {
+    localStorage.setItem('transfersData', transfersData);
+    toast({
+      title: "Dados de transferências salvos",
+      description: "Os dados foram armazenados com sucesso.",
+    });
+    setIsTransfersOpen(false);
+  };
+
+  const handleSaveProductListing = () => {
+    localStorage.setItem('productListingData', productListingData);
+    toast({
+      title: "Dados de listagem de produtos salvos",
+      description: "Os dados foram armazenados com sucesso.",
+    });
+    setIsProductListingOpen(false);
+  };
+
+  const handleSaveTransactions = () => {
+    localStorage.setItem('transactionsData', transactionsData);
+    toast({
+      title: "Dados de transações salvos",
+      description: "Os dados foram armazenados com sucesso.",
+    });
+  };
+
+  const handleSaveSettlementTransactions = () => {
+    localStorage.setItem('settlementTransactionsData', settlementTransactionsData);
+    toast({
+      title: "Dados de transações de liquidação salvos",
+      description: "Os dados foram armazenados com sucesso.",
+    });
+  };
+
+  // Fixed sellerId for testing - in production this would come from authentication
+  const sellerId = '681274853';
+  
+  const { items: inventoryItems, isLoading: inventoryLoading } = useInventoryData(sellerId);
+  
+  // Load data from localStorage on component mount
   useEffect(() => {
-    setMetrics((prev) => ({
-      ...prev,
-      grossSales: totalGrossSales,
-      totalAmount: totalGrossSales,
-      unitsSold: totalUnits,
-      totalMLRepasses: totalNetSales,
-      totalMLFees: totalGrossSales - totalNetSales,
-    }));
-  }, [totalGrossSales, totalNetSales, totalUnits]);
+    const savedReleaseData = localStorage.getItem('releaseData');
+    if (savedReleaseData) {
+      setReleaseData(savedReleaseData);
+    }
 
-  /* ------------------------------------------------------------------ */
-  /* render                                                              */
-  /* ------------------------------------------------------------------ */
+    const savedRepassesData = localStorage.getItem('repassesData');
+    if (savedRepassesData) {
+      setRepassesData(savedRepassesData);
+    }
+
+    const savedTransfersData = localStorage.getItem('transfersData');
+    if (savedTransfersData) {
+      setTransfersData(savedTransfersData);
+    }
+
+    const savedProductListingData = localStorage.getItem('productListingData');
+    if (savedProductListingData) {
+      setProductListingData(savedProductListingData);
+    }
+
+    const savedTransactionsData = localStorage.getItem('transactionsData');
+    if (savedTransactionsData) {
+      setTransactionsData(savedTransactionsData);
+    }
+
+    const savedSettlementTransactionsData = localStorage.getItem('settlementTransactionsData');
+    if (savedSettlementTransactionsData) {
+      setSettlementTransactionsData(savedSettlementTransactionsData);
+    }
+  }, []);
+  
   return (
-    <div className="min-h-screen bg-gray-100">
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex items-center mb-6">
-          <Button variant="ghost" onClick={() => navigate('/')} className="mr-2">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Voltar
-          </Button>
-          <h1 className="text-3xl font-bold">Administração Financeira</h1>
-        </div>
-
-        <Tabs
-          defaultValue="metricas"
-          value={activeTab}
-          onValueChange={(value: "metricas" | "entrada" | "estoque") => setActiveTab(value)}
-          className="w-full"
-        >
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="metricas">Métricas</TabsTrigger>
-            <TabsTrigger value="entrada">Entrada</TabsTrigger>
-            <TabsTrigger value="estoque">Estoque</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="metricas" className="space-y-4 mt-4">
-            <DateRangeFilterSection
-              startDate={startDate}
-              endDate={endDate}
-              onStartDateChange={setStartDate}
-              onEndDateChange={setEndDate}
-              onFilter={handleFilter}
-            />
-
-            <FinancialMetrics
-              grossSales={metrics.grossSales}
-              totalAmount={metrics.totalAmount}
-              unitsSold={metrics.unitsSold}
-              totalMLRepasses={metrics.totalMLRepasses}
-              totalMLFees={metrics.totalMLFees}
-              totalReleased={metrics.totalReleased}
-              totalClaims={metrics.totalClaims}
-              totalDebts={metrics.totalDebts}
-              totalTransfers={metrics.totalTransfers}
-              totalCreditCard={metrics.totalCreditCard}
-              totalShippingCashback={metrics.totalShippingCashback}
-              settlementTransactions={settlementTransactions}
-              releaseOperationsWithOrder={releaseOperationsWithOrder}
-              releaseOtherOperations={releaseOtherOperations}
-              startDate={startDate}
-              endDate={endDate}
-            />
-          </TabsContent>
-
-          <TabsContent value="entrada" className="mt-4">
-            <DataInput
-              settlementData={settlementData}
-              releaseData={releaseData}
-              onSettlementDataChange={setSettlementData}
-              onReleaseDataChange={handleReleaseDataChange}
-              startDate={startDate}
-              endDate={endDate}
-              settlementTransactions={settlementTransactions}
-              settlementLoading={settlementLoading}
-            />
-          </TabsContent>
-
-          <TabsContent value="estoque" className="mt-4">
-            <InventoryList 
-              inventoryItems={inventoryItems || []} 
-              isLoading={inventoryLoading} 
-            />
-          </TabsContent>
-        </Tabs>
-      </div>
+    <div className="container py-10">
+      <h1 className="text-2xl font-bold mb-6">Painel Financeiro Administrativo</h1>
+      
+      <Tabs defaultValue="estoque" className="space-y-4">
+        <TabsList className="grid grid-cols-2 md:grid-cols-4 gap-2">
+          <TabsTrigger value="estoque" className="flex items-center gap-2">
+            <Package className="h-4 w-4" />
+            <span>Estoque</span>
+          </TabsTrigger>
+          <TabsTrigger value="metricas" className="flex items-center gap-2">
+            <ShieldCheck className="h-4 w-4" />
+            <span>Métricas</span>
+          </TabsTrigger>
+          <TabsTrigger value="transacoes" className="flex items-center gap-2">
+            <FileText className="h-4 w-4" />
+            <span>Transações</span>
+          </TabsTrigger>
+          <TabsTrigger value="cadastro" className="flex items-center gap-2">
+            <Store className="h-4 w-4" />
+            <span>Cadastro</span>
+          </TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="estoque" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Gestão de Estoque</CardTitle>
+              <CardDescription>
+                Acompanhe seu inventário, custos médios e valor total de estoque.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <InventoryList 
+                inventoryItems={inventoryItems} 
+                isLoading={inventoryLoading} 
+                sellerId={sellerId}
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="metricas" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Métricas Financeiras</CardTitle>
+              <CardDescription>
+                Analise o desempenho financeiro do seu negócio.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <FinancialMetrics />
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="transacoes" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Transações</CardTitle>
+              <CardDescription>
+                Visualize e gerencie suas transações financeiras.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-4">
+              <DateRangePicker date={settlementDateRange} onDateChange={handleSettlementDateRangeChange} />
+              <SettlementTransactionsList settlementData={settlementData} isLoading={settlementLoading} error={settlementError} refetch={settlementRefetch} />
+              <DataInput
+                label="Transações de Liquidação"
+                value={settlementTransactionsData}
+                onChange={handleSettlementTransactionsDataChange}
+                onSave={handleSaveSettlementTransactions}
+              />
+              <TransactionsList transactionsData={transactionsData} />
+              <DataInput
+                label="Transações"
+                value={transactionsData}
+                onChange={handleTransactionsDataChange}
+                onSave={handleSaveTransactions}
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="cadastro" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Cadastro de Dados</CardTitle>
+              <CardDescription>
+                Insira e gerencie dados financeiros importantes.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-4">
+              <Button onClick={() => setIsReleaseOpen(true)}>
+                Inserir Dados de Lançamento
+              </Button>
+              <Button onClick={() => setIsRepassesOpen(true)}>
+                Inserir Dados de Repasses
+              </Button>
+              <Button onClick={() => setIsTransfersOpen(true)}>
+                Inserir Dados de Transferências
+              </Button>
+              <Button onClick={() => setIsProductListingOpen(true)}>
+                Inserir Dados de Listagem de Produtos
+              </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+      
+      <ReleasePopup
+        isOpen={isReleaseOpen}
+        onClose={() => setIsReleaseOpen(false)}
+        releaseData={releaseData}
+        onDataChange={handleReleaseDataChange}
+        onSave={handleSaveRelease}
+      />
+      
+      <RepassesPopup
+        isOpen={isRepassesOpen}
+        onClose={() => setIsRepassesOpen(false)}
+        repassesData={repassesData}
+        onDataChange={handleRepassesDataChange}
+        onSave={handleSaveRepasses}
+      />
+      
+      <TransfersPopup
+        isOpen={isTransfersOpen}
+        onClose={() => setIsTransfersOpen(false)}
+        transfersData={transfersData}
+        onDataChange={handleTransfersDataChange}
+        onSave={handleSaveTransfers}
+      />
+      
+      <ProductListingPopup
+        isOpen={isProductListingOpen}
+        onClose={() => setIsProductListingOpen(false)}
+        productListingData={productListingData}
+        onDataChange={handleProductListingDataChange}
+        onSave={handleSaveProductListing}
+      />
     </div>
   );
 };
