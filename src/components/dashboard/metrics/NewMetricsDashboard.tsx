@@ -174,14 +174,21 @@ export function NewMetricsDashboard({ sellerId }: NewMetricsDashboardProps) {
             endDate={endDate}
           />
           
-          <div className="mt-8">
+          {/* Sales section with proper visibility and styling */}
+          <div className="bg-white p-6 rounded-lg shadow-md mt-8">
             <h3 className="text-xl font-semibold mb-4">Vendas por Anúncio</h3>
-            <SalesListBox 
-              salesData={salesData?.sales}
-              settlementTransactions={settlementTransactions}
-              releaseOperationsWithOrder={releaseOperationsWithOrder}
-              isLoading={salesLoading || settlementLoading}
-            />
+            {salesLoading ? (
+              <div className="py-8 text-center">Carregando dados de vendas...</div>
+            ) : (!salesData?.sales || salesData.sales.length === 0) ? (
+              <div className="py-8 text-center">Nenhum dado de venda disponível para o período selecionado</div>
+            ) : (
+              <SalesListBox 
+                salesData={salesData?.sales}
+                settlementTransactions={settlementTransactions}
+                releaseOperationsWithOrder={releaseOperationsWithOrder}
+                isLoading={salesLoading || settlementLoading}
+              />
+            )}
           </div>
         </TabsContent>
         

@@ -139,67 +139,65 @@ export function SalesListBox({
   }, [salesData, settlementTransactions, releaseOperationsWithOrder]);
   
   if (isLoading) {
-    return <div className="py-8 text-center">Carregando dados de vendas...</div>;
+    return <div>Carregando dados de vendas...</div>;
   }
   
   if (!salesByItem || salesByItem.length === 0) {
-    return <div className="py-8 text-center">Nenhum dado de venda disponível para o período selecionado</div>;
+    return <div>Nenhum dado de venda disponível para o período selecionado</div>;
   }
   
   return (
-    <div className="bg-white p-6 rounded-lg shadow-md">
-      <div className="overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Anúncio</TableHead>
-              <TableHead className="text-right">Vendas Totais</TableHead>
-              <TableHead className="text-right">Repasse Total</TableHead>
-              <TableHead className="text-right">Taxas (ML)</TableHead>
-              <TableHead className="text-right">Liberado</TableHead>
-              <TableHead className="text-right">Não Liberado</TableHead>
+    <div className="overflow-x-auto">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Anúncio</TableHead>
+            <TableHead className="text-right">Vendas Totais</TableHead>
+            <TableHead className="text-right">Repasse Total</TableHead>
+            <TableHead className="text-right">Taxas (ML)</TableHead>
+            <TableHead className="text-right">Liberado</TableHead>
+            <TableHead className="text-right">Não Liberado</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {salesByItem.map((item) => (
+            <TableRow key={item.itemId}>
+              <TableCell className="font-medium">
+                {item.title}
+                <div className="text-xs text-muted-foreground">ID: {item.itemId}</div>
+              </TableCell>
+              <TableCell className="text-right">
+                <div>R$ {item.totalSales.toFixed(2)}</div>
+                <div className="text-xs text-muted-foreground">{item.salesCount} unid.</div>
+              </TableCell>
+              <TableCell className="text-right">
+                <div>R$ {item.totalRepasses.toFixed(2)}</div>
+                <div className="text-xs text-muted-foreground">
+                  {((item.totalRepasses / item.totalSales) * 100).toFixed(1)}%
+                </div>
+              </TableCell>
+              <TableCell className="text-right">
+                <div>R$ {item.totalFees.toFixed(2)}</div>
+                <div className="text-xs text-muted-foreground">
+                  {((item.totalFees / item.totalSales) * 100).toFixed(1)}%
+                </div>
+              </TableCell>
+              <TableCell className="text-right">
+                <div>R$ {item.releasedAmount.toFixed(2)}</div>
+                <div className="text-xs text-muted-foreground">
+                  {item.releasedCount} vendas
+                </div>
+              </TableCell>
+              <TableCell className="text-right">
+                <div>R$ {item.notReleasedAmount.toFixed(2)}</div>
+                <div className="text-xs text-muted-foreground">
+                  {item.notReleasedCount} vendas
+                </div>
+              </TableCell>
             </TableRow>
-          </TableHeader>
-          <TableBody>
-            {salesByItem.map((item) => (
-              <TableRow key={item.itemId}>
-                <TableCell className="font-medium">
-                  {item.title}
-                  <div className="text-xs text-muted-foreground">ID: {item.itemId}</div>
-                </TableCell>
-                <TableCell className="text-right">
-                  <div>R$ {item.totalSales.toFixed(2)}</div>
-                  <div className="text-xs text-muted-foreground">{item.salesCount} unid.</div>
-                </TableCell>
-                <TableCell className="text-right">
-                  <div>R$ {item.totalRepasses.toFixed(2)}</div>
-                  <div className="text-xs text-muted-foreground">
-                    {((item.totalRepasses / item.totalSales) * 100).toFixed(1)}%
-                  </div>
-                </TableCell>
-                <TableCell className="text-right">
-                  <div>R$ {item.totalFees.toFixed(2)}</div>
-                  <div className="text-xs text-muted-foreground">
-                    {((item.totalFees / item.totalSales) * 100).toFixed(1)}%
-                  </div>
-                </TableCell>
-                <TableCell className="text-right">
-                  <div>R$ {item.releasedAmount.toFixed(2)}</div>
-                  <div className="text-xs text-muted-foreground">
-                    {item.releasedCount} vendas
-                  </div>
-                </TableCell>
-                <TableCell className="text-right">
-                  <div>R$ {item.notReleasedAmount.toFixed(2)}</div>
-                  <div className="text-xs text-muted-foreground">
-                    {item.notReleasedCount} vendas
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+          ))}
+        </TableBody>
+      </Table>
     </div>
   );
 }
