@@ -13,8 +13,8 @@ interface RepassesPopupProps {
   transactions: SettlementTransaction[];
   open: boolean;
   onClose: () => void;
-  startDate?: Date;
-  endDate?: Date;
+  startDate?: Date; // Add startDate prop
+  endDate?: Date;   // Add endDate prop
 }
 
 export const RepassesPopup: React.FC<RepassesPopupProps> = ({ 

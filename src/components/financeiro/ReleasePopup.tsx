@@ -15,10 +15,10 @@ interface ReleasePopupProps {
   onClose: () => void;
   operationsWithOrder: ReleaseOperation[];
   otherOperations: ReleaseOperation[];
-  settlementTransactions?: SettlementTransaction[];
-  startDate?: Date;
-  endDate?: Date;
-  filterBySettlement?: boolean;
+  settlementTransactions?: SettlementTransaction[]; // Adicionar transações de vendas
+  startDate?: Date; // Data inicial do filtro
+  endDate?: Date; // Data final do filtro
+  filterBySettlement?: boolean; // Add filter toggle prop
 }
 
 export const ReleasePopup: React.FC<ReleasePopupProps> = ({
@@ -26,7 +26,7 @@ export const ReleasePopup: React.FC<ReleasePopupProps> = ({
   onClose,
   operationsWithOrder,
   otherOperations,
-  settlementTransactions = [],
+  settlementTransactions = [], // Valor padrão de array vazio
   startDate,
   endDate,
   filterBySettlement = false

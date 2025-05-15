@@ -7,7 +7,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { InventoryItem } from '@/types/inventory';
 import { compareBrazilianDates } from '@/lib/utils';
-import { AdvertisingItem } from '@/hooks/usePublicidadeData';
 
 interface SalesBoxComponentProps {
   settlementTransactions: SettlementTransaction[];
@@ -16,9 +15,8 @@ interface SalesBoxComponentProps {
   totalMLFees: number;
   startDate?: Date;
   endDate?: Date;
-  filterBySettlement?: boolean;
-  inventoryItems?: InventoryItem[];
-  advertisingItems?: AdvertisingItem[]; // Added advertising items prop
+  filterBySettlement?: boolean;  // Prop for filtering by settlement
+  inventoryItems?: InventoryItem[]; // Added inventory items prop
 }
 
 export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
@@ -28,9 +26,8 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
   totalMLFees,
   startDate,
   endDate,
-  filterBySettlement = false,
-  inventoryItems = [],
-  advertisingItems = [] // Default to empty array
+  filterBySettlement = false,  // Default to false
+  inventoryItems = [] // Default to empty array
 }) => {
   const salesByItem = useMemo(() => {
     if (!settlementTransactions.length) return [];
@@ -60,11 +57,8 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
         count: number;
         amount: number;
       };
-      individualProfit: number;
-      taxAmount: number;
-      advertisingCost: number; // Added field for advertising cost
-      advertisingUnitsSold: number; // Added field for advertising units sold
-      advertisingUnitProfit: number; // Added field for advertising unit profit
+      individualProfit: number; // Added field for individual profit
+      taxAmount: number; // Added field for tax amount
     }>();
 
     // Process settlement transactions (all sales)
@@ -82,11 +76,8 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
           released: { count: 0, amount: 0 },
           unreleased: { count: 0, amount: 0 },
           refunded: { count: 0, amount: 0 },
-          individualProfit: 0,
-          taxAmount: 0,
-          advertisingCost: 0, // Initialize advertising cost
-          advertisingUnitsSold: 0, // Initialize advertising units sold
-          advertisingUnitProfit: 0, // Initialize advertising unit profit
+          individualProfit: 0, // Initialize individual profit
+          taxAmount: 0, // Initialize tax amount
         });
       }
 
@@ -151,15 +142,6 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
       
       // Calculate tax amount (10% of total sales)
       item.taxAmount = item.totalSales * 0.1;
-    });
-
-    // Process advertising data for each item
-    advertisingItems.forEach(adItem => {
-      const item = itemGroups.get(adItem.item_id);
-      if (item) {
-        item.advertisingCost = adItem.metrics.cost;
-        item.advertisingUnitsSold = adItem.metrics.direct_units_quantity;
-      }
     });
 
     // Calculate individual profit based on inventory data
@@ -228,12 +210,6 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
             
             // Adjust individual profit to subtract the tax per unit
             item.individualProfit = unitReleaseValue - averageUnitCost - taxPerUnit;
-            
-            // Calculate advertising unit profit if there are advertising units sold
-            if (item.advertisingUnitsSold > 0) {
-              const advertisingCostPerUnit = item.advertisingCost / item.advertisingUnitsSold;
-              item.advertisingUnitProfit = item.individualProfit - advertisingCostPerUnit;
-            }
           }
         }
       }
@@ -242,7 +218,7 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
     // Convert to array and sort by total sales (descending)
     return Array.from(itemGroups.values())
       .sort((a, b) => b.totalSales - a.totalSales);
-  }, [settlementTransactions, releaseOperationsWithOrder, filterBySettlement, inventoryItems, endDate, advertisingItems]);
+  }, [settlementTransactions, releaseOperationsWithOrder, filterBySettlement, inventoryItems, endDate]);
 
   // Format currency values
   const formatCurrency = (value: number) => {
@@ -277,8 +253,6 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
                   <TableHead className="text-right">Não Liberado</TableHead>
                   <TableHead className="text-right">Reembolsadas</TableHead>
                   <TableHead className="text-right">Imposto</TableHead>
-                  <TableHead className="text-right">Publicidade</TableHead>
-                  <TableHead className="text-right">Lucro indiv. vendas pub.</TableHead>
                   <TableHead className="text-right">Lucro Individual /L</TableHead>
                 </TableRow>
               </TableHeader>
@@ -310,16 +284,6 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
                     </TableCell>
                     <TableCell className="text-right">
                       {formatCurrency(item.taxAmount)} <span className="text-xs text-gray-500">(10%)</span>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {item.advertisingCost > 0 ? 
-                        <>{formatCurrency(item.advertisingCost)} <span className="text-xs text-gray-500">({item.advertisingUnitsSold} un.)</span></> : 
-                        "R$ 0,00 (0 un.)"}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {item.advertisingUnitsSold > 0 ? 
-                        formatCurrency(item.advertisingUnitProfit) : 
-                        "N/A"}
                     </TableCell>
                     <TableCell className="text-right">
                       {item.individualProfit ? formatCurrency(item.individualProfit) : "Sem dados"}
