@@ -1,4 +1,3 @@
-
 import React, { useMemo } from 'react';
 import { ReleaseOperation } from '@/types/ReleaseOperation';
 import { SettlementTransaction } from '@/hooks/useSettlementData';
@@ -68,6 +67,8 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
       };
       individualProfit: number; // Added field for individual profit
       taxAmount: number; // Added field for tax amount
+      averageUnitCost: number; // Added field to store average unit cost for new calculation
+      totalInventoryCost: number; // New field for total inventory cost
       advertisingCost: number; // Added field for advertising cost
       advertisingSalesUnits: number; // Added field for advertising sales units
       advertisingProfitPerUnit: number; // Added field for profit per unit from advertising
@@ -93,6 +94,8 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
           refunded: { count: 0, amount: 0 },
           individualProfit: 0, // Initialize individual profit
           taxAmount: 0, // Initialize tax amount
+          averageUnitCost: 0, // Initialize average unit cost
+          totalInventoryCost: 0, // Initialize total inventory cost
           advertisingCost: 0, // Initialize advertising cost
           advertisingSalesUnits: 0, // Initialize advertising sales units
           advertisingProfitPerUnit: 0, // Initialize advertising profit per unit
@@ -225,6 +228,7 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
           // Calculate the average unit cost and individual profit
           if (consideredUnits > 0) {
             const averageUnitCost = totalCost / consideredUnits;
+            item.averageUnitCost = averageUnitCost; // Store for later use in calculating total inventory cost
             
             // Calculate tax per unit (tax amount / total units)
             const taxPerUnit = item.totalUnits > 0 ? item.taxAmount / item.totalUnits : 0;
@@ -283,6 +287,18 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
       }
     });
 
+    // Calculate total inventory cost
+    itemGroups.forEach(item => {
+      // Only calculate for items with data
+      if (item.averageUnitCost) {
+        // Calculate total remaining inventory (Liberado + Não liberado)
+        const totalRemainingUnits = item.released.count + item.unreleased.count;
+        
+        // Calculate total inventory cost
+        item.totalInventoryCost = item.averageUnitCost * totalRemainingUnits;
+      }
+    });
+
     // Convert to array and sort by total sales (descending)
     return Array.from(itemGroups.values())
       .sort((a, b) => b.totalSales - a.totalSales);
@@ -337,6 +353,7 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
                   <TableHead className="text-right">Lucro Individual /L -P</TableHead>
                   <TableHead className="text-right">Lucro Total /L -P</TableHead>
                   <TableHead className="text-right">Lucro Total Previsto -P</TableHead>
+                  <TableHead className="text-right">Custo total de estoque /L</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -391,6 +408,9 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
                     </TableCell>
                     <TableCell className="text-right">
                       {item.projectedTotalProfitMinusAdv ? formatCurrency(item.projectedTotalProfitMinusAdv) : "Sem dados"}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {item.totalInventoryCost ? formatCurrency(item.totalInventoryCost) : "Sem dados"}
                     </TableCell>
                   </TableRow>
                 ))}
