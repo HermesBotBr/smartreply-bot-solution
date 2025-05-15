@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SalesBoxComponent } from "./SalesBoxComponent";
@@ -168,7 +169,7 @@ export const FinancialMetrics = ({
       />
 
       <RepassesPopup
-        isOpen={showRepassesPopup}
+        open={showRepassesPopup}
         onClose={() => setShowRepassesPopup(false)}
         totalMLRepasses={totalMLRepasses}
         settlementTransactions={settlementTransactions}
@@ -177,7 +178,7 @@ export const FinancialMetrics = ({
       />
 
       <ReleasePopup
-        isOpen={showReleasePopup}
+        open={showReleasePopup}
         onClose={() => setShowReleasePopup(false)}
         releaseOperationsWithOrder={releaseOperationsWithOrder}
         releaseOtherOperations={releaseOtherOperations}
@@ -187,7 +188,7 @@ export const FinancialMetrics = ({
       />
 
       <ClaimsPopup
-        isOpen={showClaimsPopup}
+        open={showClaimsPopup}
         onClose={() => setShowClaimsPopup(false)}
         releaseOperationsWithOrder={releaseOperationsWithOrder}
         releaseOtherOperations={releaseOtherOperations}
@@ -196,7 +197,7 @@ export const FinancialMetrics = ({
       />
 
       <TransfersPopup
-        isOpen={showTransfersPopup}
+        open={showTransfersPopup}
         onClose={() => setShowTransfersPopup(false)}
         releaseOperationsWithOrder={releaseOperationsWithOrder}
         releaseOtherOperations={releaseOtherOperations}
@@ -205,7 +206,7 @@ export const FinancialMetrics = ({
       />
 
       <ProductListingPopup
-        isOpen={showProductListingPopup}
+        open={showProductListingPopup}
         onClose={() => setShowProductListingPopup(false)}
         settlementTransactions={settlementTransactions}
         startDate={startDate}
