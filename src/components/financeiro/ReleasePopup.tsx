@@ -1,4 +1,3 @@
-
 // src/components/financeiro/ReleasePopup.tsx
 
 import React, { useEffect, useState } from 'react';
@@ -11,25 +10,29 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 
 interface ReleasePopupProps {
-  open: boolean;
-  onClose: () => void;
-  operationsWithOrder: ReleaseOperation[];
-  otherOperations: ReleaseOperation[];
+  open?: boolean;
+  onClose?: () => void;
+  operations?: ReleaseOperation[]; // Changed from operationsWithOrder for compatibility
+  operationsWithOrder?: ReleaseOperation[];
+  otherOperations?: ReleaseOperation[];
   settlementTransactions?: SettlementTransaction[]; // Adicionar transações de vendas
   startDate?: Date; // Data inicial do filtro
   endDate?: Date; // Data final do filtro
   filterBySettlement?: boolean; // Add filter toggle prop
+  totalReleased?: number; // Add totalReleased prop
 }
 
 export const ReleasePopup: React.FC<ReleasePopupProps> = ({
   open,
   onClose,
-  operationsWithOrder,
-  otherOperations,
+  operations = [], // Support the operations prop for backward compatibility
+  operationsWithOrder = operations, // Default to operations if provided
+  otherOperations = [],
   settlementTransactions = [], // Valor padrão de array vazio
   startDate,
   endDate,
-  filterBySettlement = false
+  filterBySettlement = false,
+  totalReleased
 }) => {
   const [mismatchWarning, setMismatchWarning] = useState(false);
 

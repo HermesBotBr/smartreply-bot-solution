@@ -141,7 +141,7 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
           trend={undefined}
           popupComponent={
             <TransfersPopup
-              operations={releaseOtherOperations.filter(op => 
+              transfers={releaseOtherOperations.filter(op => 
                 ['payout', 'reserve_for_payout'].includes(op.description)
               )}
               totalTransfers={totalTransfers}
