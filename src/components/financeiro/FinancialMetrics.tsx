@@ -1,3 +1,4 @@
+
 // src/components/financeiro/FinancialMetrics.tsx
 
 import React, { useState } from 'react';
@@ -23,7 +24,7 @@ interface FinancialMetricsProps {
   totalCreditCard: number;
   totalShippingCashback: number;
   settlementTransactions: SettlementTransaction[];
-  refundedTransactions?: SettlementTransaction[]; // Adicionar nova prop
+  refundedTransactions?: SettlementTransaction[]; 
   releaseOperationsWithOrder: any[];
   releaseOtherOperations: any[];
   startDate?: Date;
@@ -44,7 +45,7 @@ export const FinancialMetrics = ({
   totalCreditCard,
   totalShippingCashback,
   settlementTransactions,
-  refundedTransactions = [], // Valor padrão
+  refundedTransactions = [],
   releaseOperationsWithOrder,
   releaseOtherOperations,
   startDate,
@@ -195,7 +196,7 @@ export const FinancialMetrics = ({
       <RepassesPopup
         open={showRepasses}
         onClose={() => setShowRepasses(false)}
-        settlementTransactions={settlementTransactions}
+        transactions={settlementTransactions}
         onOrderClick={handleOrderClick}
         startDate={startDate}
         endDate={endDate}
@@ -203,9 +204,25 @@ export const FinancialMetrics = ({
       <SalesDetailPopup
         open={showSalesDetails}
         onClose={() => setShowSalesDetails(false)}
-        settlementTransactions={settlementTransactions}
+        salesByItemId={Object.fromEntries(
+          settlementTransactions.reduce((map, transaction) => {
+            if (transaction.itemId) {
+              const currentValue = map.get(transaction.itemId) || 0;
+              map.set(transaction.itemId, currentValue + transaction.units);
+            }
+            return map;
+          }, new Map())
+        )}
+        detailedSales={settlementTransactions.map(transaction => ({
+          orderId: transaction.orderId,
+          itemId: transaction.itemId || '',
+          title: transaction.title,
+          quantity: transaction.units,
+          dateCreated: transaction.date
+        }))}
         startDate={startDate}
         endDate={endDate}
+        totalUnitsSold={unitsSold}
       />
       <ReleasePopup
         open={showReleaseDetails}
@@ -213,7 +230,7 @@ export const FinancialMetrics = ({
         operationsWithOrder={releaseOperationsWithOrder}
         otherOperations={releaseOtherOperations}
         settlementTransactions={settlementTransactions}
-        refundedTransactions={refundedTransactions} // Passar transações reembolsadas
+        refundedTransactions={refundedTransactions}
         startDate={startDate}
         endDate={endDate}
         filterBySettlement={filterBySettlement}
