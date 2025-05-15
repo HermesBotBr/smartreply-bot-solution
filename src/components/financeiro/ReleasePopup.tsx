@@ -143,7 +143,7 @@ export const ReleasePopup: React.FC<ReleasePopupProps> = ({
         orderId: transaction.orderId,
         itemId: transaction.itemId || '',
         title: transaction.title || '',
-        amount: transaction.grossValue || 0,
+        amount: transaction.netValue || 0, // Usar netValue (valor do repasse) em vez de grossValue
         description: 'Venda reembolsada'
       }));
     
