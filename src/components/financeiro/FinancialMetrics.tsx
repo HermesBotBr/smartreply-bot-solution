@@ -308,6 +308,7 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
         inventoryItems={inventoryItems}
         advertisingItems={advertisingItems}
         onRefreshAdvertisingData={onRefreshAdvertisingData}
+        totalAdvertisingCost={totalAdvertisingCost}
       />
       
       <RepassesPopup 
