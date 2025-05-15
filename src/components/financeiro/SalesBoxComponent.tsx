@@ -1,4 +1,3 @@
-
 import React, { useMemo } from 'react';
 import { ReleaseOperation } from '@/types/ReleaseOperation';
 import { SettlementTransaction } from '@/hooks/useSettlementData';
@@ -7,6 +6,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { InventoryItem } from '@/types/inventory';
 import { compareBrazilianDates } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { RefreshCw } from 'lucide-react';
+import { toast } from '@/components/ui/use-toast';
 
 interface SalesBoxComponentProps {
   settlementTransactions: SettlementTransaction[];
@@ -16,7 +18,8 @@ interface SalesBoxComponentProps {
   startDate?: Date;
   endDate?: Date;
   filterBySettlement?: boolean;
-  inventoryItems?: InventoryItem[]; // New prop to receive inventory data
+  inventoryItems?: InventoryItem[]; // Inventory data prop
+  onRefreshInventory?: () => Promise<void>; // New prop for refreshing inventory data
 }
 
 export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
@@ -27,8 +30,35 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
   startDate,
   endDate,
   filterBySettlement = false,
-  inventoryItems = [], // Default to empty array
+  inventoryItems = [], 
+  onRefreshInventory, // New prop for refreshing inventory data
 }) => {
+  // Handle refresh button click
+  const handleRefreshClick = async () => {
+    if (onRefreshInventory) {
+      toast({
+        title: "Atualizando dados",
+        description: "Buscando vendas...",
+      });
+      
+      try {
+        await onRefreshInventory();
+        
+        toast({
+          title: "Sucesso",
+          description: "Vendas calculadas com sucesso!",
+          variant: "default",
+        });
+      } catch (error) {
+        toast({
+          title: "Erro",
+          description: "Falha ao atualizar os dados de lucro.",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
   const salesByItem = useMemo(() => {
     if (!settlementTransactions.length) return [];
 
@@ -204,8 +234,16 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
 
   return (
     <Card className="w-full mt-6">
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="text-xl font-bold">Vendas por Anúncio</CardTitle>
+        <Button 
+          variant="outline" 
+          size="icon" 
+          onClick={handleRefreshClick}
+          title="Atualizar dados de lucro"
+        >
+          <RefreshCw className="h-4 w-4" />
+        </Button>
       </CardHeader>
       <CardContent>
         {salesByItem.length === 0 ? (

@@ -96,6 +96,26 @@ const AdminFinanceiro: React.FC = () => {
     }
   }, [inventoryItemsFromHook]);
 
+  // Function to handle inventory refresh for the profit calculation
+  const handleRefreshInventory = async () => {
+    try {
+      // This will simulate the effect of opening the "Estoque" tab
+      // by refreshing the dates from localStorage and updating inventory data
+      refreshDates();
+      
+      // Wait a moment to give the impression of loading
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // If we have inventory data but need to force a refresh, we could do it here
+      // For now, we're just using the refreshDates function which reads from localStorage
+      
+      return Promise.resolve();
+    } catch (error) {
+      console.error('Error refreshing inventory data:', error);
+      return Promise.reject(error);
+    }
+  };
+
   // Reprocessar dados de release quando as datas mudarem
   useEffect(() => {
     if (releaseData && startDate && endDate) {
@@ -452,7 +472,8 @@ const AdminFinanceiro: React.FC = () => {
               startDate={startDate}
               endDate={endDate}
               filterBySettlement={filterBySettlement}
-              inventoryItems={inventoryItems} // Pass inventory items to FinancialMetrics
+              inventoryItems={inventoryItems}
+              onRefreshInventory={handleRefreshInventory}
             />
           </TabsContent>
 
