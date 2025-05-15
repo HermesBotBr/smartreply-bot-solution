@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -175,35 +176,6 @@ const AdminFinanceiro: React.FC = () => {
       title: "Filtro aplicado",
       description: `Filtrando de ${startDate.toLocaleDateString()} até ${endDate.toLocaleDateString()}`
     });
-  };
-
-  // Add a new handler to refresh advertising data
-  const handleRefreshAdvertisingData = () => {
-    if (startDate && endDate) {
-      toast({
-        description: "Atualizando dados de publicidade..."
-      });
-      
-      fetchPublicidadeData(startDate, endDate)
-        .then(() => {
-          toast({
-            description: "Dados de publicidade atualizados com sucesso!"
-          });
-        })
-        .catch(error => {
-          toast({
-            title: "Erro",
-            description: `Falha ao atualizar dados de publicidade: ${error.message}`,
-            variant: "destructive"
-          });
-        });
-    } else {
-      toast({
-        title: "Erro",
-        description: "Selecione um período válido antes de atualizar os dados",
-        variant: "destructive"
-      });
-    }
   };
 
   const handleReleaseDataChange = (data: string) => {
@@ -524,7 +496,6 @@ const AdminFinanceiro: React.FC = () => {
               inventoryItems={inventoryItems}
               advertisingItems={advertisingData?.results || []}
               totalAdvertisingCost={metrics.totalAdvertisingCost}
-              onRefreshAdvertisingData={handleRefreshAdvertisingData}
             />
           </TabsContent>
 
