@@ -57,13 +57,14 @@ export const PublicidadePopup: React.FC<PublicidadePopupProps> = ({
               <TableRow>
                 <TableHead>Anúncio</TableHead>
                 <TableHead>Título</TableHead>
+                <TableHead className="text-right">Vendas</TableHead>
                 <TableHead className="text-right">Gasto</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {advertisingItems.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={3} className="text-center py-4">
+                  <TableCell colSpan={4} className="text-center py-4">
                     Nenhum dado de publicidade encontrado para o período selecionado.
                   </TableCell>
                 </TableRow>
@@ -89,6 +90,9 @@ export const PublicidadePopup: React.FC<PublicidadePopupProps> = ({
                     </TableCell>
                     <TableCell className="max-w-[300px] truncate" title={item.title}>
                       {item.title}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {item.metrics.direct_units_quantity || 0}
                     </TableCell>
                     <TableCell className="text-right">
                       {formatCurrency(item.metrics.cost)}

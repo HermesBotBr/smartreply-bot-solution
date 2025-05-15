@@ -13,6 +13,7 @@ export interface AdvertisingItem {
     cpc: number;
     ctr: number;
     roas: number;
+    direct_units_quantity: number;
   };
   thumbnail: string;
   permalink: string;
