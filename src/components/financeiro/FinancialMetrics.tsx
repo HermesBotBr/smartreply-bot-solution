@@ -1,4 +1,3 @@
-
 // src/components/financeiro/FinancialMetrics.tsx
 
 import React, { useState } from 'react';
@@ -197,7 +196,6 @@ export const FinancialMetrics = ({
         open={showRepasses}
         onClose={() => setShowRepasses(false)}
         transactions={settlementTransactions}
-        onOrderClick={handleOrderClick}
         startDate={startDate}
         endDate={endDate}
       />
