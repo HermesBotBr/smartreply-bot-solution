@@ -7,6 +7,7 @@ import { SettlementTransaction } from "@/hooks/useSettlementData";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { toast } from 'sonner';
 
 interface RepassesPopupProps {
   transactions: SettlementTransaction[];
@@ -24,6 +25,18 @@ export const RepassesPopup: React.FC<RepassesPopupProps> = ({
   endDate 
 }) => {
   const [groupedView, setGroupedView] = useState(false);
+
+  // Log availability of exact repasse values
+  React.useEffect(() => {
+    if (open) {
+      const withExactRepasse = transactions.filter(t => t.netValue > 0).length;
+      console.log(`Showing repasses popup with ${transactions.length} transactions (${withExactRepasse} with exact repasse values)`);
+      
+      if (withExactRepasse < transactions.length) {
+        toast.info("Alguns repasses estão sendo calculados com valores aproximados");
+      }
+    }
+  }, [open, transactions]);
 
   const groupedData = transactions.reduce((acc, item) => {
     const key = item.itemId || "unknown";

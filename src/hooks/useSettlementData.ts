@@ -1,5 +1,7 @@
+
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { usePaymentsData } from './usePaymentsData';
 
 interface Payment {
   transaction_amount: number;
@@ -54,6 +56,14 @@ export function useSettlementData(
   const [totalGrossSales, setTotalGrossSales] = useState(0);
   const [totalNetSales, setTotalNetSales] = useState(0);
   const [totalUnits, setTotalUnits] = useState(0);
+  
+  // Fetch payment data to get exact repasse values
+  const { 
+    paymentsData,
+    isLoading: paymentsLoading,
+    error: paymentsError,
+    refetch: refetchPayments 
+  } = usePaymentsData(sellerId, startDate, endDate, shouldFetch);
 
   const fetchData = async () => {
     if (!sellerId || !startDate || !endDate) {
@@ -109,59 +119,59 @@ export function useSettlementData(
           // Initialize order transaction
           const firstItem = order.order_items?.[0]?.item;
 
-transactionsMap.set(orderId, {
-  date: '',
-  sourceId: '',
-  orderId: orderId.toString(),
-  group: 'Venda',
-  units,
-  grossValue: 0,
-  netValue: 0,
-  itemId: firstItem?.id || '',
-  title: firstItem?.title || ''
-});
-
+          transactionsMap.set(orderId, {
+            date: '',
+            sourceId: '',
+            orderId: orderId.toString(),
+            group: 'Venda',
+            units,
+            grossValue: 0,
+            netValue: 0,
+            itemId: firstItem?.id || '',
+            title: firstItem?.title || ''
+          });
           
           // Process payments for this order
           if (order.payments && order.payments.length > 0) {
             // Somar todos os pagamentos da venda
-const transaction = transactionsMap.get(orderId)!;
+            const transaction = transactionsMap.get(orderId)!;
 
-let totalAmount = 0;
-let mainPayment: Payment | null = null;
+            let totalAmount = 0;
+            let mainPayment: Payment | null = null;
 
-order.payments
-  .filter(p => 
-    (p.transaction_amount || 0) > 0 &&
-    p.status !== 'cancelled' &&
-    p.status !== 'rejected'
-  )
-  .forEach((payment) => {
-    const amount = payment.transaction_amount || 0;
-    totalAmount += amount;
+            order.payments
+              .filter(p => 
+                (p.transaction_amount || 0) > 0 &&
+                p.status !== 'cancelled' &&
+                p.status !== 'rejected'
+              )
+              .forEach((payment) => {
+                const amount = payment.transaction_amount || 0;
+                totalAmount += amount;
 
-    if (!mainPayment || amount > (mainPayment.transaction_amount || 0)) {
-      mainPayment = payment;
-    }
-  });
+                if (!mainPayment || amount > (mainPayment.transaction_amount || 0)) {
+                  mainPayment = payment;
+                }
+              });
 
+            if (mainPayment) {
+              transaction.date = mainPayment.date_approved || mainPayment.date_created || new Date().toISOString();
+              transaction.sourceId = mainPayment.id.toString();
+            }
 
+            transaction.grossValue = totalAmount;
+            
+            // Use exact repasse value from payments API if available
+            if (paymentsData && paymentsData[orderId.toString()]) {
+              transaction.netValue = paymentsData[orderId.toString()];
+            } else {
+              // Fallback to 70% estimate if not available
+              transaction.netValue = totalAmount * 0.7;
+            }
 
-
-if (mainPayment) {
-  transaction.date = mainPayment.date_approved || mainPayment.date_created || new Date().toISOString();
-  transaction.sourceId = mainPayment.id.toString();
-}
-
-transaction.grossValue = totalAmount;
-transaction.netValue = totalAmount * 0.7;
-
-grossTotal += totalAmount;
-netTotal += totalAmount * 0.7;
-
-
+            grossTotal += totalAmount;
+            netTotal += transaction.netValue;
           }
-
         });
       }
 
@@ -172,7 +182,7 @@ netTotal += totalAmount * 0.7;
       // Include ALL transactions, not just ones with gross value > 0
       const transactions = Array.from(transactionsMap.values());
       
-console.log("Transações finais:", transactions);
+      console.log("Transações finais:", transactions);
 
       setSettlementTransactions(transactions);
       setTotalGrossSales(grossTotal);
@@ -186,10 +196,36 @@ console.log("Transações finais:", transactions);
     }
   };
 
+  // Refetch settlement data when payments data changes
+  useEffect(() => {
+    if (!paymentsLoading && Object.keys(paymentsData).length > 0) {
+      // Update net values based on payments data
+      setSettlementTransactions(prev => {
+        return prev.map(transaction => {
+          if (transaction.orderId && paymentsData[transaction.orderId]) {
+            return {
+              ...transaction,
+              netValue: paymentsData[transaction.orderId]
+            };
+          }
+          return transaction;
+        });
+      });
+      
+      // Recalculate total net sales
+      const updatedNetTotal = settlementTransactions.reduce(
+        (sum, transaction) => sum + transaction.netValue, 
+        0
+      );
+      setTotalNetSales(updatedNetTotal);
+    }
+  }, [paymentsData, paymentsLoading]);
+
   useEffect(() => {
     if (shouldFetch && startDate && endDate && sellerId) {
       console.log("Triggering API fetch with dates and sellerId:", startDate, endDate, sellerId);
       fetchData();
+      refetchPayments(); // Also fetch payment data
     }
   }, [sellerId, startDate, endDate, shouldFetch]);
 
@@ -198,8 +234,11 @@ console.log("Transações finais:", transactions);
     totalGrossSales,
     totalNetSales,
     totalUnits,
-    isLoading,
-    error,
-    refetch: fetchData
+    isLoading: isLoading || paymentsLoading,
+    error: error || paymentsError,
+    refetch: () => {
+      fetchData();
+      refetchPayments();
+    }
   };
 }
