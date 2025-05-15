@@ -8,6 +8,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { InventoryItem } from '@/types/inventory';
 import { compareBrazilianDates } from '@/lib/utils';
 import { AdvertisingItem } from '@/hooks/usePublicidadeData';
+import { Button } from '@/components/ui/button';
+import { RefreshCw } from 'lucide-react';
 
 interface SalesBoxComponentProps {
   settlementTransactions: SettlementTransaction[];
@@ -16,9 +18,10 @@ interface SalesBoxComponentProps {
   totalMLFees: number;
   startDate?: Date;
   endDate?: Date;
-  filterBySettlement?: boolean;  // Prop for filtering by settlement
-  inventoryItems?: InventoryItem[]; // Added inventory items prop
-  advertisingItems?: AdvertisingItem[]; // Added advertising items prop
+  filterBySettlement?: boolean;
+  inventoryItems?: InventoryItem[];
+  advertisingItems?: AdvertisingItem[];
+  onRefreshAdvertisingData?: () => void; // New prop for refresh functionality
 }
 
 export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
@@ -28,9 +31,10 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
   totalMLFees,
   startDate,
   endDate,
-  filterBySettlement = false,  // Default to false
-  inventoryItems = [], // Default to empty array
-  advertisingItems = [] // Default to empty array
+  filterBySettlement = false,
+  inventoryItems = [],
+  advertisingItems = [],
+  onRefreshAdvertisingData
 }) => {
   const salesByItem = useMemo(() => {
     if (!settlementTransactions.length) return [];
@@ -261,8 +265,18 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
 
   return (
     <Card className="w-full mt-6">
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="text-xl font-bold">Vendas por Anúncio</CardTitle>
+        {onRefreshAdvertisingData && (
+          <Button 
+            variant="outline" 
+            size="icon" 
+            onClick={onRefreshAdvertisingData} 
+            title="Atualizar dados de publicidade"
+          >
+            <RefreshCw className="h-4 w-4" />
+          </Button>
+        )}
       </CardHeader>
       <CardContent>
         {salesByItem.length === 0 ? (

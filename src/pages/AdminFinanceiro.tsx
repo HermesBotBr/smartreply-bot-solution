@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -195,6 +194,13 @@ const AdminFinanceiro: React.FC = () => {
     }));
     setReleaseOperationsWithOrder(parsed.operationsWithOrder);
     setReleaseOtherOperations(parsed.otherOperations);
+  };
+
+  // New handler for refreshing advertising data
+  const handleRefreshAdvertisingData = () => {
+    if (startDate && endDate) {
+      fetchPublicidadeData(startDate, endDate);
+    }
   };
 
   /* ------------------------------------------------------------------ */
@@ -496,6 +502,7 @@ const AdminFinanceiro: React.FC = () => {
               inventoryItems={inventoryItems}
               advertisingItems={advertisingData?.results || []}
               totalAdvertisingCost={metrics.totalAdvertisingCost}
+              onRefreshAdvertisingData={handleRefreshAdvertisingData}
             />
           </TabsContent>
 

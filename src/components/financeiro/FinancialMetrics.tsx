@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { MetricCard } from '@/components/dashboard/metrics/MetricCard';
 import { SettlementTransaction } from '@/hooks/useSettlementData';
@@ -33,8 +32,9 @@ interface FinancialMetricsProps {
   endDate?: Date;
   filterBySettlement?: boolean;
   inventoryItems?: InventoryItem[];
-  advertisingItems?: AdvertisingItem[]; // New prop for advertising data
-  totalAdvertisingCost: number; // New prop for total advertising cost
+  advertisingItems?: AdvertisingItem[];
+  totalAdvertisingCost: number;
+  onRefreshAdvertisingData?: () => void;
 }
 
 export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
@@ -56,14 +56,15 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
   endDate,
   filterBySettlement = false,
   inventoryItems = [],
-  advertisingItems = [], // Default to empty array
-  totalAdvertisingCost = 0 // Default to 0
+  advertisingItems = [],
+  totalAdvertisingCost = 0,
+  onRefreshAdvertisingData
 }) => {
   const [repassesPopupOpen, setRepassesPopupOpen] = useState(false);
   const [releasePopupOpen, setReleasePopupOpen] = useState(false);
   const [transfersPopupOpen, setTransfersPopupOpen] = useState(false);
   const [claimsPopupOpen, setClaimsPopupOpen] = useState(false);
-  const [publicidadePopupOpen, setPublicidadePopupOpen] = useState(false); // New state for publicidade popup
+  const [publicidadePopupOpen, setPublicidadePopupOpen] = useState(false);
   const [hasUnbalancedTransfers, setHasUnbalancedTransfers] = useState(false);
   const [filteredTotalReleased, setFilteredTotalReleased] = useState(totalReleased);
   const [filteredOperationsWithOrder, setFilteredOperationsWithOrder] = useState(releaseOperationsWithOrder);
@@ -243,7 +244,6 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
                   onClick={() => setClaimsPopupOpen(true)}
                 />
                 
-                {/* New Publicidade card */}
                 <MetricCard
                   title="Publicidade"
                   value={`R$ ${totalAdvertisingCost.toFixed(2)}`}
@@ -296,7 +296,7 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
         </div>
       </div>
       
-      {/* Sales Box Component */}
+      {/* Sales Box Component - pass the refresh function */}
       <SalesBoxComponent 
         settlementTransactions={settlementTransactions}
         releaseOperationsWithOrder={releaseOperationsWithOrder}
@@ -306,6 +306,8 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
         endDate={endDate}
         filterBySettlement={filterBySettlement}
         inventoryItems={inventoryItems}
+        advertisingItems={advertisingItems}
+        onRefreshAdvertisingData={onRefreshAdvertisingData}
       />
       
       <RepassesPopup 
@@ -344,7 +346,6 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
         endDate={endDate}
       />
       
-      {/* New Publicidade Popup */}
       <PublicidadePopup
         advertisingItems={advertisingItems}
         open={publicidadePopupOpen}
