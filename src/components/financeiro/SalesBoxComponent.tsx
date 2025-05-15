@@ -1,3 +1,4 @@
+
 import React, { useMemo } from 'react';
 import { ReleaseOperation } from '@/types/ReleaseOperation';
 import { SettlementTransaction } from '@/hooks/useSettlementData';
@@ -57,6 +58,7 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
         amount: number;
       };
       individualProfit: number; // Added field for individual profit
+      taxAmount: number; // Added field for tax amount
     }>();
 
     // Process settlement transactions (all sales)
@@ -74,7 +76,8 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
           released: { count: 0, amount: 0 },
           unreleased: { count: 0, amount: 0 },
           refunded: { count: 0, amount: 0 },
-          individualProfit: 0 // Initialize individual profit
+          individualProfit: 0, // Initialize individual profit
+          taxAmount: 0, // Initialize tax amount
         });
       }
 
@@ -136,6 +139,9 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
         item.unreleased.amount = 0;
         item.unreleased.count = 0;
       }
+      
+      // Calculate tax amount (10% of total sales)
+      item.taxAmount = item.totalSales * 0.1;
     });
 
     // Calculate individual profit based on inventory data
@@ -198,7 +204,12 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
           // Calculate the average unit cost and individual profit
           if (consideredUnits > 0) {
             const averageUnitCost = totalCost / consideredUnits;
-            item.individualProfit = unitReleaseValue - averageUnitCost;
+            
+            // Calculate tax per unit (tax amount / total units)
+            const taxPerUnit = item.totalUnits > 0 ? item.taxAmount / item.totalUnits : 0;
+            
+            // Adjust individual profit to subtract the tax per unit
+            item.individualProfit = unitReleaseValue - averageUnitCost - taxPerUnit;
           }
         }
       }
@@ -241,6 +252,7 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
                   <TableHead className="text-right">Liberado</TableHead>
                   <TableHead className="text-right">Não Liberado</TableHead>
                   <TableHead className="text-right">Reembolsadas</TableHead>
+                  <TableHead className="text-right">Imposto</TableHead>
                   <TableHead className="text-right">Lucro Individual /L</TableHead>
                 </TableRow>
               </TableHeader>
@@ -269,6 +281,9 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
                     </TableCell>
                     <TableCell className="text-right">
                       {formatCurrency(item.refunded.amount)} <span className="text-xs text-gray-500">({item.refunded.count} un.)</span>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {formatCurrency(item.taxAmount)} <span className="text-xs text-gray-500">(10%)</span>
                     </TableCell>
                     <TableCell className="text-right">
                       {item.individualProfit ? formatCurrency(item.individualProfit) : "Sem dados"}
