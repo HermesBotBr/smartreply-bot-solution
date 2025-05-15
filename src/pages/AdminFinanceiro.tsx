@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -81,7 +82,11 @@ const AdminFinanceiro: React.FC = () => {
   // Show toast if there's an inventory error
   useEffect(() => {
     if (inventoryError) {
-      toast.error(`Erro ao carregar dados de estoque: ${inventoryError.message}`);
+      toast({
+        title: "Erro",
+        description: `Erro ao carregar dados de estoque: ${inventoryError.message}`,
+        variant: "destructive"
+      });
     }
   }, [inventoryError]);
 
@@ -109,7 +114,11 @@ const AdminFinanceiro: React.FC = () => {
   /* ------------------------------------------------------------------ */
   const handleFilter = () => {
     if (!startDate || !endDate) {
-      toast.error('Selecione um período válido');
+      toast({
+        title: "Erro",
+        description: "Selecione um período válido",
+        variant: "destructive"
+      });
       return;
     }
 
@@ -128,9 +137,10 @@ const AdminFinanceiro: React.FC = () => {
       }));
     }
 
-    toast.info(
-      `Filtrando de ${startDate.toLocaleDateString()} até ${endDate.toLocaleDateString()}`,
-    );
+    toast({
+      title: "Filtro aplicado",
+      description: `Filtrando de ${startDate.toLocaleDateString()} até ${endDate.toLocaleDateString()}`
+    });
   };
 
   const handleReleaseDataChange = (data: string) => {
