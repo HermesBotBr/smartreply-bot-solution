@@ -8,6 +8,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { InventoryItem } from '@/types/inventory';
 import { compareBrazilianDates } from '@/lib/utils';
 import { AdvertisingItem } from '@/hooks/usePublicidadeData';
+import { Button } from '@/components/ui/button';
+import { RefreshCw } from 'lucide-react';
 
 interface SalesBoxComponentProps {
   settlementTransactions: SettlementTransaction[];
@@ -19,6 +21,7 @@ interface SalesBoxComponentProps {
   filterBySettlement?: boolean;  // Prop for filtering by settlement
   inventoryItems?: InventoryItem[]; // Added inventory items prop
   advertisingItems?: AdvertisingItem[]; // Added advertising items prop
+  onRefreshData?: () => void; // Add refresh callback prop
 }
 
 export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
@@ -30,7 +33,8 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
   endDate,
   filterBySettlement = false,  // Default to false
   inventoryItems = [], // Default to empty array
-  advertisingItems = [] // Default to empty array
+  advertisingItems = [], // Default to empty array
+  onRefreshData
 }) => {
   const salesByItem = useMemo(() => {
     if (!settlementTransactions.length) return [];
@@ -259,10 +263,26 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
     }).format(value);
   };
 
+  const handleRefresh = () => {
+    if (onRefreshData) {
+      onRefreshData();
+    }
+  };
+
   return (
     <Card className="w-full mt-6">
       <CardHeader>
-        <CardTitle className="text-xl font-bold">Vendas por Anúncio</CardTitle>
+        <div className="flex flex-row items-center justify-between">
+          <CardTitle className="text-xl font-bold">Vendas por Anúncio</CardTitle>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={handleRefresh} 
+            title="Atualizar dados de publicidade"
+          >
+            <RefreshCw className="h-4 w-4" />
+          </Button>
+        </div>
       </CardHeader>
       <CardContent>
         {salesByItem.length === 0 ? (
