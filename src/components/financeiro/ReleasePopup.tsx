@@ -1,12 +1,14 @@
 
 // src/components/financeiro/ReleasePopup.tsx
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ReleaseOperation } from "@/types/ReleaseOperation";
 import { SettlementTransaction } from "@/hooks/useSettlementData";
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/ui/table";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 interface ReleasePopupProps {
   open: boolean;
@@ -29,6 +31,8 @@ export const ReleasePopup: React.FC<ReleasePopupProps> = ({
   endDate,
   filterBySettlement = false
 }) => {
+  const [mismatchWarning, setMismatchWarning] = useState(false);
+
   useEffect(() => {
     if (open) {
       console.log("ReleasePopup aberto com dados:", { 
@@ -41,8 +45,41 @@ export const ReleasePopup: React.FC<ReleasePopupProps> = ({
         endDate,
         filterBySettlement
       });
+      
+      // Verificar se há discrepância entre os totais
+      validateTotals();
     }
-  }, [open]);
+  }, [open, settlementTransactions, operationsWithOrder]);
+
+  // Verifica se há discrepância entre os totais
+  const validateTotals = () => {
+    if (!settlementTransactions || settlementTransactions.length === 0) {
+      setMismatchWarning(false);
+      return;
+    }
+
+    // Calcular o total de repasses das transações de settlement
+    const totalSettlementValue = settlementTransactions.reduce((sum, t) => sum + (t.netValue || 0), 0);
+    
+    // Calcular o total das operações liberadas + pendentes + reembolsadas
+    const totalReleased = groupedOperationsWithOrder.reduce((sum, op) => sum + op.amount, 0);
+    const totalPending = getPendingOperations().reduce((sum, op) => sum + op.amount, 0);
+    const totalRefunded = getRefundedOperations().reduce((sum, op) => sum + op.amount, 0);
+    const combinedTotal = totalReleased + totalPending + totalRefunded;
+    
+    // Tolerar pequenas diferenças devido a arredondamentos (0.01)
+    const hasMismatch = Math.abs(totalSettlementValue - combinedTotal) > 0.01;
+    
+    setMismatchWarning(hasMismatch);
+    
+    if (hasMismatch) {
+      console.warn("Discrepância detectada nos totais:", {
+        totalSettlementValue,
+        combinedTotal,
+        difference: totalSettlementValue - combinedTotal
+      });
+    }
+  };
 
   // Função para verificar se uma data está dentro do intervalo selecionado
   const isDateInRange = (dateStr?: string): boolean => {
@@ -112,20 +149,17 @@ export const ReleasePopup: React.FC<ReleasePopupProps> = ({
       .filter(transaction => 
         transaction.orderId && 
         !liberatedOrderIds.has(transaction.orderId) &&
-        !transaction.isRefunded) // Não incluir reembolsos como pendentes
+        !transaction.isRefunded && // Não incluir reembolsos como pendentes
+        (filterBySettlement ? isDateInRange(transaction.date) : true) // Aplicar filtro de data apenas se solicitado
+      )
       .map(transaction => ({
         orderId: transaction.orderId,
         itemId: transaction.itemId || '',
         title: transaction.title || '',
         amount: transaction.netValue || 0,
-        description: 'Venda aguardando liberação'
+        description: 'Venda aguardando liberação',
+        date: transaction.date
       }));
-
-    // If filter is active, ensure pending operations are only from our settlement transactions
-    if (filterBySettlement) {
-      const settlementOrderIds = new Set(settlementTransactions.map(t => t.orderId));
-      return pendingOps.filter(op => op.orderId && settlementOrderIds.has(op.orderId));
-    }
 
     return pendingOps;
   };
@@ -138,13 +172,17 @@ export const ReleasePopup: React.FC<ReleasePopupProps> = ({
     
     // Filtrar as transações de settlement que estão marcadas como reembolsadas
     const refundedOps = settlementTransactions
-      .filter(transaction => transaction.isRefunded)
+      .filter(transaction => 
+        transaction.isRefunded &&
+        (filterBySettlement ? isDateInRange(transaction.date) : true) // Aplicar filtro de data apenas se solicitado
+      )
       .map(transaction => ({
         orderId: transaction.orderId,
         itemId: transaction.itemId || '',
         title: transaction.title || '',
         amount: transaction.netValue || 0, // Usar netValue (valor do repasse) em vez de grossValue
-        description: 'Venda reembolsada'
+        description: 'Venda reembolsada',
+        date: transaction.date
       }));
     
     return refundedOps;
@@ -162,6 +200,8 @@ export const ReleasePopup: React.FC<ReleasePopupProps> = ({
   const totalPendingOperations = pendingOperations.reduce((sum, op) => sum + op.amount, 0);
   const totalRefundedOperations = refundedOperations.reduce((sum, op) => sum + op.amount, 0);
   const grandTotal = totalOperationsWithOrder + totalOtherOperations;
+  const settlementTotal = settlementTransactions?.reduce((sum, t) => sum + (t.netValue || 0), 0) || 0;
+  const allTablesTotal = totalOperationsWithOrder + totalPendingOperations + totalRefundedOperations;
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -256,7 +296,6 @@ export const ReleasePopup: React.FC<ReleasePopupProps> = ({
               </>
             )}
             
-            {/* Nova tabela para operações reembolsadas */}
             {refundedOperations.length > 0 && (
               <>
                 <h4 className="font-semibold text-base mt-6 mb-2">Operações reembolsadas</h4>
@@ -286,6 +325,32 @@ export const ReleasePopup: React.FC<ReleasePopupProps> = ({
                 </table>
               </>
             )}
+            
+            {/* Seção de validação de totais */}
+            <div className="mt-6 p-4 bg-slate-50 rounded border">
+              <h4 className="font-semibold text-base mb-2">Validação de Totais</h4>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm font-medium">Total de Repasses:</p>
+                  <p className="text-xl font-bold">R$ {settlementTotal.toFixed(2)}</p>
+                </div>
+                
+                <div>
+                  <p className="text-sm font-medium">Total Combinado das Tabelas:</p>
+                  <p className="text-xl font-bold">R$ {allTablesTotal.toFixed(2)}</p>
+                </div>
+              </div>
+              
+              {mismatchWarning && (
+                <Alert variant="destructive" className="mt-4">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    Atenção: Há uma discrepância entre o total de repasses e o somatório das tabelas acima.
+                  </AlertDescription>
+                </Alert>
+              )}
+            </div>
             
             <div className="mt-4 p-2 bg-gray-100 rounded border">
               <p className="font-bold text-right">Valor Total Liberado: R$ {grandTotal.toFixed(2)}</p>
