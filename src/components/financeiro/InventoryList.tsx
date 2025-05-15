@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -9,6 +8,7 @@ import { toast } from '@/hooks/use-toast';
 import { useAdminSalesData } from '@/hooks/useAdminSalesData';
 import { useMlToken } from '@/hooks/useMlToken';
 import { SalesDetailPopup } from './SalesDetailPopup';
+import { parseBrazilianDate } from '@/lib/utils';
 
 interface InventoryListProps {
   inventoryItems: InventoryItem[];
@@ -96,21 +96,29 @@ export function InventoryList({ inventoryItems, isLoading, onRefreshDates }: Inv
 
   // Find the earliest purchase date when inventory items change
   useEffect(() => {
-    let earliest: string | null = null;
+    let earliestDate: Date | null = null;
+    let earliestDateStr: string | null = null;
     
     inventoryItems.forEach(item => {
       item.purchases.forEach(purchase => {
         if (purchase.date) {
-          if (!earliest || purchase.date < earliest) {
-            earliest = purchase.date;
+          const purchaseDate = parseBrazilianDate(purchase.date);
+          
+          // Skip invalid dates
+          if (!purchaseDate) return;
+          
+          // Check if this is the earliest date we've seen
+          if (!earliestDate || purchaseDate < earliestDate) {
+            earliestDate = purchaseDate;
+            earliestDateStr = purchase.date;
           }
         }
       });
     });
     
     // Only update if it's actually changed
-    if (earliest !== firstPurchaseDate) {
-      setFirstPurchaseDate(earliest);
+    if (earliestDateStr !== firstPurchaseDate) {
+      setFirstPurchaseDate(earliestDateStr);
     }
   }, [inventoryItems]);
   

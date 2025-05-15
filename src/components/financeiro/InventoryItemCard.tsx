@@ -1,9 +1,9 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Warehouse, ShoppingBag } from 'lucide-react';
 import { InventoryItem } from '@/types/inventory';
+import { compareBrazilianDates } from '@/lib/utils';
 
 interface InventoryItemCardProps {
   item: InventoryItem;
@@ -24,11 +24,8 @@ export function InventoryItemCard({ item, salesCount = 0 }: InventoryItemCardPro
   // Calculate sales distribution for each purchase in chronological order
   const purchasesWithSales = [...item.purchases]
     // Sort purchases by date (oldest first) to distribute sales chronologically
-    .sort((a, b) => {
-      if (!a.date) return 1;
-      if (!b.date) return -1;
-      return a.date.localeCompare(b.date);
-    })
+    // Using our new compareBrazilianDates function for proper date sorting
+    .sort((a, b) => compareBrazilianDates(a.date, b.date))
     // Add the sales distribution to each purchase
     .reduce((acc, purchase) => {
       const previousSalesAssigned = acc.reduce((total, p) => total + (p.salesAssigned || 0), 0);
