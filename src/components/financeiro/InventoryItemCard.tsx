@@ -21,6 +21,31 @@ export function InventoryItemCard({ item, salesCount = 0 }: InventoryItemCardPro
   // Calculate total inventory value based on actual inventory
   const totalInventoryValue = actualInventory * weightedAverageCost;
 
+  // Calculate sales distribution for each purchase in chronological order
+  const purchasesWithSales = [...item.purchases]
+    // Sort purchases by date (oldest first) to distribute sales chronologically
+    .sort((a, b) => {
+      if (!a.date) return 1;
+      if (!b.date) return -1;
+      return a.date.localeCompare(b.date);
+    })
+    // Add the sales distribution to each purchase
+    .reduce((acc, purchase) => {
+      const previousSalesAssigned = acc.reduce((total, p) => total + (p.salesAssigned || 0), 0);
+      const remainingSales = Math.max(0, salesCount - previousSalesAssigned);
+      
+      // Assign sales to this purchase (cannot exceed purchase quantity)
+      const salesAssigned = Math.min(purchase.quantity, remainingSales);
+      
+      // Add the purchase with the calculated sales
+      acc.push({
+        ...purchase,
+        salesAssigned
+      });
+      
+      return acc;
+    }, [] as Array<typeof item.purchases[0] & { salesAssigned?: number }>);
+
   return (
     <Card className="h-full">
       <CardHeader className="pb-2">
@@ -64,6 +89,7 @@ export function InventoryItemCard({ item, salesCount = 0 }: InventoryItemCardPro
             <TableHeader>
               <TableRow>
                 <TableHead>Qtd.</TableHead>
+                <TableHead>Vendas</TableHead>
                 <TableHead>Valor Unit.</TableHead>
                 <TableHead>Total</TableHead>
                 <TableHead>Source_id</TableHead>
@@ -71,9 +97,10 @@ export function InventoryItemCard({ item, salesCount = 0 }: InventoryItemCardPro
               </TableRow>
             </TableHeader>
             <TableBody>
-              {item.purchases.map((purchase, index) => (
+              {purchasesWithSales.map((purchase, index) => (
                 <TableRow key={`${purchase.sourceId}-${index}`}>
                   <TableCell>{purchase.quantity}</TableCell>
+                  <TableCell>{purchase.salesAssigned || 0}</TableCell>
                   <TableCell>R$ {purchase.unitCost.toFixed(2)}</TableCell>
                   <TableCell>R$ {purchase.totalCost.toFixed(2)}</TableCell>
                   <TableCell>{purchase.sourceId}</TableCell>
