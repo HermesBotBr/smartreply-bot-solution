@@ -32,8 +32,8 @@ interface FinancialMetricsProps {
   endDate?: Date;
   filterBySettlement?: boolean;
   inventoryItems?: InventoryItem[];
-  advertisingItems?: AdvertisingItem[]; // Added type for advertising items
-  totalAdvertisingCost: number; // Added for total advertising cost
+  advertisingItems?: AdvertisingItem[];
+  totalAdvertisingCost: number;
 }
 
 export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
@@ -55,14 +55,14 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
   endDate,
   filterBySettlement,
   inventoryItems,
-  advertisingItems = [], // Default to empty array
-  totalAdvertisingCost = 0 // Default to 0
+  advertisingItems = [],
+  totalAdvertisingCost = 0
 }) => {
   const [repassesPopupOpen, setRepassesPopupOpen] = useState(false);
   const [releasesPopupOpen, setReleasesPopupOpen] = useState(false);
   const [claimsPopupOpen, setClaimsPopupOpen] = useState(false);
   const [transfersPopupOpen, setTransfersPopupOpen] = useState(false);
-  const [publicidadePopupOpen, setPublicidadePopupOpen] = useState(false); // Add state for publicidade popup
+  const [publicidadePopupOpen, setPublicidadePopupOpen] = useState(false);
 
   return (
     <div className="mt-6">
@@ -121,14 +121,14 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
         endDate={endDate}
         filterBySettlement={filterBySettlement}
         inventoryItems={inventoryItems}
-        advertisingItems={advertisingItems} // Pass advertising items to SalesBoxComponent
+        advertisingItems={advertisingItems}
       />
 
       {/* Popups */}
       <RepassesPopup
         open={repassesPopupOpen}
         onClose={() => setRepassesPopupOpen(false)}
-        settlementTransactions={settlementTransactions}
+        transactions={settlementTransactions}
         startDate={startDate}
         endDate={endDate}
       />
@@ -136,31 +136,36 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
       <ReleasePopup
         open={releasesPopupOpen}
         onClose={() => setReleasesPopupOpen(false)}
-        releaseOperations={releaseOperationsWithOrder}
+        operationsWithOrder={releaseOperationsWithOrder}
+        otherOperations={releaseOtherOperations}
+        settlementTransactions={settlementTransactions}
         startDate={startDate}
         endDate={endDate}
+        filterBySettlement={filterBySettlement}
       />
       
       <ClaimsPopup
         open={claimsPopupOpen}
         onClose={() => setClaimsPopupOpen(false)}
-        claims={releaseOtherOperations.filter(op => 
-          op.description.includes('reserve_for_dispute') || 
-          op.description.includes('refund') || 
-          op.description.includes('mediation') ||
-          op.description.includes('reserve_for_bpp_shipping_return')
+        refundedOperations={releaseOtherOperations.filter(op => 
+          op.description?.includes('refund') || false
         )}
-        totalAmount={totalClaims}
+        claimOperations={releaseOtherOperations.filter(op => 
+          (op.description?.includes('reserve_for_dispute') || 
+          op.description?.includes('mediation') ||
+          op.description?.includes('reserve_for_bpp_shipping_return')) || false
+        )}
+        startDate={startDate}
+        endDate={endDate}
       />
       
       <TransfersPopup
         open={transfersPopupOpen}
         onClose={() => setTransfersPopupOpen(false)}
         transfers={releaseOtherOperations.filter(op => 
-          op.description.includes('payout') || 
-          op.description.includes('reserve_for_payout')
+          (op.description?.includes('payout') || 
+          op.description?.includes('reserve_for_payout')) || false
         )}
-        totalAmount={totalTransfers}
       />
 
       <PublicidadePopup
