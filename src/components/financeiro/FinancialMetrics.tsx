@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { MetricCard } from '@/components/dashboard/metrics/MetricCard';
 import { SettlementTransaction } from '@/hooks/useSettlementData';
@@ -10,6 +9,7 @@ import { ClaimsPopup } from './ClaimsPopup';
 import { ReleaseOperation } from '@/types/ReleaseOperation';
 import { AlertCircle } from 'lucide-react';
 import { SalesBoxComponent } from './SalesBoxComponent';
+import { InventoryItem } from '@/types/inventory';
 
 interface FinancialMetricsProps {
   grossSales: number;
@@ -29,6 +29,7 @@ interface FinancialMetricsProps {
   startDate?: Date;
   endDate?: Date;
   filterBySettlement?: boolean;
+  inventoryItems?: InventoryItem[]; // Added inventory items prop
 }
 
 export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
@@ -48,7 +49,8 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
   releaseOtherOperations,
   startDate,
   endDate,
-  filterBySettlement = false
+  filterBySettlement = false,
+  inventoryItems = [] // Default to empty array
 }) => {
   const [repassesPopupOpen, setRepassesPopupOpen] = useState(false);
   const [releasePopupOpen, setReleasePopupOpen] = useState(false);
@@ -285,6 +287,7 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
         startDate={startDate}
         endDate={endDate}
         filterBySettlement={filterBySettlement}
+        inventoryItems={inventoryItems} // Pass inventory items to the component
       />
       
       <RepassesPopup 

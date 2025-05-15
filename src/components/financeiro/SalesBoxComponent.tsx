@@ -1,10 +1,11 @@
-
 import React, { useMemo } from 'react';
 import { ReleaseOperation } from '@/types/ReleaseOperation';
 import { SettlementTransaction } from '@/hooks/useSettlementData';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
+import { InventoryItem } from '@/types/inventory';
+import { compareBrazilianDates } from '@/lib/utils';
 
 interface SalesBoxComponentProps {
   settlementTransactions: SettlementTransaction[];
@@ -14,6 +15,7 @@ interface SalesBoxComponentProps {
   startDate?: Date;
   endDate?: Date;
   filterBySettlement?: boolean;  // Prop for filtering by settlement
+  inventoryItems?: InventoryItem[]; // Added inventory items prop
 }
 
 export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
@@ -24,6 +26,7 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
   startDate,
   endDate,
   filterBySettlement = false,  // Default to false
+  inventoryItems = [] // Default to empty array
 }) => {
   const salesByItem = useMemo(() => {
     if (!settlementTransactions.length) return [];
@@ -53,6 +56,7 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
         count: number;
         amount: number;
       };
+      individualProfit: number; // Added field for individual profit
     }>();
 
     // Process settlement transactions (all sales)
@@ -69,7 +73,8 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
           totalFees: 0,
           released: { count: 0, amount: 0 },
           unreleased: { count: 0, amount: 0 },
-          refunded: { count: 0, amount: 0 }
+          refunded: { count: 0, amount: 0 },
+          individualProfit: 0 // Initialize individual profit
         });
       }
 
@@ -133,10 +138,76 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
       }
     });
 
+    // Calculate individual profit based on inventory data
+    itemGroups.forEach(item => {
+      // Check if we have released units and inventory data for this item
+      if (item.released.count > 0 && item.released.amount > 0) {
+        // Find matching inventory item
+        const inventoryItem = inventoryItems.find(invItem => invItem.itemId === item.itemId);
+        
+        if (inventoryItem) {
+          // Calculate the per-unit value of released amount
+          const unitReleaseValue = item.released.amount / item.released.count;
+          
+          // Get the purchase history for this item
+          const { purchases } = inventoryItem;
+          
+          // Filter purchases that occurred before or on the end date of analysis
+          const filteredPurchases = endDate 
+            ? purchases.filter(purchase => {
+                if (!purchase.date) return true; // Include purchases without dates
+                
+                // Parse the Brazilian date format (DD/MM/YYYY)
+                const parts = purchase.date.split('/');
+                const purchaseDate = new Date(
+                  parseInt(parts[2]), // Year
+                  parseInt(parts[1]) - 1, // Month (0-indexed)
+                  parseInt(parts[0]) // Day
+                );
+                
+                // Keep purchases before or on the end date
+                return purchaseDate <= endDate;
+              })
+            : purchases;
+          
+          // Sort purchases by date (newest first)
+          const sortedPurchases = [...filteredPurchases].sort((a, b) => {
+            if (!a.date && !b.date) return 0;
+            if (!a.date) return 1;
+            if (!b.date) return -1;
+            return -1 * compareBrazilianDates(a.date, b.date); // -1 to reverse order
+          });
+          
+          // Calculate the weighted average cost of the last X units (where X = released count)
+          let remainingUnits = item.released.count;
+          let totalCost = 0;
+          let consideredUnits = 0;
+          
+          for (const purchase of sortedPurchases) {
+            const unitsToConsider = Math.min(purchase.quantity, remainingUnits);
+            
+            if (unitsToConsider <= 0) break;
+            
+            totalCost += unitsToConsider * purchase.unitCost;
+            consideredUnits += unitsToConsider;
+            remainingUnits -= unitsToConsider;
+            
+            if (remainingUnits <= 0) break;
+          }
+          
+          // Calculate the average unit cost and individual profit
+          if (consideredUnits > 0) {
+            const averageUnitCost = totalCost / consideredUnits;
+            item.individualProfit = unitReleaseValue - averageUnitCost;
+          }
+        }
+      }
+    });
+
     // Convert to array and sort by total sales (descending)
     return Array.from(itemGroups.values())
       .sort((a, b) => b.totalSales - a.totalSales);
-  }, [settlementTransactions, releaseOperationsWithOrder, filterBySettlement]);
+  }, [settlementTransactions, releaseOperationsWithOrder, filterBySettlement, inventoryItems, endDate]);
 
   // Format currency values
   const formatCurrency = (value: number) => {
@@ -170,6 +241,7 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
                   <TableHead className="text-right">Liberado</TableHead>
                   <TableHead className="text-right">Não Liberado</TableHead>
                   <TableHead className="text-right">Reembolsadas</TableHead>
+                  <TableHead className="text-right">Lucro Individual /L</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -197,6 +269,9 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
                     </TableCell>
                     <TableCell className="text-right">
                       {formatCurrency(item.refunded.amount)} <span className="text-xs text-gray-500">({item.refunded.count} un.)</span>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {item.individualProfit ? formatCurrency(item.individualProfit) : "Sem dados"}
                     </TableCell>
                   </TableRow>
                 ))}

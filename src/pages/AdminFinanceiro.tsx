@@ -10,7 +10,7 @@ import { useNavigate } from 'react-router-dom';
 import { useMlToken } from '@/hooks/useMlToken';
 import { useSettlementData } from '@/hooks/useSettlementData';
 import { useInventoryData } from '@/hooks/useInventoryData';
-import { toast } from 'sonner';
+import { toast } from '@/components/ui/use-toast';
 import { ReleaseOperation } from '@/types/ReleaseOperation';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
@@ -70,6 +70,7 @@ const AdminFinanceiro: React.FC = () => {
     refetch: refetchSettlement,
   } = useSettlementData(sellerId, startDate, endDate, true);
 
+  // Load inventory data when entering the page
   const { 
     items: inventoryItems, 
     isLoading: inventoryLoading, 
@@ -440,6 +441,7 @@ const AdminFinanceiro: React.FC = () => {
               startDate={startDate}
               endDate={endDate}
               filterBySettlement={filterBySettlement}
+              inventoryItems={inventoryItems} // Pass inventory items to FinancialMetrics
             />
           </TabsContent>
 
