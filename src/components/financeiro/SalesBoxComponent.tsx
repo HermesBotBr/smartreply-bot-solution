@@ -21,7 +21,8 @@ interface SalesBoxComponentProps {
   filterBySettlement?: boolean;
   inventoryItems?: InventoryItem[];
   advertisingItems?: AdvertisingItem[];
-  onRefreshAdvertisingData?: () => void; // New prop for refresh functionality
+  totalAdvertisingCost: number;
+  onRefreshAdvertisingData?: () => void;
 }
 
 export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
@@ -34,6 +35,7 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
   filterBySettlement = false,
   inventoryItems = [],
   advertisingItems = [],
+  totalAdvertisingCost = 0,
   onRefreshAdvertisingData
 }) => {
   const salesByItem = useMemo(() => {
@@ -69,6 +71,9 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
       advertisingCost: number; // Added field for advertising cost
       advertisingSalesUnits: number; // Added field for advertising sales units
       advertisingProfitPerUnit: number; // Added field for profit per unit from advertising
+      individualProfitMinusAd: number; // New field for individual profit - advertising
+      totalProfitMinusAd: number; // New field for total profit - advertising
+      totalExpectedProfitMinusAd: number; // New field for total expected profit - advertising
     }>();
 
     // Process settlement transactions (all sales)
@@ -91,6 +96,9 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
           advertisingCost: 0, // Initialize advertising cost
           advertisingSalesUnits: 0, // Initialize advertising sales units
           advertisingProfitPerUnit: 0, // Initialize advertising profit per unit
+          individualProfitMinusAd: 0, // Initialize individual profit - advertising
+          totalProfitMinusAd: 0, // Initialize total profit - advertising
+          totalExpectedProfitMinusAd: 0, // Initialize total expected profit - advertising
         });
       }
 
@@ -250,6 +258,34 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
       }
     });
 
+    // Calculate new columns for each item
+    itemGroups.forEach(item => {
+      // Only calculate if we have the required data
+      if (item.individualProfit && item.totalUnits > 0 && item.released.count > 0) {
+        // 1. Lucro Individual /L -P
+        // Primeiro, deve-se coletar o valor da porcentagem das unidades de vendas liberadas em relação as unidades das vendas totais
+        const releasedPercentage = item.released.count / item.totalUnits;
+        
+        // (Valor da coluna "Publicidade * releasedPercentage) = X
+        const adjustedAdCost = item.advertisingCost * releasedPercentage;
+        
+        // X / Unidades Liberadas = Y
+        const adCostPerReleasedUnit = item.released.count > 0 ? adjustedAdCost / item.released.count : 0;
+        
+        // (Valor da coluna "Lucro Individual /L") - Y = "Lucro Individual /L -P"
+        item.individualProfitMinusAd = item.individualProfit - adCostPerReleasedUnit;
+        
+        // 2. Lucro Total /L -P
+        // Multiplicar o valor de "Lucro Individual /L -P" pelas unidades da coluna "Liberado"
+        item.totalProfitMinusAd = item.individualProfitMinusAd * item.released.count;
+        
+        // 3. Lucro Total Previsto -P
+        // (Unidades da coluna "Liberado" + Unidades da coluna "Não Liberado") * Lucro Individual /L -P
+        const totalUnitsExpected = item.released.count + item.unreleased.count;
+        item.totalExpectedProfitMinusAd = item.individualProfitMinusAd * totalUnitsExpected;
+      }
+    });
+
     // Convert to array and sort by total sales (descending)
     return Array.from(itemGroups.values())
       .sort((a, b) => b.totalSales - a.totalSales);
@@ -301,6 +337,9 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
                   <TableHead className="text-right">Publicidade</TableHead>
                   <TableHead className="text-right">Lucro indiv. vendas pub.</TableHead>
                   <TableHead className="text-right">Lucro Individual /L</TableHead>
+                  <TableHead className="text-right">Lucro Individual /L -P</TableHead>
+                  <TableHead className="text-right">Lucro Total /L -P</TableHead>
+                  <TableHead className="text-right">Lucro Total Previsto -P</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -346,6 +385,16 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
                     </TableCell>
                     <TableCell className="text-right">
                       {item.individualProfit ? formatCurrency(item.individualProfit) : "Sem dados"}
+                    </TableCell>
+                    {/* New columns */}
+                    <TableCell className="text-right">
+                      {item.individualProfitMinusAd ? formatCurrency(item.individualProfitMinusAd) : "Sem dados"}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {item.totalProfitMinusAd ? formatCurrency(item.totalProfitMinusAd) : "Sem dados"}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {item.totalExpectedProfitMinusAd ? formatCurrency(item.totalExpectedProfitMinusAd) : "Sem dados"}
                     </TableCell>
                   </TableRow>
                 ))}
