@@ -10,6 +10,7 @@ interface Payment {
   id: number;
   order_id: number;
   status?: string;
+  status_detail?: string; // Adicionando para identificar reembolsos
 }
 
 interface OrderItem {
@@ -41,6 +42,7 @@ export interface SettlementTransaction {
   netValue: number;
   itemId?: string;
   title?: string;
+  isRefunded?: boolean; // Nova propriedade para identificar reembolsos
 }
 
 
@@ -116,6 +118,11 @@ export function useSettlementData(
           // Add units to total (count every unique order)
           unitsTotal += units;
           
+          // Verificar se o pedido tem pagamento com status_detail de reembolso
+          const isRefunded = order.payments?.some(payment => 
+            payment.status_detail === 'bpp_refunded' || payment.status === 'refunded'
+          );
+          
           // Initialize order transaction
           const firstItem = order.order_items?.[0]?.item;
 
@@ -128,7 +135,8 @@ export function useSettlementData(
             grossValue: 0,
             netValue: 0,
             itemId: firstItem?.id || '',
-            title: firstItem?.title || ''
+            title: firstItem?.title || '',
+            isRefunded // Adicionar flag de reembolso
           });
           
           // Process payments for this order
@@ -169,8 +177,11 @@ export function useSettlementData(
               transaction.netValue = totalAmount * 0.7;
             }
 
-            grossTotal += totalAmount;
-            netTotal += transaction.netValue;
+            // Só adicionar ao total bruto e líquido se não for reembolsado
+            if (!transaction.isRefunded) {
+              grossTotal += totalAmount;
+              netTotal += transaction.netValue;
+            }
           }
         });
       }
@@ -183,6 +194,7 @@ export function useSettlementData(
       const transactions = Array.from(transactionsMap.values());
       
       console.log("Transações finais:", transactions);
+      console.log("Transações reembolsadas:", transactions.filter(t => t.isRefunded).length);
 
       setSettlementTransactions(transactions);
       setTotalGrossSales(grossTotal);
@@ -212,11 +224,11 @@ export function useSettlementData(
         });
       });
       
-      // Recalculate total net sales
-      const updatedNetTotal = settlementTransactions.reduce(
-        (sum, transaction) => sum + transaction.netValue, 
-        0
-      );
+      // Recalculate total net sales, excluding refunded transactions
+      const updatedNetTotal = settlementTransactions
+        .filter(transaction => !transaction.isRefunded)
+        .reduce((sum, transaction) => sum + transaction.netValue, 0);
+      
       setTotalNetSales(updatedNetTotal);
     }
   }, [paymentsData, paymentsLoading]);
