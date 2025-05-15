@@ -14,7 +14,6 @@ import { toast } from 'sonner';
 import { ReleaseOperation } from '@/types/ReleaseOperation';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { InventoryItem } from '@/types/inventory';
 
 const AdminFinanceiro: React.FC = () => {
   /* ------------------------------------------------------------------ */
@@ -34,9 +33,6 @@ const AdminFinanceiro: React.FC = () => {
   
   // Add the state for the filter toggle
   const [filterBySettlement, setFilterBySettlement] = useState<boolean>(false);
-  
-  // State to store inventory items
-  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
 
   const [metrics, setMetrics] = useState({
     grossSales: 0,
@@ -74,9 +70,8 @@ const AdminFinanceiro: React.FC = () => {
     refetch: refetchSettlement,
   } = useSettlementData(sellerId, startDate, endDate, true);
 
-  // Load inventory data on component mount, regardless of active tab
   const { 
-    items: inventoryItemsFromHook, 
+    items: inventoryItems, 
     isLoading: inventoryLoading, 
     error: inventoryError,
     refreshDates 
@@ -88,33 +83,6 @@ const AdminFinanceiro: React.FC = () => {
       toast.error(`Erro ao carregar dados de estoque: ${inventoryError.message}`);
     }
   }, [inventoryError]);
-
-  // Update local state when inventory data changes
-  useEffect(() => {
-    if (inventoryItemsFromHook && inventoryItemsFromHook.length > 0) {
-      setInventoryItems(inventoryItemsFromHook);
-    }
-  }, [inventoryItemsFromHook]);
-
-  // Function to handle inventory refresh for the profit calculation
-  const handleRefreshInventory = async () => {
-    try {
-      // This will simulate the effect of opening the "Estoque" tab
-      // by refreshing the dates from localStorage and updating inventory data
-      refreshDates();
-      
-      // Wait a moment to give the impression of loading
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // If we have inventory data but need to force a refresh, we could do it here
-      // For now, we're just using the refreshDates function which reads from localStorage
-      
-      return Promise.resolve();
-    } catch (error) {
-      console.error('Error refreshing inventory data:', error);
-      return Promise.reject(error);
-    }
-  };
 
   // Reprocessar dados de release quando as datas mudarem
   useEffect(() => {
@@ -472,8 +440,6 @@ const AdminFinanceiro: React.FC = () => {
               startDate={startDate}
               endDate={endDate}
               filterBySettlement={filterBySettlement}
-              inventoryItems={inventoryItems}
-              onRefreshInventory={handleRefreshInventory}
             />
           </TabsContent>
 
@@ -492,7 +458,7 @@ const AdminFinanceiro: React.FC = () => {
 
           <TabsContent value="estoque" className="mt-4">
             <InventoryList 
-              inventoryItems={inventoryItems} 
+              inventoryItems={inventoryItems || []} 
               isLoading={inventoryLoading} 
               onRefreshDates={refreshDates}
             />

@@ -1,14 +1,10 @@
+
 import React, { useMemo } from 'react';
 import { ReleaseOperation } from '@/types/ReleaseOperation';
 import { SettlementTransaction } from '@/hooks/useSettlementData';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { InventoryItem } from '@/types/inventory';
-import { compareBrazilianDates } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { RefreshCw } from 'lucide-react';
-import { toast } from '@/components/ui/use-toast';
 
 interface SalesBoxComponentProps {
   settlementTransactions: SettlementTransaction[];
@@ -17,9 +13,7 @@ interface SalesBoxComponentProps {
   totalMLFees: number;
   startDate?: Date;
   endDate?: Date;
-  filterBySettlement?: boolean;
-  inventoryItems?: InventoryItem[]; // Inventory data prop
-  onRefreshInventory?: () => Promise<void>; // New prop for refreshing inventory data
+  filterBySettlement?: boolean;  // Prop for filtering by settlement
 }
 
 export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
@@ -29,36 +23,8 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
   totalMLFees,
   startDate,
   endDate,
-  filterBySettlement = false,
-  inventoryItems = [], 
-  onRefreshInventory, // New prop for refreshing inventory data
+  filterBySettlement = false,  // Default to false
 }) => {
-  // Handle refresh button click
-  const handleRefreshClick = async () => {
-    if (onRefreshInventory) {
-      toast({
-        title: "Atualizando dados",
-        description: "Buscando vendas...",
-      });
-      
-      try {
-        await onRefreshInventory();
-        
-        toast({
-          title: "Sucesso",
-          description: "Vendas calculadas com sucesso!",
-          variant: "default",
-        });
-      } catch (error) {
-        toast({
-          title: "Erro",
-          description: "Falha ao atualizar os dados de lucro.",
-          variant: "destructive",
-        });
-      }
-    }
-  };
-
   const salesByItem = useMemo(() => {
     if (!settlementTransactions.length) return [];
 
@@ -75,7 +41,6 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
       totalUnits: number;
       totalRepasse: number;
       totalFees: number;
-      unitProfit: number; // New field for unit profit
       released: {
         count: number;
         amount: number;
@@ -102,7 +67,6 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
           totalUnits: 0,
           totalRepasse: 0,
           totalFees: 0,
-          unitProfit: 0,
           released: { count: 0, amount: 0 },
           unreleased: { count: 0, amount: 0 },
           refunded: { count: 0, amount: 0 }
@@ -169,60 +133,10 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
       }
     });
 
-    // Calculate unit profit for each item based on inventory data and released sales
-    if (inventoryItems && inventoryItems.length > 0 && endDate) {
-      itemGroups.forEach(item => {
-        // Only calculate profit if there are released units
-        if (item.released.count > 0) {
-          // Find the corresponding inventory item
-          const inventoryItem = inventoryItems.find(invItem => invItem.itemId === item.itemId);
-          
-          if (inventoryItem) {
-            // Calculate repasse per unit
-            const repassePerUnit = item.released.amount / item.released.count;
-            
-            // Sort purchases by date (oldest first) to properly calculate costs
-            const sortedPurchases = [...inventoryItem.purchases]
-              .sort((a, b) => compareBrazilianDates(a.date, b.date));
-            
-            // Filter purchases by end date (only consider purchases made before or on the end date)
-            const validPurchases = sortedPurchases.filter(purchase => {
-              if (!purchase.date || !endDate) return true;
-              
-              // Parse the purchase date
-              const [day, month, year] = purchase.date.split('/').map(Number);
-              const purchaseDate = new Date(year, month - 1, day);
-              
-              // Compare with end date
-              return purchaseDate <= endDate;
-            });
-            
-            // Calculate weighted average cost for the released units
-            let remainingUnitsNeeded = item.released.count;
-            let totalCost = 0;
-            
-            for (const purchase of validPurchases) {
-              if (remainingUnitsNeeded <= 0) break;
-              
-              const unitsFromThisPurchase = Math.min(purchase.quantity, remainingUnitsNeeded);
-              totalCost += unitsFromThisPurchase * purchase.unitCost;
-              remainingUnitsNeeded -= unitsFromThisPurchase;
-            }
-            
-            // If we have enough purchase data to calculate average cost
-            if (remainingUnitsNeeded <= 0) {
-              const averageCost = totalCost / item.released.count;
-              item.unitProfit = repassePerUnit - averageCost;
-            }
-          }
-        }
-      });
-    }
-
     // Convert to array and sort by total sales (descending)
     return Array.from(itemGroups.values())
       .sort((a, b) => b.totalSales - a.totalSales);
-  }, [settlementTransactions, releaseOperationsWithOrder, filterBySettlement, inventoryItems, endDate]);
+  }, [settlementTransactions, releaseOperationsWithOrder, filterBySettlement]);
 
   // Format currency values
   const formatCurrency = (value: number) => {
@@ -234,16 +148,8 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
 
   return (
     <Card className="w-full mt-6">
-      <CardHeader className="flex flex-row items-center justify-between">
+      <CardHeader>
         <CardTitle className="text-xl font-bold">Vendas por Anúncio</CardTitle>
-        <Button 
-          variant="outline" 
-          size="icon" 
-          onClick={handleRefreshClick}
-          title="Atualizar dados de lucro"
-        >
-          <RefreshCw className="h-4 w-4" />
-        </Button>
       </CardHeader>
       <CardContent>
         {salesByItem.length === 0 ? (
@@ -264,7 +170,6 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
                   <TableHead className="text-right">Liberado</TableHead>
                   <TableHead className="text-right">Não Liberado</TableHead>
                   <TableHead className="text-right">Reembolsadas</TableHead>
-                  <TableHead className="text-right">Lucro Individual /L</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -292,15 +197,6 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
                     </TableCell>
                     <TableCell className="text-right">
                       {formatCurrency(item.refunded.amount)} <span className="text-xs text-gray-500">({item.refunded.count} un.)</span>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {item.unitProfit ? (
-                        <span className={item.unitProfit < 0 ? 'text-red-600' : 'text-green-600'}>
-                          {formatCurrency(item.unitProfit)}
-                        </span>
-                      ) : (
-                        <span className="text-gray-500">Não calculado</span>
-                      )}
                     </TableCell>
                   </TableRow>
                 ))}

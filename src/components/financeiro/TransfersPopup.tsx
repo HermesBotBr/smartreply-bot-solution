@@ -17,13 +17,28 @@ import { ProductListingPopup } from './ProductListingPopup';
 import { getNgrokUrl } from '@/config/api';
 
 interface TransfersPopupProps {
-  open?: boolean;
-  onClose?: () => void;
-  transfers?: ReleaseOperation[];
-  operations?: ReleaseOperation[]; // Add for backward compatibility
-  totalTransfers?: number;
+  open: boolean;
+  onClose: () => void;
+  transfers: ReleaseOperation[];
   startDate?: Date;  // Adicionando data inicial do filtro
   endDate?: Date;    // Adicionando data final do filtro
+}
+
+interface TransferDescription {
+  description: string;
+  value: number;
+}
+
+interface TransferWithDescriptions extends ReleaseOperation {
+  manualDescriptions: TransferDescription[];
+}
+
+interface ApiDescription {
+  id: number;
+  seller_id: string;
+  source_id: string;
+  descricao: string;
+  valor: string;
 }
 
 // Define a transaction interface that matches what we're creating
@@ -47,15 +62,10 @@ interface Product {
 export const TransfersPopup: React.FC<TransfersPopupProps> = ({
   open,
   onClose,
-  transfers = [],
-  operations = [], // Support both props for backward compatibility
-  totalTransfers,
+  transfers,
   startDate,
   endDate
 }) => {
-  // Use transfers if provided, otherwise fall back to operations
-  const transfersToUse = transfers.length > 0 ? transfers : operations;
-  
   const [transfersWithDescriptions, setTransfersWithDescriptions] = useState<TransferWithDescriptions[]>([]);
   const [activeTransferId, setActiveTransferId] = useState<string | null>(null);
   const [newDescription, setNewDescription] = useState("");
@@ -80,12 +90,12 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
   // Atualizar a lista de transferências quando as transferências mudam
   useEffect(() => {
     setTransfersWithDescriptions(
-      transfersToUse.map(transfer => ({
+      transfers.map(transfer => ({
         ...transfer,
         manualDescriptions: []
       }))
     );
-  }, [transfersToUse]);
+  }, [transfers]);
 
   // Buscar descrições da API
   const fetchDescriptions = async () => {
@@ -332,7 +342,7 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
   const summary = calculateSummaryValues();
 
   return (
-    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose?.()}>
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Detalhamento de Transferências</DialogTitle>
@@ -500,38 +510,3 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
     </Dialog>
   );
 };
-
-// These interfaces need to be defined for the component to work properly
-interface TransferDescription {
-  description: string;
-  value: number;
-}
-
-interface TransferWithDescriptions extends ReleaseOperation {
-  manualDescriptions: TransferDescription[];
-}
-
-interface ApiDescription {
-  id: number;
-  seller_id: string;
-  source_id: string;
-  descricao: string;
-  valor: string;
-}
-
-interface TransferTransaction {
-  date: string;
-  sourceId: string;
-  descriptions: string[];
-  group: string;
-  value: number;
-  totalDeclared: number;
-  manualDescriptions: TransferDescription[];
-}
-
-interface Product {
-  mlb: string;
-  title: string;
-  image: string;
-  active: boolean;
-}

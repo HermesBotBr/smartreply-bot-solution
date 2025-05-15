@@ -6,10 +6,10 @@ import { ReleaseOperation } from "@/types/ReleaseOperation";
 import { SettlementTransaction } from "@/hooks/useSettlementData";
 
 interface ClaimsPopupProps {
-  open?: boolean;
-  onClose?: () => void;
-  operations?: ReleaseOperation[];
-  totalClaims?: number;
+  open: boolean;
+  onClose: () => void;
+  refundedOperations: ReleaseOperation[];
+  claimOperations: ReleaseOperation[];
   startDate?: Date;
   endDate?: Date;
 }
@@ -17,24 +17,15 @@ interface ClaimsPopupProps {
 export const ClaimsPopup: React.FC<ClaimsPopupProps> = ({
   open,
   onClose,
-  operations = [],
-  totalClaims = 0,
+  refundedOperations,
+  claimOperations,
   startDate,
   endDate
 }) => {
-  // Filter refunded operations vs other claims
-  const refundedOperations = operations.filter(op => 
-    op.orderId && ['refund'].includes(op.description)
-  );
-  
-  const claimOperations = operations.filter(op => 
-    !op.orderId || !['refund'].includes(op.description)
-  );
-  
   // Calculate totals
   const totalRefunded = refundedOperations.reduce((sum, op) => sum + op.amount, 0);
-  const totalOtherClaims = claimOperations.reduce((sum, op) => sum + op.amount, 0);
-  const grandTotal = totalRefunded + totalOtherClaims;
+  const totalClaims = claimOperations.reduce((sum, op) => sum + op.amount, 0);
+  const grandTotal = totalRefunded + totalClaims;
   
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -95,7 +86,7 @@ export const ClaimsPopup: React.FC<ClaimsPopupProps> = ({
                 ))}
                 <tr className="font-semibold bg-gray-50">
                   <td className="p-2 border text-right">Total:</td>
-                  <td className="p-2 border text-red-500">R$ {totalOtherClaims.toFixed(2)}</td>
+                  <td className="p-2 border text-red-500">R$ {totalClaims.toFixed(2)}</td>
                 </tr>
               </tbody>
             </table>

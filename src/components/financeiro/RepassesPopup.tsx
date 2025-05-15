@@ -11,18 +11,14 @@ import { toast } from 'sonner';
 
 interface RepassesPopupProps {
   transactions: SettlementTransaction[];
-  totalRepasses?: number;
-  totalFees?: number;
-  open?: boolean;
-  onClose?: () => void;
-  startDate?: Date;
-  endDate?: Date;
+  open: boolean;
+  onClose: () => void;
+  startDate?: Date; // Add startDate prop
+  endDate?: Date;   // Add endDate prop
 }
 
 export const RepassesPopup: React.FC<RepassesPopupProps> = ({ 
   transactions, 
-  totalRepasses,
-  totalFees,
   open, 
   onClose,
   startDate,

@@ -12,8 +12,6 @@ interface MetricCardProps {
   textColor?: string;
   onClick?: () => void;
   alertStatus?: boolean;
-  trend?: string | undefined;
-  popupComponent?: React.ReactNode;
 }
 
 export const MetricCard: React.FC<MetricCardProps> = ({
@@ -25,8 +23,6 @@ export const MetricCard: React.FC<MetricCardProps> = ({
   textColor = 'text-gray-800',
   onClick,
   alertStatus,
-  trend,
-  popupComponent,
 }) => {
   return (
     <Card 
