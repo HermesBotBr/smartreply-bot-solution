@@ -14,6 +14,7 @@ import { toast } from 'sonner';
 import { ReleaseOperation } from '@/types/ReleaseOperation';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { InventoryItem } from '@/types/inventory';
 
 const AdminFinanceiro: React.FC = () => {
   /* ------------------------------------------------------------------ */
@@ -33,6 +34,9 @@ const AdminFinanceiro: React.FC = () => {
   
   // Add the state for the filter toggle
   const [filterBySettlement, setFilterBySettlement] = useState<boolean>(false);
+  
+  // State to store inventory items
+  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
 
   const [metrics, setMetrics] = useState({
     grossSales: 0,
@@ -70,8 +74,9 @@ const AdminFinanceiro: React.FC = () => {
     refetch: refetchSettlement,
   } = useSettlementData(sellerId, startDate, endDate, true);
 
+  // Load inventory data on component mount, regardless of active tab
   const { 
-    items: inventoryItems, 
+    items: inventoryItemsFromHook, 
     isLoading: inventoryLoading, 
     error: inventoryError,
     refreshDates 
@@ -83,6 +88,13 @@ const AdminFinanceiro: React.FC = () => {
       toast.error(`Erro ao carregar dados de estoque: ${inventoryError.message}`);
     }
   }, [inventoryError]);
+
+  // Update local state when inventory data changes
+  useEffect(() => {
+    if (inventoryItemsFromHook && inventoryItemsFromHook.length > 0) {
+      setInventoryItems(inventoryItemsFromHook);
+    }
+  }, [inventoryItemsFromHook]);
 
   // Reprocessar dados de release quando as datas mudarem
   useEffect(() => {
@@ -440,6 +452,7 @@ const AdminFinanceiro: React.FC = () => {
               startDate={startDate}
               endDate={endDate}
               filterBySettlement={filterBySettlement}
+              inventoryItems={inventoryItems} // Pass inventory items to FinancialMetrics
             />
           </TabsContent>
 
@@ -458,7 +471,7 @@ const AdminFinanceiro: React.FC = () => {
 
           <TabsContent value="estoque" className="mt-4">
             <InventoryList 
-              inventoryItems={inventoryItems || []} 
+              inventoryItems={inventoryItems} 
               isLoading={inventoryLoading} 
               onRefreshDates={refreshDates}
             />
