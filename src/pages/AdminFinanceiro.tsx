@@ -63,7 +63,6 @@ const AdminFinanceiro: React.FC = () => {
 
   const {
     settlementTransactions,
-    refundedTransactions,
     totalGrossSales,
     totalNetSales,
     totalUnits,
@@ -436,7 +435,6 @@ const AdminFinanceiro: React.FC = () => {
               totalCreditCard={metrics.totalCreditCard}
               totalShippingCashback={metrics.totalShippingCashback}
               settlementTransactions={settlementTransactions}
-              refundedTransactions={refundedTransactions}
               releaseOperationsWithOrder={releaseOperationsWithOrder}
               releaseOtherOperations={releaseOtherOperations}
               startDate={startDate}

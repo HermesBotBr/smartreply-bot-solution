@@ -10,7 +10,6 @@ interface Payment {
   id: number;
   order_id: number;
   status?: string;
-  status_detail?: string; // Adicionando campo para identificar reembolsos
 }
 
 interface OrderItem {
@@ -42,7 +41,6 @@ export interface SettlementTransaction {
   netValue: number;
   itemId?: string;
   title?: string;
-  isRefunded?: boolean; // Nova propriedade para identificar reembolsos
 }
 
 
@@ -53,13 +51,11 @@ export function useSettlementData(
   shouldFetch: boolean = true
 ) {
   const [settlementTransactions, setSettlementTransactions] = useState<SettlementTransaction[]>([]);
-  const [refundedTransactions, setRefundedTransactions] = useState<SettlementTransaction[]>([]); // Nova state para operações reembolsadas
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [totalGrossSales, setTotalGrossSales] = useState(0);
   const [totalNetSales, setTotalNetSales] = useState(0);
   const [totalUnits, setTotalUnits] = useState(0);
-  const [totalRefundedAmount, setTotalRefundedAmount] = useState(0); // Novo total para reembolsos
   
   // Fetch payment data to get exact repasse values
   const { 
@@ -104,11 +100,9 @@ export function useSettlementData(
 
       // Process the API response
       const transactionsMap = new Map<number, SettlementTransaction>();
-      const refundedMap = new Map<number, SettlementTransaction>();
       let grossTotal = 0;
       let netTotal = 0;
       let unitsTotal = 0;
-      let refundedTotal = 0;
 
       // First pass: Initialize all orders with their units
       if (response.data && response.data.results) {
@@ -119,39 +113,28 @@ export function useSettlementData(
           // Calculate total units from order items (once per order)
           const units = order.order_items?.reduce((sum, item) => sum + (item.quantity || 1), 0) || 1;
           
+          // Add units to total (count every unique order)
+          unitsTotal += units;
+          
           // Initialize order transaction
           const firstItem = order.order_items?.[0]?.item;
-          
-          // Verifica se o pedido foi reembolsado
-          const isRefunded = order.payments?.some(payment => payment.status_detail === 'bpp_refunded');
-          
-          // Criar transaction object
-          const transaction: SettlementTransaction = {
+
+          transactionsMap.set(orderId, {
             date: '',
             sourceId: '',
             orderId: orderId.toString(),
-            group: isRefunded ? 'Reembolsado' : 'Venda',
+            group: 'Venda',
             units,
             grossValue: 0,
             netValue: 0,
             itemId: firstItem?.id || '',
-            title: firstItem?.title || '',
-            isRefunded
-          };
-
-          // Adiciona à coleção apropriada
-          if (isRefunded) {
-            refundedMap.set(orderId, transaction);
-          } else {
-            transactionsMap.set(orderId, transaction);
-            // Add units to total (only count non-refunded orders)
-            unitsTotal += units;
-          }
+            title: firstItem?.title || ''
+          });
           
           // Process payments for this order
           if (order.payments && order.payments.length > 0) {
             // Somar todos os pagamentos da venda
-            const transaction = isRefunded ? refundedMap.get(orderId)! : transactionsMap.get(orderId)!;
+            const transaction = transactionsMap.get(orderId)!;
 
             let totalAmount = 0;
             let mainPayment: Payment | null = null;
@@ -186,34 +169,25 @@ export function useSettlementData(
               transaction.netValue = totalAmount * 0.7;
             }
 
-            // Adicionar ao total apropriado
-            if (isRefunded) {
-              refundedTotal += totalAmount;
-            } else {
-              grossTotal += totalAmount;
-              netTotal += transaction.netValue;
-            }
+            grossTotal += totalAmount;
+            netTotal += transaction.netValue;
           }
         });
       }
 
       console.log("Processed unique orders:", transactionsMap.size);
-      console.log("Processed refunded orders:", refundedMap.size);
-      console.log("Financial totals:", { grossTotal, netTotal, unitsTotal, refundedTotal });
+      console.log("Financial totals:", { grossTotal, netTotal, unitsTotal });
 
-      // Convert the maps to arrays of transactions
+      // Convert the map to an array of transactions
+      // Include ALL transactions, not just ones with gross value > 0
       const transactions = Array.from(transactionsMap.values());
-      const refunded = Array.from(refundedMap.values());
       
-      console.log("Transações finais (não reembolsadas):", transactions.length);
-      console.log("Transações finais (reembolsadas):", refunded.length);
+      console.log("Transações finais:", transactions);
 
       setSettlementTransactions(transactions);
-      setRefundedTransactions(refunded);
       setTotalGrossSales(grossTotal);
       setTotalNetSales(netTotal);
       setTotalUnits(unitsTotal);
-      setTotalRefundedAmount(refundedTotal);
     } catch (err) {
       console.error('Error fetching settlement data from API:', err);
       setError('Falha ao carregar dados de vendas');
@@ -257,11 +231,9 @@ export function useSettlementData(
 
   return {
     settlementTransactions,
-    refundedTransactions,  // Nova propriedade exportada
     totalGrossSales,
     totalNetSales,
     totalUnits,
-    totalRefundedAmount,  // Nova propriedade exportada
     isLoading: isLoading || paymentsLoading,
     error: error || paymentsError,
     refetch: () => {
