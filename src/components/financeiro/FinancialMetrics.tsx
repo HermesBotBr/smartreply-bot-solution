@@ -1,13 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { MetricCard } from '@/components/dashboard/metrics/MetricCard';
+// src/components/financeiro/FinancialMetrics.tsx
+
+import React, { useState } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { formatCurrency } from '@/utils/formatters';
+import { Button } from '@/components/ui/button';
+import { TransfersPopup } from '@/components/financeiro/TransfersPopup';
+import { RepassesPopup } from '@/components/financeiro/RepassesPopup';
+import { SalesDetailPopup } from '@/components/financeiro/SalesDetailPopup';
+import { ReleasePopup } from '@/components/financeiro/ReleasePopup';
 import { SettlementTransaction } from '@/hooks/useSettlementData';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { RepassesPopup } from './RepassesPopup';
-import { ReleasePopup } from './ReleasePopup';
-import { TransfersPopup } from './TransfersPopup';
-import { ReleaseOperation } from '@/types/ReleaseOperation';
-import { AlertCircle } from 'lucide-react';
-import { SalesBoxComponent } from './SalesBoxComponent';
 
 interface FinancialMetricsProps {
   grossSales: number;
@@ -22,14 +23,15 @@ interface FinancialMetricsProps {
   totalCreditCard: number;
   totalShippingCashback: number;
   settlementTransactions: SettlementTransaction[];
-  releaseOperationsWithOrder: ReleaseOperation[];
-  releaseOtherOperations: ReleaseOperation[];
+  refundedTransactions?: SettlementTransaction[]; // Adicionar nova prop
+  releaseOperationsWithOrder: any[];
+  releaseOtherOperations: any[];
   startDate?: Date;
   endDate?: Date;
   filterBySettlement?: boolean;
 }
 
-export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
+export const FinancialMetrics = ({
   grossSales,
   totalAmount,
   unitsSold,
@@ -42,234 +44,179 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
   totalCreditCard,
   totalShippingCashback,
   settlementTransactions,
+  refundedTransactions = [], // Valor padrão
   releaseOperationsWithOrder,
   releaseOtherOperations,
   startDate,
   endDate,
-  filterBySettlement = false
-}) => {
-  const [repassesPopupOpen, setRepassesPopupOpen] = useState(false);
-  const [releasePopupOpen, setReleasePopupOpen] = useState(false);
-  const [transfersPopupOpen, setTransfersPopupOpen] = useState(false);
-  const [hasUnbalancedTransfers, setHasUnbalancedTransfers] = useState(false);
-  const [filteredTotalReleased, setFilteredTotalReleased] = useState(totalReleased);
-  const [filteredOperationsWithOrder, setFilteredOperationsWithOrder] = useState(releaseOperationsWithOrder);
+  filterBySettlement
+}: FinancialMetricsProps) => {
+  const [showTransfers, setShowTransfers] = useState(false);
+  const [showRepasses, setShowRepasses] = useState(false);
+  const [showSalesDetails, setShowSalesDetails] = useState(false);
+  const [showReleaseDetails, setShowReleaseDetails] = useState(false);
 
-  // Filter transfers from other operations
-  const transferOperations = releaseOtherOperations.filter(op => 
-    op.description?.toLowerCase().includes('payout') || 
-    op.description?.toLowerCase().includes('transfer')
-  );
-
-  // Check if transfers are balanced when the component mounts or when transferOperations changes
-  useEffect(() => {
-    const checkTransferBalance = async () => {
-      if (transferOperations.length === 0) {
-        setHasUnbalancedTransfers(false);
-        return;
-      }
-
-      try {
-        // Get the seller_id from the mlToken hook
-        const mlToken = JSON.parse(localStorage.getItem('ml_token') || '{}');
-        const sellerId = mlToken.seller_id || '681274853';
-
-        // Fetch descriptions from API
-        const response = await fetch(`https://projetohermes-dda7e0c8d836.herokuapp.com/trans_desc?seller_id=${sellerId}`);
-        const apiDescriptions = await response.json();
-
-        // Calculate if transfers are balanced
-        let totalTransfersValue = 0;
-        let totalDeclaredValue = 0;
-
-        transferOperations.forEach(transfer => {
-          totalTransfersValue += transfer.amount;
-          
-          // Find descriptions for this transfer
-          const transferDescriptions = apiDescriptions.filter(
-            (desc: any) => desc.source_id === transfer.sourceId
-          );
-          
-          // Sum up declared values
-          const declaredSum = transferDescriptions.reduce(
-            (sum: number, desc: any) => sum + parseFloat(desc.valor), 0
-          );
-          
-          totalDeclaredValue += declaredSum;
-        });
-
-        // Check if balanced (allow for small floating point errors)
-        const difference = totalTransfersValue + totalDeclaredValue;
-        setHasUnbalancedTransfers(Math.abs(difference) > 0.01);
-      } catch (error) {
-        console.error('Error checking transfer balance:', error);
-      }
-    };
-
-    checkTransferBalance();
-  }, [transferOperations]);
-
-  // Effect for filtering operations and recalculating totals based on the toggle
-  useEffect(() => {
-    if (filterBySettlement && settlementTransactions.length > 0) {
-      // Create a set of order IDs from settlement transactions for quick lookup
-      const settlementOrderIds = new Set(
-        settlementTransactions.map(transaction => transaction.orderId)
-      );
-
-      // Filter release operations by checking if their orderId exists in settlement
-      const filtered = releaseOperationsWithOrder.filter(operation => 
-        operation.orderId && settlementOrderIds.has(operation.orderId)
-      );
-
-      // Calculate the filtered total released amount
-      const filteredTotal = filtered.reduce((sum, op) => sum + op.amount, 0);
-      
-      // Update state with filtered values
-      setFilteredTotalReleased(filteredTotal);
-      setFilteredOperationsWithOrder(filtered);
-    } else {
-      // Reset to original values when filter is off
-      setFilteredTotalReleased(totalReleased);
-      setFilteredOperationsWithOrder(releaseOperationsWithOrder);
-    }
-  }, [filterBySettlement, settlementTransactions, releaseOperationsWithOrder, totalReleased]);
-
-  // Display value to show in the "Liberado" card
-  const displayTotalReleased = filterBySettlement ? filteredTotalReleased : totalReleased;
+  const handleOrderClick = (orderId: string) => {
+    console.log('Clicou no pedido:', orderId);
+  };
 
   return (
-    <div>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <MetricCard
-          title="Total Bruto (ML)"
-          value={`R$ ${grossSales.toFixed(2)}`}
-          description={`Unidades vendidas: ${unitsSold}`}
-          className="bg-gray-50 hover:bg-gray-100 transition-colors"
-          textColor="text-gray-800"
-        />
-        <MetricCard
-          title="Repasse Total (ML)"
-          value={`R$ ${totalMLRepasses.toFixed(2)}`}
-          description={`Clique para detalhar`}
-          className="bg-blue-50 hover:bg-blue-100 transition-colors"
-          textColor="text-blue-800"
-          onClick={() => setRepassesPopupOpen(true)}
-        />
-        <MetricCard
-          title="Taxas (ML)"
-          value={`R$ ${totalMLFees.toFixed(2)}`}
-          description={`${((totalMLFees / (grossSales || 1)) * 100).toFixed(1)}% do valor bruto`}
-          className="bg-red-50 hover:bg-red-100 transition-colors"
-          textColor="text-red-800"
-        />
-        <MetricCard
-          title="Liberado"
-          value={`R$ ${displayTotalReleased.toFixed(2)}`}
-          description={`Clique para detalhar${filterBySettlement ? ' (filtrado)' : ''}`}
-          className="bg-green-50 hover:bg-green-100 transition-colors"
-          textColor="text-green-800"
-          onClick={() => setReleasePopupOpen(true)}
-        />
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="col-span-full md:col-span-2">
-          <Tabs defaultValue="maior-detalhe">
-            <TabsList className="grid grid-cols-2 mb-4">
-              <TabsTrigger value="maior-detalhe">Maior Detalhe</TabsTrigger>
-              <TabsTrigger value="resumido">Resumido</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="maior-detalhe" className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <MetricCard
-                  title="Contestações"
-                  value={`R$ ${Math.abs(totalClaims).toFixed(2)}`}
-                  description={`${((Math.abs(totalClaims) / (grossSales || 1)) * 100).toFixed(1)}% do valor bruto`}
-                  className="bg-amber-50 hover:bg-amber-100 transition-colors"
-                  textColor="text-amber-800"
-                />
-                
-                <MetricCard
-                  title="Dívidas"
-                  value={`R$ ${Math.abs(totalDebts).toFixed(2)}`}
-                  description={`${((Math.abs(totalDebts) / (grossSales || 1)) * 100).toFixed(1)}% do valor bruto`}
-                  className="bg-purple-50 hover:bg-purple-100 transition-colors"
-                  textColor="text-purple-800"
-                />
-                
-                <MetricCard
-                  title="Transferências"
-                  value={`R$ ${Math.abs(totalTransfers).toFixed(2)}`}
-                  description={`${((Math.abs(totalTransfers) / (grossSales || 1)) * 100).toFixed(1)}% do valor bruto`}
-                  className="bg-indigo-50 hover:bg-indigo-100 transition-colors"
-                  textColor="text-indigo-800"
-                  onClick={() => setTransfersPopupOpen(true)}
-                  alertStatus={hasUnbalancedTransfers}
-                />
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="resumido" className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <MetricCard
-                  title="Cartão de Crédito"
-                  value={`R$ ${Math.abs(totalCreditCard).toFixed(2)}`}
-                  description={`${((Math.abs(totalCreditCard) / (grossSales || 1)) * 100).toFixed(1)}% do valor bruto`}
-                  className="bg-lime-50 hover:bg-lime-100 transition-colors"
-                  textColor="text-lime-800"
-                />
-                
-                <MetricCard
-                  title="Frete e Cashback"
-                  value={`R$ ${Math.abs(totalShippingCashback).toFixed(2)}`}
-                  description={`${((Math.abs(totalShippingCashback) / (grossSales || 1)) * 100).toFixed(1)}% do valor bruto`}
-                  className="bg-sky-50 hover:bg-sky-100 transition-colors"
-                  textColor="text-sky-800"
-                />
-              </div>
-            </TabsContent>
-          </Tabs>
-        </div>
-      </div>
-      
-      {/* Sales Box Component */}
-      <SalesBoxComponent 
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <Card>
+        <CardHeader>
+          <CardTitle>Vendas Brutas</CardTitle>
+          <CardDescription>Total de vendas brutas no período</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{formatCurrency(grossSales)}</div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Total de Vendas</CardTitle>
+          <CardDescription>Soma de todas as vendas</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{formatCurrency(totalAmount)}</div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Unidades Vendidas</CardTitle>
+          <CardDescription>Total de unidades vendidas</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{unitsSold}</div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Repasse Total (ML)</CardTitle>
+          <CardDescription>Total de repasses do Mercado Livre</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{formatCurrency(totalMLRepasses)}</div>
+          <Button variant="secondary" size="sm" className="mt-2" onClick={() => setShowRepasses(true)}>
+            Ver Detalhes
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Taxas (ML)</CardTitle>
+          <CardDescription>Total de taxas cobradas pelo Mercado Livre</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{formatCurrency(totalMLFees)}</div>
+          <Button variant="secondary" size="sm" className="mt-2" onClick={() => setShowSalesDetails(true)}>
+            Ver Detalhes
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Liberado</CardTitle>
+          <CardDescription>Total liberado na conta</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{formatCurrency(totalReleased)}</div>
+          <Button variant="secondary" size="sm" className="mt-2" onClick={() => setShowReleaseDetails(true)}>
+            Ver Detalhes
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Reclamações</CardTitle>
+          <CardDescription>Total de reclamações</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{formatCurrency(totalClaims)}</div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Dívidas</CardTitle>
+          <CardDescription>Total de dívidas</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{formatCurrency(totalDebts)}</div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Transferências</CardTitle>
+          <CardDescription>Total de transferências</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{formatCurrency(totalTransfers)}</div>
+          <Button variant="secondary" size="sm" className="mt-2" onClick={() => setShowTransfers(true)}>
+            Ver Detalhes
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Crédito Cartão</CardTitle>
+          <CardDescription>Total de crédito no cartão</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{formatCurrency(totalCreditCard)}</div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Cashback Frete</CardTitle>
+          <CardDescription>Total de cashback de frete</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{formatCurrency(totalShippingCashback)}</div>
+        </CardContent>
+      </Card>
+
+      {/* Modais */}
+      <TransfersPopup
+        open={showTransfers}
+        onClose={() => setShowTransfers(false)}
+        transfers={releaseOperationsWithOrder}
+        startDate={startDate}
+        endDate={endDate}
+      />
+      <RepassesPopup
+        open={showRepasses}
+        onClose={() => setShowRepasses(false)}
         settlementTransactions={settlementTransactions}
-        releaseOperationsWithOrder={releaseOperationsWithOrder}
-        totalMLRepasses={totalMLRepasses}
-        totalMLFees={totalMLFees}
-        startDate={startDate}
-        endDate={endDate}
-        filterBySettlement={filterBySettlement}
-      />
-      
-      <RepassesPopup 
-        transactions={settlementTransactions}
-        open={repassesPopupOpen}
-        onClose={() => setRepassesPopupOpen(false)}
+        onOrderClick={handleOrderClick}
         startDate={startDate}
         endDate={endDate}
       />
-      
+      <SalesDetailPopup
+        open={showSalesDetails}
+        onClose={() => setShowSalesDetails(false)}
+        settlementTransactions={settlementTransactions}
+        startDate={startDate}
+        endDate={endDate}
+      />
       <ReleasePopup
-        operationsWithOrder={filteredOperationsWithOrder}
+        open={showReleaseDetails}
+        onClose={() => setShowReleaseDetails(false)}
+        operationsWithOrder={releaseOperationsWithOrder}
         otherOperations={releaseOtherOperations}
         settlementTransactions={settlementTransactions}
-        open={releasePopupOpen}
-        onClose={() => setReleasePopupOpen(false)}
+        refundedTransactions={refundedTransactions} // Passar transações reembolsadas
         startDate={startDate}
         endDate={endDate}
         filterBySettlement={filterBySettlement}
-      />
-      
-      <TransfersPopup
-        transfers={transferOperations}
-        open={transfersPopupOpen}
-        onClose={() => setTransfersPopupOpen(false)}
-        startDate={startDate}
-        endDate={endDate}
       />
     </div>
   );

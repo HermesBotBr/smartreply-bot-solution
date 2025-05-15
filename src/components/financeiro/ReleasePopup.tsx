@@ -13,7 +13,8 @@ interface ReleasePopupProps {
   onClose: () => void;
   operationsWithOrder: ReleaseOperation[];
   otherOperations: ReleaseOperation[];
-  settlementTransactions?: SettlementTransaction[]; // Adicionar transações de vendas
+  settlementTransactions?: SettlementTransaction[]; // Transações de vendas regulares
+  refundedTransactions?: SettlementTransaction[]; // Nova prop para transações reembolsadas
   startDate?: Date; // Data inicial do filtro
   endDate?: Date; // Data final do filtro
   filterBySettlement?: boolean; // Add filter toggle prop
@@ -25,6 +26,7 @@ export const ReleasePopup: React.FC<ReleasePopupProps> = ({
   operationsWithOrder,
   otherOperations,
   settlementTransactions = [], // Valor padrão de array vazio
+  refundedTransactions = [], // Valor padrão de array vazio para transações reembolsadas
   startDate,
   endDate,
   filterBySettlement = false
@@ -35,6 +37,7 @@ export const ReleasePopup: React.FC<ReleasePopupProps> = ({
         operationsWithOrder, 
         otherOperations, 
         settlementTransactions,
+        refundedTransactions,
         pendingOperations: getPendingOperations(),
         startDate,
         endDate,
@@ -127,15 +130,33 @@ export const ReleasePopup: React.FC<ReleasePopupProps> = ({
     return pendingOps;
   };
 
+  // Converter transações reembolsadas para operações
+  const getRefundedOperations = (): ReleaseOperation[] => {
+    if (!refundedTransactions || refundedTransactions.length === 0) {
+      return [];
+    }
+    
+    return refundedTransactions.map(transaction => ({
+      orderId: transaction.orderId,
+      itemId: transaction.itemId || '',
+      title: transaction.title || '',
+      amount: transaction.grossValue || 0,
+      description: 'Venda reembolsada',
+      date: transaction.date
+    }));
+  };
+
   // Agrupe as operações
   const groupedOperationsWithOrder = groupOperationsByOrderId(filteredOperationsWithOrder);
   const groupedOtherOperations = groupOperationsByDescription(filteredOtherOperations);
   const pendingOperations = getPendingOperations();
+  const refundedOperations = getRefundedOperations();
   
   // Calcule os totais
   const totalOperationsWithOrder = groupedOperationsWithOrder.reduce((sum, op) => sum + op.amount, 0);
   const totalOtherOperations = groupedOtherOperations.reduce((sum, op) => sum + op.amount, 0);
   const totalPendingOperations = pendingOperations.reduce((sum, op) => sum + op.amount, 0);
+  const totalRefundedOperations = refundedOperations.reduce((sum, op) => sum + op.amount, 0);
   const grandTotal = totalOperationsWithOrder + totalOtherOperations;
 
   return (
@@ -201,6 +222,37 @@ export const ReleasePopup: React.FC<ReleasePopupProps> = ({
               </tbody>
             </table>
             
+            {/* Nova tabela para operações reembolsadas */}
+            {refundedOperations.length > 0 && (
+              <>
+                <h4 className="font-semibold text-base mt-6 mb-2">Operações reembolsadas</h4>
+                <table className="w-full border text-sm mb-4">
+                  <thead>
+                    <tr className="bg-gray-100 text-left">
+                      <th className="p-2 border">ORDER_ID</th>
+                      <th className="p-2 border">ID do Anúncio</th>
+                      <th className="p-2 border">Título do Anúncio</th>
+                      <th className="p-2 border">Valor Reembolsado</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {refundedOperations.map((op, idx) => (
+                      <tr key={idx} className="hover:bg-gray-50">
+                        <td className="p-2 border">{op.orderId || '-'}</td>
+                        <td className="p-2 border">{op.itemId || '-'}</td>
+                        <td className="p-2 border">{op.title || '-'}</td>
+                        <td className="p-2 border">R$ {op.amount.toFixed(2)}</td>
+                      </tr>
+                    ))}
+                    <tr className="font-semibold bg-gray-50">
+                      <td colSpan={3} className="p-2 border text-right">Total Reembolsado:</td>
+                      <td className="p-2 border">R$ {totalRefundedOperations.toFixed(2)}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </>
+            )}
+            
             {pendingOperations.length > 0 && (
               <>
                 <h4 className="font-semibold text-base mt-6 mb-2">Operações com ORDER_ID ainda não liberadas</h4>
@@ -235,6 +287,9 @@ export const ReleasePopup: React.FC<ReleasePopupProps> = ({
               <p className="font-bold text-right">Valor Total Liberado: R$ {grandTotal.toFixed(2)}</p>
               {pendingOperations.length > 0 && (
                 <p className="font-bold text-right text-amber-600">Valor Total Pendente: R$ {totalPendingOperations.toFixed(2)}</p>
+              )}
+              {refundedOperations.length > 0 && (
+                <p className="font-bold text-right text-red-600">Valor Total Reembolsado: R$ {totalRefundedOperations.toFixed(2)}</p>
               )}
             </div>
           </ScrollArea>
