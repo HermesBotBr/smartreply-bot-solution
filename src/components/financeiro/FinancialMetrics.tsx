@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { MetricCard } from '@/components/dashboard/metrics/MetricCard';
 import { SettlementTransaction } from '@/hooks/useSettlementData';
@@ -6,10 +7,12 @@ import { RepassesPopup } from './RepassesPopup';
 import { ReleasePopup } from './ReleasePopup';
 import { TransfersPopup } from './TransfersPopup';
 import { ClaimsPopup } from './ClaimsPopup';
+import { PublicidadePopup } from './PublicidadePopup';
 import { ReleaseOperation } from '@/types/ReleaseOperation';
 import { AlertCircle } from 'lucide-react';
 import { SalesBoxComponent } from './SalesBoxComponent';
 import { InventoryItem } from '@/types/inventory';
+import { AdvertisingItem } from '@/hooks/usePublicidadeData';
 
 interface FinancialMetricsProps {
   grossSales: number;
@@ -29,7 +32,9 @@ interface FinancialMetricsProps {
   startDate?: Date;
   endDate?: Date;
   filterBySettlement?: boolean;
-  inventoryItems?: InventoryItem[]; // Added inventory items prop
+  inventoryItems?: InventoryItem[];
+  advertisingItems?: AdvertisingItem[]; // New prop for advertising data
+  totalAdvertisingCost: number; // New prop for total advertising cost
 }
 
 export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
@@ -50,12 +55,15 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
   startDate,
   endDate,
   filterBySettlement = false,
-  inventoryItems = [] // Default to empty array
+  inventoryItems = [],
+  advertisingItems = [], // Default to empty array
+  totalAdvertisingCost = 0 // Default to 0
 }) => {
   const [repassesPopupOpen, setRepassesPopupOpen] = useState(false);
   const [releasePopupOpen, setReleasePopupOpen] = useState(false);
   const [transfersPopupOpen, setTransfersPopupOpen] = useState(false);
   const [claimsPopupOpen, setClaimsPopupOpen] = useState(false);
+  const [publicidadePopupOpen, setPublicidadePopupOpen] = useState(false); // New state for publicidade popup
   const [hasUnbalancedTransfers, setHasUnbalancedTransfers] = useState(false);
   const [filteredTotalReleased, setFilteredTotalReleased] = useState(totalReleased);
   const [filteredOperationsWithOrder, setFilteredOperationsWithOrder] = useState(releaseOperationsWithOrder);
@@ -225,7 +233,7 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
             </TabsList>
             
             <TabsContent value="maior-detalhe" className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <MetricCard
                   title="Contestações"
                   value={`R$ ${totalClaimsWithRefunds.toFixed(2)}`}
@@ -233,6 +241,16 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
                   className="bg-amber-50 hover:bg-amber-100 transition-colors"
                   textColor="text-amber-800"
                   onClick={() => setClaimsPopupOpen(true)}
+                />
+                
+                {/* New Publicidade card */}
+                <MetricCard
+                  title="Publicidade"
+                  value={`R$ ${totalAdvertisingCost.toFixed(2)}`}
+                  description={`${((totalAdvertisingCost / (grossSales || 1)) * 100).toFixed(1)}% do valor bruto`}
+                  className="bg-orange-50 hover:bg-orange-100 transition-colors"
+                  textColor="text-orange-800"
+                  onClick={() => setPublicidadePopupOpen(true)}
                 />
                 
                 <MetricCard
@@ -287,7 +305,7 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
         startDate={startDate}
         endDate={endDate}
         filterBySettlement={filterBySettlement}
-        inventoryItems={inventoryItems} // Pass inventory items to the component
+        inventoryItems={inventoryItems}
       />
       
       <RepassesPopup 
@@ -324,6 +342,16 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
         onClose={() => setClaimsPopupOpen(false)}
         startDate={startDate}
         endDate={endDate}
+      />
+      
+      {/* New Publicidade Popup */}
+      <PublicidadePopup
+        advertisingItems={advertisingItems}
+        open={publicidadePopupOpen}
+        onClose={() => setPublicidadePopupOpen(false)}
+        startDate={startDate}
+        endDate={endDate}
+        totalCost={totalAdvertisingCost}
       />
     </div>
   );

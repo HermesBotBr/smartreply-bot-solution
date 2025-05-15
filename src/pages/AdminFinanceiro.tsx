@@ -11,6 +11,7 @@ import { useNavigate } from 'react-router-dom';
 import { useMlToken } from '@/hooks/useMlToken';
 import { useSettlementData } from '@/hooks/useSettlementData';
 import { useInventoryData } from '@/hooks/useInventoryData';
+import { usePublicidadeData } from '@/hooks/usePublicidadeData';
 import { toast } from '@/components/ui/use-toast';
 import { ReleaseOperation } from '@/types/ReleaseOperation';
 import { Switch } from '@/components/ui/switch';
@@ -47,6 +48,7 @@ const AdminFinanceiro: React.FC = () => {
     totalTransfers: 0,
     totalCreditCard: 0,
     totalShippingCashback: 0,
+    totalAdvertisingCost: 0, // New field for advertising cost
   });
 
   const [activeTab, setActiveTab] = useState<'metricas' | 'entrada' | 'estoque'>('metricas');
@@ -79,6 +81,14 @@ const AdminFinanceiro: React.FC = () => {
     refreshDates 
   } = useInventoryData(sellerId);
 
+  // Load advertising data
+  const {
+    data: advertisingData,
+    isLoading: advertisingLoading,
+    error: advertisingError,
+    fetchPublicidadeData
+  } = usePublicidadeData(sellerId);
+
   // Show toast if there's an inventory error
   useEffect(() => {
     if (inventoryError) {
@@ -89,6 +99,30 @@ const AdminFinanceiro: React.FC = () => {
       });
     }
   }, [inventoryError]);
+
+  // Show toast if there's an advertising error
+  useEffect(() => {
+    if (advertisingError) {
+      toast({
+        title: "Erro",
+        description: `Erro ao carregar dados de publicidade: ${advertisingError.message}`,
+        variant: "destructive"
+      });
+    }
+  }, [advertisingError]);
+
+  // Calculate total advertising cost when data changes
+  useEffect(() => {
+    if (advertisingData && advertisingData.results) {
+      const totalCost = advertisingData.results.reduce((sum, item) => 
+        sum + (item.metrics.cost || 0), 0);
+      
+      setMetrics(prev => ({
+        ...prev,
+        totalAdvertisingCost: totalCost
+      }));
+    }
+  }, [advertisingData]);
 
   // Reprocessar dados de release quando as datas mudarem
   useEffect(() => {
@@ -123,6 +157,7 @@ const AdminFinanceiro: React.FC = () => {
     }
 
     refetchSettlement();
+    fetchPublicidadeData(startDate, endDate);
 
     if (releaseData) {
       const parsed = parseReleaseData(releaseData, startDate, endDate);
@@ -385,6 +420,13 @@ const AdminFinanceiro: React.FC = () => {
     }));
   }, [totalGrossSales, totalNetSales, totalUnits]);
 
+  // Initial fetch of advertising data when component mounts
+  useEffect(() => {
+    if (startDate && endDate) {
+      fetchPublicidadeData(startDate, endDate);
+    }
+  }, []);
+
   /* ------------------------------------------------------------------ */
   /* render                                                              */
   /* ------------------------------------------------------------------ */
@@ -451,7 +493,9 @@ const AdminFinanceiro: React.FC = () => {
               startDate={startDate}
               endDate={endDate}
               filterBySettlement={filterBySettlement}
-              inventoryItems={inventoryItems} // Pass inventory items to FinancialMetrics
+              inventoryItems={inventoryItems}
+              advertisingItems={advertisingData?.results || []}
+              totalAdvertisingCost={metrics.totalAdvertisingCost}
             />
           </TabsContent>
 
