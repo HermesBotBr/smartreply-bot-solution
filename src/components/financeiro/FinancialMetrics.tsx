@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { MetricCard } from '@/components/dashboard/metrics/MetricCard';
 import { SettlementTransaction } from '@/hooks/useSettlementData';
@@ -5,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RepassesPopup } from './RepassesPopup';
 import { ReleasePopup } from './ReleasePopup';
 import { TransfersPopup } from './TransfersPopup';
+import { ClaimsPopup } from './ClaimsPopup';
 import { ReleaseOperation } from '@/types/ReleaseOperation';
 import { AlertCircle } from 'lucide-react';
 import { SalesBoxComponent } from './SalesBoxComponent';
@@ -51,6 +53,7 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
   const [repassesPopupOpen, setRepassesPopupOpen] = useState(false);
   const [releasePopupOpen, setReleasePopupOpen] = useState(false);
   const [transfersPopupOpen, setTransfersPopupOpen] = useState(false);
+  const [claimsPopupOpen, setClaimsPopupOpen] = useState(false);
   const [hasUnbalancedTransfers, setHasUnbalancedTransfers] = useState(false);
   const [filteredTotalReleased, setFilteredTotalReleased] = useState(totalReleased);
   const [filteredOperationsWithOrder, setFilteredOperationsWithOrder] = useState(releaseOperationsWithOrder);
@@ -60,6 +63,44 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
     op.description?.toLowerCase().includes('payout') || 
     op.description?.toLowerCase().includes('transfer')
   );
+
+  // Get refunded operations
+  const getRefundedOperations = () => {
+    if (!settlementTransactions || settlementTransactions.length === 0) {
+      return [];
+    }
+    
+    // Filtrar as transações de settlement que estão marcadas como reembolsadas
+    const refundedOps = settlementTransactions
+      .filter(transaction => transaction.isRefunded)
+      .map(transaction => ({
+        orderId: transaction.orderId,
+        itemId: transaction.itemId || '',
+        title: transaction.title || '',
+        amount: transaction.netValue || 0, // Usar netValue (valor do repasse)
+        description: 'Venda reembolsada'
+      }));
+    
+    return refundedOps;
+  };
+
+  // Get claim operations
+  const getClaimOperations = () => {
+    return releaseOtherOperations.filter(op => {
+      const desc = op.description?.toLowerCase() || '';
+      return desc.includes('dispute') || 
+             desc.includes('refund') || 
+             desc.includes('mediation') || 
+             desc.includes('shipping_return');
+    });
+  };
+
+  // Calculate total refunded amount
+  const refundedOperations = getRefundedOperations();
+  const refundedAmount = refundedOperations.reduce((sum, op) => sum + op.amount, 0);
+
+  // Calculate total claims including refunds
+  const totalClaimsWithRefunds = Math.abs(totalClaims) + Math.abs(refundedAmount);
 
   // Check if transfers are balanced when the component mounts or when transferOperations changes
   useEffect(() => {
@@ -185,10 +226,11 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <MetricCard
                   title="Contestações"
-                  value={`R$ ${Math.abs(totalClaims).toFixed(2)}`}
-                  description={`${((Math.abs(totalClaims) / (grossSales || 1)) * 100).toFixed(1)}% do valor bruto`}
+                  value={`R$ ${totalClaimsWithRefunds.toFixed(2)}`}
+                  description={`${((totalClaimsWithRefunds / (grossSales || 1)) * 100).toFixed(1)}% do valor bruto`}
                   className="bg-amber-50 hover:bg-amber-100 transition-colors"
                   textColor="text-amber-800"
+                  onClick={() => setClaimsPopupOpen(true)}
                 />
                 
                 <MetricCard
@@ -268,6 +310,15 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
         transfers={transferOperations}
         open={transfersPopupOpen}
         onClose={() => setTransfersPopupOpen(false)}
+        startDate={startDate}
+        endDate={endDate}
+      />
+      
+      <ClaimsPopup
+        refundedOperations={refundedOperations}
+        claimOperations={getClaimOperations()}
+        open={claimsPopupOpen}
+        onClose={() => setClaimsPopupOpen(false)}
         startDate={startDate}
         endDate={endDate}
       />
