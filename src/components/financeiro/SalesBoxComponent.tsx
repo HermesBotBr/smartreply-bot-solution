@@ -13,7 +13,7 @@ interface SalesBoxComponentProps {
   totalMLFees: number;
   startDate?: Date;
   endDate?: Date;
-  filterBySettlement?: boolean;  // New prop for filtering by settlement
+  filterBySettlement?: boolean;  // Prop for filtering by settlement
 }
 
 export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
@@ -49,6 +49,10 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
         count: number;
         amount: number;
       };
+      refunded: {
+        count: number;
+        amount: number;
+      };
     }>();
 
     // Process settlement transactions (all sales)
@@ -64,21 +68,29 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
           totalRepasse: 0,
           totalFees: 0,
           released: { count: 0, amount: 0 },
-          unreleased: { count: 0, amount: 0 }
+          unreleased: { count: 0, amount: 0 },
+          refunded: { count: 0, amount: 0 }
         });
       }
 
       const item = itemGroups.get(transaction.itemId)!;
+      
+      // Add to totals (even if refunded - we'll handle that separately)
       item.totalSales += transaction.grossValue;
       item.totalUnits += transaction.units;
       
-      // Calculate repasse (70% of gross value as a simple approximation)
+      // Calculate repasse and fees
       const repasse = transaction.netValue;
       item.totalRepasse += repasse;
       
-      // Calculate fees (30% of gross value as a simple approximation)
       const fees = transaction.grossValue - repasse;
       item.totalFees += fees;
+      
+      // If it's a refunded transaction, add to refunded counts
+      if (transaction.isRefunded) {
+        item.refunded.count += transaction.units;
+        item.refunded.amount += repasse;
+      }
     });
 
     // Process release operations (released amounts)
@@ -101,21 +113,21 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
       }
     });
 
-    // Calculate unreleased amounts (totalSales - releasedAmount)
+    // Calculate unreleased amounts (totalRepasse - releasedAmount - refundedAmount)
     itemGroups.forEach(item => {
       const totalOrderValue = item.totalRepasse; // Use repasse value as this is what gets released
       const releasedAmount = item.released.amount;
+      const refundedAmount = item.refunded.amount;
       
-      // Calculate unreleased amount (exact calculation)
-      if (releasedAmount < totalOrderValue) {
-        const unreleasedAmount = totalOrderValue - releasedAmount;
+      // Calculate unreleased amount, excluding refunded transactions
+      if (releasedAmount < (totalOrderValue - refundedAmount)) {
+        const unreleasedAmount = totalOrderValue - releasedAmount - refundedAmount;
         
-        // Calculate unreleased count (exact calculation)
-        // Instead of estimating, we directly subtract released count from total units
+        // Calculate unreleased count
         item.unreleased.amount = unreleasedAmount;
-        item.unreleased.count = item.totalUnits - item.released.count;
+        item.unreleased.count = item.totalUnits - item.released.count - item.refunded.count;
       } else {
-        // If everything is released, set unreleased to 0
+        // If everything is released or refunded, set unreleased to 0
         item.unreleased.amount = 0;
         item.unreleased.count = 0;
       }
@@ -157,6 +169,7 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
                   <TableHead className="text-right">Taxas (ML)</TableHead>
                   <TableHead className="text-right">Liberado</TableHead>
                   <TableHead className="text-right">Não Liberado</TableHead>
+                  <TableHead className="text-right">Reembolsadas</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -181,6 +194,9 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
                     <TableCell className="text-right">
                       {formatCurrency(item.unreleased.amount)} <span className="text-xs text-gray-500">({item.unreleased.count} un.)</span>
                       {filterBySettlement && <span className="text-xs text-blue-500 ml-1">(filtrado)</span>}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {formatCurrency(item.refunded.amount)} <span className="text-xs text-gray-500">({item.refunded.count} un.)</span>
                     </TableCell>
                   </TableRow>
                 ))}
