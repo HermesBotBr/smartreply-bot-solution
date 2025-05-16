@@ -31,6 +31,29 @@ const AdminFinanceiro: React.FC = () => {
 
   const [settlementData, setSettlementData] = useState<string>('');
   const [releaseData, setReleaseData] = useState<string>('');
+
+  useEffect(() => {
+  const fetchReleaseData = async () => {
+    try {
+      const response = await fetch("https://projetohermes-dda7e0c8d836.herokuapp.com/releases.txt");
+      if (!response.ok) throw new Error("Erro ao buscar release.txt");
+      const text = await response.text();
+      handleReleaseDataChange(text); // já trata parsing, métricas e estados
+    } catch (error) {
+      console.error("Erro ao carregar release.txt:", error);
+      toast({
+        title: "Erro",
+        description: "Falha ao carregar os dados iniciais de liberações",
+        variant: "destructive"
+      });
+    }
+  };
+
+  if (!releaseData) {
+    fetchReleaseData();
+  }
+}, []);
+
   
   // Add the state for the filter toggle
   const [filterBySettlement, setFilterBySettlement] = useState<boolean>(false);
