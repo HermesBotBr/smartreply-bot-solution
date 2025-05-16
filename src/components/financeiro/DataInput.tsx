@@ -7,6 +7,8 @@ import { TransactionsList } from './TransactionsList';
 import { SettlementTransactionsList } from './SettlementTransactionsList';
 import { useSettlementData } from '@/hooks/useSettlementData';
 import { useMlToken } from '@/hooks/useMlToken';
+import { Button } from "@/components/ui/button";
+
 
 interface Transaction {
   date: string;
@@ -291,16 +293,33 @@ export const DataInput: React.FC<DataInputProps> = ({
               Cole os dados do relatório de release no formato CSV abaixo
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <Textarea 
-              value={releaseData}
-              onChange={handleReleaseChange}
-              placeholder="release:
+<CardContent className="space-y-4">
+  <Button
+    variant="outline"
+    onClick={async () => {
+      try {
+        const response = await fetch("https://projetohermes-dda7e0c8d836.herokuapp.com/releases.txt");
+        if (!response.ok) throw new Error("Erro ao buscar o arquivo");
+        const text = await response.text();
+        onReleaseDataChange(text);
+      } catch (error) {
+        console.error("Erro ao carregar o arquivo releases.txt:", error);
+      }
+    }}
+  >
+    Adicionar automaticamente
+  </Button>
+
+  <Textarea 
+    value={releaseData}
+    onChange={handleReleaseChange}
+    placeholder="release:
 DATE,SOURCE_ID,EXTERNAL_REFERENCE,RECORD_TYPE,DESCRIPTION,NET_CREDIT_AMOUNT,NET_DEBIT_AMOUNT,ITEM_ID,SALE_DETAIL
 ..."
-              className="min-h-[400px] font-mono text-sm"
-            />
-          </CardContent>
+    className="min-h-[400px] font-mono text-sm"
+  />
+</CardContent>
+
           <CardFooter className="flex justify-between items-center">
             <div className="text-sm text-muted-foreground">
               Os dados serão processados para calcular valores liberados, reclamações, dívidas, transferências e pagamentos de cartão
