@@ -15,16 +15,21 @@ import { toast } from '@/components/ui/use-toast';
 import { ReleaseOperation } from '@/types/ReleaseOperation';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { useAdminSalesData } from '@/hooks/useAdminSalesData';
+import { parseBrazilianDate } from '@/lib/utils';
+
+
 
 const AdminFinanceiro: React.FC = () => {
   /* ------------------------------------------------------------------ */
   /* state                                                               */
   /* ------------------------------------------------------------------ */
-  const [releaseOperationsWithOrder, setReleaseOperationsWithOrder] =
-    useState<ReleaseOperation[]>([]);
-  const [releaseOtherOperations, setReleaseOtherOperations] = useState<
-    ReleaseOperation[]
-  >([]);
+  const [releaseOperationsWithOrder, setReleaseOperationsWithOrder] = useState<ReleaseOperation[]>([]);
+  const [releaseOtherOperations, setReleaseOtherOperations] = useState<ReleaseOperation[]>([]);
+
+  const [firstPurchaseDate, setFirstPurchaseDate] = useState<string | null>(null);
+  const [totalUnitsSoldSinceFirstPurchase, setTotalUnitsSoldSinceFirstPurchase] = useState<number>(0);
+
 
   const [startDate, setStartDate] = useState<Date | undefined>(new Date());
   const [endDate, setEndDate] = useState<Date | undefined>(new Date());
@@ -32,13 +37,16 @@ const AdminFinanceiro: React.FC = () => {
   const [settlementData, setSettlementData] = useState<string>('');
   const [releaseData, setReleaseData] = useState<string>('');
 
-  useEffect(() => {
+const { fetchSalesData, salesByItemId, detailedSales } = useAdminSalesData();
+
+
+useEffect(() => {
   const fetchReleaseData = async () => {
     try {
       const response = await fetch("https://projetohermes-dda7e0c8d836.herokuapp.com/releases.txt");
       if (!response.ok) throw new Error("Erro ao buscar release.txt");
       const text = await response.text();
-      handleReleaseDataChange(text); // já trata parsing, métricas e estados
+      handleReleaseDataChange(text);
     } catch (error) {
       console.error("Erro ao carregar release.txt:", error);
       toast({
@@ -53,6 +61,7 @@ const AdminFinanceiro: React.FC = () => {
     fetchReleaseData();
   }
 }, []);
+
 
   
   // Add the state for the filter toggle
@@ -102,6 +111,25 @@ const AdminFinanceiro: React.FC = () => {
     error: inventoryError,
     refreshDates 
   } = useInventoryData(sellerId);
+
+  useEffect(() => {
+  let earliest: Date | null = null;
+  let earliestStr: string | null = null;
+
+  inventoryItems.forEach(item => {
+    item.purchases.forEach(purchase => {
+      const date = parseBrazilianDate(purchase.date);
+      if (date && (!earliest || date < earliest)) {
+        earliest = date;
+        earliestStr = purchase.date;
+      }
+    });
+  });
+
+  if (earliestStr) {
+    setFirstPurchaseDate(earliestStr);
+  }
+}, [inventoryItems]);
 
   // Load advertising data
   const {
@@ -225,6 +253,26 @@ const AdminFinanceiro: React.FC = () => {
       fetchPublicidadeData(startDate, endDate);
     }
   };
+
+
+const fetchSalesSinceFirstPurchase = async () => {
+  if (!firstPurchaseDate) return;
+
+  try {
+    const today = new Date();
+    const formattedToday = `${today.getDate().toString().padStart(2, '0')}/${(today.getMonth() + 1).toString().padStart(2, '0')}/${today.getFullYear()}`;
+    const total = await fetchSalesData(sellerId, firstPurchaseDate, formattedToday);
+    setTotalUnitsSoldSinceFirstPurchase(total);
+  } catch (err) {
+    console.error("Erro ao buscar vendas:", err);
+    toast({
+      title: "Erro",
+      description: "Não foi possível buscar as vendas desde a primeira reposição.",
+      variant: "destructive"
+    });
+  }
+};
+
 
   /* ------------------------------------------------------------------ */
   /* utils                                                               */
@@ -456,6 +504,13 @@ const AdminFinanceiro: React.FC = () => {
     }
   }, []);
 
+  useEffect(() => {
+  if (firstPurchaseDate) {
+    fetchSalesSinceFirstPurchase();
+  }
+}, [firstPurchaseDate]);
+
+
   /* ------------------------------------------------------------------ */
   /* render                                                              */
   /* ------------------------------------------------------------------ */
@@ -544,10 +599,15 @@ const AdminFinanceiro: React.FC = () => {
 
           <TabsContent value="estoque" className="mt-4">
             <InventoryList 
-              inventoryItems={inventoryItems || []} 
-              isLoading={inventoryLoading} 
-              onRefreshDates={refreshDates}
-            />
+  inventoryItems={inventoryItems || []} 
+  isLoading={inventoryLoading} 
+  onRefreshDates={refreshDates}
+  firstPurchaseDate={firstPurchaseDate}
+  totalUnitsSold={totalUnitsSoldSinceFirstPurchase}
+  salesByItemId={salesByItemId}
+  detailedSales={detailedSales}
+/>
+
           </TabsContent>
         </Tabs>
       </div>
