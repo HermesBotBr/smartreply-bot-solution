@@ -20,8 +20,8 @@ interface SalesBoxComponentProps {
   filterBySettlement?: boolean;
   inventoryItems?: InventoryItem[];
   advertisingItems?: AdvertisingItem[];
-  onRefreshAdvertisingData?: () => void; // Prop for refresh functionality
-  totalAdvertisingCost: number; // Add required property to fix build error
+  onRefreshAdvertisingData?: () => void; 
+  totalAdvertisingCost: number;
 }
 
 export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
@@ -35,7 +35,7 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
   inventoryItems = [],
   advertisingItems = [],
   onRefreshAdvertisingData,
-  totalAdvertisingCost = 0 // Default value for the newly required property
+  totalAdvertisingCost = 0
 }) => {
   const salesByItem = useMemo(() => {
     if (!settlementTransactions.length) return [];
@@ -65,16 +65,30 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
         count: number;
         amount: number;
       };
-      individualProfit: number; // Added field for individual profit
-      taxAmount: number; // Added field for tax amount
-      averageUnitCost: number; // Added field to store average unit cost for new calculation
-      totalInventoryCost: number; // New field for total inventory cost
-      advertisingCost: number; // Added field for advertising cost
-      advertisingSalesUnits: number; // Added field for advertising sales units
-      advertisingProfitPerUnit: number; // Added field for profit per unit from advertising
-      individualProfitMinusAdv: number; // New field for individual profit minus advertising
-      totalProfitMinusAdv: number; // New field for total profit minus advertising
-      projectedTotalProfitMinusAdv: number; // New field for projected total profit minus advertising
+      individualProfit: number;
+      taxAmount: number;
+      averageUnitCost: number;
+      totalInventoryCost: number;
+      advertisingCost: number;
+      advertisingSalesUnits: number;
+      advertisingProfitPerUnit: number;
+      individualProfitMinusAdv: number;
+      totalProfitMinusAdv: number;
+      projectedTotalProfitMinusAdv: number;
+      // New calculated fields for the updated table
+      faturadoUnitario: number;
+      repasseUnitario: number;
+      custoUnitario: number;
+      faturadoLiberado: number;
+      repasseLiberado: number;
+      custoLiberado: number;
+      publicidadeUnitario: number;
+      publicidadeLiberado: number;
+      impostoUnitario: number;
+      impostoLiberado: number;
+      resultadoTotal: number;
+      resultadoLiberado: number;
+      resultadoUnitario: number;
     }>();
 
     // Process settlement transactions (all sales)
@@ -92,16 +106,30 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
           released: { count: 0, amount: 0 },
           unreleased: { count: 0, amount: 0 },
           refunded: { count: 0, amount: 0 },
-          individualProfit: 0, // Initialize individual profit
-          taxAmount: 0, // Initialize tax amount
-          averageUnitCost: 0, // Initialize average unit cost
-          totalInventoryCost: 0, // Initialize total inventory cost
-          advertisingCost: 0, // Initialize advertising cost
-          advertisingSalesUnits: 0, // Initialize advertising sales units
-          advertisingProfitPerUnit: 0, // Initialize advertising profit per unit
-          individualProfitMinusAdv: 0, // Initialize individual profit minus advertising
-          totalProfitMinusAdv: 0, // Initialize total profit minus advertising
-          projectedTotalProfitMinusAdv: 0, // Initialize projected total profit minus advertising
+          individualProfit: 0,
+          taxAmount: 0,
+          averageUnitCost: 0,
+          totalInventoryCost: 0,
+          advertisingCost: 0,
+          advertisingSalesUnits: 0,
+          advertisingProfitPerUnit: 0,
+          individualProfitMinusAdv: 0,
+          totalProfitMinusAdv: 0,
+          projectedTotalProfitMinusAdv: 0,
+          // Initialize new calculated fields
+          faturadoUnitario: 0,
+          repasseUnitario: 0,
+          custoUnitario: 0,
+          faturadoLiberado: 0,
+          repasseLiberado: 0,
+          custoLiberado: 0,
+          publicidadeUnitario: 0,
+          publicidadeLiberado: 0,
+          impostoUnitario: 0,
+          impostoLiberado: 0,
+          resultadoTotal: 0,
+          resultadoLiberado: 0,
+          resultadoUnitario: 0,
         });
       }
 
@@ -299,6 +327,57 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
       }
     });
 
+    // Calculate the new fields for the updated table
+    itemGroups.forEach(item => {
+      // Faturado /U: Valor Unitário Faturado (Faturado /T / Unidades /T)
+      item.faturadoUnitario = item.totalUnits > 0 ? item.totalSales / item.totalUnits : 0;
+      
+      // Faturado /L: Valor Liberado Faturado (estimating as a proportion of total faturado)
+      item.faturadoLiberado = item.totalUnits > 0 ? 
+        (item.totalSales * item.released.count) / item.totalUnits : 0;
+        
+      // Repasse /U: Valor Unitário de repasse (Repasse /L / Unidades /L)
+      item.repasseUnitario = item.released.count > 0 ? item.released.amount / item.released.count : 0;
+      
+      // Custo /U: Custo de estoque Unitário (Custo /T / Unidades /T)
+      const totalRemainingUnits = item.released.count + item.unreleased.count;
+      item.custoUnitario = totalRemainingUnits > 0 && item.totalInventoryCost ? 
+        item.totalInventoryCost / totalRemainingUnits : item.averageUnitCost || 0;
+      
+      // Custo /L: Custo de estoque Liberado (Custo /U * Unidades /L)
+      item.custoLiberado = item.custoUnitario * item.released.count;
+
+      // Publicidade /U: Publicidade sobre unidades  
+      // (Publicidade /T / (Unidades /T - Unidades /R))
+      const nonRefundedUnits = item.totalUnits - item.refunded.count;
+      item.publicidadeUnitario = nonRefundedUnits > 0 ? 
+        item.advertisingCost / nonRefundedUnits : 0;
+      
+      // Publicidade /L: Publicidade sobre Liberados (Publicidade /U * Unidades /L)
+      item.publicidadeLiberado = item.publicidadeUnitario * item.released.count;
+      
+      // Imposto /U: Imposto sobre Unidades (Imposto /T / Unidades /T)
+      item.impostoUnitario = item.totalUnits > 0 ? item.taxAmount / item.totalUnits : 0;
+      
+      // Imposto /L: Imposto sobre Liberados (Imposto /U * Unidades /L)
+      item.impostoLiberado = item.impostoUnitario * item.released.count;
+      
+      // Resultado /T: Resultado Total 
+      // (Repasse /T - Custo /T - Publicidade /T - Imposto /T)
+      item.resultadoTotal = item.totalRepasse - item.totalInventoryCost - 
+        item.advertisingCost - item.taxAmount;
+      
+      // Resultado /L: Resultado Liberado 
+      // (Repasse /L - Custo /L - Publicidade /L - Imposto /L)
+      item.resultadoLiberado = item.released.amount - item.custoLiberado - 
+        item.publicidadeLiberado - item.impostoLiberado;
+      
+      // Resultado /U: Resultado Unitário 
+      // (Repasse /U - Custo /U - Publicidade /U - Imposto /U)
+      item.resultadoUnitario = item.repasseUnitario - item.custoUnitario - 
+        item.publicidadeUnitario - item.impostoUnitario;
+    });
+
     // Convert to array and sort by total sales (descending)
     return Array.from(itemGroups.values())
       .sort((a, b) => b.totalSales - a.totalSales);
@@ -340,20 +419,30 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
               <TableHeader>
                 <TableRow>
                   <TableHead>Anúncio</TableHead>
-                  <TableHead className="text-right">Vendas Totais</TableHead>
-                  <TableHead className="text-right">Repasse Total</TableHead>
-                  <TableHead className="text-right">Taxas (ML)</TableHead>
-                  <TableHead className="text-right">Liberado</TableHead>
-                  <TableHead className="text-right">Não Liberado</TableHead>
-                  <TableHead className="text-right">Reembolsadas</TableHead>
-                  <TableHead className="text-right">Imposto</TableHead>
-                  <TableHead className="text-right">Publicidade</TableHead>
-                  <TableHead className="text-right">Lucro indiv. vendas pub.</TableHead>
-                  <TableHead className="text-right">Lucro Individual /L</TableHead>
-                  <TableHead className="text-right">Lucro Individual /L -P</TableHead>
-                  <TableHead className="text-right">Lucro Total /L -P</TableHead>
-                  <TableHead className="text-right">Lucro Total Previsto -P</TableHead>
-                  <TableHead className="text-right">Custo total de estoque /L</TableHead>
+                  <TableHead className="text-right">Unidades /T</TableHead>
+                  <TableHead className="text-right">Unidades /L</TableHead>
+                  <TableHead className="text-right">Unidades /NL</TableHead>
+                  <TableHead className="text-right">Unidades /R</TableHead>
+                  <TableHead className="text-right">Faturado /T</TableHead>
+                  <TableHead className="text-right">Faturado /L</TableHead>
+                  <TableHead className="text-right">Faturado /U</TableHead>
+                  <TableHead className="text-right">Repasse /T</TableHead>
+                  <TableHead className="text-right">Repasse /L</TableHead>
+                  <TableHead className="text-right">Repasse /U</TableHead>
+                  <TableHead className="text-right">Repasse /NL</TableHead>
+                  <TableHead className="text-right">Repasse /R</TableHead>
+                  <TableHead className="text-right">Custo /T</TableHead>
+                  <TableHead className="text-right">Custo /L</TableHead>
+                  <TableHead className="text-right">Custo /U</TableHead>
+                  <TableHead className="text-right">Publicidade /T</TableHead>
+                  <TableHead className="text-right">Publicidade /L</TableHead>
+                  <TableHead className="text-right">Publicidade /U</TableHead>
+                  <TableHead className="text-right">Imposto /T</TableHead>
+                  <TableHead className="text-right">Imposto /L</TableHead>
+                  <TableHead className="text-right">Imposto /U</TableHead>
+                  <TableHead className="text-right">Resultado /T</TableHead>
+                  <TableHead className="text-right">Resultado /L</TableHead>
+                  <TableHead className="text-right">Resultado /U</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -363,54 +452,76 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
                       {item.title}
                     </TableCell>
                     <TableCell className="text-right">
-                      {formatCurrency(item.totalSales)} <span className="text-xs text-gray-500">({item.totalUnits} un.)</span>
+                      {item.totalUnits}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {item.released.count}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {item.unreleased.count}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {item.refunded.count}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {formatCurrency(item.totalSales)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {formatCurrency(item.faturadoLiberado)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {formatCurrency(item.faturadoUnitario)}
                     </TableCell>
                     <TableCell className="text-right">
                       {formatCurrency(item.totalRepasse)}
                     </TableCell>
                     <TableCell className="text-right">
-                      {formatCurrency(item.totalFees)}
+                      {formatCurrency(item.released.amount)}
                     </TableCell>
                     <TableCell className="text-right">
-                      {formatCurrency(item.released.amount)} <span className="text-xs text-gray-500">({item.released.count} un.)</span>
-                      {filterBySettlement && <span className="text-xs text-blue-500 ml-1">(filtrado)</span>}
+                      {formatCurrency(item.repasseUnitario)}
                     </TableCell>
                     <TableCell className="text-right">
-                      {formatCurrency(item.unreleased.amount)} <span className="text-xs text-gray-500">({item.unreleased.count} un.)</span>
-                      {filterBySettlement && <span className="text-xs text-blue-500 ml-1">(filtrado)</span>}
+                      {formatCurrency(item.unreleased.amount)}
                     </TableCell>
                     <TableCell className="text-right">
-                      {formatCurrency(item.refunded.amount)} <span className="text-xs text-gray-500">({item.refunded.count} un.)</span>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {formatCurrency(item.taxAmount)} <span className="text-xs text-gray-500">(10%)</span>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {item.advertisingCost > 0 
-                        ? <>
-                            {formatCurrency(item.advertisingCost)} <span className="text-xs text-gray-500">({item.advertisingSalesUnits} un.)</span>
-                          </>
-                        : "Sem dados"}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {item.advertisingSalesUnits > 0 && item.advertisingProfitPerUnit !== 0
-                        ? formatCurrency(item.advertisingProfitPerUnit)
-                        : "Sem dados"}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {item.individualProfit ? formatCurrency(item.individualProfit) : "Sem dados"}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {item.individualProfitMinusAdv ? formatCurrency(item.individualProfitMinusAdv) : "Sem dados"}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {item.totalProfitMinusAdv ? formatCurrency(item.totalProfitMinusAdv) : "Sem dados"}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {item.projectedTotalProfitMinusAdv ? formatCurrency(item.projectedTotalProfitMinusAdv) : "Sem dados"}
+                      {formatCurrency(item.refunded.amount)}
                     </TableCell>
                     <TableCell className="text-right">
                       {item.totalInventoryCost ? formatCurrency(item.totalInventoryCost) : "Sem dados"}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {formatCurrency(item.custoLiberado)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {formatCurrency(item.custoUnitario)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {item.advertisingCost > 0 ? formatCurrency(item.advertisingCost) : "Sem dados"}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {formatCurrency(item.publicidadeLiberado)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {formatCurrency(item.publicidadeUnitario)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {formatCurrency(item.taxAmount)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {formatCurrency(item.impostoLiberado)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {formatCurrency(item.impostoUnitario)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {formatCurrency(item.resultadoTotal)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {formatCurrency(item.resultadoLiberado)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {formatCurrency(item.resultadoUnitario)}
                     </TableCell>
                   </TableRow>
                 ))}
