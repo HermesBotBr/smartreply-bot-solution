@@ -293,23 +293,7 @@ export const DataInput: React.FC<DataInputProps> = ({
               Cole os dados do relatório de release no formato CSV abaixo
             </CardDescription>
           </CardHeader>
-<CardContent className="space-y-4">
-  <Button
-    variant="outline"
-    onClick={async () => {
-      try {
-        const response = await fetch("https://projetohermes-dda7e0c8d836.herokuapp.com/releases.txt");
-        if (!response.ok) throw new Error("Erro ao buscar o arquivo");
-        const text = await response.text();
-        onReleaseDataChange(text);
-      } catch (error) {
-        console.error("Erro ao carregar o arquivo releases.txt:", error);
-      }
-    }}
-  >
-    Adicionar automaticamente
-  </Button>
-
+<CardContent>
   <Textarea 
     value={releaseData}
     onChange={handleReleaseChange}
@@ -319,6 +303,7 @@ DATE,SOURCE_ID,EXTERNAL_REFERENCE,RECORD_TYPE,DESCRIPTION,NET_CREDIT_AMOUNT,NET_
     className="min-h-[400px] font-mono text-sm"
   />
 </CardContent>
+
 
           <CardFooter className="flex justify-between items-center">
             <div className="text-sm text-muted-foreground">
