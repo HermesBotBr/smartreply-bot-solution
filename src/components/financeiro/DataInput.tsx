@@ -88,6 +88,24 @@ export const DataInput: React.FC<DataInputProps> = ({
     }
   }, [releaseData, startDate, endDate]);
 
+  useEffect(() => {
+  const fetchReleaseData = async () => {
+    try {
+      const response = await fetch("https://projetohermes-dda7e0c8d836.herokuapp.com/releases.txt");
+      if (!response.ok) throw new Error("Erro ao buscar o arquivo");
+      const text = await response.text();
+      onReleaseDataChange(text);
+    } catch (error) {
+      console.error("Erro ao carregar o arquivo releases.txt:", error);
+    }
+  };
+
+  if (!releaseData) {
+    fetchReleaseData();
+  }
+}, []);
+
+
   const parseReleaseTransactions = (data: string, startDate?: Date, endDate?: Date): Transaction[] => {
     try {
       // Skip the first two lines (title and headers) and the last line (total)
