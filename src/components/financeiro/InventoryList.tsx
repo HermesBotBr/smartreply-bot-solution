@@ -14,17 +14,26 @@ interface InventoryListProps {
   inventoryItems: InventoryItem[];
   isLoading: boolean;
   onRefreshDates?: () => void;
+  firstPurchaseDate?: string | null;
+  totalUnitsSold?: number;
+  salesByItemId?: Record<string, number>;
+  detailedSales?: any[];
 }
 
-export function InventoryList({ inventoryItems, isLoading, onRefreshDates }: InventoryListProps) {
+
+export function InventoryList({ 
+  inventoryItems, 
+  isLoading, 
+  onRefreshDates, 
+  firstPurchaseDate, 
+  totalUnitsSold, 
+  salesByItemId = {}, 
+  detailedSales = [] 
+}: InventoryListProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [refreshing, setRefreshing] = useState(false);
-  const [firstPurchaseDate, setFirstPurchaseDate] = useState<string | null>(null);
-  const [totalUnitsSoldSinceFirstPurchase, setTotalUnitsSoldSinceFirstPurchase] = useState<number>(0);
-  const [fetchingSales, setFetchingSales] = useState<boolean>(false);
   const [salesPopupOpen, setSalesPopupOpen] = useState<boolean>(false);
-  
-  const { fetchSalesData, salesByItemId, detailedSales } = useAdminSalesData();
+
   
   // Get seller ID from ML token
   const mlToken = useMlToken();
@@ -94,40 +103,8 @@ export function InventoryList({ inventoryItems, isLoading, onRefreshDates }: Inv
     }
   };
 
-  // Find the earliest purchase date when inventory items change
-  useEffect(() => {
-    let earliestDate: Date | null = null;
-    let earliestDateStr: string | null = null;
-    
-    inventoryItems.forEach(item => {
-      item.purchases.forEach(purchase => {
-        if (purchase.date) {
-          const purchaseDate = parseBrazilianDate(purchase.date);
-          
-          // Skip invalid dates
-          if (!purchaseDate) return;
-          
-          // Check if this is the earliest date we've seen
-          if (!earliestDate || purchaseDate < earliestDate) {
-            earliestDate = purchaseDate;
-            earliestDateStr = purchase.date;
-          }
-        }
-      });
-    });
-    
-    // Only update if it's actually changed
-    if (earliestDateStr !== firstPurchaseDate) {
-      setFirstPurchaseDate(earliestDateStr);
-    }
-  }, [inventoryItems]);
+
   
-  // Fetch sales data whenever the first purchase date changes
-  useEffect(() => {
-    if (firstPurchaseDate) {
-      fetchSalesSinceFirstPurchase();
-    }
-  }, [firstPurchaseDate]);
   
   const handleRefresh = () => {
     if (onRefreshDates) {
@@ -240,12 +217,9 @@ export function InventoryList({ inventoryItems, isLoading, onRefreshDates }: Inv
               <ShoppingBag className="h-4 w-4 text-muted-foreground" />
             </div>
             <p className="text-2xl font-bold">
-              {fetchingSales ? (
-                <span className="text-lg">Calculando...</span>
-              ) : (
-                `${totalUnitsSoldSinceFirstPurchase} unidades`
-              )}
-            </p>
+  {totalUnitsSold !== undefined ? `${totalUnitsSold} unidades` : 'N/A'}
+</p>
+
           </div>
         </div>
       </div>
@@ -261,12 +235,13 @@ export function InventoryList({ inventoryItems, isLoading, onRefreshDates }: Inv
       </div>
 
       <SalesDetailPopup
-        open={salesPopupOpen}
-        onClose={() => setSalesPopupOpen(false)}
-        salesByItemId={salesByItemId}
-        detailedSales={detailedSales}
-        totalUnitsSold={totalUnitsSoldSinceFirstPurchase}
-      />
+  open={salesPopupOpen}
+  onClose={() => setSalesPopupOpen(false)}
+  salesByItemId={salesByItemId || {}}
+  detailedSales={detailedSales || []}
+  totalUnitsSold={totalUnitsSold || 0}
+/>
+
     </div>
   );
 }
