@@ -11,7 +11,6 @@ import { useMlToken } from '@/hooks/useMlToken';
 import { toast } from '@/components/ui/use-toast';
 import axios from 'axios';
 import { getNgrokUrl } from '@/config/api';
-import ProductThumbnail from '@/components/dashboard/ProductThumbnail';
 
 interface InventoryItemCardProps {
   item: InventoryItem;
@@ -147,12 +146,9 @@ export function InventoryItemCard({ item, salesCount = 0, onInventoryUpdated }: 
     <Card className="h-full">
       <CardHeader className="pb-2">
         <div className="flex items-start justify-between">
-          <div className="flex items-center gap-2">
-            <ProductThumbnail itemId={item.itemId} />
-            <div>
-              <CardTitle className="text-lg font-semibold">{item.title}</CardTitle>
-              <p className="text-sm text-muted-foreground">ID: {item.itemId}</p>
-            </div>
+          <div>
+            <CardTitle className="text-lg font-semibold">{item.title}</CardTitle>
+            <p className="text-sm text-muted-foreground">ID: {item.itemId}</p>
           </div>
           <div className="flex items-center gap-2">
             <div className="flex items-center justify-center bg-primary/10 p-2 rounded-full">
