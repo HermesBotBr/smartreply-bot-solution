@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { MetricCard } from '@/components/dashboard/metrics/MetricCard';
 import { SettlementTransaction } from '@/hooks/useSettlementData';
@@ -75,6 +74,10 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
   // Calculate total repasse value from settlement transactions
   const totalSettlementRepasse = settlementTransactions.reduce((sum, transaction) => 
     sum + (transaction.netValue || 0), 0);
+    
+  // Calculate total gross value from settlement transactions
+  const totalSettlementGross = settlementTransactions.reduce((sum, transaction) => 
+    sum + (transaction.grossValue || 0), 0);
 
   // Filter transfers from other operations
   const transferOperations = releaseOtherOperations.filter(op => 
@@ -202,7 +205,7 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         <MetricCard
           title="Total Bruto (ML)"
-          value={`R$ ${grossSales.toFixed(2)}`}
+          value={`R$ ${totalSettlementGross.toFixed(2)}`}
           description={`Unidades vendidas: ${unitsSold}`}
           className="bg-gray-50 hover:bg-gray-100 transition-colors"
           textColor="text-gray-800"
@@ -219,7 +222,7 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
         <MetricCard
           title="Taxas (ML)"
           value={`R$ ${totalMLFees.toFixed(2)}`}
-          description={`${((totalMLFees / (grossSales || 1)) * 100).toFixed(1)}% do valor bruto`}
+          description={`${((totalMLFees / (totalSettlementGross || 1)) * 100).toFixed(1)}% do valor bruto`}
           className="bg-red-50 hover:bg-red-100 transition-colors"
           textColor="text-red-800"
         />
@@ -246,7 +249,7 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
                 <MetricCard
                   title="Contestações"
                   value={`R$ ${totalClaimsWithRefunds.toFixed(2)}`}
-                  description={`${((totalClaimsWithRefunds / (grossSales || 1)) * 100).toFixed(1)}% do valor bruto`}
+                  description={`${((totalClaimsWithRefunds / (totalSettlementGross || 1)) * 100).toFixed(1)}% do valor bruto`}
                   className="bg-amber-50 hover:bg-amber-100 transition-colors"
                   textColor="text-amber-800"
                   onClick={() => setClaimsPopupOpen(true)}
@@ -255,7 +258,7 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
                 <MetricCard
                   title="Publicidade"
                   value={`R$ ${totalAdvertisingCost.toFixed(2)}`}
-                  description={`${((totalAdvertisingCost / (grossSales || 1)) * 100).toFixed(1)}% do valor bruto`}
+                  description={`${((totalAdvertisingCost / (totalSettlementGross || 1)) * 100).toFixed(1)}% do valor bruto`}
                   className="bg-orange-50 hover:bg-orange-100 transition-colors"
                   textColor="text-orange-800"
                   onClick={() => setPublicidadePopupOpen(true)}
@@ -264,7 +267,7 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
                 <MetricCard
                   title="Dívidas"
                   value={`R$ ${Math.abs(totalDebts).toFixed(2)}`}
-                  description={`${((Math.abs(totalDebts) / (grossSales || 1)) * 100).toFixed(1)}% do valor bruto`}
+                  description={`${((Math.abs(totalDebts) / (totalSettlementGross || 1)) * 100).toFixed(1)}% do valor bruto`}
                   className="bg-purple-50 hover:bg-purple-100 transition-colors"
                   textColor="text-purple-800"
                 />
@@ -272,7 +275,7 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
                 <MetricCard
                   title="Transferências"
                   value={`R$ ${Math.abs(totalTransfers).toFixed(2)}`}
-                  description={`${((Math.abs(totalTransfers) / (grossSales || 1)) * 100).toFixed(1)}% do valor bruto`}
+                  description={`${((Math.abs(totalTransfers) / (totalSettlementGross || 1)) * 100).toFixed(1)}% do valor bruto`}
                   className="bg-indigo-50 hover:bg-indigo-100 transition-colors"
                   textColor="text-indigo-800"
                   onClick={() => setTransfersPopupOpen(true)}
@@ -286,7 +289,7 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
                 <MetricCard
                   title="Cartão de Crédito"
                   value={`R$ ${Math.abs(totalCreditCard).toFixed(2)}`}
-                  description={`${((Math.abs(totalCreditCard) / (grossSales || 1)) * 100).toFixed(1)}% do valor bruto`}
+                  description={`${((Math.abs(totalCreditCard) / (totalSettlementGross || 1)) * 100).toFixed(1)}% do valor bruto`}
                   className="bg-lime-50 hover:bg-lime-100 transition-colors"
                   textColor="text-lime-800"
                 />
@@ -294,7 +297,7 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
                 <MetricCard
                   title="Frete e Cashback"
                   value={`R$ ${Math.abs(totalShippingCashback).toFixed(2)}`}
-                  description={`${((Math.abs(totalShippingCashback) / (grossSales || 1)) * 100).toFixed(1)}% do valor bruto`}
+                  description={`${((Math.abs(totalShippingCashback) / (totalSettlementGross || 1)) * 100).toFixed(1)}% do valor bruto`}
                   className="bg-sky-50 hover:bg-sky-100 transition-colors"
                   textColor="text-sky-800"
                 />

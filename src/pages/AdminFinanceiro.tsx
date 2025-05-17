@@ -18,8 +18,6 @@ import { Label } from '@/components/ui/label';
 import { useAdminSalesData } from '@/hooks/useAdminSalesData';
 import { parseBrazilianDate } from '@/lib/utils';
 
-
-
 const AdminFinanceiro: React.FC = () => {
   /* ------------------------------------------------------------------ */
   /* state                                                               */
@@ -30,40 +28,36 @@ const AdminFinanceiro: React.FC = () => {
   const [firstPurchaseDate, setFirstPurchaseDate] = useState<string | null>(null);
   const [totalUnitsSoldSinceFirstPurchase, setTotalUnitsSoldSinceFirstPurchase] = useState<number>(0);
 
-
   const [startDate, setStartDate] = useState<Date | undefined>(new Date());
   const [endDate, setEndDate] = useState<Date | undefined>(new Date());
 
   const [settlementData, setSettlementData] = useState<string>('');
   const [releaseData, setReleaseData] = useState<string>('');
 
-const { fetchSalesData, salesByItemId, detailedSales } = useAdminSalesData();
+  const { fetchSalesData, salesByItemId, detailedSales } = useAdminSalesData();
 
+  useEffect(() => {
+    const fetchReleaseData = async () => {
+      try {
+        const response = await fetch("https://projetohermes-dda7e0c8d836.herokuapp.com/releases.txt");
+        if (!response.ok) throw new Error("Erro ao buscar release.txt");
+        const text = await response.text();
+        handleReleaseDataChange(text);
+      } catch (error) {
+        console.error("Erro ao carregar release.txt:", error);
+        toast({
+          title: "Erro",
+          description: "Falha ao carregar os dados iniciais de liberações",
+          variant: "destructive"
+        });
+      }
+    };
 
-useEffect(() => {
-  const fetchReleaseData = async () => {
-    try {
-      const response = await fetch("https://projetohermes-dda7e0c8d836.herokuapp.com/releases.txt");
-      if (!response.ok) throw new Error("Erro ao buscar release.txt");
-      const text = await response.text();
-      handleReleaseDataChange(text);
-    } catch (error) {
-      console.error("Erro ao carregar release.txt:", error);
-      toast({
-        title: "Erro",
-        description: "Falha ao carregar os dados iniciais de liberações",
-        variant: "destructive"
-      });
+    if (!releaseData) {
+      fetchReleaseData();
     }
-  };
+  }, []);
 
-  if (!releaseData) {
-    fetchReleaseData();
-  }
-}, []);
-
-
-  
   // Add the state for the filter toggle
   const [filterBySettlement, setFilterBySettlement] = useState<boolean>(false);
 
@@ -113,23 +107,23 @@ useEffect(() => {
   } = useInventoryData(sellerId);
 
   useEffect(() => {
-  let earliest: Date | null = null;
-  let earliestStr: string | null = null;
+    let earliest: Date | null = null;
+    let earliestStr: string | null = null;
 
-  inventoryItems.forEach(item => {
-    item.purchases.forEach(purchase => {
-      const date = parseBrazilianDate(purchase.date);
-      if (date && (!earliest || date < earliest)) {
-        earliest = date;
-        earliestStr = purchase.date;
-      }
+    inventoryItems.forEach(item => {
+      item.purchases.forEach(purchase => {
+        const date = parseBrazilianDate(purchase.date);
+        if (date && (!earliest || date < earliest)) {
+          earliest = date;
+          earliestStr = purchase.date;
+        }
+      });
     });
-  });
 
-  if (earliestStr) {
-    setFirstPurchaseDate(earliestStr);
-  }
-}, [inventoryItems]);
+    if (earliestStr) {
+      setFirstPurchaseDate(earliestStr);
+    }
+  }, [inventoryItems]);
 
   // Load advertising data
   const {
@@ -254,25 +248,23 @@ useEffect(() => {
     }
   };
 
+  const fetchSalesSinceFirstPurchase = async () => {
+    if (!firstPurchaseDate) return;
 
-const fetchSalesSinceFirstPurchase = async () => {
-  if (!firstPurchaseDate) return;
-
-  try {
-    const today = new Date();
-    const formattedToday = `${today.getDate().toString().padStart(2, '0')}/${(today.getMonth() + 1).toString().padStart(2, '0')}/${today.getFullYear()}`;
-    const total = await fetchSalesData(sellerId, firstPurchaseDate, formattedToday);
-    setTotalUnitsSoldSinceFirstPurchase(total);
-  } catch (err) {
-    console.error("Erro ao buscar vendas:", err);
-    toast({
-      title: "Erro",
-      description: "Não foi possível buscar as vendas desde a primeira reposição.",
-      variant: "destructive"
-    });
-  }
-};
-
+    try {
+      const today = new Date();
+      const formattedToday = `${today.getDate().toString().padStart(2, '0')}/${(today.getMonth() + 1).toString().padStart(2, '0')}/${today.getFullYear()}`;
+      const total = await fetchSalesData(sellerId, firstPurchaseDate, formattedToday);
+      setTotalUnitsSoldSinceFirstPurchase(total);
+    } catch (err) {
+      console.error("Erro ao buscar vendas:", err);
+      toast({
+        title: "Erro",
+        description: "Não foi possível buscar as vendas desde a primeira reposição.",
+        variant: "destructive"
+      });
+    }
+  };
 
   /* ------------------------------------------------------------------ */
   /* utils                                                               */
@@ -487,6 +479,8 @@ const fetchSalesSinceFirstPurchase = async () => {
   /* side‑effects                                                        */
   /* ------------------------------------------------------------------ */
   useEffect(() => {
+    // Agora usaremos totalGrossSales apenas como entrada, mas deixamos a métrica ser calculada
+    // dentro do componente FinancialMetrics baseado nas transações reais
     setMetrics((prev) => ({
       ...prev,
       grossSales: totalGrossSales,
@@ -505,11 +499,10 @@ const fetchSalesSinceFirstPurchase = async () => {
   }, []);
 
   useEffect(() => {
-  if (firstPurchaseDate) {
-    fetchSalesSinceFirstPurchase();
-  }
-}, [firstPurchaseDate]);
-
+    if (firstPurchaseDate) {
+      fetchSalesSinceFirstPurchase();
+    }
+  }, [firstPurchaseDate]);
 
   /* ------------------------------------------------------------------ */
   /* render                                                              */
@@ -599,14 +592,14 @@ const fetchSalesSinceFirstPurchase = async () => {
 
           <TabsContent value="estoque" className="mt-4">
             <InventoryList 
-  inventoryItems={inventoryItems || []} 
-  isLoading={inventoryLoading} 
-  onRefreshDates={refreshDates}
-  firstPurchaseDate={firstPurchaseDate}
-  totalUnitsSold={totalUnitsSoldSinceFirstPurchase}
-  salesByItemId={salesByItemId}
-  detailedSales={detailedSales}
-/>
+              inventoryItems={inventoryItems || []} 
+              isLoading={inventoryLoading} 
+              onRefreshDates={refreshDates}
+              firstPurchaseDate={firstPurchaseDate}
+              totalUnitsSold={totalUnitsSoldSinceFirstPurchase}
+              salesByItemId={salesByItemId}
+              detailedSales={detailedSales}
+            />
 
           </TabsContent>
         </Tabs>
