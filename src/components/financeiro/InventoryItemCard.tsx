@@ -11,7 +11,7 @@ import { useMlToken } from '@/hooks/useMlToken';
 import { toast } from '@/components/ui/use-toast';
 import axios from 'axios';
 import { getNgrokUrl } from '@/config/api';
-import { ProductThumbnail } from '../dashboard/ProductThumbnail';
+import ProductThumbnail from '../dashboard/ProductThumbnail';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 interface InventoryItemCardProps {
