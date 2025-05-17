@@ -69,6 +69,10 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
   const [filteredTotalReleased, setFilteredTotalReleased] = useState(totalReleased);
   const [filteredOperationsWithOrder, setFilteredOperationsWithOrder] = useState(releaseOperationsWithOrder);
 
+  // Calculate total repasse value from settlement transactions
+  const totalSettlementRepasse = settlementTransactions.reduce((sum, transaction) => 
+    sum + (transaction.netValue || 0), 0);
+
   // Filter transfers from other operations
   const transferOperations = releaseOtherOperations.filter(op => 
     op.description?.toLowerCase().includes('payout') || 
@@ -202,7 +206,7 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
         />
         <MetricCard
           title="Repasse Total (ML)"
-          value={`R$ ${totalMLRepasses.toFixed(2)}`}
+          value={`R$ ${totalSettlementRepasse.toFixed(2)}`}
           description={`Clique para detalhar`}
           className="bg-blue-50 hover:bg-blue-100 transition-colors"
           textColor="text-blue-800"
