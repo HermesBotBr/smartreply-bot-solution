@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { MetricCard } from '@/components/dashboard/metrics/MetricCard';
 import { SettlementTransaction } from '@/hooks/useSettlementData';
@@ -247,15 +248,16 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
         />
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="col-span-full md:col-span-2">
+      {/* Modified this div to be full-width instead of col-span-2 */}
+      <div className="grid grid-cols-1 gap-4">
+        <div className="col-span-full">
           <Tabs defaultValue="pos-liberacao">
             <TabsList className="grid grid-cols-1 mb-4">
               <TabsTrigger value="pos-liberacao">Pós Liberação</TabsTrigger>
             </TabsList>
             
             <TabsContent value="pos-liberacao" className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                 <MetricCard
                   title="Contestações"
                   value={`R$ ${totalClaimsExcludingRefunds.toFixed(2)}`}
