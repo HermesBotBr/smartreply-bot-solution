@@ -1,16 +1,33 @@
-import React from 'react';
+
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Warehouse, ShoppingBag } from 'lucide-react';
+import { Warehouse, ShoppingBag, Plus } from 'lucide-react';
 import { InventoryItem } from '@/types/inventory';
 import { compareBrazilianDates } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { ProductListingPopup } from './ProductListingPopup';
+import { useMlToken } from '@/hooks/useMlToken';
+import { toast } from '@/components/ui/use-toast';
+import axios from 'axios';
+import { getNgrokUrl } from '@/config/api';
 
 interface InventoryItemCardProps {
   item: InventoryItem;
   salesCount?: number;
+  onInventoryUpdated?: () => void;
 }
 
-export function InventoryItemCard({ item, salesCount = 0 }: InventoryItemCardProps) {
+export function InventoryItemCard({ item, salesCount = 0, onInventoryUpdated }: InventoryItemCardProps) {
+  const [productListingOpen, setProductListingOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Get seller_id from user token
+  const mlToken = useMlToken();
+  const sellerId = mlToken && typeof mlToken === 'object' && 'seller_id' in mlToken
+    ? (mlToken as { seller_id: string }).seller_id
+    : '681274853'; // Default ID if not found
+
   // Calculate weighted average cost
   const weightedAverageCost = item.purchases.reduce((total, purchase) => 
     total + (purchase.unitCost * purchase.quantity), 0) / item.totalQuantity;
@@ -43,6 +60,71 @@ export function InventoryItemCard({ item, salesCount = 0 }: InventoryItemCardPro
       return acc;
     }, [] as Array<typeof item.purchases[0] & { salesAssigned?: number }>);
 
+  // Create the product object in the required format for the ProductListingPopup
+  const productForListing = {
+    mlb: item.itemId,
+    title: item.title,
+    image: '', // We don't have an image in our inventory data
+    active: true
+  };
+
+  // Handle adding a new purchase for this product
+  const handleAddPurchase = async (product: any, quantity: number, value: number) => {
+    if (!value || value <= 0) {
+      toast({
+        title: "Erro",
+        description: "O valor da compra deve ser maior que zero",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      
+      // Format description for the transaction
+      const description = `Compra de mercadoria: ${quantity}x ${product.title} (${product.mlb})`;
+      
+      // Generate a unique source_id for this transaction
+      const sourceId = `manual_purchase_${Date.now()}`;
+      
+      // Save the transaction description to the API
+      await axios.post(getNgrokUrl('/trans_desc'), {
+        seller_id: sellerId,
+        source_id: sourceId,
+        descricao: description,
+        valor: value.toString()
+      });
+      
+      toast({
+        title: "Sucesso",
+        description: "Compra adicionada com sucesso!",
+      });
+      
+      // Notify parent component to refresh inventory data
+      if (onInventoryUpdated) {
+        onInventoryUpdated();
+      }
+      
+      setIsLoading(false);
+      setProductListingOpen(false);
+    } catch (error) {
+      console.error('Erro ao adicionar compra:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível adicionar a compra",
+        variant: "destructive"
+      });
+      setIsLoading(false);
+    }
+  };
+
+  // Handle the product selection from the popup
+  const handleProductSelect = (product: any, quantity: number) => {
+    // ProductListingPopup will be closed automatically when a product is selected
+    // We don't need to do anything else here as the popup will handle showing the value input
+  };
+
   return (
     <Card className="h-full">
       <CardHeader className="pb-2">
@@ -51,8 +133,20 @@ export function InventoryItemCard({ item, salesCount = 0 }: InventoryItemCardPro
             <CardTitle className="text-lg font-semibold">{item.title}</CardTitle>
             <p className="text-sm text-muted-foreground">ID: {item.itemId}</p>
           </div>
-          <div className="flex items-center justify-center bg-primary/10 p-2 rounded-full">
-            <Warehouse className="h-5 w-5 text-primary" />
+          <div className="flex items-center gap-2">
+            <div className="flex items-center justify-center bg-primary/10 p-2 rounded-full">
+              <Warehouse className="h-5 w-5 text-primary" />
+            </div>
+            <Button 
+              size="icon" 
+              variant="outline" 
+              className="h-8 w-8 rounded-full"
+              onClick={() => setProductListingOpen(true)}
+              disabled={isLoading}
+            >
+              <Plus className="h-4 w-4" />
+              <span className="sr-only">Adicionar Compra</span>
+            </Button>
           </div>
         </div>
       </CardHeader>
@@ -107,6 +201,17 @@ export function InventoryItemCard({ item, salesCount = 0 }: InventoryItemCardPro
             </TableBody>
           </Table>
         </div>
+
+        {/* Product listing popup with pre-selected product */}
+        <ProductListingPopup 
+          open={productListingOpen}
+          onClose={() => setProductListingOpen(false)}
+          sellerId={sellerId}
+          onSelectProduct={handleProductSelect}
+          preselectedProduct={productForListing}
+          showValueInput={true}
+          onAddPurchase={handleAddPurchase}
+        />
       </CardContent>
     </Card>
   );

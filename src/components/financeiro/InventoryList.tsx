@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -107,9 +108,6 @@ export function InventoryList({
     }
   };
 
-
-  
-  
   const handleRefresh = () => {
     if (onRefreshDates) {
       setRefreshing(true);
@@ -134,6 +132,13 @@ export function InventoryList({
 
   const handleSalesCardClick = () => {
     setSalesPopupOpen(true);
+  };
+
+  // Handler for inventory updates
+  const handleInventoryUpdated = () => {
+    if (onRefreshDates) {
+      onRefreshDates();
+    }
   };
 
   if (isLoading) {
@@ -233,6 +238,7 @@ export function InventoryList({
             key={item.itemId} 
             item={item} 
             salesCount={salesByItemId[item.itemId] || 0}
+            onInventoryUpdated={handleInventoryUpdated}
           />
         ))}
       </div>

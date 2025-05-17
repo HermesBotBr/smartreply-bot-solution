@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { 
   Dialog, 
@@ -27,30 +26,44 @@ interface ProductListingPopupProps {
   onClose: () => void;
   sellerId: string;
   onSelectProduct: (product: Product, quantity: number) => void;
+  preselectedProduct?: Product;
+  showValueInput?: boolean;
+  onAddPurchase?: (product: Product, quantity: number, value: number) => void;
 }
 
 export const ProductListingPopup: React.FC<ProductListingPopupProps> = ({
   open,
   onClose,
   sellerId,
-  onSelectProduct
+  onSelectProduct,
+  preselectedProduct,
+  showValueInput = false,
+  onAddPurchase
 }) => {
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [quantity, setQuantity] = useState(1);
+  const [value, setValue] = useState<string>('');
   
   useEffect(() => {
     if (open) {
-      fetchProducts();
+      // If we have a preselected product, set it right away
+      if (preselectedProduct) {
+        setSelectedProduct(preselectedProduct);
+      } else {
+        // Otherwise fetch products as usual
+        fetchProducts();
+      }
     } else {
       // Reset state when popup closes
-      setSelectedProduct(null);
+      setSelectedProduct(preselectedProduct || null);
       setQuantity(1);
       setSearchTerm('');
+      setValue('');
     }
-  }, [open, sellerId]);
+  }, [open, sellerId, preselectedProduct]);
 
   const fetchProducts = async () => {
     try {
@@ -79,8 +92,23 @@ export const ProductListingPopup: React.FC<ProductListingPopupProps> = ({
   const handleSelectProduct = () => {
     if (!selectedProduct) return;
     
-    onSelectProduct(selectedProduct, quantity);
-    onClose();
+    if (showValueInput && onAddPurchase) {
+      // If we're adding a purchase, make sure the value is valid
+      const numericValue = parseFloat(value.replace(',', '.'));
+      if (isNaN(numericValue) || numericValue <= 0) {
+        toast({
+          title: "Erro",
+          description: "Por favor, insira um valor válido maior que zero.",
+          variant: "destructive"
+        });
+        return;
+      }
+      onAddPurchase(selectedProduct, quantity, numericValue);
+    } else {
+      // Standard product selection
+      onSelectProduct(selectedProduct, quantity);
+      onClose();
+    }
   };
 
   const filteredProducts = products.filter(product => 
@@ -94,20 +122,20 @@ export const ProductListingPopup: React.FC<ProductListingPopupProps> = ({
           <DialogTitle>Selecionar Produto</DialogTitle>
         </DialogHeader>
 
-        <div className="mb-4">
-          <Input
-            placeholder="Buscar por nome do produto..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="mb-4"
-          />
+        {!preselectedProduct && (
+          <div className="mb-4">
+            <Input
+              placeholder="Buscar por nome do produto..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="mb-4"
+            />
 
-          {isLoading ? (
-            <div className="flex justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-            </div>
-          ) : (
-            <>
+            {isLoading ? (
+              <div className="flex justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
                 {filteredProducts.map((product) => (
                   <div
@@ -141,31 +169,40 @@ export const ProductListingPopup: React.FC<ProductListingPopupProps> = ({
                   </div>
                 ))}
               </div>
+            )}
+          </div>
+        )}
 
-              {filteredProducts.length === 0 && (
-                <p className="text-center py-8 text-muted-foreground">
-                  Nenhum produto encontrado.
-                </p>
-              )}
-
-              {selectedProduct && (
-                <div className="border rounded-md p-4 mt-4 bg-muted/30">
-                  <h4 className="font-medium mb-2">Produto selecionado: {selectedProduct.title}</h4>
-                  <div className="flex items-center">
-                    <label className="mr-2 text-sm">Quantidade:</label>
-                    <Input
-                      type="number"
-                      min="1"
-                      value={quantity}
-                      onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
-                      className="w-24"
-                    />
-                  </div>
+        {selectedProduct && (
+          <div className="border rounded-md p-4 mt-4 bg-muted/30">
+            <h4 className="font-medium mb-2">Produto selecionado: {selectedProduct.title}</h4>
+            <div className="space-y-4">
+              <div className="flex items-center">
+                <label className="mr-2 text-sm">Quantidade:</label>
+                <Input
+                  type="number"
+                  min="1"
+                  value={quantity}
+                  onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
+                  className="w-24"
+                />
+              </div>
+              
+              {showValueInput && (
+                <div className="flex items-center">
+                  <label className="mr-2 text-sm">Valor Total da Compra:</label>
+                  <Input
+                    type="text"
+                    placeholder="R$ 0,00"
+                    value={value}
+                    onChange={(e) => setValue(e.target.value)}
+                    className="w-32"
+                  />
                 </div>
               )}
-            </>
-          )}
-        </div>
+            </div>
+          </div>
+        )}
 
         <DialogFooter>
           <DialogClose asChild>
@@ -175,7 +212,7 @@ export const ProductListingPopup: React.FC<ProductListingPopupProps> = ({
             disabled={!selectedProduct || isLoading} 
             onClick={handleSelectProduct}
           >
-            Selecionar
+            {showValueInput ? "Adicionar Compra" : "Selecionar"}
           </Button>
         </DialogFooter>
       </DialogContent>
