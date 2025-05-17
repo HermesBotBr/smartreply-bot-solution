@@ -251,7 +251,7 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
             
             totalCost += unitsToConsider * purchase.unitCost;
             consideredUnits += unitsToConsider;
-            remainingUnits -= unitsConsider;
+            remainingUnits -= unitsToConsider;
             
             if (remainingUnits <= 0) break;
           }
