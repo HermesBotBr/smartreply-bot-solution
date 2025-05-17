@@ -1,3 +1,4 @@
+
 import React, { useMemo } from 'react';
 import { ReleaseOperation } from '@/types/ReleaseOperation';
 import { SettlementTransaction } from '@/hooks/useSettlementData';
@@ -9,6 +10,7 @@ import { compareBrazilianDates } from '@/lib/utils';
 import { AdvertisingItem } from '@/hooks/usePublicidadeData';
 import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react';
+import ProductThumbnail from '@/components/dashboard/ProductThumbnail';
 
 interface SalesBoxComponentProps {
   settlementTransactions: SettlementTransaction[];
@@ -424,6 +426,7 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>Imagem</TableHead>
                   <TableHead>Anúncio</TableHead>
                   <TableHead className="text-right">Unidades /T</TableHead>
                   <TableHead className="text-right">Unidades /L</TableHead>
@@ -455,6 +458,9 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
               <TableBody>
                 {salesByItem.map((item) => (
                   <TableRow key={item.itemId}>
+                    <TableCell className="w-12">
+                      <ProductThumbnail itemId={item.itemId} />
+                    </TableCell>
                     <TableCell className="font-medium max-w-[200px] truncate" title={item.title}>
                       {item.title}
                     </TableCell>
