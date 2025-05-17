@@ -33,8 +33,12 @@ export function InventoryList({
   const [searchQuery, setSearchQuery] = useState('');
   const [refreshing, setRefreshing] = useState(false);
   const [salesPopupOpen, setSalesPopupOpen] = useState<boolean>(false);
-
+  const [fetchingSales, setFetchingSales] = useState<boolean>(false);
+  const [totalUnitsSoldSinceFirstPurchase, setTotalUnitsSoldSinceFirstPurchase] = useState<number>(0);
   
+  // Get the fetchSalesData function from the useAdminSalesData hook
+  const { fetchSalesData } = useAdminSalesData();
+
   // Get seller ID from ML token
   const mlToken = useMlToken();
   const sellerId = typeof mlToken === 'object' && mlToken !== null && 'seller_id' in mlToken 
@@ -217,9 +221,8 @@ export function InventoryList({
               <ShoppingBag className="h-4 w-4 text-muted-foreground" />
             </div>
             <p className="text-2xl font-bold">
-  {totalUnitsSold !== undefined ? `${totalUnitsSold} unidades` : 'N/A'}
-</p>
-
+              {totalUnitsSold !== undefined ? `${totalUnitsSold} unidades` : 'N/A'}
+            </p>
           </div>
         </div>
       </div>
@@ -235,13 +238,12 @@ export function InventoryList({
       </div>
 
       <SalesDetailPopup
-  open={salesPopupOpen}
-  onClose={() => setSalesPopupOpen(false)}
-  salesByItemId={salesByItemId || {}}
-  detailedSales={detailedSales || []}
-  totalUnitsSold={totalUnitsSold || 0}
-/>
-
+        open={salesPopupOpen}
+        onClose={() => setSalesPopupOpen(false)}
+        salesByItemId={salesByItemId || {}}
+        detailedSales={detailedSales || []}
+        totalUnitsSold={totalUnitsSold || 0}
+      />
     </div>
   );
 }
