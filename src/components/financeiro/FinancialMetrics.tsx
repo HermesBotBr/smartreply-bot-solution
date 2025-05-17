@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { MetricCard } from '@/components/dashboard/metrics/MetricCard';
 import { SettlementTransaction } from '@/hooks/useSettlementData';
@@ -250,14 +249,13 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="col-span-full md:col-span-2">
-          <Tabs defaultValue="maior-detalhe">
-            <TabsList className="grid grid-cols-2 mb-4">
-              <TabsTrigger value="maior-detalhe">Maior Detalhe</TabsTrigger>
-              <TabsTrigger value="resumido">Resumido</TabsTrigger>
+          <Tabs defaultValue="pos-liberacao">
+            <TabsList className="grid grid-cols-1 mb-4">
+              <TabsTrigger value="pos-liberacao">Pós Liberação</TabsTrigger>
             </TabsList>
             
-            <TabsContent value="maior-detalhe" className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <TabsContent value="pos-liberacao" className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
                 <MetricCard
                   title="Contestações"
                   value={`R$ ${totalClaimsExcludingRefunds.toFixed(2)}`}
@@ -293,11 +291,7 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
                   onClick={() => setTransfersPopupOpen(true)}
                   alertStatus={hasUnbalancedTransfers}
                 />
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="resumido" className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                
                 <MetricCard
                   title="Cartão de Crédito"
                   value={`R$ ${Math.abs(totalCreditCard).toFixed(2)}`}
