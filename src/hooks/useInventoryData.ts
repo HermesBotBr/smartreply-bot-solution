@@ -99,13 +99,13 @@ export function useInventoryData(sellerId: string | null) {
         transDescData.forEach(transaction => {
           const { descricao, valor, source_id } = transaction;
           
-          // Check if this is a merchandise purchase
-          if (descricao.startsWith('Compra de mercadoria:')) {
-            // Extract item information using regex
-            const match = descricao.match(/(\d+)x\s(.+)\s\(([A-Z0-9]+)\)/);
+          // Check if this is a merchandise purchase or withdrawal
+          if (descricao.includes('Compra de mercadoria:')) {
+            // Extract item information using regex for both positive and negative quantities
+            const match = descricao.match(/(-?\d+)x\s(.+)\s\(([A-Z0-9]+)\)/);
             
             if (match) {
-              const quantity = parseInt(match[1], 10);
+              const quantity = parseInt(match[1], 10); // This can now be positive or negative
               const title = match[2].trim();
               const itemId = match[3].trim();
               const totalCost = parseFloat(valor);
@@ -123,10 +123,10 @@ export function useInventoryData(sellerId: string | null) {
               
               const item = inventoryMap.get(itemId)!;
               
-              // Update total quantity
+              // Update total quantity (can now add or subtract based on sign)
               item.totalQuantity += quantity;
               
-              // Add this purchase with date if available
+              // Add this purchase/withdrawal with date if available
               item.purchases.push({
                 quantity,
                 unitCost,

@@ -28,11 +28,20 @@ export function InventoryItemCard({ item, salesCount = 0, onInventoryUpdated }: 
     ? (mlToken as { seller_id: string }).seller_id
     : '681274853'; // Default ID if not found
 
-  // Calculate weighted average cost
-  const weightedAverageCost = item.purchases.reduce((total, purchase) => 
-    total + (purchase.unitCost * purchase.quantity), 0) / item.totalQuantity;
+  // Group purchases and withdrawals
+  const purchasesOnly = item.purchases.filter(p => p.quantity > 0);
+  const withdrawalsOnly = item.purchases.filter(p => p.quantity < 0);
   
-  // Calculate actual inventory after sales
+  // Calculate total purchases and withdrawals
+  const totalPurchases = purchasesOnly.reduce((sum, p) => sum + p.quantity, 0);
+  const totalWithdrawals = Math.abs(withdrawalsOnly.reduce((sum, p) => sum + p.quantity, 0));
+
+  // Calculate weighted average cost only from positive purchases
+  const weightedAverageCost = purchasesOnly.length > 0 
+    ? purchasesOnly.reduce((total, purchase) => total + (purchase.unitCost * purchase.quantity), 0) / totalPurchases
+    : 0;
+  
+  // Calculate actual inventory after sales and withdrawals
   const actualInventory = Math.max(0, item.totalQuantity - salesCount);
   
   // Calculate total inventory value based on actual inventory
@@ -41,12 +50,20 @@ export function InventoryItemCard({ item, salesCount = 0, onInventoryUpdated }: 
   // Calculate sales distribution for each purchase in chronological order
   const purchasesWithSales = [...item.purchases]
     // Sort purchases by date (oldest first) to distribute sales chronologically
-    // Using our new compareBrazilianDates function for proper date sorting
     .sort((a, b) => compareBrazilianDates(a.date, b.date))
     // Add the sales distribution to each purchase
     .reduce((acc, purchase) => {
       const previousSalesAssigned = acc.reduce((total, p) => total + (p.salesAssigned || 0), 0);
       const remainingSales = Math.max(0, salesCount - previousSalesAssigned);
+      
+      // If this is a withdrawal (negative quantity), don't assign any sales to it
+      if (purchase.quantity < 0) {
+        acc.push({
+          ...purchase,
+          salesAssigned: 0
+        });
+        return acc;
+      }
       
       // Assign sales to this purchase (cannot exceed purchase quantity)
       const salesAssigned = Math.min(purchase.quantity, remainingSales);
@@ -155,7 +172,9 @@ export function InventoryItemCard({ item, salesCount = 0, onInventoryUpdated }: 
           <div>
             <p className="text-sm text-muted-foreground">Estoque Total</p>
             <p className="text-xl font-semibold">{actualInventory} unidades</p>
-            <p className="text-xs text-muted-foreground">(Compras: {item.totalQuantity} - Vendas: {salesCount})</p>
+            <p className="text-xs text-muted-foreground">
+              (Compras: {totalPurchases} - Retiradas: {totalWithdrawals} - Vendas: {salesCount})
+            </p>
           </div>
           <div>
             <p className="text-sm text-muted-foreground">Custo Médio</p>
@@ -175,7 +194,7 @@ export function InventoryItemCard({ item, salesCount = 0, onInventoryUpdated }: 
         </div>
 
         <div className="mt-4">
-          <h4 className="text-sm font-medium mb-2">Histórico de Compras</h4>
+          <h4 className="text-sm font-medium mb-2">Histórico de Movimentações</h4>
           <Table>
             <TableHeader>
               <TableRow>
@@ -189,11 +208,15 @@ export function InventoryItemCard({ item, salesCount = 0, onInventoryUpdated }: 
             </TableHeader>
             <TableBody>
               {purchasesWithSales.map((purchase, index) => (
-                <TableRow key={`${purchase.sourceId}-${index}`}>
-                  <TableCell>{purchase.quantity}</TableCell>
+                <TableRow key={`${purchase.sourceId}-${index}`} className={purchase.quantity < 0 ? "bg-red-50" : ""}>
+                  <TableCell className={purchase.quantity < 0 ? "text-red-600 font-medium" : ""}>
+                    {purchase.quantity}
+                  </TableCell>
                   <TableCell>{purchase.salesAssigned || 0}</TableCell>
                   <TableCell>R$ {purchase.unitCost.toFixed(2)}</TableCell>
-                  <TableCell>R$ {purchase.totalCost.toFixed(2)}</TableCell>
+                  <TableCell className={purchase.totalCost < 0 ? "text-red-600" : ""}>
+                    R$ {purchase.totalCost.toFixed(2)}
+                  </TableCell>
                   <TableCell>{purchase.sourceId}</TableCell>
                   <TableCell>{purchase.date || '-'}</TableCell>
                 </TableRow>
