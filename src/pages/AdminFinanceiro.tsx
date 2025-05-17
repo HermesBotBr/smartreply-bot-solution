@@ -574,6 +574,7 @@ const AdminFinanceiro: React.FC = () => {
               advertisingItems={advertisingData?.results || []}
               totalAdvertisingCost={metrics.totalAdvertisingCost}
               onRefreshAdvertisingData={handleRefreshAdvertisingData}
+              sellerId={sellerId} // Pass sellerId to FinancialMetrics
             />
           </TabsContent>
 

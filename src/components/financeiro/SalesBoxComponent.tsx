@@ -24,6 +24,7 @@ interface SalesBoxComponentProps {
   advertisingItems?: AdvertisingItem[];
   onRefreshAdvertisingData?: () => void; 
   totalAdvertisingCost: number;
+  sellerId?: string; // Add this prop
 }
 
 export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
@@ -37,7 +38,8 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
   inventoryItems = [],
   advertisingItems = [],
   onRefreshAdvertisingData,
-  totalAdvertisingCost = 0
+  totalAdvertisingCost = 0,
+  sellerId // Use this prop
 }) => {
   const salesByItem = useMemo(() => {
     if (!settlementTransactions.length) return [];
@@ -459,7 +461,7 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
                 {salesByItem.map((item) => (
                   <TableRow key={item.itemId}>
                     <TableCell className="w-12">
-                      <ProductThumbnail itemId={item.itemId} />
+                      <ProductThumbnail itemId={item.itemId} sellerId={sellerId} />
                     </TableCell>
                     <TableCell className="font-medium max-w-[200px] truncate" title={item.title}>
                       {item.title}

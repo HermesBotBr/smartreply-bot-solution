@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { MetricCard } from '@/components/dashboard/metrics/MetricCard';
 import { SettlementTransaction } from '@/hooks/useSettlementData';
@@ -38,6 +37,7 @@ interface FinancialMetricsProps {
   advertisingItems?: AdvertisingItem[];
   totalAdvertisingCost: number;
   onRefreshAdvertisingData?: () => void;
+  sellerId: string; // Add this prop
 }
 
 export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
@@ -61,7 +61,8 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
   inventoryItems = [],
   advertisingItems = [],
   totalAdvertisingCost = 0,
-  onRefreshAdvertisingData
+  onRefreshAdvertisingData,
+  sellerId
 }) => {
   const [repassesPopupOpen, setRepassesPopupOpen] = useState(false);
   const [grossSalesPopupOpen, setGrossSalesPopupOpen] = useState(false);
@@ -205,7 +206,7 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
   const displayTotalReleased = filterBySettlement ? filteredTotalReleased : totalReleased;
 
   return (
-    <div>
+    <div className="space-y-6">
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
         <MetricCard
           title="Total Bruto (ML)"
@@ -328,6 +329,7 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
         advertisingItems={advertisingItems}
         onRefreshAdvertisingData={onRefreshAdvertisingData}
         totalAdvertisingCost={totalAdvertisingCost}
+        sellerId={sellerId} // Pass sellerId to SalesBoxComponent
       />
       
       <RepassesPopup 
