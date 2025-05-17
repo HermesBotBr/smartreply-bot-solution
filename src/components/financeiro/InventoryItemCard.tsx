@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Warehouse, ShoppingBag, Plus } from 'lucide-react';
+import { Warehouse, ShoppingBag, Plus, Trash2 } from 'lucide-react';
 import { InventoryItem } from '@/types/inventory';
 import { compareBrazilianDates } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,8 @@ import { useMlToken } from '@/hooks/useMlToken';
 import { toast } from '@/components/ui/use-toast';
 import axios from 'axios';
 import { getNgrokUrl } from '@/config/api';
+import { ProductThumbnail } from '../dashboard/ProductThumbnail';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 interface InventoryItemCardProps {
   item: InventoryItem;
@@ -21,6 +23,8 @@ interface InventoryItemCardProps {
 export function InventoryItemCard({ item, salesCount = 0, onInventoryUpdated }: InventoryItemCardProps) {
   const [productListingOpen, setProductListingOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [deletingSourceId, setDeletingSourceId] = useState<string | null>(null);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
   // Get seller_id from user token
   const mlToken = useMlToken();
@@ -136,6 +140,41 @@ export function InventoryItemCard({ item, salesCount = 0, onInventoryUpdated }: 
     }
   };
 
+  // Handle deleting a movement entry
+  const handleDeleteMovement = async () => {
+    if (!deletingSourceId) return;
+    
+    try {
+      setIsLoading(true);
+      
+      // Delete the transaction from the API
+      await axios.delete(getNgrokUrl(`/trans_desc?seller_id=${sellerId}&source_id=${deletingSourceId}`));
+      
+      toast({
+        title: "Sucesso",
+        description: "Movimentação excluída com sucesso!",
+      });
+      
+      // Notify parent component to refresh inventory data
+      if (onInventoryUpdated) {
+        onInventoryUpdated();
+      }
+      
+      setIsLoading(false);
+      setDeleteConfirmOpen(false);
+      setDeletingSourceId(null);
+    } catch (error) {
+      console.error('Erro ao excluir movimentação:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível excluir a movimentação",
+        variant: "destructive"
+      });
+      setIsLoading(false);
+      setDeleteConfirmOpen(false);
+    }
+  };
+
   // Handle the product selection from the popup
   const handleProductSelect = (product: any, quantity: number) => {
     // ProductListingPopup will be closed automatically when a product is selected
@@ -146,9 +185,12 @@ export function InventoryItemCard({ item, salesCount = 0, onInventoryUpdated }: 
     <Card className="h-full">
       <CardHeader className="pb-2">
         <div className="flex items-start justify-between">
-          <div>
-            <CardTitle className="text-lg font-semibold">{item.title}</CardTitle>
-            <p className="text-sm text-muted-foreground">ID: {item.itemId}</p>
+          <div className="flex items-center gap-3">
+            <ProductThumbnail itemId={item.itemId} sellerId={sellerId} />
+            <div>
+              <CardTitle className="text-lg font-semibold">{item.title}</CardTitle>
+              <p className="text-sm text-muted-foreground">ID: {item.itemId}</p>
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <div className="flex items-center justify-center bg-primary/10 p-2 rounded-full">
@@ -204,6 +246,7 @@ export function InventoryItemCard({ item, salesCount = 0, onInventoryUpdated }: 
                 <TableHead>Total</TableHead>
                 <TableHead>Source_id</TableHead>
                 <TableHead>Data</TableHead>
+                <TableHead className="text-right">Ação</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -219,6 +262,20 @@ export function InventoryItemCard({ item, salesCount = 0, onInventoryUpdated }: 
                   </TableCell>
                   <TableCell>{purchase.sourceId}</TableCell>
                   <TableCell>{purchase.date || '-'}</TableCell>
+                  <TableCell className="text-right">
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                      onClick={() => {
+                        setDeletingSourceId(purchase.sourceId);
+                        setDeleteConfirmOpen(true);
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      <span className="sr-only">Excluir</span>
+                    </Button>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -235,6 +292,28 @@ export function InventoryItemCard({ item, salesCount = 0, onInventoryUpdated }: 
           showValueInput={true}
           onAddPurchase={handleAddPurchase}
         />
+
+        {/* Delete confirmation dialog */}
+        <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+              <AlertDialogDescription>
+                Tem certeza que deseja excluir esta movimentação? Esta ação não pode ser desfeita.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={isLoading}>Cancelar</AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={handleDeleteMovement}
+                disabled={isLoading}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {isLoading ? "Excluindo..." : "Excluir"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </CardContent>
     </Card>
   );
