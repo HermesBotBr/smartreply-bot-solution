@@ -89,6 +89,7 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
       resultadoTotal: number;
       resultadoLiberado: number;
       resultadoUnitario: number;
+      resultadoLiberadoPrevisto: number; // New field for "Resultado /L Previsto"
     }>();
 
     // Process settlement transactions (all sales)
@@ -130,6 +131,7 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
           resultadoTotal: 0,
           resultadoLiberado: 0,
           resultadoUnitario: 0,
+          resultadoLiberadoPrevisto: 0, // Initialize new field
         });
       }
 
@@ -376,6 +378,10 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
       // (Repasse /U - Custo /U - Publicidade /U - Imposto /U)
       item.resultadoUnitario = item.repasseUnitario - item.custoUnitario - 
         item.publicidadeUnitario - item.impostoUnitario;
+        
+      // NEW COLUMN: Resultado /L Previsto
+      // Calculated as Resultado /U * (Unidades /L + Unidades /NL)
+      item.resultadoLiberadoPrevisto = item.resultadoUnitario * (item.released.count + item.unreleased.count);
     });
 
     // Convert to array and sort by total sales (descending)
@@ -443,6 +449,7 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
                   <TableHead className="text-right">Resultado /T</TableHead>
                   <TableHead className="text-right">Resultado /L</TableHead>
                   <TableHead className="text-right">Resultado /U</TableHead>
+                  <TableHead className="text-right">Resultado /L Previsto</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -522,6 +529,9 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
                     </TableCell>
                     <TableCell className="text-right">
                       {formatCurrency(item.resultadoUnitario)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {formatCurrency(item.resultadoLiberadoPrevisto)}
                     </TableCell>
                   </TableRow>
                 ))}
