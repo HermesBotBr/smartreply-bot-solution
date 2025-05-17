@@ -1,8 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
 import { MetricCard } from '@/components/dashboard/metrics/MetricCard';
 import { SettlementTransaction } from '@/hooks/useSettlementData';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RepassesPopup } from './RepassesPopup';
+import { GrossSalesPopup } from './GrossSalesPopup';
 import { ReleasePopup } from './ReleasePopup';
 import { TransfersPopup } from './TransfersPopup';
 import { ClaimsPopup } from './ClaimsPopup';
@@ -61,6 +63,7 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
   onRefreshAdvertisingData
 }) => {
   const [repassesPopupOpen, setRepassesPopupOpen] = useState(false);
+  const [grossSalesPopupOpen, setGrossSalesPopupOpen] = useState(false);
   const [releasePopupOpen, setReleasePopupOpen] = useState(false);
   const [transfersPopupOpen, setTransfersPopupOpen] = useState(false);
   const [claimsPopupOpen, setClaimsPopupOpen] = useState(false);
@@ -203,6 +206,7 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
           description={`Unidades vendidas: ${unitsSold}`}
           className="bg-gray-50 hover:bg-gray-100 transition-colors"
           textColor="text-gray-800"
+          onClick={() => setGrossSalesPopupOpen(true)}
         />
         <MetricCard
           title="Repasse Total (ML)"
@@ -319,6 +323,14 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
         transactions={settlementTransactions}
         open={repassesPopupOpen}
         onClose={() => setRepassesPopupOpen(false)}
+        startDate={startDate}
+        endDate={endDate}
+      />
+
+      <GrossSalesPopup
+        transactions={settlementTransactions}
+        open={grossSalesPopupOpen}
+        onClose={() => setGrossSalesPopupOpen(false)}
         startDate={startDate}
         endDate={endDate}
       />

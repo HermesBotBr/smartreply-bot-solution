@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { usePaymentsData } from './usePaymentsData';
@@ -167,6 +166,7 @@ export function useSettlementData(
               transaction.sourceId = mainPayment.id.toString();
             }
 
+            // Set gross value from total amount
             transaction.grossValue = totalAmount;
             
             // Use exact repasse value from payments API if available
