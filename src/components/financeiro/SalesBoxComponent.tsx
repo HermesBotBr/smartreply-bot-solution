@@ -9,6 +9,7 @@ import { compareBrazilianDates } from '@/lib/utils';
 import { AdvertisingItem } from '@/hooks/usePublicidadeData';
 import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react';
+import ProductThumbnail from '@/components/dashboard/ProductThumbnail';
 
 interface SalesBoxComponentProps {
   settlementTransactions: SettlementTransaction[];
@@ -455,8 +456,11 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
               <TableBody>
                 {salesByItem.map((item) => (
                   <TableRow key={item.itemId}>
-                    <TableCell className="font-medium max-w-[200px] truncate" title={item.title}>
-                      {item.title}
+                    <TableCell className="font-medium max-w-[200px] truncate">
+                      <div className="flex items-center gap-2">
+                        <ProductThumbnail itemId={item.itemId} />
+                        <span title={item.title}>{item.title}</span>
+                      </div>
                     </TableCell>
                     <TableCell className="text-right">
                       {item.totalUnits}
