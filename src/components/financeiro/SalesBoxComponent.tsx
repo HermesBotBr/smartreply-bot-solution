@@ -9,7 +9,7 @@ import { InventoryItem } from '@/types/inventory';
 import { compareBrazilianDates } from '@/lib/utils';
 import { AdvertisingItem } from '@/hooks/usePublicidadeData';
 import { Button } from '@/components/ui/button';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, ExternalLink } from 'lucide-react';
 import ProductThumbnail from '@/components/dashboard/ProductThumbnail';
 
 interface SalesBoxComponentProps {
@@ -24,7 +24,7 @@ interface SalesBoxComponentProps {
   advertisingItems?: AdvertisingItem[];
   onRefreshAdvertisingData?: () => void; 
   totalAdvertisingCost: number;
-  sellerId?: string; // Add this prop
+  sellerId?: string;
 }
 
 export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
@@ -461,6 +461,24 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
       currency: 'BRL'
     }).format(value);
   };
+  
+  // Function to get ad link for an item
+  const getItemPermalink = (itemId: string) => {
+    // First check if the item exists in advertisingItems
+    const adItem = advertisingItems.find(ad => ad.item_id === itemId);
+    if (adItem?.permalink) {
+      return adItem.permalink;
+    }
+    
+    // If not found in advertising items or no permalink, create a default ML link
+    return `https://articulo.mercadolibre.com.br/MLB-${itemId.replace('MLB', '')}`;
+  };
+  
+  // Function to open item link in new tab
+  const openItemInNewTab = (itemId: string) => {
+    const permalink = getItemPermalink(itemId);
+    window.open(permalink, '_blank');
+  };
 
   return (
     <Card className="w-full mt-6">
@@ -522,10 +540,21 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
                 {salesByItem.map((item) => (
                   <TableRow key={item.itemId}>
                     <TableCell className="w-12">
-                      <ProductThumbnail itemId={item.itemId} sellerId={sellerId} />
+                      <div 
+                        className="cursor-pointer" 
+                        onClick={() => openItemInNewTab(item.itemId)}
+                        title="Abrir anúncio em nova guia"
+                      >
+                        <ProductThumbnail itemId={item.itemId} sellerId={sellerId} />
+                      </div>
                     </TableCell>
-                    <TableCell className="font-medium max-w-[200px] truncate" title={item.title}>
-                      {item.title}
+                    <TableCell 
+                      className="font-medium max-w-[200px] truncate cursor-pointer hover:text-blue-600 hover:underline flex items-center" 
+                      title={`${item.title} - Clique para abrir o anúncio`}
+                      onClick={() => openItemInNewTab(item.itemId)}
+                    >
+                      <span className="mr-1">{item.title}</span>
+                      <ExternalLink size={14} className="inline-block opacity-50" />
                     </TableCell>
                     <TableCell className="text-right">
                       {item.totalUnits}
