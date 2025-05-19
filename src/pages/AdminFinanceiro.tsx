@@ -34,6 +34,8 @@ const AdminFinanceiro: React.FC = () => {
   const [settlementData, setSettlementData] = useState<string>('');
   const [releaseData, setReleaseData] = useState<string>('');
 
+  const [lastUpdateDate, setLastUpdateDate] = useState<string | null>(null);
+
   const { fetchSalesData, salesByItemId, detailedSales } = useAdminSalesData();
 
   useEffect(() => {
@@ -42,6 +44,17 @@ const AdminFinanceiro: React.FC = () => {
         const response = await fetch("https://projetohermes-dda7e0c8d836.herokuapp.com/releases.txt");
         if (!response.ok) throw new Error("Erro ao buscar release.txt");
         const text = await response.text();
+        
+        // Extract last update date from the fetched data
+        const lastUpdateMatch = text.match(/LAST_UPDATE: (\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})/);
+        if (lastUpdateMatch && lastUpdateMatch[1]) {
+          const lastUpdate = lastUpdateMatch[1];
+          // Format the date for display
+          const date = new Date(lastUpdate);
+          const formattedDate = `${date.toLocaleDateString('pt-BR')} - ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+          setLastUpdateDate(formattedDate);
+        }
+        
         handleReleaseDataChange(text);
       } catch (error) {
         console.error("Erro ao carregar release.txt:", error);
@@ -226,6 +239,18 @@ const AdminFinanceiro: React.FC = () => {
     setReleaseData(data);
     // Save release data to localStorage for date lookups in inventory
     localStorage.setItem('releaseData', data);
+    
+    // Extract the last update date from the release data
+    const lastUpdateMatch = data.match(/LAST_UPDATE: (\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})/);
+    if (lastUpdateMatch && lastUpdateMatch[1]) {
+      const lastUpdate = lastUpdateMatch[1];
+      // Format the date for display
+      const date = new Date(lastUpdate);
+      const formattedDate = `${date.toLocaleDateString('pt-BR')} - ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+      setLastUpdateDate(formattedDate);
+    } else {
+      setLastUpdateDate(null);
+    }
     
     const parsed = parseReleaseData(data, startDate, endDate);
     setMetrics((prev) => ({
@@ -539,6 +564,7 @@ const AdminFinanceiro: React.FC = () => {
                 onEndDateChange={setEndDate}
                 onFilter={handleFilter}
                 className="flex-grow"
+                lastUpdateDate={lastUpdateDate || undefined}
               />
               <div className="flex items-center space-x-2 mt-2 md:mt-0 md:ml-4">
                 <Switch
@@ -601,7 +627,6 @@ const AdminFinanceiro: React.FC = () => {
               salesByItemId={salesByItemId}
               detailedSales={detailedSales}
             />
-
           </TabsContent>
         </Tabs>
       </div>
