@@ -9,7 +9,8 @@ interface DateRangeFilterSectionProps {
   onStartDateChange: (date: Date | undefined) => void;
   onEndDateChange: (date: Date | undefined) => void;
   onFilter: () => void;
-  className?: string; // Added className as an optional prop
+  className?: string;
+  lastUpdateDate?: string | null; // New prop to receive the last update date
 }
 
 export function DateRangeFilterSection({
@@ -18,7 +19,8 @@ export function DateRangeFilterSection({
   onStartDateChange,
   onEndDateChange,
   onFilter,
-  className
+  className,
+  lastUpdateDate
 }: DateRangeFilterSectionProps) {
   return (
     <div className={cn("mb-4", className)}>
@@ -30,6 +32,11 @@ export function DateRangeFilterSection({
         onEndDateChange={onEndDateChange}
         onFilter={onFilter}
       />
+      {lastUpdateDate && (
+        <p className="text-xs text-gray-400 mt-2">
+          Última atualização de liberações: {lastUpdateDate}
+        </p>
+      )}
     </div>
   );
 }

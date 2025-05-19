@@ -34,6 +34,8 @@ const AdminFinanceiro: React.FC = () => {
   const [settlementData, setSettlementData] = useState<string>('');
   const [releaseData, setReleaseData] = useState<string>('');
 
+  const [lastUpdateDate, setLastUpdateDate] = useState<string | null>(null);
+
   const { fetchSalesData, salesByItemId, detailedSales } = useAdminSalesData();
 
   useEffect(() => {
@@ -226,6 +228,24 @@ const AdminFinanceiro: React.FC = () => {
     setReleaseData(data);
     // Save release data to localStorage for date lookups in inventory
     localStorage.setItem('releaseData', data);
+    
+    // Extract the LAST_UPDATE from the release data
+    const lastUpdateMatch = data.match(/LAST_UPDATE: (.+?)(\r?\n|\r|$)/);
+    if (lastUpdateMatch && lastUpdateMatch[1]) {
+      const lastUpdateValue = lastUpdateMatch[1].trim();
+      // Format the date if needed
+      try {
+        const lastUpdateDate = new Date(lastUpdateValue);
+        const formattedDate = lastUpdateDate.toLocaleDateString('pt-BR') + ' - ' + 
+                              lastUpdateDate.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
+        setLastUpdateDate(formattedDate);
+      } catch (error) {
+        console.error("Error formatting last update date:", error);
+        setLastUpdateDate(lastUpdateValue); // Use as is if formatting fails
+      }
+    } else {
+      setLastUpdateDate(null);
+    }
     
     const parsed = parseReleaseData(data, startDate, endDate);
     setMetrics((prev) => ({
@@ -539,6 +559,7 @@ const AdminFinanceiro: React.FC = () => {
                 onEndDateChange={setEndDate}
                 onFilter={handleFilter}
                 className="flex-grow"
+                lastUpdateDate={lastUpdateDate}
               />
               <div className="flex items-center space-x-2 mt-2 md:mt-0 md:ml-4">
                 <Switch
