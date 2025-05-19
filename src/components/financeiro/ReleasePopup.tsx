@@ -188,11 +188,19 @@ export const ReleasePopup: React.FC<ReleasePopupProps> = ({
     return refundedOps;
   };
 
-  // Agrupe as operações
-  const groupedOperationsWithOrder = groupOperationsByOrderId(filteredOperationsWithOrder);
+  // Obter as operações reembolsadas
+  const refundedOperations = getRefundedOperations();
+  
+  // Criar um Set com os IDs de pedidos reembolsados para facilitar a filtragem
+  const refundedOrderIds = new Set(refundedOperations.map(op => op.orderId));
+
+  // Agrupe as operações, excluindo as reembolsadas da lista de operações com ORDER_ID
+  // Esta é a principal alteração: filtramos as operações para remover aquelas que estão reembolsadas
+  const filteredOrderOperations = filteredOperationsWithOrder.filter(op => !refundedOrderIds.has(op.orderId));
+  const groupedOperationsWithOrder = groupOperationsByOrderId(filteredOrderOperations);
+
   const groupedOtherOperations = groupOperationsByDescription(filteredOtherOperations);
   const pendingOperations = getPendingOperations();
-  const refundedOperations = getRefundedOperations();
   
   // Calcule os totais
   const totalOperationsWithOrder = groupedOperationsWithOrder.reduce((sum, op) => sum + op.amount, 0);
