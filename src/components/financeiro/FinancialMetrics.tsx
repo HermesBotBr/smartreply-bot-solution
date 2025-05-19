@@ -70,8 +70,10 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
   const [transfersPopupOpen, setTransfersPopupOpen] = useState(false);
   const [claimsPopupOpen, setClaimsPopupOpen] = useState(false);
   const [refundsPopupOpen, setRefundsPopupOpen] = useState(false);
-  const [publicidadePopupOpen, setPublicidadePopupOpen] = useState(false);
-  const [hasUnbalancedTransfers, setHasUnbalancedTransfers] = useState(false);
+const [publicidadePopupOpen, setPublicidadePopupOpen] = useState(false);
+const [debtsPopupOpen, setDebtsPopupOpen] = useState(false); // NOVO POPUP
+const [hasUnbalancedTransfers, setHasUnbalancedTransfers] = useState(false);
+
   const [filteredTotalReleased, setFilteredTotalReleased] = useState(totalReleased);
   const [filteredOperationsWithOrder, setFilteredOperationsWithOrder] = useState(releaseOperationsWithOrder);
 
@@ -277,13 +279,15 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
                   onClick={() => setPublicidadePopupOpen(true)}
                 />
                 
-                <MetricCard
-                  title="Dívidas"
-                  value={`R$ ${Math.abs(totalDebts).toFixed(2)}`}
-                  description={`${((Math.abs(totalDebts) / (totalSettlementGross || 1)) * 100).toFixed(1)}% do valor bruto`}
-                  className="bg-purple-50 hover:bg-purple-100 transition-colors"
-                  textColor="text-purple-800"
-                />
+               <MetricCard
+  title="Dívidas"
+  value={`R$ ${Math.abs(totalDebts).toFixed(2)}`}
+  description={`${((Math.abs(totalDebts) / (totalSettlementGross || 1)) * 100).toFixed(1)}% do valor bruto`}
+  className="bg-purple-50 hover:bg-purple-100 transition-colors"
+  textColor="text-purple-800"
+  onClick={() => setDebtsPopupOpen(true)} // ABRE O POPUP
+/>
+
                 
                 <MetricCard
                   title="Transferências"
@@ -384,14 +388,29 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
         endDate={endDate}
       />
       
-      <PublicidadePopup
-        advertisingItems={advertisingItems}
-        open={publicidadePopupOpen}
-        onClose={() => setPublicidadePopupOpen(false)}
-        startDate={startDate}
-        endDate={endDate}
-        totalCost={totalAdvertisingCost}
-      />
+     <PublicidadePopup
+  advertisingItems={advertisingItems}
+  open={publicidadePopupOpen}
+  onClose={() => setPublicidadePopupOpen(false)}
+  startDate={startDate}
+  endDate={endDate}
+  totalCost={totalAdvertisingCost}
+/>
+
+<DebtsPopup
+  open={debtsPopupOpen}
+  onClose={() => setDebtsPopupOpen(false)}
+  debtOperations={releaseOtherOperations.filter(op =>
+    op.description?.toLowerCase().includes("debt") &&
+    (!startDate || !endDate || (
+      new Date(op.date || '') >= new Date(startDate.setHours(0, 0, 0, 0)) &&
+      new Date(op.date || '') <= new Date(endDate.setHours(23, 59, 59, 999))
+    ))
+  )}
+  startDate={startDate}
+  endDate={endDate}
+/>
+
     </div>
   );
 };
