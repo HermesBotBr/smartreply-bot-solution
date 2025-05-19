@@ -37,33 +37,34 @@ export const DebtsPopup: React.FC<DebtsPopupProps> = ({
         <div className="mt-4 max-h-[500px] overflow-auto">
           <ScrollArea className="w-full">
             <table className="w-full border text-sm mb-4">
-              <thead>
-                <tr className="bg-gray-100 text-left">
-                  <th className="p-2 border">ORDER_ID</th>
-                  <th className="p-2 border">ID do Anúncio</th>
-                  <th className="p-2 border">Título</th>
-                  <th className="p-2 border">Descrição</th>
-                  <th className="p-2 border">Data</th>
-                  <th className="p-2 border">Valor (R$)</th>
-                </tr>
-              </thead>
-              <tbody>
-                {debtOperations.map((op, idx) => (
-                  <tr key={idx} className="hover:bg-gray-50">
-                    <td className="p-2 border">{op.orderId || "-"}</td>
-                    <td className="p-2 border">{op.itemId || "-"}</td>
-                    <td className="p-2 border">{op.title || "-"}</td>
-                    <td className="p-2 border">{op.description || "-"}</td>
-                    <td className="p-2 border">{op.date ? new Date(op.date).toLocaleDateString("pt-BR") : "-"}</td>
-                    <td className="p-2 border text-purple-800">R$ {Math.abs(op.amount).toFixed(2)}</td>
-                  </tr>
-                ))}
-                <tr className="font-semibold bg-gray-50">
-                  <td colSpan={5} className="p-2 border text-right">Total:</td>
-                  <td className="p-2 border text-purple-800">R$ {totalDebt.toFixed(2)}</td>
-                </tr>
-              </tbody>
-            </table>
+  <thead>
+    <tr className="bg-gray-100 text-left">
+      <th className="p-2 border">Data e hora</th>
+      <th className="p-2 border">SOURCE_ID</th>
+      <th className="p-2 border">Descrições</th>
+      <th className="p-2 border">Grupo</th>
+      <th className="p-2 border">Valor</th>
+    </tr>
+  </thead>
+  <tbody>
+    {debtOperations.map((op, idx) => (
+      <tr key={idx} className="hover:bg-gray-50">
+        <td className="p-2 border">
+          {op.date ? new Date(op.date).toLocaleString("pt-BR", { hour12: false }) : "-"}
+        </td>
+        <td className="p-2 border">{op.sourceId || "-"}</td>
+        <td className="p-2 border">{op.description || "-"}</td>
+        <td className="p-2 border">{op.group || "-"}</td>
+        <td className="p-2 border text-purple-800">R$ {Math.abs(op.amount).toFixed(2)}</td>
+      </tr>
+    ))}
+    <tr className="font-semibold bg-gray-50">
+      <td colSpan={4} className="p-2 border text-right">Total:</td>
+      <td className="p-2 border text-purple-800">R$ {totalDebt.toFixed(2)}</td>
+    </tr>
+  </tbody>
+</table>
+
           </ScrollArea>
         </div>
       </DialogContent>
