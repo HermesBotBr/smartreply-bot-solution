@@ -3,7 +3,7 @@ import React, { useMemo } from 'react';
 import { ReleaseOperation } from '@/types/ReleaseOperation';
 import { SettlementTransaction } from '@/hooks/useSettlementData';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { InventoryItem } from '@/types/inventory';
 import { compareBrazilianDates } from '@/lib/utils';
@@ -39,7 +39,7 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
   advertisingItems = [],
   onRefreshAdvertisingData,
   totalAdvertisingCost = 0,
-  sellerId // Use this prop
+  sellerId
 }) => {
   const salesByItem = useMemo(() => {
     if (!settlementTransactions.length) return [];
@@ -393,6 +393,67 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
       .sort((a, b) => b.totalSales - a.totalSales);
   }, [settlementTransactions, releaseOperationsWithOrder, filterBySettlement, inventoryItems, endDate, advertisingItems]);
 
+  // Calculate totals for the footer row
+  const tableTotals = useMemo(() => {
+    if (!salesByItem.length) return null;
+    
+    return salesByItem.reduce((totals, item) => {
+      return {
+        totalUnits: totals.totalUnits + item.totalUnits,
+        releasedCount: totals.releasedCount + item.released.count,
+        unreleasedCount: totals.unreleasedCount + item.unreleased.count,
+        refundedCount: totals.refundedCount + item.refunded.count,
+        totalSales: totals.totalSales + item.totalSales,
+        faturadoLiberado: totals.faturadoLiberado + item.faturadoLiberado,
+        faturadoUnitario: 0, // Not meaningful as an average here
+        totalRepasse: totals.totalRepasse + item.totalRepasse,
+        releasedAmount: totals.releasedAmount + item.released.amount,
+        repasseUnitario: 0, // Not meaningful as an average here
+        unreleasedAmount: totals.unreleasedAmount + item.unreleased.amount,
+        refundedAmount: totals.refundedAmount + item.refunded.amount,
+        totalInventoryCost: totals.totalInventoryCost + (item.totalInventoryCost || 0),
+        custoLiberado: totals.custoLiberado + item.custoLiberado,
+        custoUnitario: 0, // Not meaningful as an average here
+        advertisingCost: totals.advertisingCost + item.advertisingCost,
+        publicidadeLiberado: totals.publicidadeLiberado + item.publicidadeLiberado,
+        publicidadeUnitario: 0, // Not meaningful as an average here
+        taxAmount: totals.taxAmount + item.taxAmount,
+        impostoLiberado: totals.impostoLiberado + item.impostoLiberado,
+        impostoUnitario: 0, // Not meaningful as an average here
+        resultadoTotal: totals.resultadoTotal + item.resultadoTotal,
+        resultadoLiberado: totals.resultadoLiberado + item.resultadoLiberado,
+        resultadoUnitario: 0, // Not meaningful as an average here
+        resultadoLiberadoPrevisto: totals.resultadoLiberadoPrevisto + item.resultadoLiberadoPrevisto,
+      };
+    }, {
+      totalUnits: 0,
+      releasedCount: 0,
+      unreleasedCount: 0,
+      refundedCount: 0,
+      totalSales: 0,
+      faturadoLiberado: 0,
+      faturadoUnitario: 0,
+      totalRepasse: 0,
+      releasedAmount: 0,
+      repasseUnitario: 0,
+      unreleasedAmount: 0,
+      refundedAmount: 0,
+      totalInventoryCost: 0,
+      custoLiberado: 0,
+      custoUnitario: 0,
+      advertisingCost: 0,
+      publicidadeLiberado: 0,
+      publicidadeUnitario: 0,
+      taxAmount: 0,
+      impostoLiberado: 0,
+      impostoUnitario: 0,
+      resultadoTotal: 0,
+      resultadoLiberado: 0,
+      resultadoUnitario: 0,
+      resultadoLiberadoPrevisto: 0,
+    });
+  }, [salesByItem]);
+
   // Format currency values
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -544,6 +605,38 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
                   </TableRow>
                 ))}
               </TableBody>
+              {tableTotals && (
+                <TableFooter>
+                  <TableRow className="font-bold">
+                    <TableCell colSpan={2}>Total</TableCell>
+                    <TableCell className="text-right">{tableTotals.totalUnits}</TableCell>
+                    <TableCell className="text-right">{tableTotals.releasedCount}</TableCell>
+                    <TableCell className="text-right">{tableTotals.unreleasedCount}</TableCell>
+                    <TableCell className="text-right">{tableTotals.refundedCount}</TableCell>
+                    <TableCell className="text-right">{formatCurrency(tableTotals.totalSales)}</TableCell>
+                    <TableCell className="text-right">{formatCurrency(tableTotals.faturadoLiberado)}</TableCell>
+                    <TableCell className="text-right">-</TableCell>
+                    <TableCell className="text-right">{formatCurrency(tableTotals.totalRepasse)}</TableCell>
+                    <TableCell className="text-right">{formatCurrency(tableTotals.releasedAmount)}</TableCell>
+                    <TableCell className="text-right">-</TableCell>
+                    <TableCell className="text-right">{formatCurrency(tableTotals.unreleasedAmount)}</TableCell>
+                    <TableCell className="text-right">{formatCurrency(tableTotals.refundedAmount)}</TableCell>
+                    <TableCell className="text-right">{formatCurrency(tableTotals.totalInventoryCost)}</TableCell>
+                    <TableCell className="text-right">{formatCurrency(tableTotals.custoLiberado)}</TableCell>
+                    <TableCell className="text-right">-</TableCell>
+                    <TableCell className="text-right">{formatCurrency(tableTotals.advertisingCost)}</TableCell>
+                    <TableCell className="text-right">{formatCurrency(tableTotals.publicidadeLiberado)}</TableCell>
+                    <TableCell className="text-right">-</TableCell>
+                    <TableCell className="text-right">{formatCurrency(tableTotals.taxAmount)}</TableCell>
+                    <TableCell className="text-right">{formatCurrency(tableTotals.impostoLiberado)}</TableCell>
+                    <TableCell className="text-right">-</TableCell>
+                    <TableCell className="text-right">{formatCurrency(tableTotals.resultadoTotal)}</TableCell>
+                    <TableCell className="text-right">{formatCurrency(tableTotals.resultadoLiberado)}</TableCell>
+                    <TableCell className="text-right">-</TableCell>
+                    <TableCell className="text-right">{formatCurrency(tableTotals.resultadoLiberadoPrevisto)}</TableCell>
+                  </TableRow>
+                </TableFooter>
+              )}
             </Table>
           </div>
         )}
