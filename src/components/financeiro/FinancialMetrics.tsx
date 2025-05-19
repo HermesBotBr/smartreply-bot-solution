@@ -14,6 +14,7 @@ import { AlertCircle } from 'lucide-react';
 import { SalesBoxComponent } from './SalesBoxComponent';
 import { InventoryItem } from '@/types/inventory';
 import { AdvertisingItem } from '@/hooks/usePublicidadeData';
+import { DebtsPopup } from './DebtsPopup';
 
 interface FinancialMetricsProps {
   grossSales: number;
