@@ -1,8 +1,7 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Warehouse, ShoppingBag, Plus } from 'lucide-react';
+import { Warehouse, ShoppingBag, Plus, Trash2 } from 'lucide-react';
 import { InventoryItem } from '@/types/inventory';
 import { compareBrazilianDates } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -11,6 +10,8 @@ import { useMlToken } from '@/hooks/useMlToken';
 import { toast } from '@/components/ui/use-toast';
 import axios from 'axios';
 import { getNgrokUrl } from '@/config/api';
+import ProductThumbnail from '@/components/dashboard/ProductThumbnail';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 interface InventoryItemCardProps {
   item: InventoryItem;
@@ -21,6 +22,7 @@ interface InventoryItemCardProps {
 export function InventoryItemCard({ item, salesCount = 0, onInventoryUpdated }: InventoryItemCardProps) {
   const [productListingOpen, setProductListingOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [deletingPurchaseId, setDeletingPurchaseId] = useState<string | null>(null);
 
   // Get seller_id from user token
   const mlToken = useMlToken();
@@ -142,13 +144,52 @@ export function InventoryItemCard({ item, salesCount = 0, onInventoryUpdated }: 
     // We don't need to do anything else here as the popup will handle showing the value input
   };
 
+  // Handle deleting a purchase transaction
+  const handleDeletePurchase = async (sourceId: string) => {
+    try {
+      setIsLoading(true);
+      
+      await axios.delete(getNgrokUrl(`/trans_desc`), { 
+        data: { 
+          seller_id: sellerId, 
+          source_id: sourceId 
+        } 
+      });
+      
+      toast({
+        title: "Sucesso",
+        description: "Movimentação excluída com sucesso",
+      });
+      
+      // Reset state
+      setDeletingPurchaseId(null);
+      
+      // Notify parent component to refresh inventory data
+      if (onInventoryUpdated) {
+        onInventoryUpdated();
+      }
+    } catch (error) {
+      console.error('Erro ao excluir movimentação:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível excluir a movimentação",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <Card className="h-full">
       <CardHeader className="pb-2">
         <div className="flex items-start justify-between">
-          <div>
-            <CardTitle className="text-lg font-semibold">{item.title}</CardTitle>
-            <p className="text-sm text-muted-foreground">ID: {item.itemId}</p>
+          <div className="flex items-center gap-3">
+            <ProductThumbnail itemId={item.itemId} sellerId={sellerId} />
+            <div>
+              <CardTitle className="text-lg font-semibold">{item.title}</CardTitle>
+              <p className="text-sm text-muted-foreground">ID: {item.itemId}</p>
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <div className="flex items-center justify-center bg-primary/10 p-2 rounded-full">
@@ -204,6 +245,7 @@ export function InventoryItemCard({ item, salesCount = 0, onInventoryUpdated }: 
                 <TableHead>Total</TableHead>
                 <TableHead>Source_id</TableHead>
                 <TableHead>Data</TableHead>
+                <TableHead></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -219,6 +261,38 @@ export function InventoryItemCard({ item, salesCount = 0, onInventoryUpdated }: 
                   </TableCell>
                   <TableCell>{purchase.sourceId}</TableCell>
                   <TableCell>{purchase.date || '-'}</TableCell>
+                  <TableCell>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          <span className="sr-only">Excluir</span>
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Excluir movimentação</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Tem certeza que deseja excluir esta movimentação?
+                            Esta ação não pode ser desfeita.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                          <AlertDialogAction 
+                            onClick={() => handleDeletePurchase(purchase.sourceId)}
+                            className="bg-red-500 hover:bg-red-600"
+                          >
+                            Excluir
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
