@@ -149,9 +149,26 @@ export function InventoryItemCard({ item, salesCount = 0, onInventoryUpdated }: 
     try {
       setIsLoading(true);
       
-      // IMPORTANT FIX: Correct the endpoint URL and pass params properly
-      // The issue was that we were using the wrong approach for sending data in a DELETE request
-      await axios.delete(`${getNgrokUrl('/trans_desc')}?seller_id=${sellerId}&source_id=${sourceId}`);
+      // Step 1: First fetch the transaction details
+      const transDescResponse = await axios.get(`${getNgrokUrl('/trans_desc')}?seller_id=${sellerId}`);
+      const transactions = transDescResponse.data;
+      
+      // Step 2: Find the specific transaction with this sourceId
+      const transactionToDelete = transactions.find((trans: any) => trans.source_id === sourceId);
+      
+      if (!transactionToDelete) {
+        throw new Error(`Transaction with source_id ${sourceId} not found`);
+      }
+      
+      // Step 3: Send DELETE request with the complete transaction data in the body
+      await axios.delete(getNgrokUrl('/trans_desc'), { 
+        data: {
+          seller_id: transactionToDelete.seller_id,
+          source_id: transactionToDelete.source_id,
+          descricao: transactionToDelete.descricao,
+          valor: transactionToDelete.valor
+        }
+      });
       
       toast({
         title: "Sucesso",
