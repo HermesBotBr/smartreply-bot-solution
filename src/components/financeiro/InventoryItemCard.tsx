@@ -7,7 +7,7 @@ import { compareBrazilianDates } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { ProductListingPopup } from './ProductListingPopup';
 import { useMlToken } from '@/hooks/useMlToken';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from '@/hooks/use-toast';
 import axios from 'axios';
 import { getNgrokUrl } from '@/config/api';
 import ProductThumbnail from '@/components/dashboard/ProductThumbnail';
@@ -149,12 +149,9 @@ export function InventoryItemCard({ item, salesCount = 0, onInventoryUpdated }: 
     try {
       setIsLoading(true);
       
-      await axios.delete(getNgrokUrl(`/trans_desc`), { 
-        data: { 
-          seller_id: sellerId, 
-          source_id: sourceId 
-        } 
-      });
+      // IMPORTANT FIX: Correct the endpoint URL and pass params properly
+      // The issue was that we were using the wrong approach for sending data in a DELETE request
+      await axios.delete(`${getNgrokUrl('/trans_desc')}?seller_id=${sellerId}&source_id=${sourceId}`);
       
       toast({
         title: "Sucesso",
