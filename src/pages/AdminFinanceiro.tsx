@@ -615,9 +615,17 @@ const AdminFinanceiro: React.FC = () => {
   key={dreKey}
   startDate={startDate}
   endDate={endDate}
-  grossSales={settlementTransactions.reduce((sum, t) => sum + (t.grossValue || 0), 0)}
-  mlFees={metrics.totalMLFees} // ✅ nome da prop correto de acordo com o DRETable.tsx
-  repassePrevisto={metrics.totalMLRepasses}
+  grossSales={releaseOperationsWithOrder.reduce((sum, op) => sum + op.amount, 0)}
+  mlFees={metrics.totalMLFees}
+  repassePrevisto={
+    releaseOperationsWithOrder.reduce((sum, op) => sum + op.amount, 0) +
+    settlementTransactions
+      .filter(tx => !releaseOperationsWithOrder.some(op => op.orderId === tx.orderId) && !tx.isRefunded)
+      .reduce((sum, tx) => sum + (tx.netValue || 0), 0) +
+    settlementTransactions
+      .filter(tx => tx.isRefunded)
+      .reduce((sum, tx) => sum + (tx.netValue || 0), 0)
+  }
   reembolsos={metrics.totalClaims}
   vendasNaoLiberadas={0} // (coloque o valor correto se tiver)
   cmv={0} // (coloque o valor correto se tiver)
