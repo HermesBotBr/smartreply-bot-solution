@@ -574,29 +574,38 @@ const AdminFinanceiro: React.FC = () => {
             </div>
 
             <FinancialMetrics
-              grossSales={metrics.grossSales}
-              totalAmount={metrics.totalAmount}
-              unitsSold={metrics.unitsSold}
-              totalMLRepasses={metrics.totalMLRepasses}
-              totalMLFees={metrics.totalMLFees}
-              totalReleased={metrics.totalReleased}
-              totalClaims={metrics.totalClaims}
-              totalDebts={metrics.totalDebts}
-              totalTransfers={metrics.totalTransfers}
-              totalCreditCard={metrics.totalCreditCard}
-              totalShippingCashback={metrics.totalShippingCashback}
-              settlementTransactions={settlementTransactions}
-              releaseOperationsWithOrder={releaseOperationsWithOrder}
-              releaseOtherOperations={releaseOtherOperations}
-              startDate={startDate}
-              endDate={endDate}
-              filterBySettlement={filterBySettlement}
-              inventoryItems={inventoryItems}
-              advertisingItems={advertisingData?.results || []}
-              totalAdvertisingCost={metrics.totalAdvertisingCost}
-              onRefreshAdvertisingData={handleRefreshAdvertisingData}
-              sellerId={sellerId} // Pass sellerId to FinancialMetrics
-            />
+  grossSales={metrics.grossSales}
+  totalAmount={metrics.totalAmount}
+  unitsSold={metrics.unitsSold}
+  totalMLRepasses={metrics.totalMLRepasses}
+  totalMLFees={metrics.totalMLFees}
+  totalReleased={metrics.totalReleased}
+  totalClaims={metrics.totalClaims}
+  totalDebts={metrics.totalDebts}
+  totalTransfers={metrics.totalTransfers}
+  totalCreditCard={metrics.totalCreditCard}
+  totalShippingCashback={metrics.totalShippingCashback}
+  settlementTransactions={settlementTransactions}
+  releaseOperationsWithOrder={releaseOperationsWithOrder}
+  releaseOtherOperations={releaseOtherOperations}
+  startDate={startDate}
+  endDate={endDate}
+  filterBySettlement={filterBySettlement}
+  inventoryItems={inventoryItems}
+  advertisingItems={advertisingData?.results || []}
+  totalAdvertisingCost={metrics.totalAdvertisingCost}
+  onRefreshAdvertisingData={handleRefreshAdvertisingData}
+  sellerId={sellerId}
+/>
+
+{/* Box DRE abaixo da tabela de vendas */}
+<div className="mt-6 p-4 bg-white rounded shadow-sm">
+  <h2 className="text-lg font-semibold mb-4">DRE (Demonstrativo de Resultados)</h2>
+  <div className="text-sm text-gray-600">
+    Em breve: Tabela DRE com resumo de receitas, custos e lucro líquido.
+  </div>
+</div>
+
           </TabsContent>
 
           <TabsContent value="entrada" className="mt-4">
