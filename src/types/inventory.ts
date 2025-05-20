@@ -11,6 +11,7 @@ export interface InventoryItem {
   itemId: string;
   title: string;
   totalQuantity: number;
+  averagePurchasePrice?: number;  // Added missing property
   purchases: {
     quantity: number;
     unitCost: number;

@@ -566,7 +566,7 @@ const AdminFinanceiro: React.FC = () => {
       if (salesData) {
         // Calcular o lucro: (valor médio da venda - custo unitário) * quantidade vendida
         const unitProfit = (salesData.averagePrice || 0) - unitCost;
-        totalProfit += unitProfit * salesData.totalUnits;
+        totalProfit += unitProfit * (salesData.totalUnits || 0);
       }
     });
     
