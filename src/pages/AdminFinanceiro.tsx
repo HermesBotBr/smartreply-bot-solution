@@ -17,6 +17,8 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { useAdminSalesData } from '@/hooks/useAdminSalesData';
 import { parseBrazilianDate } from '@/lib/utils';
+import { DRETable } from '@/components/financeiro/DRETable';
+
 
 const AdminFinanceiro: React.FC = () => {
   /* ------------------------------------------------------------------ */
@@ -601,10 +603,20 @@ const AdminFinanceiro: React.FC = () => {
 {/* Box DRE abaixo da tabela de vendas */}
 <div className="mt-6 p-4 bg-white rounded shadow-sm">
   <h2 className="text-lg font-semibold mb-4">DRE (Demonstrativo de Resultados)</h2>
-  <div className="text-sm text-gray-600">
-    Em breve: Tabela DRE com resumo de receitas, custos e lucro líquido.
-  </div>
+  <DRETable
+    startDate={startDate}
+    endDate={endDate}
+    grossSales={metrics.grossSales}
+    totalMLFees={metrics.totalMLFees}
+    refundedAmount={metrics.totalClaims}
+    totalAdvertisingCost={metrics.totalAdvertisingCost}
+    inventoryItems={inventoryItems}
+    settlementTransactions={settlementTransactions}
+    releaseOperationsWithOrder={releaseOperationsWithOrder}
+    releaseOtherOperations={releaseOtherOperations}
+  />
 </div>
+
 
           </TabsContent>
 
