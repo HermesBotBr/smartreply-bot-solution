@@ -55,22 +55,9 @@ export function useInventoryData(sellerId: string | null) {
         date: dates[purchase.sourceId] || purchase.date
       }));
       
-      // Calculate the average purchase price
-      let totalCost = 0;
-      let totalQuantity = 0;
-      updatedPurchases.forEach(purchase => {
-        if (purchase.quantity > 0) {
-          totalCost += purchase.totalCost;
-          totalQuantity += purchase.quantity;
-        }
-      });
-      
-      const averagePurchasePrice = totalQuantity > 0 ? totalCost / totalQuantity : 0;
-      
       return {
         ...item,
-        purchases: updatedPurchases,
-        averagePurchasePrice // Add the calculated average purchase price
+        purchases: updatedPurchases
       };
     });
   }, []);
@@ -130,8 +117,7 @@ export function useInventoryData(sellerId: string | null) {
                   itemId,
                   title,
                   totalQuantity: 0,
-                  purchases: [],
-                  averagePurchasePrice: 0 // Initialize with 0
+                  purchases: []
                 });
               }
               
@@ -150,21 +136,6 @@ export function useInventoryData(sellerId: string | null) {
               });
             }
           }
-        });
-        
-        // Calculate average purchase prices for all items
-        inventoryMap.forEach(item => {
-          let totalCost = 0;
-          let totalQuantity = 0;
-          
-          item.purchases.forEach(purchase => {
-            if (purchase.quantity > 0) {
-              totalCost += purchase.totalCost;
-              totalQuantity += purchase.quantity;
-            }
-          });
-          
-          item.averagePurchasePrice = totalQuantity > 0 ? totalCost / totalQuantity : 0;
         });
         
         setInventoryItems(Array.from(inventoryMap.values()));

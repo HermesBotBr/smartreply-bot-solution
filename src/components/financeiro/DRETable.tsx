@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
@@ -41,42 +40,43 @@ export const DRETable: React.FC<DRETableProps> = ({
   const [variaveis, setVariaveis] = useState(0);
 
   useEffect(() => {
-    const fetchDescriptions = async () => {
-      console.log("🔁 Recalculando DRE com novas props...");
+  const fetchDescriptions = async () => {
+    console.log("🔁 Recalculando DRE com novas props...");
 
-      try {
-        const res = await axios.get(`https://projetohermes-dda7e0c8d836.herokuapp.com/trans_desc?seller_id=${sellerId}`);
-        const data = res.data;
+    try {
+      const res = await axios.get(`https://projetohermes-dda7e0c8d836.herokuapp.com/trans_desc?seller_id=${sellerId}`);
+      const data = res.data;
 
-        const validSources = new Set(
-          releaseOtherOperations
-            .filter(op => {
-              const d = op.date ? new Date(op.date) : null;
-              return d && (!startDate || d >= startDate) && (!endDate || d <= endDate);
-            })
-            .map(op => op.sourceId)
-        );
+      const validSources = new Set(
+        releaseOtherOperations
+          .filter(op => {
+            const d = op.date ? new Date(op.date) : null;
+            return d && (!startDate || d >= startDate) && (!endDate || d <= endDate);
+          })
+          .map(op => op.sourceId)
+      );
 
-        let totalFixas = 0;
-        let totalVariaveis = 0;
+      let totalFixas = 0;
+      let totalVariaveis = 0;
 
-        data.forEach((desc: any) => {
-          if (validSources.has(desc.source_id)) {
-            const valor = parseFloat(desc.valor);
-            if (desc.descricao.includes('$fixa$')) totalFixas += valor;
-            else totalVariaveis += valor;
-          }
-        });
+      data.forEach((desc: any) => {
+        if (validSources.has(desc.source_id)) {
+          const valor = parseFloat(desc.valor);
+          if (desc.descricao.includes('$fixa$')) totalFixas += valor;
+          else totalVariaveis += valor;
+        }
+      });
 
-        setFixas(totalFixas);
-        setVariaveis(totalVariaveis);
-      } catch (err) {
-        console.error('Erro ao buscar trans_desc para DRE:', err);
-      }
-    };
+      setFixas(totalFixas);
+      setVariaveis(totalVariaveis);
+    } catch (err) {
+      console.error('Erro ao buscar trans_desc para DRE:', err);
+    }
+  };
 
-    fetchDescriptions();
-  }, [releaseOtherOperations, startDate, endDate, sellerId]);
+  fetchDescriptions();
+}, [releaseOtherOperations, startDate, endDate, sellerId]);
+
 
   const imposto = grossSales * 0.10;
   const lucroOperacional = lucroProdutos - fixas;

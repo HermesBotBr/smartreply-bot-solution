@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -530,83 +529,6 @@ const AdminFinanceiro: React.FC = () => {
     }
   }, [firstPurchaseDate]);
 
-  // Função para calcular o CMV (Custo de Mercadorias Vendidas) total
-  const calculateTotalCMV = () => {
-    if (!inventoryItems || inventoryItems.length === 0) return 0;
-    
-    // Calcular o custo total baseado no custo unitário e quantidade vendida
-    let totalCMV = 0;
-    
-    inventoryItems.forEach(item => {
-      // Pegar o custo unitário do item
-      const unitCost = item.averagePurchasePrice || 0;
-      
-      // Pegar a quantidade vendida do item
-      const soldQuantity = salesByItemId[item.itemId]?.totalUnits || 0;
-      
-      // Adicionar ao total
-      totalCMV += unitCost * soldQuantity;
-    });
-    
-    return totalCMV;
-  };
-
-  // Função para calcular o lucro sobre produtos
-  const calculateTotalProfit = () => {
-    if (!inventoryItems || inventoryItems.length === 0) return 0;
-    
-    let totalProfit = 0;
-    
-    inventoryItems.forEach(item => {
-      // Pegar o custo unitário do item
-      const unitCost = item.averagePurchasePrice || 0;
-      
-      // Pegar os dados de venda do item
-      const salesData = salesByItemId[item.itemId];
-      
-      if (salesData) {
-        // Calcular o lucro: (valor médio da venda - custo unitário) * quantidade vendida
-        const unitProfit = (salesData.averagePrice || 0) - unitCost;
-        totalProfit += unitProfit * (salesData.totalUnits || 0);
-      }
-    });
-    
-    return totalProfit;
-  };
-  
-  // Função para calcular o total de vendas não liberadas
-  const calculatePendingSales = () => {
-    // Filtra as transações do settlement para obter as que ainda não foram liberadas
-    // que estão presentes na tabela "Operações com ORDER_ID ainda não liberadas"
-    const pendingSalesIds = new Set(
-      settlementTransactions
-        .filter(tx => 
-          !releaseOperationsWithOrder.some(op => op.orderId === tx.orderId) && 
-          !tx.isRefunded
-        )
-        .map(tx => tx.orderId)
-    );
-    
-    // Calcula o valor total das vendas não liberadas
-    const pendingTotal = settlementTransactions
-      .filter(tx => pendingSalesIds.has(tx.orderId))
-      .reduce((sum, tx) => sum + (tx.netValue || 0), 0);
-    
-    return pendingTotal;
-  };
-
-  // Função para calcular o repasse previsto total
-  const calculateTotalExpectedRepasse = () => {
-    // Soma dos valores já liberados + valores pendentes + reembolsos
-    const releasedTotal = releaseOperationsWithOrder.reduce((sum, op) => sum + op.amount, 0);
-    const pendingTotal = calculatePendingSales();
-    const refundsTotal = settlementTransactions
-      .filter(tx => tx.isRefunded)
-      .reduce((sum, tx) => sum + (tx.netValue || 0), 0);
-    
-    return releasedTotal + pendingTotal + refundsTotal;
-  };
-
   /* ------------------------------------------------------------------ */
   /* render                                                              */
   /* ------------------------------------------------------------------ */
@@ -657,55 +579,66 @@ const AdminFinanceiro: React.FC = () => {
             </div>
 
             <FinancialMetrics
-              grossSales={metrics.grossSales}
-              totalAmount={metrics.totalAmount}
-              unitsSold={metrics.unitsSold}
-              totalMLRepasses={metrics.totalMLRepasses}
-              totalMLFees={metrics.totalMLFees}
-              totalReleased={metrics.totalReleased}
-              totalClaims={metrics.totalClaims}
-              totalDebts={metrics.totalDebts}
-              totalTransfers={metrics.totalTransfers}
-              totalCreditCard={metrics.totalCreditCard}
-              totalShippingCashback={metrics.totalShippingCashback}
-              settlementTransactions={settlementTransactions}
-              releaseOperationsWithOrder={releaseOperationsWithOrder}
-              releaseOtherOperations={releaseOtherOperations}
-              startDate={startDate}
-              endDate={endDate}
-              filterBySettlement={filterBySettlement}
-              inventoryItems={inventoryItems}
-              advertisingItems={advertisingData?.results || []}
-              totalAdvertisingCost={metrics.totalAdvertisingCost}
-              onRefreshAdvertisingData={handleRefreshAdvertisingData}
-              sellerId={sellerId}
-            />
+  grossSales={metrics.grossSales}
+  totalAmount={metrics.totalAmount}
+  unitsSold={metrics.unitsSold}
+  totalMLRepasses={metrics.totalMLRepasses}
+  totalMLFees={metrics.totalMLFees}
+  totalReleased={metrics.totalReleased}
+  totalClaims={metrics.totalClaims}
+  totalDebts={metrics.totalDebts}
+  totalTransfers={metrics.totalTransfers}
+  totalCreditCard={metrics.totalCreditCard}
+  totalShippingCashback={metrics.totalShippingCashback}
+  settlementTransactions={settlementTransactions}
+  releaseOperationsWithOrder={releaseOperationsWithOrder}
+  releaseOtherOperations={releaseOtherOperations}
+  startDate={startDate}
+  endDate={endDate}
+  filterBySettlement={filterBySettlement}
+  inventoryItems={inventoryItems}
+  advertisingItems={advertisingData?.results || []}
+  totalAdvertisingCost={metrics.totalAdvertisingCost}
+  onRefreshAdvertisingData={handleRefreshAdvertisingData}
+  sellerId={sellerId}
+/>
 
-            {/* Box DRE abaixo da tabela de vendas */}
-            <div className="mt-6 p-4 bg-white rounded shadow-sm">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold">DRE (Demonstrativo de Resultados)</h2>
-                <Button variant="ghost" size="sm" onClick={() => setDreKey(prev => prev + 1)}>
-                  🔁 Atualizar
-                </Button>
-              </div>
-              <DRETable
-                key={dreKey}
-                startDate={startDate}
-                endDate={endDate}
-                grossSales={metrics.grossSales}
-                mlFees={metrics.totalMLFees}
-                repassePrevisto={calculateTotalExpectedRepasse()}
-                reembolsos={metrics.totalClaims}
-                vendasNaoLiberadas={calculatePendingSales()}
-                cmv={calculateTotalCMV()}
-                publicidade={metrics.totalAdvertisingCost}
-                lucroProdutos={calculateTotalProfit()}
-                contestacoes={metrics.totalClaims}
-                releaseOtherOperations={releaseOtherOperations}
-                sellerId={sellerId}
-              />
-            </div>
+{/* Box DRE abaixo da tabela de vendas */}
+<div className="mt-6 p-4 bg-white rounded shadow-sm">
+  <div className="flex items-center justify-between mb-4">
+    <h2 className="text-lg font-semibold">DRE (Demonstrativo de Resultados)</h2>
+    <Button variant="ghost" size="sm" onClick={() => setDreKey(prev => prev + 1)}>
+      🔁 Atualizar
+    </Button>
+  </div>
+  <DRETable
+  key={dreKey}
+  startDate={startDate}
+  endDate={endDate}
+  grossSales={releaseOperationsWithOrder.reduce((sum, op) => sum + op.amount, 0)}
+  mlFees={metrics.totalMLFees}
+  repassePrevisto={
+    releaseOperationsWithOrder.reduce((sum, op) => sum + op.amount, 0) +
+    settlementTransactions
+      .filter(tx => !releaseOperationsWithOrder.some(op => op.orderId === tx.orderId) && !tx.isRefunded)
+      .reduce((sum, tx) => sum + (tx.netValue || 0), 0) +
+    settlementTransactions
+      .filter(tx => tx.isRefunded)
+      .reduce((sum, tx) => sum + (tx.netValue || 0), 0)
+  }
+  reembolsos={metrics.totalClaims}
+  vendasNaoLiberadas={0} // (coloque o valor correto se tiver)
+  cmv={0} // (coloque o valor correto se tiver)
+  publicidade={metrics.totalAdvertisingCost}
+  lucroProdutos={0} // (coloque o valor correto se tiver)
+  contestacoes={metrics.totalClaims}
+  releaseOtherOperations={releaseOtherOperations}
+  sellerId={sellerId}
+/>
+
+</div>
+
+
 
           </TabsContent>
 
@@ -732,6 +665,7 @@ const AdminFinanceiro: React.FC = () => {
               salesByItemId={salesByItemId}
               detailedSales={detailedSales}
             />
+
           </TabsContent>
         </Tabs>
       </div>
