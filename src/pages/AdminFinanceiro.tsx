@@ -82,6 +82,9 @@ const AdminFinanceiro: React.FC = () => {
 
   const [activeTab, setActiveTab] = useState<'metricas' | 'entrada' | 'estoque'>('metricas');
 
+  const [dreKey, setDreKey] = useState(0); // Forçar re-render do DRETable
+
+
   /* ------------------------------------------------------------------ */
   /* hooks / data                                                        */
   /* ------------------------------------------------------------------ */
@@ -602,8 +605,14 @@ const AdminFinanceiro: React.FC = () => {
 
 {/* Box DRE abaixo da tabela de vendas */}
 <div className="mt-6 p-4 bg-white rounded shadow-sm">
-  <h2 className="text-lg font-semibold mb-4">DRE (Demonstrativo de Resultados)</h2>
+  <div className="flex items-center justify-between mb-4">
+    <h2 className="text-lg font-semibold">DRE (Demonstrativo de Resultados)</h2>
+    <Button variant="ghost" size="sm" onClick={() => setDreKey(prev => prev + 1)}>
+      🔁 Atualizar
+    </Button>
+  </div>
   <DRETable
+    key={dreKey}
     startDate={startDate}
     endDate={endDate}
     grossSales={metrics.grossSales}
@@ -616,6 +625,7 @@ const AdminFinanceiro: React.FC = () => {
     releaseOtherOperations={releaseOtherOperations}
   />
 </div>
+
 
 
           </TabsContent>
