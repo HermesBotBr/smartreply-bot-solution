@@ -573,39 +573,6 @@ const AdminFinanceiro: React.FC = () => {
     return totalProfit;
   };
 
-  // Função para calcular o total de vendas não liberadas
-  const calculatePendingSales = () => {
-    // Filtra as transações do settlement para obter as que ainda não foram liberadas
-    // que estão presentes na tabela "Operações com ORDER_ID ainda não liberadas"
-    const pendingSalesIds = new Set(
-      settlementTransactions
-        .filter(tx => 
-          !releaseOperationsWithOrder.some(op => op.orderId === tx.orderId) && 
-          !tx.isRefunded
-        )
-        .map(tx => tx.orderId)
-    );
-    
-    // Calcula o valor total das vendas não liberadas
-    const pendingTotal = settlementTransactions
-      .filter(tx => pendingSalesIds.has(tx.orderId))
-      .reduce((sum, tx) => sum + (tx.netValue || 0), 0);
-    
-    return pendingTotal;
-  };
-
-  // Função para calcular o repasse previsto total
-  const calculateTotalExpectedRepasse = () => {
-    // Soma dos valores já liberados + valores pendentes + reembolsos
-    const releasedTotal = releaseOperationsWithOrder.reduce((sum, op) => sum + op.amount, 0);
-    const pendingTotal = calculatePendingSales();
-    const refundsTotal = settlementTransactions
-      .filter(tx => tx.isRefunded)
-      .reduce((sum, tx) => sum + (tx.netValue || 0), 0);
-    
-    return releasedTotal + pendingTotal + refundsTotal;
-  };
-
   /* ------------------------------------------------------------------ */
   /* render                                                              */
   /* ------------------------------------------------------------------ */
