@@ -612,33 +612,38 @@ const AdminFinanceiro: React.FC = () => {
     </Button>
   </div>
   <DRETable
-  key={dreKey}
-  startDate={startDate}
-  endDate={endDate}
-  grossSales={releaseOperationsWithOrder.reduce((sum, op) => sum + op.amount, 0)}
-  mlFees={metrics.totalMLFees}
-  repassePrevisto={
-    releaseOperationsWithOrder.reduce((sum, op) => sum + op.amount, 0) +
-    settlementTransactions
-      .filter(tx => !releaseOperationsWithOrder.some(op => op.orderId === tx.orderId) && !tx.isRefunded)
-      .reduce((sum, tx) => sum + (tx.netValue || 0), 0) +
-    settlementTransactions
-      .filter(tx => tx.isRefunded)
-      .reduce((sum, tx) => sum + (tx.netValue || 0), 0)
-  }
-  reembolsos={metrics.totalClaims}
-  vendasNaoLiberadas={0} // (coloque o valor correto se tiver)
-  cmv={0} // (coloque o valor correto se tiver)
-  publicidade={metrics.totalAdvertisingCost}
-  lucroProdutos={0} // (coloque o valor correto se tiver)
-  contestacoes={metrics.totalClaims}
-  releaseOtherOperations={releaseOtherOperations}
-  sellerId={sellerId}
-/>
-
+    key={dreKey}
+    startDate={startDate}
+    endDate={endDate}
+    grossSales={metrics.grossSales} // 1. Using grossSales directly from metrics
+    mlFees={metrics.totalMLFees}
+    repassePrevisto={
+      releaseOperationsWithOrder.reduce((sum, op) => sum + op.amount, 0) // Liberado com OrderID
+      + settlementTransactions
+        .filter(tx => !releaseOperationsWithOrder.some(op => op.orderId === tx.orderId) && !tx.isRefunded)
+        .reduce((sum, tx) => sum + (tx.netValue || 0), 0) // Pendente
+      + settlementTransactions
+        .filter(tx => tx.isRefunded)
+        .reduce((sum, tx) => sum + (tx.netValue || 0), 0) // Reembolsado
+    } // 2. Total combinado das tabelas 
+    reembolsos={metrics.totalClaims}
+    vendasNaoLiberadas={
+      settlementTransactions
+        .filter(tx => !releaseOperationsWithOrder.some(op => op.orderId === tx.orderId) && !tx.isRefunded)
+        .reduce((sum, tx) => sum + (tx.netValue || 0), 0)
+    } // 3. Total pendente
+    cmv={
+      (detailedSales || []).reduce((sum, sale) => sum + (sale.totalCost || 0), 0)
+    } // 4. Total da coluna Custo /T
+    publicidade={metrics.totalAdvertisingCost}
+    lucroProdutos={
+      (detailedSales || []).reduce((sum, sale) => sum + (sale.profit || 0), 0)
+    } // 5. Soma da coluna Resultado /L
+    contestacoes={metrics.totalClaims}
+    releaseOtherOperations={releaseOtherOperations}
+    sellerId={sellerId}
+  />
 </div>
-
-
 
           </TabsContent>
 
