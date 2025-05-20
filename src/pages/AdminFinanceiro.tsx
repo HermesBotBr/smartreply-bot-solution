@@ -612,18 +612,22 @@ const AdminFinanceiro: React.FC = () => {
     </Button>
   </div>
   <DRETable
-    key={dreKey}
-    startDate={startDate}
-    endDate={endDate}
-    grossSales={metrics.grossSales}
-    totalMLFees={metrics.totalMLFees}
-    refundedAmount={metrics.totalClaims}
-    totalAdvertisingCost={metrics.totalAdvertisingCost}
-    inventoryItems={inventoryItems}
-    settlementTransactions={settlementTransactions}
-    releaseOperationsWithOrder={releaseOperationsWithOrder}
-    releaseOtherOperations={releaseOtherOperations}
-  />
+  key={dreKey}
+  startDate={startDate}
+  endDate={endDate}
+  grossSales={metrics.grossSales}
+  mlFees={metrics.totalMLFees} // ✅ nome da prop correto de acordo com o DRETable.tsx
+  repassePrevisto={metrics.totalMLRepasses}
+  reembolsos={metrics.totalClaims}
+  vendasNaoLiberadas={0} // (coloque o valor correto se tiver)
+  cmv={0} // (coloque o valor correto se tiver)
+  publicidade={metrics.totalAdvertisingCost}
+  lucroProdutos={0} // (coloque o valor correto se tiver)
+  contestacoes={metrics.totalClaims}
+  releaseOtherOperations={releaseOtherOperations}
+  sellerId={sellerId}
+/>
+
 </div>
 
 
