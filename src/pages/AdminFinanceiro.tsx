@@ -89,6 +89,11 @@ const AdminFinanceiro: React.FC = () => {
     resultadoLiberado: 0
   });
 
+  const handleSalesTableTotalsUpdate = (totals: { totalInventoryCost: number; resultadoLiberado: number }) => {
+  setSalesTableTotals(totals);
+};
+
+
   /* ------------------------------------------------------------------ */
   /* hooks / data                                                        */
   /* ------------------------------------------------------------------ */
