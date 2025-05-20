@@ -612,62 +612,30 @@ const AdminFinanceiro: React.FC = () => {
     </Button>
   </div>
   <DRETable
-    key={dreKey}
-    startDate={startDate}
-    endDate={endDate}
-    grossSales={metrics.grossSales}
-    mlFees={metrics.totalMLFees}
-    repassePrevisto={
-      // Total Combinado das Tabelas do pop-up "Detalhamento de Valor Liberado na Conta"
-      releaseOperationsWithOrder.reduce((sum, op) => sum + op.amount, 0) + 
-      metrics.totalClaims +
-      (settlementTransactions
-        .filter(tx => !releaseOperationsWithOrder.some(op => op.orderId === tx.orderId) && !tx.isRefunded)
-        .reduce((sum, tx) => sum + (tx.netValue || 0), 0))
-    }
-    reembolsos={metrics.totalClaims}
-    vendasNaoLiberadas={
-      // Total das operações pendentes (Total Pendente)
-      settlementTransactions
-        .filter(tx => !releaseOperationsWithOrder.some(op => op.orderId === tx.orderId) && !tx.isRefunded)
-        .reduce((sum, tx) => sum + (tx.netValue || 0), 0)
-    }
-    cmv={
-      // Total da coluna Custo /T da tabela "Vendas por Anúncio"
-      inventoryItems.reduce((total, item) => {
-        // Calculate average cost per item
-        const avgCost = item.purchases.reduce((sum, purchase) => sum + purchase.unitCost * purchase.quantity, 0) / 
-                         Math.max(1, item.purchases.reduce((sum, purchase) => sum + purchase.quantity, 0));
-        
-        // Get item sales count
-        const salesCount = salesByItemId[item.itemId] || 0;
-        
-        // Add to total CMV (avgCost * salesCount)
-        return total + (avgCost * salesCount);
-      }, 0)
-    }
-    publicidade={metrics.totalAdvertisingCost}
-    lucroProdutos={
-      // Soma total da coluna "Resultado /L" da tabela "Vendas por Anúncio"
-      inventoryItems.reduce((total, item) => {
-        // Calculate average cost per item
-        const avgCost = item.purchases.reduce((sum, purchase) => sum + purchase.unitCost * purchase.quantity, 0) / 
-                         Math.max(1, item.purchases.reduce((sum, purchase) => sum + purchase.quantity, 0));
-        
-        // Get item sales count and potential revenue
-        const salesCount = salesByItemId[item.itemId] || 0;
-        const salesRevenue = (detailedSales[item.itemId]?.averagePrice || 0) * salesCount;
-        
-        // Calculate profit (salesRevenue - cost)
-        const profit = salesRevenue - (avgCost * salesCount);
-        
-        return total + profit;
-      }, 0)
-    }
-    contestacoes={metrics.totalClaims}
-    releaseOtherOperations={releaseOtherOperations}
-    sellerId={sellerId}
-  />
+  key={dreKey}
+  startDate={startDate}
+  endDate={endDate}
+  grossSales={releaseOperationsWithOrder.reduce((sum, op) => sum + op.amount, 0)}
+  mlFees={metrics.totalMLFees}
+  repassePrevisto={
+    releaseOperationsWithOrder.reduce((sum, op) => sum + op.amount, 0) +
+    settlementTransactions
+      .filter(tx => !releaseOperationsWithOrder.some(op => op.orderId === tx.orderId) && !tx.isRefunded)
+      .reduce((sum, tx) => sum + (tx.netValue || 0), 0) +
+    settlementTransactions
+      .filter(tx => tx.isRefunded)
+      .reduce((sum, tx) => sum + (tx.netValue || 0), 0)
+  }
+  reembolsos={metrics.totalClaims}
+  vendasNaoLiberadas={0} // (coloque o valor correto se tiver)
+  cmv={0} // (coloque o valor correto se tiver)
+  publicidade={metrics.totalAdvertisingCost}
+  lucroProdutos={0} // (coloque o valor correto se tiver)
+  contestacoes={metrics.totalClaims}
+  releaseOtherOperations={releaseOtherOperations}
+  sellerId={sellerId}
+/>
+
 </div>
 
 
