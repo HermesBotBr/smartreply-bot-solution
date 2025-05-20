@@ -615,30 +615,69 @@ const AdminFinanceiro: React.FC = () => {
     key={dreKey}
     startDate={startDate}
     endDate={endDate}
-    grossSales={metrics.grossSales} // 1. Using grossSales directly from metrics
+    grossSales={
+      // 1. Fix: Use sum of gross values from settlement transactions
+      settlementTransactions.reduce((sum, tx) => sum + (tx.grossValue || 0), 0)
+    } 
     mlFees={metrics.totalMLFees}
     repassePrevisto={
-      releaseOperationsWithOrder.reduce((sum, op) => sum + op.amount, 0) // Liberado com OrderID
-      + settlementTransactions
+      // 2. Fix: Sum of values from three tables in ReleasePopup
+      releaseOperationsWithOrder.reduce((sum, op) => sum + op.amount, 0) + // Liberado com OrderID
+      settlementTransactions
         .filter(tx => !releaseOperationsWithOrder.some(op => op.orderId === tx.orderId) && !tx.isRefunded)
-        .reduce((sum, tx) => sum + (tx.netValue || 0), 0) // Pendente
-      + settlementTransactions
+        .reduce((sum, tx) => sum + (tx.netValue || 0), 0) + // Pendente
+      settlementTransactions
         .filter(tx => tx.isRefunded)
         .reduce((sum, tx) => sum + (tx.netValue || 0), 0) // Reembolsado
-    } // 2. Total combinado das tabelas 
-    reembolsos={metrics.totalClaims}
+    }
+    reembolsos={
+      // 3. Fix: Get total from refunded operations table
+      settlementTransactions
+        .filter(tx => tx.isRefunded)
+        .reduce((sum, tx) => sum + (tx.netValue || 0), 0)
+    }
     vendasNaoLiberadas={
       settlementTransactions
         .filter(tx => !releaseOperationsWithOrder.some(op => op.orderId === tx.orderId) && !tx.isRefunded)
         .reduce((sum, tx) => sum + (tx.netValue || 0), 0)
-    } // 3. Total pendente
+    } 
     cmv={
-      (detailedSales || []).reduce((sum, sale) => sum + (sale.totalCost || 0), 0)
-    } // 4. Total da coluna Custo /T
+      // 4. Fix: Get total from Custo /T column in SalesBoxComponent
+      // Since we don't have direct access to that table total,
+      // we'll use the tableTotals.totalInventoryCost from SalesBoxComponent calculations
+      // For now, let's use a simpler calculation from SalesBoxComponent logic
+      (salesByItemId && inventoryItems) ? 
+        inventoryItems.reduce((sum, item) => {
+          // Find most recent purchase cost for this item
+          const purchases = item.purchases || [];
+          const avgCost = purchases.length > 0 ? 
+            purchases[0].unitCost : 0;
+          
+          // Multiply by quantity sold
+          const soldQuantity = salesByItemId[item.itemId] || 0;
+          return sum + (avgCost * soldQuantity);
+        }, 0) : 0
+    }
     publicidade={metrics.totalAdvertisingCost}
     lucroProdutos={
-      (detailedSales || []).reduce((sum, sale) => sum + (sale.profit || 0), 0)
-    } // 5. Soma da coluna Resultado /L
+      // 5. Fix: Get sum of Resultado /L column from SalesBoxComponent
+      // Similar to CMV, we don't have direct access to the column total
+      // Using a calculation based on available data
+      settlementTransactions
+        .filter(tx => !tx.isRefunded)
+        .reduce((sum, tx) => {
+          // Find the inventory item for this transaction
+          const item = inventoryItems.find(inv => inv.itemId === tx.itemId);
+          if (!item || !item.purchases || item.purchases.length === 0) return sum;
+          
+          // Get the average cost for this item
+          const avgCost = item.purchases[0].unitCost;
+          
+          // Calculate profit: netValue - (avgCost * units)
+          const profit = tx.netValue - (avgCost * tx.units);
+          return sum + profit;
+        }, 0)
+    }
     contestacoes={metrics.totalClaims}
     releaseOtherOperations={releaseOtherOperations}
     sellerId={sellerId}

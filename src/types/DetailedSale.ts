@@ -1,4 +1,5 @@
 
+
 export interface DetailedSale {
   orderId: string;
   itemId: string;
@@ -8,3 +9,4 @@ export interface DetailedSale {
   totalCost?: number;  // Added missing property
   profit?: number;     // Added missing property
 }
+
