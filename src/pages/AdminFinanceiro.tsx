@@ -615,7 +615,7 @@ const AdminFinanceiro: React.FC = () => {
   key={dreKey}
   startDate={startDate}
   endDate={endDate}
-  grossSales={releaseOperationsWithOrder.reduce((sum, op) => sum + op.amount, 0)}
+  grossSales={settlementTransactions.reduce((sum, t) => sum + (t.grossValue || 0), 0)}
   mlFees={metrics.totalMLFees} // ✅ nome da prop correto de acordo com o DRETable.tsx
   repassePrevisto={metrics.totalMLRepasses}
   reembolsos={metrics.totalClaims}
