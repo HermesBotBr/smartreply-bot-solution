@@ -278,11 +278,6 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
     return transfer.manualDescriptions.reduce((sum, desc) => sum + desc.value, 0);
   };
 
-  // Calculate declared total for a transaction
-  const getTransactionDeclaredTotal = (transaction: TransferTransaction) => {
-    return transaction.manualDescriptions?.reduce((sum, desc) => sum + desc.value, 0) || 0;
-  };
-
   // Group transfers by description for summary
   const transfersByDescription = transfersWithDescriptions.reduce((acc: Record<string, number>, transfer) => {
     const description = transfer.description || 'Sem descrição';
@@ -329,7 +324,7 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
 
     filteredTransactions.forEach(transaction => {
       totalValue += transaction.value;
-      totalDeclared += getTransactionDeclaredTotal(transaction);
+      totalDeclared += transaction.totalDeclared || 0;
     });
 
     return {
