@@ -19,6 +19,7 @@ import { useAdminSalesData } from '@/hooks/useAdminSalesData';
 import { parseBrazilianDate } from '@/lib/utils';
 import { DRETable } from '@/components/financeiro/DRETable';
 
+
 const AdminFinanceiro: React.FC = () => {
   /* ------------------------------------------------------------------ */
   /* state                                                               */
@@ -82,16 +83,6 @@ const AdminFinanceiro: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'metricas' | 'entrada' | 'estoque'>('metricas');
 
   const [dreKey, setDreKey] = useState(0); // Forçar re-render do DRETable
-
-  // Add these new state variables for tracking the totals from SalesBoxComponent
-  const [salesTableTotals, setSalesTableTotals] = useState({
-    totalInventoryCost: 0,
-    resultadoLiberado: 0
-  });
-
-  const handleSalesTableTotalsUpdate = (totals: { totalInventoryCost: number; resultadoLiberado: number }) => {
-  setSalesTableTotals(totals);
-};
 
 
   /* ------------------------------------------------------------------ */
@@ -588,83 +579,67 @@ const AdminFinanceiro: React.FC = () => {
             </div>
 
             <FinancialMetrics
-              grossSales={metrics.grossSales}
-              totalAmount={metrics.totalAmount}
-              unitsSold={metrics.unitsSold}
-              totalMLRepasses={metrics.totalMLRepasses}
-              totalMLFees={metrics.totalMLFees}
-              totalReleased={metrics.totalReleased}
-              totalClaims={metrics.totalClaims}
-              totalDebts={metrics.totalDebts}
-              totalTransfers={metrics.totalTransfers}
-              totalCreditCard={metrics.totalCreditCard}
-              totalShippingCashback={metrics.totalShippingCashback}
-              settlementTransactions={settlementTransactions}
-              releaseOperationsWithOrder={releaseOperationsWithOrder}
-              releaseOtherOperations={releaseOtherOperations}
-              startDate={startDate}
-              endDate={endDate}
-              filterBySettlement={filterBySettlement}
-              inventoryItems={inventoryItems}
-              advertisingItems={advertisingData?.results || []}
-              totalAdvertisingCost={metrics.totalAdvertisingCost}
-              onRefreshAdvertisingData={handleRefreshAdvertisingData}
-              sellerId={sellerId}
-              onSalesTableTotalsUpdate={handleSalesTableTotalsUpdate}
-            />
+  grossSales={metrics.grossSales}
+  totalAmount={metrics.totalAmount}
+  unitsSold={metrics.unitsSold}
+  totalMLRepasses={metrics.totalMLRepasses}
+  totalMLFees={metrics.totalMLFees}
+  totalReleased={metrics.totalReleased}
+  totalClaims={metrics.totalClaims}
+  totalDebts={metrics.totalDebts}
+  totalTransfers={metrics.totalTransfers}
+  totalCreditCard={metrics.totalCreditCard}
+  totalShippingCashback={metrics.totalShippingCashback}
+  settlementTransactions={settlementTransactions}
+  releaseOperationsWithOrder={releaseOperationsWithOrder}
+  releaseOtherOperations={releaseOtherOperations}
+  startDate={startDate}
+  endDate={endDate}
+  filterBySettlement={filterBySettlement}
+  inventoryItems={inventoryItems}
+  advertisingItems={advertisingData?.results || []}
+  totalAdvertisingCost={metrics.totalAdvertisingCost}
+  onRefreshAdvertisingData={handleRefreshAdvertisingData}
+  sellerId={sellerId}
+/>
 
-            {/* Box DRE abaixo da tabela de vendas */}
-            <div className="mt-6 p-4 bg-white rounded shadow-sm">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold">DRE (Demonstrativo de Resultados)</h2>
-                <Button variant="ghost" size="sm" onClick={() => setDreKey(prev => prev + 1)}>
-                  🔁 Atualizar
-                </Button>
-              </div>
-              <DRETable
-                key={dreKey}
-                startDate={startDate}
-                endDate={endDate}
-                grossSales={
-                  // 1. Fix: Use sum of gross values from settlement transactions
-                  settlementTransactions.reduce((sum, tx) => sum + (tx.grossValue || 0), 0)
-                } 
-                mlFees={metrics.totalMLFees}
-                repassePrevisto={
-                  // 2. Fix: Sum of values from three tables in ReleasePopup
-                  releaseOperationsWithOrder.reduce((sum, op) => sum + op.amount, 0) + // Liberado com OrderID
-                  settlementTransactions
-                    .filter(tx => !releaseOperationsWithOrder.some(op => op.orderId === tx.orderId) && !tx.isRefunded)
-                    .reduce((sum, tx) => sum + (tx.netValue || 0), 0) + // Pendente
-                  settlementTransactions
-                    .filter(tx => tx.isRefunded)
-                    .reduce((sum, tx) => sum + (tx.netValue || 0), 0) // Reembolsado
-                }
-                reembolsos={
-                  // 3. Fix: Get total from refunded operations table
-                  settlementTransactions
-                    .filter(tx => tx.isRefunded)
-                    .reduce((sum, tx) => sum + (tx.netValue || 0), 0)
-                }
-                vendasNaoLiberadas={
-                  settlementTransactions
-                    .filter(tx => !releaseOperationsWithOrder.some(op => op.orderId === tx.orderId) && !tx.isRefunded)
-                    .reduce((sum, tx) => sum + (tx.netValue || 0), 0)
-                } 
-                cmv={
-                  // Updated: Get the value from the total row of the Custo /T column
-                  salesTableTotals.totalInventoryCost
-                }
-                publicidade={metrics.totalAdvertisingCost}
-                lucroProdutos={
-                  // Updated: Get the value from the total row of the Resultado /L column
-                  salesTableTotals.resultadoLiberado
-                }
-                contestacoes={metrics.totalClaims}
-                releaseOtherOperations={releaseOtherOperations}
-                sellerId={sellerId}
-              />
-            </div>
+{/* Box DRE abaixo da tabela de vendas */}
+<div className="mt-6 p-4 bg-white rounded shadow-sm">
+  <div className="flex items-center justify-between mb-4">
+    <h2 className="text-lg font-semibold">DRE (Demonstrativo de Resultados)</h2>
+    <Button variant="ghost" size="sm" onClick={() => setDreKey(prev => prev + 1)}>
+      🔁 Atualizar
+    </Button>
+  </div>
+  <DRETable
+  key={dreKey}
+  startDate={startDate}
+  endDate={endDate}
+  grossSales={releaseOperationsWithOrder.reduce((sum, op) => sum + op.amount, 0)}
+  mlFees={metrics.totalMLFees}
+  repassePrevisto={
+    releaseOperationsWithOrder.reduce((sum, op) => sum + op.amount, 0) +
+    settlementTransactions
+      .filter(tx => !releaseOperationsWithOrder.some(op => op.orderId === tx.orderId) && !tx.isRefunded)
+      .reduce((sum, tx) => sum + (tx.netValue || 0), 0) +
+    settlementTransactions
+      .filter(tx => tx.isRefunded)
+      .reduce((sum, tx) => sum + (tx.netValue || 0), 0)
+  }
+  reembolsos={metrics.totalClaims}
+  vendasNaoLiberadas={0} // (coloque o valor correto se tiver)
+  cmv={0} // (coloque o valor correto se tiver)
+  publicidade={metrics.totalAdvertisingCost}
+  lucroProdutos={0} // (coloque o valor correto se tiver)
+  contestacoes={metrics.totalClaims}
+  releaseOtherOperations={releaseOtherOperations}
+  sellerId={sellerId}
+/>
+
+</div>
+
+
+
           </TabsContent>
 
           <TabsContent value="entrada" className="mt-4">
@@ -690,6 +665,7 @@ const AdminFinanceiro: React.FC = () => {
               salesByItemId={salesByItemId}
               detailedSales={detailedSales}
             />
+
           </TabsContent>
         </Tabs>
       </div>
