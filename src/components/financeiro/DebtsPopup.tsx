@@ -21,10 +21,9 @@ export const DebtsPopup: React.FC<DebtsPopupProps> = ({
   endDate,
 }) => {
 const totalDebt = debtOperations.reduce(
-  (sum, op) => sum + (op.amount || 0),
+  (sum, op) => sum + ((op.netCreditAmount || 0) - (op.netDebitAmount || 0)),
   0
 );
-
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -59,10 +58,9 @@ const totalDebt = debtOperations.reduce(
         <td className="p-2 border">{op.sourceId || "-"}</td>
         <td className="p-2 border">{op.description || "-"}</td>
         <td className="p-2 border">{op.group || "-"}</td>
-<td className={`p-2 border ${op.amount < 0 ? 'text-red-600' : 'text-green-700'}`}>
-  R$ {op.amount.toFixed(2)}
+        <td className="p-2 border text-purple-800">
+  R$ {((op.netCreditAmount || 0) - (op.netDebitAmount || 0)).toFixed(2)}
 </td>
-
 
       </tr>
     ))}
