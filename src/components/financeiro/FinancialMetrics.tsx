@@ -38,7 +38,8 @@ interface FinancialMetricsProps {
   advertisingItems?: AdvertisingItem[];
   totalAdvertisingCost: number;
   onRefreshAdvertisingData?: () => void;
-  sellerId: string; // Add this prop
+  sellerId: string;
+  onSalesTableTotalsUpdate?: (totals: any) => void; // New prop for passing totals
 }
 
 export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
@@ -63,7 +64,8 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
   advertisingItems = [],
   totalAdvertisingCost = 0,
   onRefreshAdvertisingData,
-  sellerId
+  sellerId,
+  onSalesTableTotalsUpdate
 }) => {
   const [repassesPopupOpen, setRepassesPopupOpen] = useState(false);
   const [grossSalesPopupOpen, setGrossSalesPopupOpen] = useState(false);
@@ -71,9 +73,9 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
   const [transfersPopupOpen, setTransfersPopupOpen] = useState(false);
   const [claimsPopupOpen, setClaimsPopupOpen] = useState(false);
   const [refundsPopupOpen, setRefundsPopupOpen] = useState(false);
-const [publicidadePopupOpen, setPublicidadePopupOpen] = useState(false);
-const [debtsPopupOpen, setDebtsPopupOpen] = useState(false); // NOVO POPUP
-const [hasUnbalancedTransfers, setHasUnbalancedTransfers] = useState(false);
+  const [publicidadePopupOpen, setPublicidadePopupOpen] = useState(false);
+  const [debtsPopupOpen, setDebtsPopupOpen] = useState(false); // NOVO POPUP
+  const [hasUnbalancedTransfers, setHasUnbalancedTransfers] = useState(false);
 
   const [filteredTotalReleased, setFilteredTotalReleased] = useState(totalReleased);
   const [filteredOperationsWithOrder, setFilteredOperationsWithOrder] = useState(releaseOperationsWithOrder);
@@ -208,6 +210,13 @@ const [hasUnbalancedTransfers, setHasUnbalancedTransfers] = useState(false);
   // Display value to show in the "Liberado" card
   const displayTotalReleased = filterBySettlement ? filteredTotalReleased : totalReleased;
 
+  // Function to handle table totals from SalesBoxComponent
+  const handleTableTotalsUpdate = (totals) => {
+    if (onSalesTableTotalsUpdate) {
+      onSalesTableTotalsUpdate(totals);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
@@ -321,7 +330,7 @@ const [hasUnbalancedTransfers, setHasUnbalancedTransfers] = useState(false);
         </div>
       </div>
       
-      {/* Sales Box Component - pass the refresh function */}
+      {/* Sales Box Component - pass the new callback */}
       <SalesBoxComponent 
         settlementTransactions={settlementTransactions}
         releaseOperationsWithOrder={releaseOperationsWithOrder}
@@ -334,7 +343,8 @@ const [hasUnbalancedTransfers, setHasUnbalancedTransfers] = useState(false);
         advertisingItems={advertisingItems}
         onRefreshAdvertisingData={onRefreshAdvertisingData}
         totalAdvertisingCost={totalAdvertisingCost}
-        sellerId={sellerId} // Pass sellerId to SalesBoxComponent
+        sellerId={sellerId}
+        onTableTotalsUpdate={handleTableTotalsUpdate}
       />
       
       <RepassesPopup 

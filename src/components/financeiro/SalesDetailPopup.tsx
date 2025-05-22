@@ -9,14 +9,7 @@ import {
 } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Clock, Calendar, Package } from 'lucide-react';
-
-interface DetailedSale {
-  orderId: string;
-  itemId: string;
-  title?: string;
-  quantity: number;
-  dateCreated: string;
-}
+import { DetailedSale } from '@/types/DetailedSale';
 
 interface SalesDetailPopupProps {
   open: boolean;

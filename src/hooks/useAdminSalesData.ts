@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { getNgrokUrl } from '@/config/api';
 import axios from 'axios';
+import { DetailedSale } from '@/types/DetailedSale';
 
 interface AdminSalesItem {
   total_amount: number;
@@ -20,14 +21,6 @@ interface AdminSalesItem {
 interface AdminSalesResponse {
   query: string;
   results: AdminSalesItem[];
-}
-
-interface DetailedSale {
-  orderId: string;
-  itemId: string;
-  title?: string;
-  quantity: number;
-  dateCreated: string;
 }
 
 export function useAdminSalesData() {
@@ -83,7 +76,9 @@ export function useAdminSalesData() {
               itemId: itemId,
               title: orderItem.item?.title,
               quantity: orderItem.quantity || 0,
-              dateCreated: item.date_created
+              dateCreated: item.date_created,
+              totalCost: 0, // Initialize with default values
+              profit: 0     // Initialize with default values
             });
           }
           
