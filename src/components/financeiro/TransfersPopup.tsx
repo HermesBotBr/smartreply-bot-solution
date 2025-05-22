@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
@@ -75,6 +74,7 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
   const [productListingOpen, setProductListingOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
+  const [descriptionsFetched, setDescriptionsFetched] = useState(false);
   
   // Obter o seller_id do usuário logado
   const mlToken = useMlToken();
@@ -82,32 +82,40 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
     ? (mlToken as { seller_id: string }).seller_id
     : '681274853'; // ID padrão caso não encontre
   
-  // Carregar descrições do endpoint quando o popup é aberto
-  useEffect(() => {
-    if (open) {
-      fetchDescriptions();
-    }
-  }, [open]);
-  
-  // Atualizar a lista de transferências quando as transferências mudam
+  // Preparar as transferências quando mudam
   useEffect(() => {
     if (transfers.length > 0) {
-      setTransfersWithDescriptions(
-        transfers.map(transfer => ({
-          ...transfer,
-          manualDescriptions: []
-        }))
-      );
+      // Inicializar as transferências com descrições vazias
+      const initialTransfersWithDescriptions = transfers.map(transfer => ({
+        ...transfer,
+        manualDescriptions: []
+      }));
+      
+      setTransfersWithDescriptions(initialTransfersWithDescriptions);
+      
+      // Resetar o estado de busca para que possamos buscar novamente quando necessário
+      if (open) {
+        setDescriptionsFetched(false);
+      }
     }
-  }, [transfers]);
+  }, [transfers, open]);
+  
+  // Carregar descrições quando o popup é aberto e as transferências estão prontas
+  useEffect(() => {
+    if (open && transfers.length > 0 && !descriptionsFetched) {
+      fetchDescriptions();
+    }
+  }, [open, transfers, descriptionsFetched]);
 
-  // Buscar descrições da API
+  // Buscar descrições da API uma única vez
   const fetchDescriptions = async () => {
+    if (descriptionsFetched || transfers.length === 0) return;
+    
     try {
       setIsLoading(true);
       setApiError(null);
       
-      console.log("Fetching descriptions from API...");
+      console.log("Fetching descriptions from API - single call");
       
       const response = await axios.get(`${getNgrokUrl('/trans_desc')}`, {
         params: {
@@ -115,7 +123,7 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
         }
       });
       
-      console.log("API response:", response.data);
+      console.log("API response received:", response.data);
       
       const apiDescriptions: ApiDescription[] = response.data;
       
@@ -126,20 +134,16 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
         return;
       }
       
-      // Mapear as descrições da API para o formato usado no componente
+      // Mapear as descrições da API para todas as transferências de uma só vez
       setTransfersWithDescriptions(prevTransfers => 
         prevTransfers.map(transfer => {
           const sourceId = transfer.sourceId || '';
           
-          console.log(`Processing transfer with sourceId: ${sourceId}`);
-          
+          // Filtrar apenas descrições relacionadas a este sourceId
           const matchingDescriptions = apiDescriptions
             .filter(desc => desc.source_id === sourceId)
             .map(desc => {
-              // Ensure the value is properly converted to a number
               const numericValue = Number(desc.valor);
-              console.log(`Description for ${sourceId}: ${desc.descricao}, valor: ${desc.valor}, converted to: ${numericValue}`);
-              
               return {
                 description: desc.descricao,
                 value: numericValue
@@ -155,6 +159,8 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
         })
       );
       
+      // Marcar como buscado para evitar buscas repetidas
+      setDescriptionsFetched(true);
       setIsLoading(false);
     } catch (error) {
       console.error('Erro ao buscar descrições:', error);
@@ -220,8 +226,8 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
         description: "Descrição adicionada com sucesso",
       });
       
-      // Refetch descriptions to ensure we have the most up-to-date data
-      fetchDescriptions();
+      // Buscar novamente as descrições para atualizar tudo
+      setDescriptionsFetched(false);
       
       setIsLoading(false);
     } catch (error) {
@@ -276,8 +282,8 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
         description: "Descrição removida com sucesso",
       });
       
-      // Refetch descriptions to ensure we have the most up-to-date data
-      fetchDescriptions();
+      // Buscar novamente as descrições para atualizar tudo
+      setDescriptionsFetched(false);
       
       setIsLoading(false);
     } catch (error) {
@@ -337,11 +343,7 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
     // Calculate the total declared amount
     const totalDeclared = getDeclaredTotal(transfer);
     
-    // Log the total declared amount for debugging
-    console.log(`Transfer ${transfer.sourceId}: Total declared = ${totalDeclared}`, transfer.manualDescriptions);
-    
     // Use the transfer's date if available, otherwise use current date
-    // This ensures we have a valid date for date filtering
     const transferDate = transfer.date || new Date().toISOString();
     
     return {
