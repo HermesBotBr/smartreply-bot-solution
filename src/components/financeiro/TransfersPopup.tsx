@@ -73,8 +73,6 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
   const [descriptionDialogOpen, setDescriptionDialogOpen] = useState(false);
   const [productListingOpen, setProductListingOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [apiError, setApiError] = useState<string | null>(null);
-  const [descriptionsFetched, setDescriptionsFetched] = useState(false);
   
   // Obter o seller_id do usuário logado
   const mlToken = useMlToken();
@@ -82,75 +80,44 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
     ? (mlToken as { seller_id: string }).seller_id
     : '681274853'; // ID padrão caso não encontre
   
-  // Preparar as transferências quando mudam
+  // Carregar descrições do endpoint quando o popup é aberto
   useEffect(() => {
-    if (transfers.length > 0) {
-      // Inicializar as transferências com descrições vazias
-      const initialTransfersWithDescriptions = transfers.map(transfer => ({
-        ...transfer,
-        manualDescriptions: []
-      }));
-      
-      setTransfersWithDescriptions(initialTransfersWithDescriptions);
-      
-      // Resetar o estado de busca para que possamos buscar novamente quando necessário
-      if (open) {
-        setDescriptionsFetched(false);
-      }
-    }
-  }, [transfers, open]);
-  
-  // Carregar descrições quando o popup é aberto e as transferências estão prontas
-  useEffect(() => {
-    if (open && transfers.length > 0 && !descriptionsFetched) {
+    if (open) {
       fetchDescriptions();
     }
-  }, [open, transfers, descriptionsFetched]);
+  }, [open]);
+  
+  // Atualizar a lista de transferências quando as transferências mudam
+  useEffect(() => {
+    setTransfersWithDescriptions(
+      transfers.map(transfer => ({
+        ...transfer,
+        manualDescriptions: []
+      }))
+    );
+  }, [transfers]);
 
-  // Buscar descrições da API uma única vez
+  // Buscar descrições da API
   const fetchDescriptions = async () => {
-    if (descriptionsFetched || transfers.length === 0) return;
-    
     try {
       setIsLoading(true);
-      setApiError(null);
-      
-      console.log("Fetching descriptions from API - single call");
-      
       const response = await axios.get(`${getNgrokUrl('/trans_desc')}`, {
         params: {
           seller_id: sellerId
         }
       });
-      
-      console.log("API response received:", response.data);
-      
       const apiDescriptions: ApiDescription[] = response.data;
       
-      if (!Array.isArray(apiDescriptions)) {
-        console.error("API response is not an array:", apiDescriptions);
-        setApiError("Invalid API response format");
-        setIsLoading(false);
-        return;
-      }
-      
-      // Mapear as descrições da API para todas as transferências de uma só vez
+      // Mapear as descrições da API para o formato usado no componente
       setTransfersWithDescriptions(prevTransfers => 
         prevTransfers.map(transfer => {
           const sourceId = transfer.sourceId || '';
-          
-          // Filtrar apenas descrições relacionadas a este sourceId
           const matchingDescriptions = apiDescriptions
             .filter(desc => desc.source_id === sourceId)
-            .map(desc => {
-              const numericValue = Number(desc.valor);
-              return {
-                description: desc.descricao,
-                value: numericValue
-              };
-            });
-          
-          console.log(`Found ${matchingDescriptions.length} descriptions for ${sourceId}`);
+            .map(desc => ({
+              description: desc.descricao,
+              value: parseFloat(desc.valor)
+            }));
           
           return {
             ...transfer,
@@ -159,12 +126,9 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
         })
       );
       
-      // Marcar como buscado para evitar buscas repetidas
-      setDescriptionsFetched(true);
       setIsLoading(false);
     } catch (error) {
       console.error('Erro ao buscar descrições:', error);
-      setApiError("Erro ao buscar descrições");
       toast({
         title: "Erro",
         description: "Erro ao carregar descrições",
@@ -225,10 +189,6 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
         title: "Sucesso",
         description: "Descrição adicionada com sucesso",
       });
-      
-      // Buscar novamente as descrições para atualizar tudo
-      setDescriptionsFetched(false);
-      
       setIsLoading(false);
     } catch (error) {
       console.error('Erro ao salvar descrição:', error);
@@ -281,10 +241,6 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
         title: "Sucesso",
         description: "Descrição removida com sucesso",
       });
-      
-      // Buscar novamente as descrições para atualizar tudo
-      setDescriptionsFetched(false);
-      
       setIsLoading(false);
     } catch (error) {
       console.error('Erro ao remover descrição:', error);
@@ -334,8 +290,6 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
   const transferTransactions: TransferTransaction[] = transfersWithDescriptions.map(transfer => {
     // Collect all descriptions
     const allDescriptions = [transfer.description || 'Transferência'];
-    
-    // Add manual descriptions to the list
     transfer.manualDescriptions.forEach(desc => {
       allDescriptions.push(desc.description);
     });
@@ -344,6 +298,7 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
     const totalDeclared = getDeclaredTotal(transfer);
     
     // Use the transfer's date if available, otherwise use current date
+    // This ensures we have a valid date for date filtering
     const transferDate = transfer.date || new Date().toISOString();
     
     return {
@@ -395,13 +350,6 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
             )}
           </DialogDescription>
         </DialogHeader>
-
-        {apiError && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
-            <p className="font-medium">Erro ao carregar dados</p>
-            <p className="text-sm">{apiError}</p>
-          </div>
-        )}
 
         <div className="space-y-6">
           <div>
