@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { formatCurrency } from '@/utils/formatters';
 import { ReleaseOperation } from '@/types/ReleaseOperation';
 import { TransactionsList } from './TransactionsList';
@@ -101,45 +101,42 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
   const fetchDescriptions = async () => {
     try {
       setIsLoading(true);
-      try {
-        const response = await axios.get(`${getNgrokUrl('/trans_desc')}`, {
-          params: {
-            seller_id: sellerId
-          }
-        });
-        const apiDescriptions: ApiDescription[] = response.data;
+      const response = await axios.get(`${getNgrokUrl('/trans_desc')}`, {
+        params: {
+          seller_id: sellerId
+        }
+      });
+      const apiDescriptions: ApiDescription[] = response.data;
 
-        // Atualizar o estado local com as descrições corretamente associadas
-        setTransfersWithDescriptions(prevTransfers =>
-          prevTransfers.map(transfer => {
-            const sourceId = transfer.sourceId || '';
-            
-            // Filtrar as descrições correspondentes ao sourceId atual
-            const matchingDescriptions = apiDescriptions
-              .filter(desc => desc.source_id === sourceId)
-              .map(desc => ({
-                description: desc.descricao,
-                value: parseFloat(desc.valor)
-              }));
-            
-            return {
-              ...transfer,
-              manualDescriptions: matchingDescriptions
-            };
-          })
-        );
-      } catch (error) {
-        console.error('Erro ao buscar descrições:', error);
-        toast({
-          title: "Erro",
-          description: "Erro ao carregar descrições",
-          variant: "destructive"
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    }
-  };
+      // Atualizar o estado local com as descrições corretamente associadas
+      setTransfersWithDescriptions(prevTransfers =>
+        prevTransfers.map(transfer => {
+          const sourceId = transfer.sourceId || '';
+          
+          const matchingDescriptions = apiDescriptions
+            .filter(desc => desc.source_id === sourceId)
+            .map(desc => ({
+              description: desc.descricao,
+              value: parseFloat(desc.valor)
+            }));
+          
+          return {
+            ...transfer,
+            manualDescriptions: matchingDescriptions
+          };
+        })
+      );
+    } catch (error) {
+      console.error('Erro ao buscar descrições:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao carregar descrições",
+        variant: "destructive"
+      });
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   // Lidar com seleção de produto
   const handleProductSelect = (product: Product, quantity: number) => {
@@ -371,10 +368,8 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
                   <TableRow key={index}>
                     <TableCell>{description}</TableCell>
                     <TableCell className="text-right">
-  {transaction.totalDeclared > 0 
-    ? formatCurrency(transaction.totalDeclared) 
-    : 'R$ 0,00'}
-</TableCell>
+                      {amount > 0 ? formatCurrency(amount) : 'R$ 0,00'}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
