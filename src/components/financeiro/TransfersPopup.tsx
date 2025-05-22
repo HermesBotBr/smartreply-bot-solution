@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogAction, AlertDialogCancel } from '@/components/ui/alert-dialog';
-import { Trash } from 'lucide-react';
+import { Trash, RefreshCw } from 'lucide-react';
 import axios from 'axios';
 import { toast } from '@/hooks/use-toast';
 import { useMlToken } from '@/hooks/useMlToken';
@@ -75,6 +75,7 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
   const [descriptionsFetched, setDescriptionsFetched] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
   
   // Obter o seller_id do usuário logado
   const mlToken = useMlToken();
@@ -96,6 +97,7 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
       // Resetar o estado de busca para que possamos buscar novamente quando necessário
       if (open) {
         setDescriptionsFetched(false);
+        setApiError(null);
       }
     }
   }, [transfers, open]);
@@ -105,7 +107,14 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
     if (open && transfers.length > 0 && !descriptionsFetched) {
       fetchDescriptions();
     }
-  }, [open, transfers, descriptionsFetched]);
+  }, [open, transfers, descriptionsFetched, retryCount]);
+
+  // Função para lidar com tentativas de refetch após erros
+  const handleRetryFetch = () => {
+    setDescriptionsFetched(false);
+    setApiError(null);
+    setRetryCount(prev => prev + 1);
+  };
 
   // Buscar descrições da API uma única vez
   const fetchDescriptions = async () => {
@@ -117,19 +126,33 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
       
       console.log("Fetching descriptions from API - single call");
       
-      const response = await axios.get(`${getNgrokUrl('/trans_desc')}`, {
+      const apiUrl = getNgrokUrl('/trans_desc');
+      console.log(`API URL: ${apiUrl}`);
+      
+      const response = await axios.get(apiUrl, {
         params: {
           seller_id: sellerId
-        }
+        },
+        // Set specific headers and timeout to avoid HTML responses
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        },
+        timeout: 15000 // 15-second timeout
       });
       
       console.log("API response received:", response.data);
+      
+      // Validate that the response is actually JSON data
+      if (!response.data || typeof response.data !== 'object') {
+        throw new Error("API response is not valid JSON data");
+      }
       
       const apiDescriptions: ApiDescription[] = response.data;
       
       if (!Array.isArray(apiDescriptions)) {
         console.error("API response is not an array:", apiDescriptions);
-        setApiError("Invalid API response format");
+        setApiError("Formato de resposta da API inválido");
         setIsLoading(false);
         return;
       }
@@ -164,12 +187,39 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
       setIsLoading(false);
     } catch (error) {
       console.error('Erro ao buscar descrições:', error);
-      setApiError("Erro ao buscar descrições");
+      
+      let errorMessage = "Erro ao buscar descrições";
+      
+      if (axios.isAxiosError(error)) {
+        // Handle specific Axios errors
+        if (error.response) {
+          // The request was made and the server responded with a status code
+          // that falls out of the range of 2xx
+          errorMessage = `Erro ${error.response.status}: ${error.response.statusText}`;
+          console.error('Response data:', error.response.data);
+          console.error('Response headers:', error.response.headers);
+        } else if (error.request) {
+          // The request was made but no response was received
+          errorMessage = "Sem resposta do servidor. Verifique sua conexão.";
+          console.error('Request:', error.request);
+        } else {
+          // Something happened in setting up the request
+          errorMessage = `Erro: ${error.message}`;
+        }
+
+        if (error.code === 'ECONNABORTED') {
+          errorMessage = "Tempo limite de conexão excedido. O servidor está demorando muito para responder.";
+        }
+      }
+      
+      setApiError(errorMessage);
+      
       toast({
         title: "Erro",
-        description: "Erro ao carregar descrições",
+        description: "Erro ao carregar descrições de transações",
         variant: "destructive"
       });
+      
       setIsLoading(false);
     }
   };
@@ -398,8 +448,22 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
 
         {apiError && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
-            <p className="font-medium">Erro ao carregar dados</p>
-            <p className="text-sm">{apiError}</p>
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="font-medium">Erro ao carregar dados</p>
+                <p className="text-sm">{apiError}</p>
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="ml-2 flex items-center gap-1" 
+                onClick={handleRetryFetch}
+                disabled={isLoading}
+              >
+                <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+                {isLoading ? 'Tentando...' : 'Tentar novamente'}
+              </Button>
+            </div>
           </div>
         )}
 
@@ -444,6 +508,7 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
                 </Button>
               )}
               showFooterTotals={true}
+              error={apiError}
             />
           </div>
         </div>

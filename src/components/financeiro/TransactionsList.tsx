@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table";
 import { formatCurrency } from "@/utils/formatters";
 import { FileBarChart, AlertCircle } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 
 interface TransferDescription {
   description: string;
@@ -24,12 +25,14 @@ interface TransactionsListProps {
   transactions: Transaction[];
   renderActions?: (transaction: Transaction) => React.ReactNode;
   showFooterTotals?: boolean;
+  error?: string | null;
 }
 
 export const TransactionsList: React.FC<TransactionsListProps> = ({ 
   transactions,
   renderActions,
-  showFooterTotals = false
+  showFooterTotals = false,
+  error = null
 }) => {
   // Function to format the date to a readable format
   const formatDate = (dateString: string): string => {
@@ -81,7 +84,16 @@ export const TransactionsList: React.FC<TransactionsListProps> = ({
         </div>
       </CardHeader>
       <CardContent>
-        {transactions.length === 0 ? (
+        {error ? (
+          <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-md flex items-start gap-3">
+            <AlertTriangle className="h-5 w-5 mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="font-medium">Erro ao carregar os dados</p>
+              <p className="text-sm mt-1">{error}</p>
+              <p className="text-sm mt-2">Tente recarregar a página ou verificar a conexão com o servidor.</p>
+            </div>
+          </div>
+        ) : transactions.length === 0 ? (
           <div className="text-center py-4 text-muted-foreground">
             Nenhuma transação encontrada. Insira dados de liberação para visualizar.
           </div>

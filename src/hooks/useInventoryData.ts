@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { getNgrokUrl } from '@/config/api';
 import { TransDesc, InventoryItem } from '@/types/inventory';
+import { toast } from '@/hooks/use-toast';
 
 export function useInventoryData(sellerId: string | null) {
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
@@ -69,6 +70,24 @@ export function useInventoryData(sellerId: string | null) {
     setInventoryItems(prevItems => updateInventoryWithDates(prevItems, dates));
   }, [processReleaseDates, updateInventoryWithDates]);
 
+  // Validate if response is JSON
+  const validateJsonResponse = useCallback(async (response: Response) => {
+    const contentType = response.headers.get('content-type');
+    
+    if (!contentType || !contentType.includes('application/json')) {
+      // Get a preview of the response to include in the error
+      const text = await response.text();
+      const preview = text.substring(0, 100) + (text.length > 100 ? '...' : '');
+      throw new Error(`Expected JSON response but got ${contentType || 'unknown content type'}. Response starts with: ${preview}`);
+    }
+    
+    if (!response.ok) {
+      throw new Error(`API request failed with status ${response.status}: ${response.statusText}`);
+    }
+    
+    return response.json();
+  }, []);
+
   useEffect(() => {
     const fetchInventoryData = async () => {
       if (!sellerId) {
@@ -78,17 +97,19 @@ export function useInventoryData(sellerId: string | null) {
 
       try {
         setIsLoading(true);
+        setError(null);
+        
+        // Construct the API URL
+        const apiUrl = `${getNgrokUrl(`/trans_desc?seller_id=${sellerId}`)}`;
+        console.log(`Fetching transaction descriptions from: ${apiUrl}`);
         
         // Fetch transactions with merchandise purchase descriptions
-        const transDescResponse = await fetch(
-          `${getNgrokUrl(`/trans_desc?seller_id=${sellerId}`)}`
-        );
+        const transDescResponse = await fetch(apiUrl);
         
-        if (!transDescResponse.ok) {
-          throw new Error('Failed to fetch transaction descriptions');
-        }
+        // Validate and parse the JSON response
+        const transDescData: TransDesc[] = await validateJsonResponse(transDescResponse);
         
-        const transDescData: TransDesc[] = await transDescResponse.json();
+        console.log(`Successfully fetched ${transDescData.length} transaction descriptions`);
         
         // Process release data to get dates for source_ids
         const sourceIdToDateMap = processReleaseDates();
@@ -144,11 +165,21 @@ export function useInventoryData(sellerId: string | null) {
         console.error('Error fetching inventory data:', err);
         setError(err instanceof Error ? err : new Error('Unknown error occurred'));
         setIsLoading(false);
+        
+        // Show user-friendly error toast
+        toast({
+          title: "Erro ao carregar dados de estoque",
+          description: err instanceof Error ? err.message : "Ocorreu um erro desconhecido",
+          variant: "destructive"
+        });
+        
+        // Return empty inventory to prevent UI issues
+        setInventoryItems([]);
       }
     };
 
     fetchInventoryData();
-  }, [sellerId, processReleaseDates]);
+  }, [sellerId, processReleaseDates, validateJsonResponse]);
 
   return { items: inventoryItems, isLoading, error, refreshDates };
 }
