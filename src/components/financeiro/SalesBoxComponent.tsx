@@ -1,4 +1,5 @@
-import React, { useMemo, useEffect } from 'react';
+
+import React, { useMemo } from 'react';
 import { ReleaseOperation } from '@/types/ReleaseOperation';
 import { SettlementTransaction } from '@/hooks/useSettlementData';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,7 +25,6 @@ interface SalesBoxComponentProps {
   onRefreshAdvertisingData?: () => void; 
   totalAdvertisingCost: number;
   sellerId?: string;
-  onTableTotalsUpdate?: (totals: any) => void; // New prop for table totals
 }
 
 export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
@@ -39,8 +39,7 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
   advertisingItems = [],
   onRefreshAdvertisingData,
   totalAdvertisingCost = 0,
-  sellerId,
-  onTableTotalsUpdate
+  sellerId
 }) => {
   const salesByItem = useMemo(() => {
     if (!settlementTransactions.length) return [];
@@ -454,18 +453,7 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
       resultadoLiberadoPrevisto: 0,
     });
   }, [salesByItem]);
-  
-  // Send table totals to parent component when they change
-  useEffect(() => {
-    if (onTableTotalsUpdate && tableTotals) {
-      // Pass the relevant totals back to the parent
-      onTableTotalsUpdate({
-        totalInventoryCost: tableTotals.totalInventoryCost || 0,
-        resultadoLiberado: tableTotals.resultadoLiberado || 0
-      });
-    }
-  }, [tableTotals, onTableTotalsUpdate]);
-  
+
   // Format currency values
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {

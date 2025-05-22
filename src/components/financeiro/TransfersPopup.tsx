@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { formatCurrency } from '@/utils/formatters';
 import { ReleaseOperation } from '@/types/ReleaseOperation';
 import { TransactionsList } from './TransactionsList';
@@ -107,12 +107,11 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
         }
       });
       const apiDescriptions: ApiDescription[] = response.data;
-
-      // Atualizar o estado local com as descrições corretamente associadas
-      setTransfersWithDescriptions(prevTransfers =>
+      
+      // Mapear as descrições da API para o formato usado no componente
+      setTransfersWithDescriptions(prevTransfers => 
         prevTransfers.map(transfer => {
           const sourceId = transfer.sourceId || '';
-          
           const matchingDescriptions = apiDescriptions
             .filter(desc => desc.source_id === sourceId)
             .map(desc => ({
@@ -126,6 +125,8 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
           };
         })
       );
+      
+      setIsLoading(false);
     } catch (error) {
       console.error('Erro ao buscar descrições:', error);
       toast({
@@ -133,10 +134,9 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
         description: "Erro ao carregar descrições",
         variant: "destructive"
       });
-  } finally {
-    setIsLoading(false);
-  }
-};
+      setIsLoading(false);
+    }
+  };
 
   // Lidar com seleção de produto
   const handleProductSelect = (product: Product, quantity: number) => {
@@ -275,9 +275,12 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
 
   // Calculate declared total for a transfer
   const getDeclaredTotal = (transfer: TransferWithDescriptions) => {
-    return transfer.manualDescriptions.reduce((sum, desc) => {
-      return sum + (desc.value || 0); // Garantir que valores inválidos ou ausentes não causem problemas
-    }, 0);
+    return transfer.manualDescriptions.reduce((sum, desc) => sum + desc.value, 0);
+  };
+
+  // Calculate declared total for a transaction
+  const getTransactionDeclaredTotal = (transaction: TransferTransaction) => {
+    return transaction.manualDescriptions?.reduce((sum, desc) => sum + desc.value, 0) || 0;
   };
 
   // Group transfers by description for summary
@@ -326,7 +329,7 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
 
     filteredTransactions.forEach(transaction => {
       totalValue += transaction.value;
-      totalDeclared += transaction.totalDeclared || 0;
+      totalDeclared += getTransactionDeclaredTotal(transaction);
     });
 
     return {
@@ -367,8 +370,8 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
                 {Object.entries(transfersByDescription).map(([description, amount], index) => (
                   <TableRow key={index}>
                     <TableCell>{description}</TableCell>
-                    <TableCell className="text-right">
-                      {amount > 0 ? formatCurrency(amount) : 'R$ 0,00'}
+                    <TableCell className={`text-right ${amount < 0 ? 'text-red-500' : 'text-green-500'}`}>
+                      {formatCurrency(amount)}
                     </TableCell>
                   </TableRow>
                 ))}

@@ -14,7 +14,6 @@ import { AlertCircle } from 'lucide-react';
 import { SalesBoxComponent } from './SalesBoxComponent';
 import { InventoryItem } from '@/types/inventory';
 import { AdvertisingItem } from '@/hooks/usePublicidadeData';
-import { DebtsPopup } from './DebtsPopup';
 
 interface FinancialMetricsProps {
   grossSales: number;
@@ -38,8 +37,7 @@ interface FinancialMetricsProps {
   advertisingItems?: AdvertisingItem[];
   totalAdvertisingCost: number;
   onRefreshAdvertisingData?: () => void;
-  sellerId: string;
-  onSalesTableTotalsUpdate?: (totals: any) => void; // New prop for passing totals
+  sellerId: string; // Add this prop
 }
 
 export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
@@ -64,8 +62,7 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
   advertisingItems = [],
   totalAdvertisingCost = 0,
   onRefreshAdvertisingData,
-  sellerId,
-  onSalesTableTotalsUpdate
+  sellerId
 }) => {
   const [repassesPopupOpen, setRepassesPopupOpen] = useState(false);
   const [grossSalesPopupOpen, setGrossSalesPopupOpen] = useState(false);
@@ -74,9 +71,7 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
   const [claimsPopupOpen, setClaimsPopupOpen] = useState(false);
   const [refundsPopupOpen, setRefundsPopupOpen] = useState(false);
   const [publicidadePopupOpen, setPublicidadePopupOpen] = useState(false);
-  const [debtsPopupOpen, setDebtsPopupOpen] = useState(false); // NOVO POPUP
   const [hasUnbalancedTransfers, setHasUnbalancedTransfers] = useState(false);
-
   const [filteredTotalReleased, setFilteredTotalReleased] = useState(totalReleased);
   const [filteredOperationsWithOrder, setFilteredOperationsWithOrder] = useState(releaseOperationsWithOrder);
 
@@ -210,13 +205,6 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
   // Display value to show in the "Liberado" card
   const displayTotalReleased = filterBySettlement ? filteredTotalReleased : totalReleased;
 
-  // Function to handle table totals from SalesBoxComponent
-  const handleTableTotalsUpdate = (totals) => {
-    if (onSalesTableTotalsUpdate) {
-      onSalesTableTotalsUpdate(totals);
-    }
-  };
-
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
@@ -289,15 +277,13 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
                   onClick={() => setPublicidadePopupOpen(true)}
                 />
                 
-               <MetricCard
-  title="Dívidas"
-  value={`R$ ${Math.abs(totalDebts).toFixed(2)}`}
-  description={`${((Math.abs(totalDebts) / (totalSettlementGross || 1)) * 100).toFixed(1)}% do valor bruto`}
-  className="bg-purple-50 hover:bg-purple-100 transition-colors"
-  textColor="text-purple-800"
-  onClick={() => setDebtsPopupOpen(true)} // ABRE O POPUP
-/>
-
+                <MetricCard
+                  title="Dívidas"
+                  value={`R$ ${Math.abs(totalDebts).toFixed(2)}`}
+                  description={`${((Math.abs(totalDebts) / (totalSettlementGross || 1)) * 100).toFixed(1)}% do valor bruto`}
+                  className="bg-purple-50 hover:bg-purple-100 transition-colors"
+                  textColor="text-purple-800"
+                />
                 
                 <MetricCard
                   title="Transferências"
@@ -330,7 +316,7 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
         </div>
       </div>
       
-      {/* Sales Box Component - pass the new callback */}
+      {/* Sales Box Component - pass the refresh function */}
       <SalesBoxComponent 
         settlementTransactions={settlementTransactions}
         releaseOperationsWithOrder={releaseOperationsWithOrder}
@@ -343,8 +329,7 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
         advertisingItems={advertisingItems}
         onRefreshAdvertisingData={onRefreshAdvertisingData}
         totalAdvertisingCost={totalAdvertisingCost}
-        sellerId={sellerId}
-        onTableTotalsUpdate={handleTableTotalsUpdate}
+        sellerId={sellerId} // Pass sellerId to SalesBoxComponent
       />
       
       <RepassesPopup 
@@ -399,29 +384,14 @@ export const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
         endDate={endDate}
       />
       
-     <PublicidadePopup
-  advertisingItems={advertisingItems}
-  open={publicidadePopupOpen}
-  onClose={() => setPublicidadePopupOpen(false)}
-  startDate={startDate}
-  endDate={endDate}
-  totalCost={totalAdvertisingCost}
-/>
-
-<DebtsPopup
-  open={debtsPopupOpen}
-  onClose={() => setDebtsPopupOpen(false)}
-  debtOperations={releaseOtherOperations.filter(op =>
-    op.description?.toLowerCase().includes("debt") &&
-    (!startDate || !endDate || (
-      new Date(op.date || '') >= new Date(startDate.setHours(0, 0, 0, 0)) &&
-      new Date(op.date || '') <= new Date(endDate.setHours(23, 59, 59, 999))
-    ))
-  )}
-  startDate={startDate}
-  endDate={endDate}
-/>
-
+      <PublicidadePopup
+        advertisingItems={advertisingItems}
+        open={publicidadePopupOpen}
+        onClose={() => setPublicidadePopupOpen(false)}
+        startDate={startDate}
+        endDate={endDate}
+        totalCost={totalAdvertisingCost}
+      />
     </div>
   );
 };

@@ -7,5 +7,4 @@ export interface ReleaseOperation {
   description?: string;
   sourceId?: string; // Added sourceId for grouping operations
   date?: string;     // Added date field
-  group?: string;    // Added group field for categorization
 }
