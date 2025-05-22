@@ -101,40 +101,43 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
   const fetchDescriptions = async () => {
     try {
       setIsLoading(true);
-      const response = await axios.get(`${getNgrokUrl('/trans_desc')}`, {
-        params: {
-          seller_id: sellerId
-        }
-      });
-      const apiDescriptions: ApiDescription[] = response.data;
-      
-      // Mapear as descrições da API para o formato usado no componente
-      setTransfersWithDescriptions(prevTransfers => 
-        prevTransfers.map(transfer => {
-          const sourceId = transfer.sourceId || '';
-          const matchingDescriptions = apiDescriptions
-            .filter(desc => desc.source_id === sourceId)
-            .map(desc => ({
-              description: desc.descricao,
-              value: parseFloat(desc.valor)
-            }));
-          
-          return {
-            ...transfer,
-            manualDescriptions: matchingDescriptions
-          };
-        })
-      );
-      
-      setIsLoading(false);
-    } catch (error) {
-      console.error('Erro ao buscar descrições:', error);
-      toast({
-        title: "Erro",
-        description: "Erro ao carregar descrições",
-        variant: "destructive"
-      });
-      setIsLoading(false);
+      try {
+        const response = await axios.get(`${getNgrokUrl('/trans_desc')}`, {
+          params: {
+            seller_id: sellerId
+          }
+        });
+        const apiDescriptions: ApiDescription[] = response.data;
+
+        // Atualizar o estado local com as descrições corretamente associadas
+        setTransfersWithDescriptions(prevTransfers =>
+          prevTransfers.map(transfer => {
+            const sourceId = transfer.sourceId || '';
+            
+            // Filtrar as descrições correspondentes ao sourceId atual
+            const matchingDescriptions = apiDescriptions
+              .filter(desc => desc.source_id === sourceId)
+              .map(desc => ({
+                description: desc.descricao,
+                value: parseFloat(desc.valor)
+              }));
+            
+            return {
+              ...transfer,
+              manualDescriptions: matchingDescriptions
+            };
+          })
+        );
+      } catch (error) {
+        console.error('Erro ao buscar descrições:', error);
+        toast({
+          title: "Erro",
+          description: "Erro ao carregar descrições",
+          variant: "destructive"
+        });
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -275,7 +278,9 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
 
   // Calculate declared total for a transfer
   const getDeclaredTotal = (transfer: TransferWithDescriptions) => {
-    return transfer.manualDescriptions.reduce((sum, desc) => sum + desc.value, 0);
+    return transfer.manualDescriptions.reduce((sum, desc) => {
+      return sum + (desc.value || 0); // Garantir que valores inválidos ou ausentes não causem problemas
+    }, 0);
   };
 
   // Group transfers by description for summary
@@ -365,9 +370,11 @@ export const TransfersPopup: React.FC<TransfersPopupProps> = ({
                 {Object.entries(transfersByDescription).map(([description, amount], index) => (
                   <TableRow key={index}>
                     <TableCell>{description}</TableCell>
-                    <TableCell className={`text-right ${amount < 0 ? 'text-red-500' : 'text-green-500'}`}>
-                      {formatCurrency(amount)}
-                    </TableCell>
+                    <TableCell className="text-right">
+  {transaction.totalDeclared > 0 
+    ? formatCurrency(transaction.totalDeclared) 
+    : 'R$ 0,00'}
+</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
