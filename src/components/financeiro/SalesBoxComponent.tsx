@@ -1,4 +1,3 @@
-
 import React, { useMemo } from 'react';
 import { ReleaseOperation } from '@/types/ReleaseOperation';
 import { SettlementTransaction } from '@/hooks/useSettlementData';
@@ -41,6 +40,59 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
   totalAdvertisingCost = 0,
   sellerId
 }) => {
+  // Helper function to calculate cost of last N units based on purchase history
+  const calculateLastUnitsAverageCost = (inventoryItem: InventoryItem, unitsNeeded: number, endDateLimit?: Date) => {
+    if (!inventoryItem || unitsNeeded <= 0) return 0;
+
+    // Filter purchases that occurred before or on the end date of analysis
+    const filteredPurchases = endDateLimit 
+      ? inventoryItem.purchases.filter(purchase => {
+          if (!purchase.date) return true; // Include purchases without dates
+          
+          // Parse the Brazilian date format (DD/MM/YYYY)
+          const parts = purchase.date.split('/');
+          const purchaseDate = new Date(
+            parseInt(parts[2]), // Year
+            parseInt(parts[1]) - 1, // Month (0-indexed)
+            parseInt(parts[0]) // Day
+          );
+          
+          // Keep purchases before or on the end date
+          return purchaseDate <= endDateLimit;
+        })
+      : inventoryItem.purchases;
+
+    // Sort purchases by date (newest first) - only positive quantities
+    const sortedPurchases = filteredPurchases
+      .filter(purchase => purchase.quantity > 0) // Only consider positive purchases
+      .sort((a, b) => {
+        if (!a.date && !b.date) return 0;
+        if (!a.date) return 1;
+        if (!b.date) return -1;
+        return -1 * compareBrazilianDates(a.date, b.date); // -1 to reverse order (newest first)
+      });
+
+    // Calculate the weighted average cost of the last X units
+    let remainingUnits = unitsNeeded;
+    let totalCost = 0;
+    let consideredUnits = 0;
+    
+    for (const purchase of sortedPurchases) {
+      const unitsToConsider = Math.min(purchase.quantity, remainingUnits);
+      
+      if (unitsToConsider <= 0) break;
+      
+      totalCost += unitsToConsider * purchase.unitCost;
+      consideredUnits += unitsToConsider;
+      remainingUnits -= unitsToConsider;
+      
+      if (remainingUnits <= 0) break;
+    }
+    
+    // Return the total cost for the units considered
+    return totalCost;
+  };
+
   const salesByItem = useMemo(() => {
     if (!settlementTransactions.length) return [];
 
@@ -93,7 +145,7 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
       resultadoTotal: number;
       resultadoLiberado: number;
       resultadoUnitario: number;
-      resultadoLiberadoPrevisto: number; // New field for "Resultado /L Previsto"
+      resultadoLiberadoPrevisto: number;
     }>();
 
     // Process settlement transactions (all sales)
@@ -135,7 +187,7 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
           resultadoTotal: 0,
           resultadoLiberado: 0,
           resultadoUnitario: 0,
-          resultadoLiberadoPrevisto: 0, // Initialize new field
+          resultadoLiberadoPrevisto: 0,
         });
       }
 
@@ -202,75 +254,33 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
       item.taxAmount = item.totalSales * 0.1;
     });
 
-    // Calculate individual profit based on inventory data
+    // Calculate total inventory cost and unit costs for all items
+    itemGroups.forEach(item => {
+      // Find matching inventory item
+      const inventoryItem = inventoryItems.find(invItem => invItem.itemId === item.itemId);
+      
+      if (inventoryItem) {
+        // Calculate total inventory cost based on total units sold (not just released)
+        const totalInventoryCostValue = calculateLastUnitsAverageCost(inventoryItem, item.totalUnits, endDate);
+        item.totalInventoryCost = totalInventoryCostValue;
+        
+        // Calculate average unit cost for this item
+        item.averageUnitCost = item.totalUnits > 0 ? totalInventoryCostValue / item.totalUnits : 0;
+      }
+    });
+
+    // Calculate individual profit based on released data and cost calculation
     itemGroups.forEach(item => {
       // Check if we have released units and inventory data for this item
-      if (item.released.count > 0 && item.released.amount > 0) {
-        // Find matching inventory item
-        const inventoryItem = inventoryItems.find(invItem => invItem.itemId === item.itemId);
+      if (item.released.count > 0 && item.released.amount > 0 && item.averageUnitCost > 0) {
+        // Calculate the per-unit value of released amount
+        const unitReleaseValue = item.released.amount / item.released.count;
         
-        if (inventoryItem) {
-          // Calculate the per-unit value of released amount
-          const unitReleaseValue = item.released.amount / item.released.count;
-          
-          // Get the purchase history for this item
-          const { purchases } = inventoryItem;
-          
-          // Filter purchases that occurred before or on the end date of analysis
-          const filteredPurchases = endDate 
-            ? purchases.filter(purchase => {
-                if (!purchase.date) return true; // Include purchases without dates
-                
-                // Parse the Brazilian date format (DD/MM/YYYY)
-                const parts = purchase.date.split('/');
-                const purchaseDate = new Date(
-                  parseInt(parts[2]), // Year
-                  parseInt(parts[1]) - 1, // Month (0-indexed)
-                  parseInt(parts[0]) // Day
-                );
-                
-                // Keep purchases before or on the end date
-                return purchaseDate <= endDate;
-              })
-            : purchases;
-          
-          // Sort purchases by date (newest first)
-          const sortedPurchases = [...filteredPurchases].sort((a, b) => {
-            if (!a.date && !b.date) return 0;
-            if (!a.date) return 1;
-            if (!b.date) return -1;
-            return -1 * compareBrazilianDates(a.date, b.date); // -1 to reverse order
-          });
-          
-          // Calculate the weighted average cost of the last X units (where X = released count)
-          let remainingUnits = item.released.count;
-          let totalCost = 0;
-          let consideredUnits = 0;
-          
-          for (const purchase of sortedPurchases) {
-            const unitsToConsider = Math.min(purchase.quantity, remainingUnits);
-            
-            if (unitsToConsider <= 0) break;
-            
-            totalCost += unitsToConsider * purchase.unitCost;
-            consideredUnits += unitsToConsider;
-            remainingUnits -= unitsToConsider;
-            
-            if (remainingUnits <= 0) break;
-          }
-          
-          // Calculate the average unit cost and individual profit
-          if (consideredUnits > 0) {
-            const averageUnitCost = totalCost / consideredUnits;
-            item.averageUnitCost = averageUnitCost; // Store for later use in calculating total inventory cost
-            
-            // Calculate tax per unit (tax amount / total units)
-            const taxPerUnit = item.totalUnits > 0 ? item.taxAmount / item.totalUnits : 0;
-            
-            // Adjust individual profit to subtract the tax per unit
-            item.individualProfit = unitReleaseValue - averageUnitCost - taxPerUnit;
-          }
-        }
+        // Calculate tax per unit (tax amount / total units)
+        const taxPerUnit = item.totalUnits > 0 ? item.taxAmount / item.totalUnits : 0;
+        
+        // Calculate individual profit: unit release value - average unit cost - tax per unit
+        item.individualProfit = unitReleaseValue - item.averageUnitCost - taxPerUnit;
       }
     });
 
@@ -321,18 +331,6 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
       }
     });
 
-    // Calculate total inventory cost
-    itemGroups.forEach(item => {
-      // Only calculate for items with data
-      if (item.averageUnitCost) {
-        // Calculate total remaining inventory (Liberado + Não liberado)
-        const totalRemainingUnits = item.released.count + item.unreleased.count;
-        
-        // Calculate total inventory cost
-        item.totalInventoryCost = item.averageUnitCost * totalRemainingUnits;
-      }
-    });
-
     // Calculate the new fields for the updated table
     itemGroups.forEach(item => {
       // Faturado /U: Valor Unitário Faturado (Faturado /T / Unidades /T)
@@ -345,10 +343,8 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
       // Repasse /U: Valor Unitário de repasse (Repasse /L / Unidades /L)
       item.repasseUnitario = item.released.count > 0 ? item.released.amount / item.released.count : 0;
       
-      // Custo /U: Custo de estoque Unitário (Custo /T / Unidades /T)
-      const totalRemainingUnits = item.released.count + item.unreleased.count;
-      item.custoUnitario = totalRemainingUnits > 0 && item.totalInventoryCost ? 
-        item.totalInventoryCost / totalRemainingUnits : item.averageUnitCost || 0;
+      // Custo /U: Use the calculated average unit cost
+      item.custoUnitario = item.averageUnitCost;
       
       // Custo /L: Custo de estoque Liberado (Custo /U * Unidades /L)
       item.custoLiberado = item.custoUnitario * item.released.count;
@@ -383,7 +379,7 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
       item.resultadoUnitario = item.repasseUnitario - item.custoUnitario - 
         item.publicidadeUnitario - item.impostoUnitario;
         
-      // NEW COLUMN: Resultado /L Previsto
+      // Resultado /L Previsto
       // Calculated as Resultado /U * (Unidades /L + Unidades /NL)
       item.resultadoLiberadoPrevisto = item.resultadoUnitario * (item.released.count + item.unreleased.count);
     });
