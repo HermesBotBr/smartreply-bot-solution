@@ -15,10 +15,10 @@ interface ReleasePopupProps {
   onClose: () => void;
   operationsWithOrder: ReleaseOperation[];
   otherOperations: ReleaseOperation[];
-  settlementTransactions?: SettlementTransaction[]; // Adicionar transações de vendas
-  startDate?: Date; // Data inicial do filtro
-  endDate?: Date; // Data final do filtro
-  filterBySettlement?: boolean; // Add filter toggle prop
+  settlementTransactions?: SettlementTransaction[];
+  startDate?: Date;
+  endDate?: Date;
+  filterBySettlement?: boolean;
 }
 
 export const ReleasePopup: React.FC<ReleasePopupProps> = ({
@@ -26,7 +26,7 @@ export const ReleasePopup: React.FC<ReleasePopupProps> = ({
   onClose,
   operationsWithOrder,
   otherOperations,
-  settlementTransactions = [], // Valor padrão de array vazio
+  settlementTransactions = [],
   startDate,
   endDate,
   filterBySettlement = false
@@ -46,28 +46,24 @@ export const ReleasePopup: React.FC<ReleasePopupProps> = ({
         filterBySettlement
       });
       
-      // Verificar se há discrepância entre os totais
       validateTotals();
     }
   }, [open, settlementTransactions, operationsWithOrder]);
 
-  // Verifica se há discrepância entre os totais
   const validateTotals = () => {
     if (!settlementTransactions || settlementTransactions.length === 0) {
       setMismatchWarning(false);
       return;
     }
 
-    // Calcular o total de repasses das transações de settlement
     const totalSettlementValue = settlementTransactions.reduce((sum, t) => sum + (t.netValue || 0), 0);
     
-    // Calcular o total das operações liberadas + pendentes + reembolsadas
-    const totalReleased = groupedOperationsWithOrder.reduce((sum, op) => sum + op.amount, 0);
+    // Usar o mesmo cálculo do card "Liberado" - soma direta das operações filtradas por data
+    const totalReleased = filteredOperationsWithOrder.reduce((sum, op) => sum + op.amount, 0);
     const totalPending = getPendingOperations().reduce((sum, op) => sum + op.amount, 0);
     const totalRefunded = getRefundedOperations().reduce((sum, op) => sum + op.amount, 0);
     const combinedTotal = totalReleased + totalPending + totalRefunded;
     
-    // Tolerar pequenas diferenças devido a arredondamentos (0.01)
     const hasMismatch = Math.abs(totalSettlementValue - combinedTotal) > 0.01;
     
     setMismatchWarning(hasMismatch);
@@ -81,7 +77,6 @@ export const ReleasePopup: React.FC<ReleasePopupProps> = ({
     }
   };
 
-  // Função para verificar se uma data está dentro do intervalo selecionado
   const isDateInRange = (dateStr?: string): boolean => {
     if (!dateStr || !startDate || !endDate) return true;
     
@@ -94,11 +89,15 @@ export const ReleasePopup: React.FC<ReleasePopupProps> = ({
     return date >= start && date <= end;
   };
 
-  // Filtrar operações com base na data
+  // Filtrar operações com base na data - MESMA LÓGICA DO CARD "LIBERADO"
   const filteredOperationsWithOrder = operationsWithOrder.filter(op => isDateInRange(op.date));
   const filteredOtherOperations = otherOperations.filter(op => isDateInRange(op.date));
 
-  // Função para agrupar operações pelo orderId
+  console.log("=== RELEASE POPUP DEBUG ===");
+  console.log("operationsWithOrder total:", operationsWithOrder.length);
+  console.log("filteredOperationsWithOrder:", filteredOperationsWithOrder.length);
+  console.log("filteredOperationsWithOrder total value:", filteredOperationsWithOrder.reduce((sum, op) => sum + op.amount, 0));
+
   const groupOperationsByOrderId = (operations: ReleaseOperation[]): ReleaseOperation[] => {
     const groupedMap = new Map<string, ReleaseOperation>();
     
@@ -117,7 +116,6 @@ export const ReleasePopup: React.FC<ReleasePopupProps> = ({
     return Array.from(groupedMap.values());
   };
 
-  // Função para agrupar operações pelo tipo de descrição
   const groupOperationsByDescription = (operations: ReleaseOperation[]): ReleaseOperation[] => {
     const groupedMap = new Map<string, ReleaseOperation>();
     
@@ -134,23 +132,19 @@ export const ReleasePopup: React.FC<ReleasePopupProps> = ({
     return Array.from(groupedMap.values());
   };
 
-  // Função para identificar operações pendentes (presentes em settlement mas não em operações liberadas)
   const getPendingOperations = (): ReleaseOperation[] => {
     if (!settlementTransactions || settlementTransactions.length === 0) {
       return [];
     }
 
-    // Extrair todos os orderIds das operações já liberadas
     const liberatedOrderIds = new Set(operationsWithOrder.map(op => op.orderId));
     
-    // Filtrar as transações de settlement que não estão nas operações liberadas
-    // Excluir também operações reembolsadas
     const pendingOps = settlementTransactions
       .filter(transaction => 
         transaction.orderId && 
         !liberatedOrderIds.has(transaction.orderId) &&
-        !transaction.isRefunded && // Não incluir reembolsos como pendentes
-        (filterBySettlement ? isDateInRange(transaction.date) : true) // Aplicar filtro de data apenas se solicitado
+        !transaction.isRefunded &&
+        (filterBySettlement ? isDateInRange(transaction.date) : true)
       )
       .map(transaction => ({
         orderId: transaction.orderId,
@@ -164,23 +158,21 @@ export const ReleasePopup: React.FC<ReleasePopupProps> = ({
     return pendingOps;
   };
 
-  // Função para identificar operações reembolsadas
   const getRefundedOperations = (): ReleaseOperation[] => {
     if (!settlementTransactions || settlementTransactions.length === 0) {
       return [];
     }
     
-    // Filtrar as transações de settlement que estão marcadas como reembolsadas
     const refundedOps = settlementTransactions
       .filter(transaction => 
         transaction.isRefunded &&
-        (filterBySettlement ? isDateInRange(transaction.date) : true) // Aplicar filtro de data apenas se solicitado
+        (filterBySettlement ? isDateInRange(transaction.date) : true)
       )
       .map(transaction => ({
         orderId: transaction.orderId,
         itemId: transaction.itemId || '',
         title: transaction.title || '',
-        amount: transaction.netValue || 0, // Usar netValue (valor do repasse) em vez de grossValue
+        amount: transaction.netValue || 0,
         description: 'Venda reembolsada',
         date: transaction.date
       }));
@@ -188,21 +180,16 @@ export const ReleasePopup: React.FC<ReleasePopupProps> = ({
     return refundedOps;
   };
 
-  // Obter as operações reembolsadas
   const refundedOperations = getRefundedOperations();
   
-  // Criar um Set com os IDs de pedidos reembolsados para facilitar a filtragem
-  const refundedOrderIds = new Set(refundedOperations.map(op => op.orderId));
-
-  // Agrupe as operações, excluindo as reembolsadas da lista de operações com ORDER_ID
-  // Esta é a principal alteração: filtramos as operações para remover aquelas que estão reembolsadas
-  const filteredOrderOperations = filteredOperationsWithOrder.filter(op => !refundedOrderIds.has(op.orderId));
-  const groupedOperationsWithOrder = groupOperationsByOrderId(filteredOrderOperations);
+  // MUDANÇA PRINCIPAL: Usar diretamente as operações filtradas por data, SEM filtrar reembolsos
+  // Esta é a mesma lógica usada no card "Liberado"
+  const groupedOperationsWithOrder = groupOperationsByOrderId(filteredOperationsWithOrder);
 
   const groupedOtherOperations = groupOperationsByDescription(filteredOtherOperations);
   const pendingOperations = getPendingOperations();
   
-  // Calcule os totais
+  // Calcular totais
   const totalOperationsWithOrder = groupedOperationsWithOrder.reduce((sum, op) => sum + op.amount, 0);
   const totalOtherOperations = groupedOtherOperations.reduce((sum, op) => sum + op.amount, 0);
   const totalPendingOperations = pendingOperations.reduce((sum, op) => sum + op.amount, 0);
@@ -210,6 +197,11 @@ export const ReleasePopup: React.FC<ReleasePopupProps> = ({
   const grandTotal = totalOperationsWithOrder + totalOtherOperations;
   const settlementTotal = settlementTransactions?.reduce((sum, t) => sum + (t.netValue || 0), 0) || 0;
   const allTablesTotal = totalOperationsWithOrder + totalPendingOperations + totalRefundedOperations;
+
+  console.log("=== TOTAIS CALCULADOS ===");
+  console.log("totalOperationsWithOrder (deve ser igual ao card Liberado):", totalOperationsWithOrder);
+  console.log("grandTotal:", grandTotal);
+  console.log("settlementTotal:", settlementTotal);
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -334,7 +326,6 @@ export const ReleasePopup: React.FC<ReleasePopupProps> = ({
               </>
             )}
             
-            {/* Seção de validação de totais */}
             <div className="mt-6 p-4 bg-slate-50 rounded border">
               <h4 className="font-semibold text-base mb-2">Validação de Totais</h4>
               
