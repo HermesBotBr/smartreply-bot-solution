@@ -1,3 +1,4 @@
+
 // src/components/financeiro/ReleasePopup.tsx
 
 import React, { useEffect, useState } from 'react';
@@ -80,8 +81,8 @@ export const ReleasePopup: React.FC<ReleasePopupProps> = ({
     }
   };
 
-  // Função para verificar se uma data de venda está dentro do intervalo selecionado
-  const isSaleDateInRange = (dateStr?: string): boolean => {
+  // Função para verificar se uma data está dentro do intervalo selecionado
+  const isDateInRange = (dateStr?: string): boolean => {
     if (!dateStr || !startDate || !endDate) return true;
     
     const date = new Date(dateStr);
@@ -93,40 +94,9 @@ export const ReleasePopup: React.FC<ReleasePopupProps> = ({
     return date >= start && date <= end;
   };
 
-  // Função para verificar se uma data de liberação está dentro do intervalo selecionado
-  const isReleaseDateInRange = (dateStr?: string): boolean => {
-    if (!dateStr || !startDate || !endDate) return true;
-    
-    const date = new Date(dateStr);
-    const start = new Date(startDate);
-    start.setHours(0, 0, 0, 0);
-    const end = new Date(endDate);
-    end.setHours(23, 59, 59, 999);
-    
-    return date >= start && date <= end;
-  };
-
-  // Função para encontrar a data da venda correspondente a uma operação liberada
-  const getSaleDateForOperation = (operation: ReleaseOperation): string | undefined => {
-    if (!operation.orderId) return undefined;
-    
-    const correspondingSale = settlementTransactions.find(
-      transaction => transaction.orderId === operation.orderId
-    );
-    
-    return correspondingSale?.date;
-  };
-
-  // Filtrar operações com ORDER_ID: mostrar se a venda está no período, independente de quando foi liberada
-  const filteredOperationsWithOrder = operationsWithOrder.filter(op => {
-    const saleDate = getSaleDateForOperation(op);
-    return isSaleDateInRange(saleDate);
-  });
-
-  // Filtrar outras operações com base na data de liberação apenas se filterBySettlement estiver ativo
-  const filteredOtherOperations = otherOperations.filter(op => 
-    filterBySettlement ? isReleaseDateInRange(op.date) : true
-  );
+  // Filtrar operações com base na data
+  const filteredOperationsWithOrder = operationsWithOrder.filter(op => isDateInRange(op.date));
+  const filteredOtherOperations = otherOperations.filter(op => isDateInRange(op.date));
 
   // Função para agrupar operações pelo orderId
   const groupOperationsByOrderId = (operations: ReleaseOperation[]): ReleaseOperation[] => {
@@ -180,7 +150,7 @@ export const ReleasePopup: React.FC<ReleasePopupProps> = ({
         transaction.orderId && 
         !liberatedOrderIds.has(transaction.orderId) &&
         !transaction.isRefunded && // Não incluir reembolsos como pendentes
-        isSaleDateInRange(transaction.date) // Filtrar por data de venda
+        (filterBySettlement ? isDateInRange(transaction.date) : true) // Aplicar filtro de data apenas se solicitado
       )
       .map(transaction => ({
         orderId: transaction.orderId,
@@ -204,7 +174,7 @@ export const ReleasePopup: React.FC<ReleasePopupProps> = ({
     const refundedOps = settlementTransactions
       .filter(transaction => 
         transaction.isRefunded &&
-        isSaleDateInRange(transaction.date) // Filtrar por data de venda
+        (filterBySettlement ? isDateInRange(transaction.date) : true) // Aplicar filtro de data apenas se solicitado
       )
       .map(transaction => ({
         orderId: transaction.orderId,
