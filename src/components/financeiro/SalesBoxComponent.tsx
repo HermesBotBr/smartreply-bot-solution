@@ -499,176 +499,170 @@ export const SalesBoxComponent: React.FC<SalesBoxComponentProps> = ({
             <Skeleton className="h-10 w-full" />
           </div>
         ) : (
-          <div className="relative">
-            <div className="overflow-auto max-h-[600px]" style={{ 
-              maxWidth: 'calc(100vw - 4rem)',
-              scrollbarWidth: 'thin',
-              scrollbarColor: '#CBD5E0 #F7FAFC'
-            }}>
-              <Table className="relative">
-                <TableHeader className="sticky top-0 z-20 bg-white shadow-sm">
-                  <TableRow>
-                    <TableHead className="sticky left-0 z-30 bg-white border-r-2 border-gray-200 shadow-md min-w-[80px]">Imagem</TableHead>
-                    <TableHead className="sticky left-[80px] z-30 bg-white border-r-2 border-gray-200 shadow-md min-w-[200px]">Anúncio</TableHead>
-                    <TableHead className="text-right min-w-[100px]">Unidades /T</TableHead>
-                    <TableHead className="text-right min-w-[100px]">Unidades /L</TableHead>
-                    <TableHead className="text-right min-w-[100px]">Unidades /NL</TableHead>
-                    <TableHead className="text-right min-w-[100px]">Unidades /R</TableHead>
-                    <TableHead className="text-right min-w-[120px]">Faturado /T</TableHead>
-                    <TableHead className="text-right min-w-[120px]">Faturado /L</TableHead>
-                    <TableHead className="text-right min-w-[120px]">Faturado /U</TableHead>
-                    <TableHead className="text-right min-w-[120px]">Repasse /T</TableHead>
-                    <TableHead className="text-right min-w-[120px]">Repasse /L</TableHead>
-                    <TableHead className="text-right min-w-[120px]">Repasse /U</TableHead>
-                    <TableHead className="text-right min-w-[120px]">Repasse /NL</TableHead>
-                    <TableHead className="text-right min-w-[120px]">Repasse /R</TableHead>
-                    <TableHead className="text-right min-w-[120px]">Custo /T</TableHead>
-                    <TableHead className="text-right min-w-[120px]">Custo /L</TableHead>
-                    <TableHead className="text-right min-w-[120px]">Custo /U</TableHead>
-                    <TableHead className="text-right min-w-[140px]">Publicidade /T</TableHead>
-                    <TableHead className="text-right min-w-[140px]">Publicidade /L</TableHead>
-                    <TableHead className="text-right min-w-[140px]">Publicidade /U</TableHead>
-                    <TableHead className="text-right min-w-[120px]">Imposto /T</TableHead>
-                    <TableHead className="text-right min-w-[120px]">Imposto /L</TableHead>
-                    <TableHead className="text-right min-w-[120px]">Imposto /U</TableHead>
-                    <TableHead className="text-right min-w-[140px]">Resultado /T</TableHead>
-                    <TableHead className="text-right min-w-[140px]">Resultado /L</TableHead>
-                    <TableHead className="text-right min-w-[140px]">Resultado /U</TableHead>
-                    <TableHead className="text-right min-w-[160px]">Resultado /L Previsto</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {salesByItem.map((item) => (
-                    <TableRow key={item.itemId}>
-                      <TableCell className="sticky left-0 z-10 bg-white border-r-2 border-gray-200 shadow-md w-[80px]">
-                        <div 
-                          className="cursor-pointer" 
-                          onClick={() => openItemInNewTab(item.itemId)}
-                          title="Abrir anúncio em nova guia"
-                        >
-                          <ProductThumbnail itemId={item.itemId} sellerId={sellerId} />
-                        </div>
-                      </TableCell>
-                      <TableCell 
-                        className="sticky left-[80px] z-10 bg-white border-r-2 border-gray-200 shadow-md font-medium max-w-[200px] truncate cursor-pointer hover:text-blue-600 hover:underline flex items-center" 
-                        title={`${item.title} - Clique para abrir o anúncio`}
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Imagem</TableHead>
+                  <TableHead>Anúncio</TableHead>
+                  <TableHead className="text-right">Unidades /T</TableHead>
+                  <TableHead className="text-right">Unidades /L</TableHead>
+                  <TableHead className="text-right">Unidades /NL</TableHead>
+                  <TableHead className="text-right">Unidades /R</TableHead>
+                  <TableHead className="text-right">Faturado /T</TableHead>
+                  <TableHead className="text-right">Faturado /L</TableHead>
+                  <TableHead className="text-right">Faturado /U</TableHead>
+                  <TableHead className="text-right">Repasse /T</TableHead>
+                  <TableHead className="text-right">Repasse /L</TableHead>
+                  <TableHead className="text-right">Repasse /U</TableHead>
+                  <TableHead className="text-right">Repasse /NL</TableHead>
+                  <TableHead className="text-right">Repasse /R</TableHead>
+                  <TableHead className="text-right">Custo /T</TableHead>
+                  <TableHead className="text-right">Custo /L</TableHead>
+                  <TableHead className="text-right">Custo /U</TableHead>
+                  <TableHead className="text-right">Publicidade /T</TableHead>
+                  <TableHead className="text-right">Publicidade /L</TableHead>
+                  <TableHead className="text-right">Publicidade /U</TableHead>
+                  <TableHead className="text-right">Imposto /T</TableHead>
+                  <TableHead className="text-right">Imposto /L</TableHead>
+                  <TableHead className="text-right">Imposto /U</TableHead>
+                  <TableHead className="text-right">Resultado /T</TableHead>
+                  <TableHead className="text-right">Resultado /L</TableHead>
+                  <TableHead className="text-right">Resultado /U</TableHead>
+                  <TableHead className="text-right">Resultado /L Previsto</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {salesByItem.map((item) => (
+                  <TableRow key={item.itemId}>
+                    <TableCell className="w-12">
+                      <div 
+                        className="cursor-pointer" 
                         onClick={() => openItemInNewTab(item.itemId)}
+                        title="Abrir anúncio em nova guia"
                       >
-                        <span className="mr-1">{item.title}</span>
-                        <ExternalLink size={14} className="inline-block opacity-50" />
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {item.totalUnits}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {item.released.count}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {item.unreleased.count}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {item.refunded.count}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {formatCurrency(item.totalSales)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {formatCurrency(item.faturadoLiberado)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {formatCurrency(item.faturadoUnitario)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {formatCurrency(item.totalRepasse)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {formatCurrency(item.released.amount)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {formatCurrency(item.repasseUnitario)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {formatCurrency(item.unreleased.amount)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {formatCurrency(item.refunded.amount)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {item.totalInventoryCost ? formatCurrency(item.totalInventoryCost) : "Sem dados"}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {formatCurrency(item.custoLiberado)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {formatCurrency(item.custoUnitario)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {item.advertisingCost > 0 ? formatCurrency(item.advertisingCost) : "Sem dados"}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {formatCurrency(item.publicidadeLiberado)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {formatCurrency(item.publicidadeUnitario)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {formatCurrency(item.taxAmount)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {formatCurrency(item.impostoLiberado)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {formatCurrency(item.impostoUnitario)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {formatCurrency(item.resultadoTotal)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {formatCurrency(item.resultadoLiberado)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {formatCurrency(item.resultadoUnitario)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {formatCurrency(item.resultadoLiberadoPrevisto)}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-                {tableTotals && (
-                  <TableFooter className="sticky bottom-0 z-20 bg-white shadow-sm">
-                    <TableRow className="font-bold">
-                      <TableCell className="sticky left-0 z-30 bg-white border-r-2 border-gray-200 shadow-md" colSpan={2}>Total</TableCell>
-                      <TableCell className="text-right">{tableTotals.totalUnits}</TableCell>
-                      <TableCell className="text-right">{tableTotals.releasedCount}</TableCell>
-                      <TableCell className="text-right">{tableTotals.unreleasedCount}</TableCell>
-                      <TableCell className="text-right">{tableTotals.refundedCount}</TableCell>
-                      <TableCell className="text-right">{formatCurrency(tableTotals.totalSales)}</TableCell>
-                      <TableCell className="text-right">{formatCurrency(tableTotals.faturadoLiberado)}</TableCell>
-                      <TableCell className="text-right">-</TableCell>
-                      <TableCell className="text-right">{formatCurrency(tableTotals.totalRepasse)}</TableCell>
-                      <TableCell className="text-right">{formatCurrency(tableTotals.releasedAmount)}</TableCell>
-                      <TableCell className="text-right">-</TableCell>
-                      <TableCell className="text-right">{formatCurrency(tableTotals.unreleasedAmount)}</TableCell>
-                      <TableCell className="text-right">{formatCurrency(tableTotals.refundedAmount)}</TableCell>
-                      <TableCell className="text-right">{formatCurrency(tableTotals.totalInventoryCost)}</TableCell>
-                      <TableCell className="text-right">{formatCurrency(tableTotals.custoLiberado)}</TableCell>
-                      <TableCell className="text-right">-</TableCell>
-                      <TableCell className="text-right">{formatCurrency(tableTotals.advertisingCost)}</TableCell>
-                      <TableCell className="text-right">{formatCurrency(tableTotals.publicidadeLiberado)}</TableCell>
-                      <TableCell className="text-right">-</TableCell>
-                      <TableCell className="text-right">{formatCurrency(tableTotals.taxAmount)}</TableCell>
-                      <TableCell className="text-right">{formatCurrency(tableTotals.impostoLiberado)}</TableCell>
-                      <TableCell className="text-right">-</TableCell>
-                      <TableCell className="text-right">{formatCurrency(tableTotals.resultadoTotal)}</TableCell>
-                      <TableCell className="text-right">{formatCurrency(tableTotals.resultadoLiberado)}</TableCell>
-                      <TableCell className="text-right">-</TableCell>
-                      <TableCell className="text-right">{formatCurrency(tableTotals.resultadoLiberadoPrevisto)}</TableCell>
-                    </TableRow>
-                  </TableFooter>
-                )}
-              </Table>
-            </div>
+                        <ProductThumbnail itemId={item.itemId} sellerId={sellerId} />
+                      </div>
+                    </TableCell>
+                    <TableCell 
+                      className="font-medium max-w-[200px] truncate cursor-pointer hover:text-blue-600 hover:underline flex items-center" 
+                      title={`${item.title} - Clique para abrir o anúncio`}
+                      onClick={() => openItemInNewTab(item.itemId)}
+                    >
+                      <span className="mr-1">{item.title}</span>
+                      <ExternalLink size={14} className="inline-block opacity-50" />
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {item.totalUnits}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {item.released.count}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {item.unreleased.count}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {item.refunded.count}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {formatCurrency(item.totalSales)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {formatCurrency(item.faturadoLiberado)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {formatCurrency(item.faturadoUnitario)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {formatCurrency(item.totalRepasse)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {formatCurrency(item.released.amount)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {formatCurrency(item.repasseUnitario)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {formatCurrency(item.unreleased.amount)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {formatCurrency(item.refunded.amount)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {item.totalInventoryCost ? formatCurrency(item.totalInventoryCost) : "Sem dados"}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {formatCurrency(item.custoLiberado)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {formatCurrency(item.custoUnitario)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {item.advertisingCost > 0 ? formatCurrency(item.advertisingCost) : "Sem dados"}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {formatCurrency(item.publicidadeLiberado)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {formatCurrency(item.publicidadeUnitario)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {formatCurrency(item.taxAmount)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {formatCurrency(item.impostoLiberado)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {formatCurrency(item.impostoUnitario)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {formatCurrency(item.resultadoTotal)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {formatCurrency(item.resultadoLiberado)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {formatCurrency(item.resultadoUnitario)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {formatCurrency(item.resultadoLiberadoPrevisto)}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+              {tableTotals && (
+                <TableFooter>
+                  <TableRow className="font-bold">
+                    <TableCell colSpan={2}>Total</TableCell>
+                    <TableCell className="text-right">{tableTotals.totalUnits}</TableCell>
+                    <TableCell className="text-right">{tableTotals.releasedCount}</TableCell>
+                    <TableCell className="text-right">{tableTotals.unreleasedCount}</TableCell>
+                    <TableCell className="text-right">{tableTotals.refundedCount}</TableCell>
+                    <TableCell className="text-right">{formatCurrency(tableTotals.totalSales)}</TableCell>
+                    <TableCell className="text-right">{formatCurrency(tableTotals.faturadoLiberado)}</TableCell>
+                    <TableCell className="text-right">-</TableCell>
+                    <TableCell className="text-right">{formatCurrency(tableTotals.totalRepasse)}</TableCell>
+                    <TableCell className="text-right">{formatCurrency(tableTotals.releasedAmount)}</TableCell>
+                    <TableCell className="text-right">-</TableCell>
+                    <TableCell className="text-right">{formatCurrency(tableTotals.unreleasedAmount)}</TableCell>
+                    <TableCell className="text-right">{formatCurrency(tableTotals.refundedAmount)}</TableCell>
+                    <TableCell className="text-right">{formatCurrency(tableTotals.totalInventoryCost)}</TableCell>
+                    <TableCell className="text-right">{formatCurrency(tableTotals.custoLiberado)}</TableCell>
+                    <TableCell className="text-right">-</TableCell>
+                    <TableCell className="text-right">{formatCurrency(tableTotals.advertisingCost)}</TableCell>
+                    <TableCell className="text-right">{formatCurrency(tableTotals.publicidadeLiberado)}</TableCell>
+                    <TableCell className="text-right">-</TableCell>
+                    <TableCell className="text-right">{formatCurrency(tableTotals.taxAmount)}</TableCell>
+                    <TableCell className="text-right">{formatCurrency(tableTotals.impostoLiberado)}</TableCell>
+                    <TableCell className="text-right">-</TableCell>
+                    <TableCell className="text-right">{formatCurrency(tableTotals.resultadoTotal)}</TableCell>
+                    <TableCell className="text-right">{formatCurrency(tableTotals.resultadoLiberado)}</TableCell>
+                    <TableCell className="text-right">-</TableCell>
+                    <TableCell className="text-right">{formatCurrency(tableTotals.resultadoLiberadoPrevisto)}</TableCell>
+                  </TableRow>
+                </TableFooter>
+              )}
+            </Table>
           </div>
         )}
       </CardContent>
